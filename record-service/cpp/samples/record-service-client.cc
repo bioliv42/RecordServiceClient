@@ -50,7 +50,53 @@ bool impala::TNetworkAddress::operator<(const impala::TNetworkAddress& that) con
     return true;
   }
   return false;
-};
+}
+
+string PrintResultSchema(const TSchema& schema) {
+  stringstream ss;
+  ss << "[";
+  for (int i = 0; i < schema.cols.size(); ++i) {
+    if (i != 0) ss << ", ";
+    switch (schema.cols[i].type_id) {
+      case TTypeId::BOOLEAN:
+        ss << "BOOLEAN";
+        break;
+      case TTypeId::TINYINT:
+        ss << "SMALLINT";
+        break;
+      case TTypeId::SMALLINT:
+        ss << "SMALLINT";
+        break;
+      case TTypeId::INT:
+        ss << "INT";
+        break;
+      case TTypeId::BIGINT:
+        ss << "BIGINT";
+        break;
+      case TTypeId::FLOAT:
+        ss << "FLOAT";
+        break;
+      case TTypeId::DOUBLE:
+        ss << "DOUBLE";
+        break;
+      case TTypeId::STRING:
+        ss << "STRING";
+        break;
+      case TTypeId::TIMESTAMP:
+        ss << "TIMESTAMP";
+        break;
+      case TTypeId::DECIMAL:
+        ss << "DECIMAL(" << schema.cols[i].precision << ", "
+           << schema.cols[i].scale << ")";
+        break;
+      default:
+        ss << "Unknown";
+    }
+  }
+  ss << "]" << endl;
+  return ss.str();
+}
+
 
 void ExecRequestDistributed(const char* request, TRowBatchFormat::type format) {
   printf("Planning request: %s\n", request);
@@ -84,6 +130,8 @@ void ExecRequestDistributed(const char* request, TRowBatchFormat::type format) {
       printf("     %s\n", plan_result.tasks[i].hosts[j].c_str());
     }
   }
+
+  printf("Result Types: %s\n", PrintResultSchema(plan_result.schema).c_str());
 
   printf("\nExecuting tasks...\n");
   int64_t total_rows = 0;

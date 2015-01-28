@@ -20,8 +20,35 @@ struct TUniqueId {
   2: required i64 lo
 }
 
-exception RecordServiceException {
-  1: string message
+enum TTypeId {
+  BOOLEAN,
+  TINYINT,
+  SMALLINT,
+  INT,
+  BIGINT,
+  FLOAT,
+  DOUBLE,
+  STRING,
+  TIMESTAMP,
+  DECIMAL,
+
+  // TODO: other types
+}
+
+// TODO: how to extend this for complex types.
+struct TType {
+  1: required TTypeId type_id
+
+  // TODO:
+  // bool nullable?
+
+  // Only set if id == DECIMAL
+  2: optional i32 precision
+  3: optional i32 scale
+}
+
+struct TSchema {
+  1: required list<TType> cols
 }
 
 enum TRowBatchFormat {
@@ -95,6 +122,7 @@ struct TTask {
 
 struct TPlanRequestResult {
   1: required list<TTask> tasks
+  2: required TSchema schema
 }
 
 struct TExecTaskParams {
@@ -113,6 +141,8 @@ struct TExecTaskParams {
 
 struct TExecTaskResult {
   1: required TUniqueId handle
+  // TODO: do we need the schema here as well?
+  //2: required TSchema schema
 }
 
 struct TFetchParams {
@@ -144,6 +174,10 @@ struct TStats {
 
   4: optional i64 bytes_read
   5: optional i64 bytes_read_local
+}
+
+exception RecordServiceException {
+  1: string message
 }
 
 // This service is responsible for planning requests.
