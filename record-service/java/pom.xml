@@ -28,6 +28,7 @@
 
   <modules>
     <module>client</module>
+    <module>sample</module>
   </modules>
 
   <properties>
