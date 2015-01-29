@@ -163,17 +163,36 @@ struct TFetchResult {
 
 struct TStats {
   // [0 - 100]
-  1: optional double completion_percentage
+  1: required double completion_percentage
+
+  // The number of rows read before filtering.
+  2: required i64 num_rows_read
+
+  // The number of rows returned to the client.
+  3: required i64 num_rows_returned
 
   // Time spent in the record service serializing returned results.
-  2: optional i64 serialize_time_ms
+  4: required i64 serialize_time_ms
 
   // Time spent in the client, as measured by the server. This includes
   // time in the data exchange as well as time the client spent working.
-  3: optional i64 client_time_ms
+  5: required i64 client_time_ms
 
-  4: optional i64 bytes_read
-  5: optional i64 bytes_read_local
+  //
+  // HDFS specific counters
+  //
+
+  // Time spent in decompression.
+  6: optional i64 decompress_time_ms
+
+  // Bytes read from HDFS
+  7: optional i64 bytes_read
+
+  // Bytes read from the local data node.
+  8: optional i64 bytes_read_local
+
+  // Throughput of reading the raw bytes from HDFS, in MB/s
+  9: optional double hdfs_throughput
 }
 
 exception RecordServiceException {
@@ -208,8 +227,8 @@ service RecordServiceWorker {
   // cancelled. The handle is no longer valid after this call.
   void CloseTask(1:TUniqueId handle);
 
-  // Returns stats for the task specified by handle
+  // Returns stats for the task specified by handle. This can be called for tasks that
+  // are not yet closed (including tasks in flight).
   TStats GetTaskStats(1:TUniqueId handle)
       throws(1:RecordServiceException ex);
-
 }

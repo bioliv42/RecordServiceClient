@@ -199,8 +199,12 @@ void ExecRequestDistributed(const char* request, TRowBatchFormat::type format) {
 
       total_stats.serialize_time_ms += stats.serialize_time_ms;
       total_stats.client_time_ms += stats.client_time_ms;
+      total_stats.decompress_time_ms += stats.decompress_time_ms;
       total_stats.bytes_read += stats.bytes_read;
       total_stats.bytes_read_local += stats.bytes_read_local;
+      total_stats.hdfs_throughput += stats.hdfs_throughput;
+      total_stats.num_rows_read += stats.num_rows_read;
+      total_stats.num_rows_returned += stats.num_rows_returned;
 
       worker.CloseTask(exec_result.handle);
 
@@ -225,11 +229,18 @@ void ExecRequestDistributed(const char* request, TRowBatchFormat::type format) {
         total_stats.serialize_time_ms, total_stats.serialize_time_ms / duration_ms * 100);
     printf("  TotalTaskTime: %ld ms (%0.2f%%)\n",
         total_stats.client_time_ms, total_stats.client_time_ms / duration_ms * 100);
+    printf("  DecompressTime: %ld ms (%0.2f%%)\n",
+        total_stats.decompress_time_ms,
+        total_stats.decompress_time_ms / duration_ms * 100);
     printf("  TaskProcessTime: %ld ms (%0.2f%%)\n",
         task_time_ms, task_time_ms / duration_ms * 100);
   }
   printf("  BytesRead: %0.2f mb\n", total_stats.bytes_read / (1024. * 1024.));
   printf("  BytesReadLocal: %0.2f mb\n", total_stats.bytes_read_local / (1024. * 1024.));
+  printf("  Avg Hdfs Throughput: %0.2f mb/s\n",
+      total_stats.hdfs_throughput / plan_result.tasks.size());
+  printf("  Rows filtered: %ld\n",
+      total_stats.num_rows_read - total_stats.num_rows_returned);
 
 #if QUERY_1
   printf("Query 1 Result: %ld\n", q1_result);
