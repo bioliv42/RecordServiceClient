@@ -238,7 +238,7 @@ void ExecRequestDistributed(const char* request, TRowBatchFormat::type format) {
   printf("  BytesRead: %0.2f mb\n", total_stats.bytes_read / (1024. * 1024.));
   printf("  BytesReadLocal: %0.2f mb\n", total_stats.bytes_read_local / (1024. * 1024.));
   printf("  Avg Hdfs Throughput: %0.2f mb/s\n",
-      total_stats.hdfs_throughput / plan_result.tasks.size());
+      total_stats.hdfs_throughput / (1024 * 1024) / plan_result.tasks.size());
   printf("  Rows filtered: %ld\n",
       total_stats.num_rows_read - total_stats.num_rows_returned);
 

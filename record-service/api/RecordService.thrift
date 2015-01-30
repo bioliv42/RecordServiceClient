@@ -191,7 +191,7 @@ struct TStats {
   // Bytes read from the local data node.
   8: optional i64 bytes_read_local
 
-  // Throughput of reading the raw bytes from HDFS, in MB/s
+  // Throughput of reading the raw bytes from HDFS, in bytes per second
   9: optional double hdfs_throughput
 }
 
