@@ -47,8 +47,13 @@ struct TType {
   3: optional i32 scale
 }
 
+struct TColumnDesc {
+  1: required TType type
+  2: required string name
+}
+
 struct TSchema {
-  1: required list<TType> cols
+  1: required list<TColumnDesc> cols
 }
 
 enum TRowBatchFormat {

@@ -57,7 +57,7 @@ string PrintResultSchema(const TSchema& schema) {
   ss << "[";
   for (int i = 0; i < schema.cols.size(); ++i) {
     if (i != 0) ss << ", ";
-    switch (schema.cols[i].type_id) {
+    switch (schema.cols[i].type.type_id) {
       case TTypeId::BOOLEAN:
         ss << "BOOLEAN";
         break;
@@ -86,12 +86,13 @@ string PrintResultSchema(const TSchema& schema) {
         ss << "TIMESTAMP";
         break;
       case TTypeId::DECIMAL:
-        ss << "DECIMAL(" << schema.cols[i].precision << ", "
-           << schema.cols[i].scale << ")";
+        ss << "DECIMAL(" << schema.cols[i].type.precision << ","
+           << schema.cols[i].type.scale << ")";
         break;
       default:
         ss << "Unknown";
     }
+    ss << " " << schema.cols[i].name;
   }
   ss << "]" << endl;
   return ss.str();
