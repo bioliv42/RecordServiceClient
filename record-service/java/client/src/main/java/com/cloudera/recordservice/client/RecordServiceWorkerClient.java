@@ -14,6 +14,8 @@
 
 package com.cloudera.recordservice.client;
 
+import java.nio.ByteBuffer;
+
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TProtocol;
@@ -78,10 +80,10 @@ public class RecordServiceWorkerClient {
   /**
    * Executes the task asynchronously, returning the handle the client.
    */
-  public TUniqueId execTask(TTask task) throws TException {
+  public TUniqueId execTask(ByteBuffer task) throws TException {
     Preconditions.checkNotNull(task);
     try {
-      TExecTaskParams taskParams = new TExecTaskParams(task.task);
+      TExecTaskParams taskParams = new TExecTaskParams(task);
       TExecTaskResult result = workerClient_.ExecTask(taskParams);
       return result.getHandle();
     } catch (TException e) {
