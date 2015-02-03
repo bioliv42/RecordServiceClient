@@ -1,0 +1,9 @@
+This builds to a jar which contains the RecordServiceRDD. To use:
+
+bin/spark-shell --jars <path to recordservice-spark-0.1.jar>
+
+scala> import com.cloudera.recordservice.spark._
+scala> val data = sc.recordServiceRecords("select * from tpch.nation")
+ finished: count at <console>:18, took 0.617566 s
+res0: Long = 25
+

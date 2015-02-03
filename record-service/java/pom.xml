@@ -30,6 +30,7 @@
     <module>client</module>
     <module>sample</module>
     <module>mr</module>
+    <module>spark</module>
   </modules>
 
   <properties>
