@@ -41,6 +41,9 @@ const int RECORD_SERVICE_WORKER_PORT = 40100;
 // If true, runs the aggregation portion of "select sum(l_orderkey)" logic.
 #define QUERY_1 1
 
+// "select min(l_comment")
+#define QUERY_2 0
+
 // Comparator for THostPorts. Thrift declares this (in gen-cpp/Types_types.h) but
 // never defines it.
 bool impala::TNetworkAddress::operator<(const impala::TNetworkAddress& that) const {
@@ -98,6 +101,13 @@ string PrintResultSchema(const TSchema& schema) {
   return ss.str();
 }
 
+// Returns comparison of x <> string(y_data, y_len)
+int CompareString(const string& x, const char* y_data, int y_len) {
+  int len = min((int)x.size(), y_len);
+  int ret = strncmp(x.c_str(), y_data, len);
+  if (ret != 0) return ret;
+  return x.size() - y_len;
+}
 
 void ExecRequestDistributed(const char* request, TRowBatchFormat::type format) {
   printf("Planning request: %s\n", request);
@@ -142,6 +152,9 @@ void ExecRequestDistributed(const char* request, TRowBatchFormat::type format) {
 
 #if QUERY_1
   int64_t q1_result = 0;
+#elif QUERY_2
+  bool min_string_found = false;
+  string min_string;
 #endif
 
   for (int i = 0; i < plan_result.tasks.size(); ++i) {
@@ -190,6 +203,28 @@ void ExecRequestDistributed(const char* request, TRowBatchFormat::type format) {
         for (int n = 0; n < fetch_result.num_rows; ++n) {
           if (nulls[n]) continue;
           q1_result += values[idx++];
+        }
+#elif QUERY_2
+        const char* data = NULL;
+        const uint8_t* nulls = NULL;
+        if (fetch_result.row_batch_format == TRowBatchFormat::Parquet) {
+          data = fetch_result.parquet_row_batch.cols[0].data.data();
+          nulls = (const uint8_t*)fetch_result.parquet_row_batch.cols[0].is_null.data();
+        } else {
+          printf("Unknown row batch format.\n");
+          return;
+        }
+        for (int n = 0; n < fetch_result.num_rows; ++n) {
+          if (nulls[n]) continue;
+          int32_t str_len = *(const int32_t*)data;
+          data += sizeof(int32_t);
+
+          if (!min_string_found || CompareString(min_string, data, str_len) > 0) {
+            min_string = string(data, str_len);
+            min_string_found = true;
+          }
+
+          data += str_len;
         }
 #endif
         task_time.Stop();
@@ -245,6 +280,8 @@ void ExecRequestDistributed(const char* request, TRowBatchFormat::type format) {
 
 #if QUERY_1
   printf("Query 1 Result: %ld\n", q1_result);
+#elif QUERY_2
+  printf("Query 2 Result: %s\n", min_string.c_str());
 #endif
 }
 
