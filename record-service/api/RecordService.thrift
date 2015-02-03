@@ -200,8 +200,34 @@ struct TStats {
   9: optional double hdfs_throughput
 }
 
-exception RecordServiceException {
-  1: string message
+enum TErrorCode {
+  // The request is invalid or unsupported by the Planner service.
+  INVALID_REQUEST,
+
+  // The handle is invalid or closed.
+  INVALID_HANDLE,
+
+  // Service is busy and not unable to process the request. Try later.
+  SERVICE_BUSY,
+
+  // The service ran out of memory processing the task.
+  OUT_OF_MEMORY,
+
+  // The task was cancelled.
+  CANCELLED,
+
+  // Internal error in the service.
+  INTERNAL_ERROR,
+}
+
+exception TRecordServiceException {
+  1: required TErrorCode code
+
+  // The error message, intended for the client of the RecordService.
+  2: required string message
+
+  // The detailed error, intended for troubleshooting of the RecordService.
+  3: optional string detail
 }
 
 // This service is responsible for planning requests.
@@ -210,7 +236,7 @@ service RecordServicePlanner {
   // Plans the request. This generates the tasks and the list of machines
   // that each task can run on.
   TPlanRequestResult PlanRequest(1:TPlanRequestParams params)
-      throws(1:RecordServiceException ex);
+      throws(1:TRecordServiceException ex);
 
   // Cancel at this level? Would be nice to avoid and rely on the frameworks to
   // deal with that. e.g. Mapreduce cancels all the running map tasks which in
@@ -221,12 +247,12 @@ service RecordServicePlanner {
 service RecordServiceWorker {
   // Begin execution of the task in params. This is asynchronous.
   TExecTaskResult ExecTask(1:TExecTaskParams params)
-      throws(1:RecordServiceException ex);
+      throws(1:TRecordServiceException ex);
 
   // Returns the next batch of rows
   // TODO: returning the row batch is not good here. Put this in a wrapper object.
   TFetchResult Fetch(1:TFetchParams params)
-      throws(1:RecordServiceException ex);
+      throws(1:TRecordServiceException ex);
 
   // Closes the task specified by handle. If the task is still running, it is
   // cancelled. The handle is no longer valid after this call.
@@ -235,5 +261,5 @@ service RecordServiceWorker {
   // Returns stats for the task specified by handle. This can be called for tasks that
   // are not yet closed (including tasks in flight).
   TStats GetTaskStats(1:TUniqueId handle)
-      throws(1:RecordServiceException ex);
+      throws(1:TRecordServiceException ex);
 }

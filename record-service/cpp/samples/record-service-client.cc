@@ -124,7 +124,7 @@ void ExecRequestDistributed(const char* request, TRowBatchFormat::type format) {
     TPlanRequestParams plan_params;
     plan_params.sql_stmt = request;
     planner.PlanRequest(plan_result, plan_params);
-  } catch (const RecordServiceException& e) {
+  } catch (const TRecordServiceException& e) {
     printf("Failed with exception:\n%s\n", e.message.c_str());
     return;
   } catch (const std::exception& e) {
@@ -246,7 +246,7 @@ void ExecRequestDistributed(const char* request, TRowBatchFormat::type format) {
 
       printf("Worker %d returned %d rows\n", i + 1, worker_rows);
       total_rows += worker_rows;
-    } catch (const RecordServiceException& e) {
+    } catch (const TRecordServiceException& e) {
       printf("Failed with exception:\n%s\n", e.message.c_str());
       return;
     } catch (const std::exception& e) {
