@@ -33,8 +33,8 @@ import org.apache.thrift.TException;
 import org.apache.thrift.TSerializer;
 import org.apache.thrift.protocol.TCompactProtocol;
 
+import com.cloudera.recordservice.thrift.TColumnDesc;
 import com.cloudera.recordservice.thrift.TSchema;
-import com.cloudera.recordservice.thrift.TType;
 import com.cloudera.recordservice.thrift.TTypeId;
 
 /**
@@ -75,19 +75,21 @@ public class Schema implements Writable {
   }
 
   public class ColumnInfo {
-    private final TType tType_;
-    ColumnInfo(TType type) {
-      tType_ = type;
+    private final TColumnDesc columnDesc_;
+
+    ColumnInfo(TColumnDesc columnDesc) {
+      columnDesc_ = columnDesc;
     }
+
     public ColumnType getType() {
-      return ColumnType.valueOf(tType_.getType_id().toString());
+      return ColumnType.valueOf(columnDesc_.getType().getType_id().toString());
     }
 
     public int getPrecision() {
-      if (tType_.isSetPrecision()) {
-        return tType_.getPrecision();
+      if (columnDesc_.getType().isSetPrecision()) {
+        return columnDesc_.getType().getPrecision();
       } else {
-        if (tType_.getType_id() != TTypeId.DECIMAL) {
+        if (columnDesc_.getType().getType_id() != TTypeId.DECIMAL) {
           throw new UnsupportedOperationException(
               "Type does not have a precision !!");
         }
@@ -96,16 +98,18 @@ public class Schema implements Writable {
     }
 
     public int getScale() {
-      if (tType_.isSetScale()) {
-        return tType_.getScale();
+      if (columnDesc_.getType().isSetScale()) {
+        return columnDesc_.getType().getScale();
       } else {
-        if (tType_.getType_id() != TTypeId.DECIMAL) {
+        if (columnDesc_.getType().getType_id() != TTypeId.DECIMAL) {
           throw new UnsupportedOperationException(
               "Type does not have a scale !!");
         }
       }
       return -1;
     }
+
+    public String getColumnName() { return columnDesc_.getName(); }
   }
 
   private TSchema tSchema_;
