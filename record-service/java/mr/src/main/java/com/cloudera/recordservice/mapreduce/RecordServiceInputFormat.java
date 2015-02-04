@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.cloudera.recordservice.client;
+package com.cloudera.recordservice.mapreduce;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -26,6 +26,7 @@ import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 
+import com.cloudera.recordservice.client.RecordServicePlannerClient;
 import com.cloudera.recordservice.thrift.RecordServicePlanner;
 import com.cloudera.recordservice.thrift.RecordServicePlanner.Client;
 import com.cloudera.recordservice.thrift.TPlanRequestParams;
@@ -41,8 +42,6 @@ import com.google.common.base.Joiner;
 public class RecordServiceInputFormat extends
   InputFormat<WritableComparable<?>, RecordServiceRecord>{
 
-  private static String PLANNER_SERVICE_NAME = "Planner";
-
   public final static String DB_NAME_CONF = "recordservice.db.name";
   public final static String TBL_NAME_CONF = "recordservice.table.name";
   public final static String COL_NAMES_CONF = "recordservice.col.names";
@@ -54,6 +53,10 @@ public class RecordServiceInputFormat extends
   public List<InputSplit> getSplits(JobContext context) throws IOException,
       InterruptedException {
     Configuration jobConf = context.getConfiguration();
+    return getSplits(jobConf);
+  }
+
+  public List<InputSplit> getSplits(Configuration jobConf) throws IOException {
     String dbName = jobConf.get(DB_NAME_CONF, "default");
     String tblName = jobConf.get(TBL_NAME_CONF);
     if (tblName == null) {

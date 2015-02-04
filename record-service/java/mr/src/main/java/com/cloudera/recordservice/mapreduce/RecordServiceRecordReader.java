@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.cloudera.recordservice.client;
+package com.cloudera.recordservice.mapreduce;
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -21,6 +21,7 @@ import org.apache.hadoop.io.BooleanWritable;
 import org.apache.hadoop.io.ByteWritable;
 import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.DoubleWritable;
+import org.apache.hadoop.io.FloatWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
@@ -33,7 +34,8 @@ import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.thrift.TException;
 
-import com.cloudera.recordservice.client.Schema.ColumnInfo;
+import com.cloudera.recordservice.client.RecordServiceWorkerClient;
+import com.cloudera.recordservice.mapreduce.Schema.ColumnInfo;
 import com.cloudera.recordservice.thrift.TColumnData;
 import com.cloudera.recordservice.thrift.TColumnarRowBatch;
 import com.cloudera.recordservice.thrift.TFetchResult;
@@ -54,8 +56,9 @@ public class RecordServiceRecordReader extends
   private RowBatch currentRowBatch_;
   private Schema schema_;
   private RecordServiceRecord currentRecord_;
+  private volatile boolean initialized = false;
 
-
+  
   static class ColumnnarRowBatch implements RowBatch {
 
     private TColumnarRowBatch tRowBatch_;
@@ -102,7 +105,7 @@ public class RecordServiceRecordReader extends
       TColumnData cd = tRowBatch_.getCols().get(colIdx);
       int actualIdx = rowIdx;
       for (int i = rowIdx; i > -1; i--) {
-        if (cd.getIs_null()[i] == 0) {
+        if (cd.getIs_null()[i] == 1) {
           // Column is null
           if (i == rowIdx) return NullWritable.get();
           // decrement rowIdx for all cols that are null
@@ -124,8 +127,7 @@ public class RecordServiceRecordReader extends
       case BINARY:
         return new BytesWritable(cd.getBinary_vals().get(actualIdx).array());
       case FLOAT:
-        // TODO : Is this ok ?
-        return new DoubleWritable(cd.getDouble_vals().get(actualIdx));
+        return new FloatWritable(cd.getDouble_vals().get(actualIdx).floatValue());
       case SMALLINT:
         return new ShortWritable(cd.getShort_vals().get(actualIdx));
 //      case TIMESTAMP:
@@ -158,6 +160,7 @@ public class RecordServiceRecordReader extends
     } catch (Exception e) {
       throw new IOException(e);
     }
+    initialized = true;
   }
 
   /**
@@ -171,6 +174,9 @@ public class RecordServiceRecordReader extends
    */
   @Override
   public boolean nextKeyValue() throws IOException, InterruptedException {
+    if (!initialized) {
+      throw new IOException("Record Reader not initialized !!");
+    }
     if ((currentRowBatch_ == null) || (!currentRowBatch_.hasNext())) {
       try {
         TFetchResult fetch = worker_.fetch(tUniqId_);
@@ -222,6 +228,10 @@ public class RecordServiceRecordReader extends
     } catch (TException e) {
       throw new IOException(e);
     }
+  }
+  
+  public boolean iSinitialized() {
+    return this.initialized;
   }
 
 }

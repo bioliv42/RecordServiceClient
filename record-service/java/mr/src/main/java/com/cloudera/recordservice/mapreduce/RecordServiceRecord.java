@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.cloudera.recordservice.client;
+package com.cloudera.recordservice.mapreduce;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -20,8 +20,8 @@ import java.io.IOException;
 
 import org.apache.hadoop.io.Writable;
 
-import com.cloudera.recordservice.client.Schema.ColumnInfo;
-import com.cloudera.recordservice.client.Schema.ColumnType;
+import com.cloudera.recordservice.mapreduce.Schema.ColumnInfo;
+import com.cloudera.recordservice.mapreduce.Schema.ColumnType;
 import com.google.common.base.Preconditions;
 
 public class RecordServiceRecord implements Writable {
@@ -67,4 +67,8 @@ public class RecordServiceRecord implements Writable {
     }
   }
 
+  public void cloneFrom(RecordServiceRecord other) {
+    this.schema_ = other.schema_;
+    this.columnValues_ = other.columnValues_;
+  }
 }
