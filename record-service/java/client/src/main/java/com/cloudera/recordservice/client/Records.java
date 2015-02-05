@@ -25,7 +25,7 @@ import sun.misc.Unsafe;
 import com.cloudera.recordservice.thrift.TFetchResult;
 import com.cloudera.recordservice.thrift.TRowBatchFormat;
 import com.cloudera.recordservice.thrift.TSchema;
-import com.cloudera.recordservice.thrift.TStats;
+import com.cloudera.recordservice.thrift.TTaskStatus;
 import com.cloudera.recordservice.thrift.TType;
 import com.cloudera.recordservice.thrift.TTypeId;
 import com.cloudera.recordservice.thrift.TUniqueId;
@@ -278,12 +278,12 @@ public class Records {
   }
 
   /*
-   * Returns the stats of the underlying task. This issues an RPC to the server
+   * Returns the status of the underlying task. This issues an RPC to the server
    * and cannot be used in the hot path.
    */
-  public TStats getStats() throws TException {
+  public TTaskStatus getStatus() throws TException {
     if (handle_ == null) throw new RuntimeException("Cannot call on closed object.");
-    return worker_.getTaskStats(handle_);
+    return worker_.getTaskStatus(handle_);
   }
 
   public TSchema getSchema() { return record_.getSchema(); }

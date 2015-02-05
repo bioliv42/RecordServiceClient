@@ -72,6 +72,14 @@ void PlanRequest(const char* request) {
   }
   printf("Total task size: %ld\n", total_task_size);
   printf("Largest task size: %ld\n", largest_task_size);
+
+  if (plan_result.warnings.size() > 0) {
+    printf("Plan generated %ld warnings.", plan_result.warnings.size());
+    for (int i = 0; i < plan_result.warnings.size(); ++i) {
+      printf("%s: %d\n", plan_result.warnings[i].message.c_str(),
+          plan_result.warnings[i].count);
+    }
+  }
 }
 
 // Utility application that plans a request. Does not run the request.

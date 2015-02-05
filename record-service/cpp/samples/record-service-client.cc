@@ -234,17 +234,17 @@ void ExecRequestDistributed(const char* request, TRowBatchFormat::type format) {
         task_time.Stop();
       } while (!fetch_result.done);
 
-      TStats stats;
-      worker.GetTaskStats(stats, exec_result.handle);
+      TTaskStatus status;
+      worker.GetTaskStatus(status, exec_result.handle);
 
-      total_stats.serialize_time_ms += stats.serialize_time_ms;
-      total_stats.client_time_ms += stats.client_time_ms;
-      total_stats.decompress_time_ms += stats.decompress_time_ms;
-      total_stats.bytes_read += stats.bytes_read;
-      total_stats.bytes_read_local += stats.bytes_read_local;
-      total_stats.hdfs_throughput += stats.hdfs_throughput;
-      total_stats.num_rows_read += stats.num_rows_read;
-      total_stats.num_rows_returned += stats.num_rows_returned;
+      total_stats.serialize_time_ms += status.stats.serialize_time_ms;
+      total_stats.client_time_ms += status.stats.client_time_ms;
+      total_stats.decompress_time_ms += status.stats.decompress_time_ms;
+      total_stats.bytes_read += status.stats.bytes_read;
+      total_stats.bytes_read_local += status.stats.bytes_read_local;
+      total_stats.hdfs_throughput += status.stats.hdfs_throughput;
+      total_stats.num_rows_read += status.stats.num_rows_read;
+      total_stats.num_rows_returned += status.stats.num_rows_returned;
 
       worker.CloseTask(exec_result.handle);
 

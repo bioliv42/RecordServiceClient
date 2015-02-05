@@ -124,6 +124,14 @@ struct TPathRequest {
   //4: optional TSchema schema
 }
 
+struct TLogMessage {
+  1: required string message
+
+  // The number of times similar messages have occurred. It is up to the service to
+  // decide what counts as a duplicate.
+  2: required i32 count = 1
+}
+
 struct TPlanRequestParams {
   // The version of the client
   1: required TProtocolVersion client_version = TProtocolVersion.V1
@@ -153,6 +161,8 @@ struct TPlanRequestResult {
 
   // The list of all hosts running workers.
   3: required list<TNetworkAddress> hosts
+
+  4: required list<TLogMessage> warnings
 }
 
 struct TExecTaskParams {
@@ -225,6 +235,17 @@ struct TStats {
   9: optional double hdfs_throughput
 }
 
+struct TTaskStatus {
+  1: required TStats stats
+
+  // Errors due to invalid data
+  2: required list<TLogMessage> data_errors
+
+  // Warnings encountered when running the task. These should have no impact
+  // on correctness.
+  3: required list<TLogMessage> warnings
+}
+
 enum TErrorCode {
   // The request is invalid or unsupported by the Planner service.
   INVALID_REQUEST,
@@ -286,9 +307,9 @@ service RecordServiceWorker {
   // cancelled. The handle is no longer valid after this call.
   void CloseTask(1:TUniqueId handle);
 
-  // Returns stats for the task specified by handle. This can be called for tasks that
+  // Returns status for the task specified by handle. This can be called for tasks that
   // are not yet closed (including tasks in flight).
-  TStats GetTaskStats(1:TUniqueId handle)
+  TTaskStatus GetTaskStatus(1:TUniqueId handle)
       throws(1:TRecordServiceException ex);
 }
 

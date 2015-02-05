@@ -31,6 +31,7 @@ import com.cloudera.recordservice.thrift.TPlanRequestResult;
 import com.cloudera.recordservice.thrift.TRecordServiceException;
 import com.cloudera.recordservice.thrift.TSchema;
 import com.cloudera.recordservice.thrift.TStats;
+import com.cloudera.recordservice.thrift.TTaskStatus;
 import com.cloudera.recordservice.thrift.TTypeId;
 import com.cloudera.recordservice.thrift.TUniqueId;
 import com.google.common.collect.Lists;
@@ -174,7 +175,7 @@ public class TestBasicClient {
 
     threwException = false;
     try {
-      worker.getTaskStats(badHandle);
+      worker.getTaskStatus(badHandle);
     } catch (RuntimeException e) {
       threwException = true;
       assertTrue(e.getMessage().contains("Invalid task handle."));
@@ -189,6 +190,7 @@ public class TestBasicClient {
     TPlanRequestResult plan = RecordServicePlannerClient.planRequest(
         "localhost", PLANNER_PORT,
         Request.createSqlRequest("select * from tpch.nation"));
+    assertTrue(plan.warnings.isEmpty());
 
     // Verify schema
     assertEquals(plan.schema.cols.size(), 4);
@@ -222,8 +224,12 @@ public class TestBasicClient {
         }
       }
 
-      // Verify stats
-      TStats stats = records.getStats();
+      // Verify status
+      TTaskStatus status = records.getStatus();
+      assertTrue(status.data_errors.isEmpty());
+      assertTrue(status.warnings.isEmpty());
+
+      TStats stats = status.stats;
       assertEquals(stats.completion_percentage, 100, 0.1);
       assertEquals(stats.num_rows_read, 25);
       assertEquals(stats.num_rows_returned, 25);

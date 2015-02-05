@@ -30,7 +30,7 @@ import com.cloudera.recordservice.thrift.TExecTaskParams;
 import com.cloudera.recordservice.thrift.TExecTaskResult;
 import com.cloudera.recordservice.thrift.TFetchParams;
 import com.cloudera.recordservice.thrift.TFetchResult;
-import com.cloudera.recordservice.thrift.TStats;
+import com.cloudera.recordservice.thrift.TTaskStatus;
 import com.cloudera.recordservice.thrift.TUniqueId;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
@@ -156,12 +156,12 @@ public class RecordServiceWorkerClient {
   }
 
   /**
-   * Gets stats on the current task executing.
+   * Gets status on the current task executing.
    */
-  public TStats getTaskStats(TUniqueId handle) throws TException {
+  public TTaskStatus getTaskStatus(TUniqueId handle) throws TException {
     validateIsConnected();
     validateHandleIsActive(handle);
-    return workerClient_.GetTaskStats(handle);
+    return workerClient_.GetTaskStatus(handle);
   }
 
   /**
