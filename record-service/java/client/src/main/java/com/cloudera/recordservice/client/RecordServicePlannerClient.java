@@ -24,6 +24,7 @@ import org.apache.thrift.transport.TTransportException;
 import com.cloudera.recordservice.thrift.RecordServicePlanner;
 import com.cloudera.recordservice.thrift.TPlanRequestParams;
 import com.cloudera.recordservice.thrift.TPlanRequestResult;
+import com.cloudera.recordservice.thrift.TProtocolVersion;
 
 /**
  * Java client for the RecordServicePlanner. This class is not thread safe.
@@ -68,7 +69,7 @@ public class RecordServicePlannerClient {
   public TPlanRequestResult planRequest(String query) throws TException {
     TPlanRequestResult planResult;
     try {
-      TPlanRequestParams planParams = new TPlanRequestParams(query);
+      TPlanRequestParams planParams = new TPlanRequestParams(TProtocolVersion.V1, query);
       planResult = plannerClient_.PlanRequest(planParams);
     } catch (TException e) {
       System.err.println("Could not plan request: " + e.getMessage());

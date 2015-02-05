@@ -29,7 +29,6 @@ import com.cloudera.recordservice.thrift.TExecTaskResult;
 import com.cloudera.recordservice.thrift.TFetchParams;
 import com.cloudera.recordservice.thrift.TFetchResult;
 import com.cloudera.recordservice.thrift.TStats;
-import com.cloudera.recordservice.thrift.TTask;
 import com.cloudera.recordservice.thrift.TUniqueId;
 import com.google.common.base.Preconditions;
 

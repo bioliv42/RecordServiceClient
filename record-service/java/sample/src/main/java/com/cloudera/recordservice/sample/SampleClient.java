@@ -15,6 +15,7 @@ import com.cloudera.recordservice.thrift.TFetchParams;
 import com.cloudera.recordservice.thrift.TFetchResult;
 import com.cloudera.recordservice.thrift.TPlanRequestParams;
 import com.cloudera.recordservice.thrift.TPlanRequestResult;
+import com.cloudera.recordservice.thrift.TProtocolVersion;
 import com.cloudera.recordservice.thrift.TRecordServiceException;
 import com.cloudera.recordservice.thrift.TTask;
 
@@ -52,7 +53,7 @@ public class SampleClient {
         createConnection(PLANNER_PORT, "Planner"));
     TPlanRequestResult planResult;
     try {
-      TPlanRequestParams planParams = new TPlanRequestParams(query);
+      TPlanRequestParams planParams = new TPlanRequestParams(TProtocolVersion.V1, query);
       planResult = planner.PlanRequest(planParams);
     } catch (TRecordServiceException e) {
       System.err.println("Could not plan request: " + e.message);
