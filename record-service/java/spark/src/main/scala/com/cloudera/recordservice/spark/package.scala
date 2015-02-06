@@ -24,8 +24,9 @@ package object spark {
    * from the RecordService
    */
   implicit class RecordServiceContext(ctx: SparkContext) {
-    def recordServiceRecords(sql: String) : RDD[Array[Writable]] = {
-      new RecordServiceRDD(ctx, sql)
+    def recordServiceRecords(sql: String, plannerHost:String = "localhost")
+        : RDD[Array[Writable]] = {
+      new RecordServiceRDD(ctx, sql, plannerHost)
     }
   }
 }

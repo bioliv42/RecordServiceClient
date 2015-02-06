@@ -25,14 +25,16 @@ import org.apache.thrift.TException
 import org.apache.thrift.protocol.{TProtocol, TBinaryProtocol}
 import org.apache.thrift.transport.{TSocket}
 
+import scala.collection.mutable.ListBuffer
+
 private class RecordServicePartition(rddId: Int, idx: Int,
-                                             h:String, t: TTask, s: TSchema)
+                                             h:Seq[String], t: TTask, s: TSchema)
     extends Partition {
   override def hashCode(): Int = 41 * (41 + rddId) + idx
   override val index: Int = idx
   val task: TTask = t
   val schema: TSchema = s
-  val host: String = h
+  val hosts: Seq[String] = h
 }
 
 /**
@@ -41,7 +43,7 @@ private class RecordServicePartition(rddId: Int, idx: Int,
  * Each array is a row.
  * TODO: redo this using the recordservice client/recordservice MR lib
  */
-class RecordServiceRDD(sc: SparkContext, stmt: String)
+class RecordServiceRDD(sc: SparkContext, stmt: String, plannerHost: String = "localhost")
   extends RDD[Array[Writable]](sc, Nil) with Logging {
 
   val PLANNER_PORT: Int = 40000
@@ -77,9 +79,19 @@ class RecordServiceRDD(sc: SparkContext, stmt: String)
       var colIdx = new Array[Int](partition.schema.cols.size())
       var batchSize: Int = 0
 
+      // Register an on-task-completion callback to close the input stream.
+      context.addTaskCompletionListener{ context => closeIfNeeded() }
+
       val execResult = try {
+        // Always connect to localhost. This assumes that on each node, we have
+        // a RecordServiceWorker running and that Spark has scheduled for locality
+        // using getPreferredLocations.
+        // TODO: we need to support the case where there is not a worker running on
+        // each host, in which case this needs to talk to get the list of all workers
+        // and pick one randomly.
         worker = new RecordServiceWorker.Client(
-            createConnection(partition.host, WORKER_PORT))
+            createConnection("localhost", WORKER_PORT))
+
         val request = new TExecTaskParams()
         request.setTask(partition.task.task)
         request.setRow_batch_format(TRowBatchFormat.ColumnarThrift)
@@ -180,15 +192,22 @@ class RecordServiceRDD(sc: SparkContext, stmt: String)
   }
 
   /**
+   * Returns the list of preferred hosts to run this partition.
+   */
+  override def getPreferredLocations(split: Partition): Seq[String] = {
+    val partition = split.asInstanceOf[RecordServicePartition]
+    partition.hosts
+  }
+
+    /**
    * Sends the request to the RecordServicePlanner to generate the list of partitions
    * (tasks in RecordService terminology)
-   * TODO: How does this handle locality.
    */
   override protected def getPartitions: Array[Partition] = {
     logInfo("Running request: " + stmt)
     val planResult = try {
       val planner = new RecordServicePlanner.Client(
-          createConnection("localhost", PLANNER_PORT))
+          createConnection(plannerHost, PLANNER_PORT))
       val request = new TPlanRequestParams()
       request.setSql_stmt(stmt)
       planner.PlanRequest(request)
@@ -200,8 +219,11 @@ class RecordServiceRDD(sc: SparkContext, stmt: String)
     }
     val partitions = new Array[Partition](planResult.tasks.size())
     for (i <- 0 until planResult.tasks.size()) {
-      partitions(i) = new RecordServicePartition(
-          id, i, planResult.tasks.get(i).hosts.get(0),
+      val hosts = ListBuffer[String]()
+      for (j <- 0 until planResult.tasks.get(i).hosts.size()) {
+        hosts += planResult.tasks.get(i).hosts.get(j)
+      }
+      partitions(i) = new RecordServicePartition(id, i, hosts.seq,
           planResult.tasks.get(i), planResult.schema)
     }
     partitions

@@ -1,9 +1,16 @@
-This builds to a jar which contains the RecordServiceRDD. To use:
+This builds to a jar which contains the RecordServiceRDD. To use,
+start spark shell and pass it these 3 jars:
+  libthrift-0.9.0.jar
+  recordservice-client-0.1.jar
+  recordservice-spark-0.1.jar
+These should be comma separated.
 
-bin/spark-shell --jars <path to recordservice-spark-0.1.jar>
+example:
+bin/spark-shell --jars $IMPALA_HOME/record-service/java/spark/target/recordservice-spark-0.1.jar,$IMPALA_HOME/record-service/java/client/target/recordservice-client-0.1.jar,$IMPALA_HOME/fe/target/dependency/libthrift-0.9.0.jar 
 
 scala> import com.cloudera.recordservice.spark._
 scala> val data = sc.recordServiceRecords("select * from tpch.nation")
  finished: count at <console>:18, took 0.617566 s
+scala> data.count()
 res0: Long = 25
 
