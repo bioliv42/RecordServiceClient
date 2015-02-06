@@ -28,6 +28,7 @@
 
   <modules>
     <module>client</module>
+    <module>hive</module>
     <module>sample</module>
     <module>mr</module>
     <module>spark</module>
