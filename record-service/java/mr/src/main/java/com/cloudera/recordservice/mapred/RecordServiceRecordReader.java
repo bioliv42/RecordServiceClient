@@ -21,14 +21,18 @@ import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.mapred.RecordReader;
 
 import com.cloudera.recordservice.mapreduce.RecordServiceRecord;
+import com.google.common.base.Preconditions;
 
 public class RecordServiceRecordReader implements
     RecordReader<WritableComparable<?>, RecordServiceRecord> {
 
-  private com.cloudera.recordservice.mapreduce.RecordServiceRecordReader reader_;
+  private final com.cloudera.recordservice.mapreduce.RecordServiceRecordReader reader_;
+  private RecordServiceRecord currentRecord_;
+  private LongWritable currentKey_;
 
   public RecordServiceRecordReader(
       com.cloudera.recordservice.mapreduce.RecordServiceRecordReader reader) {
+    Preconditions.checkNotNull(reader);
     // The reader has to be initialized at this point !!
     this.reader_ = reader;
   }
@@ -37,11 +41,10 @@ public class RecordServiceRecordReader implements
   public boolean next(WritableComparable<?> key, RecordServiceRecord value)
       throws IOException {
     try {
-      boolean hasNext = this.reader_.nextKeyValue();
+      boolean hasNext = reader_.nextKeyValue();
       if (hasNext) {
-        ((LongWritable)key).set(
-            ((LongWritable)this.reader_.getCurrentKey()).get());
-        value.cloneFrom(this.reader_.getCurrentValue());
+        ((LongWritable)key).set(((LongWritable) reader_.getCurrentKey()).get());
+        value.set(this.reader_.getCurrentValue());
       }
       return hasNext;
     } catch (InterruptedException e) {
@@ -51,12 +54,12 @@ public class RecordServiceRecordReader implements
 
   @Override
   public WritableComparable<?> createKey() {
-    return new LongWritable();
+    return currentKey_ == null ? new LongWritable() : currentKey_;
   }
 
   @Override
   public RecordServiceRecord createValue() {
-    return new RecordServiceRecord();
+    return currentRecord_ == null ? new RecordServiceRecord() : currentRecord_;
   }
 
   @Override

@@ -29,7 +29,7 @@ import org.apache.hadoop.mapred.TaskAttemptID;
 import com.cloudera.recordservice.mapreduce.RecordServiceRecord;
 
 public class RecordServiceInputFormat implements
-  InputFormat<WritableComparable<?>, RecordServiceRecord>{
+    InputFormat<WritableComparable<?>, RecordServiceRecord>{
 
   @Override
   public InputSplit[] getSplits(JobConf job, int numSplits) throws IOException {
@@ -37,10 +37,9 @@ public class RecordServiceInputFormat implements
         new com.cloudera.recordservice.mapreduce.RecordServiceInputFormat().getSplits(job);
     InputSplit[] retSplits = new InputSplit[splits.size()];
     int i = 0;
-    for (org.apache.hadoop.mapreduce.InputSplit split : splits) {
-      retSplits[i] =
-          new RecordServiceInputSplit(
-              (com.cloudera.recordservice.mapreduce.RecordServiceInputSplit)split);
+    for (org.apache.hadoop.mapreduce.InputSplit split: splits) {
+      retSplits[i] = new RecordServiceInputSplit(
+          (com.cloudera.recordservice.mapreduce.RecordServiceInputSplit) split);
       i++;
     }
     return retSplits;
@@ -59,12 +58,7 @@ public class RecordServiceInputFormat implements
     } catch (InterruptedException e) {
       throw new IOException(e);
     } finally {
-      try {
-        reader.close();
-      } catch (Exception e){
-        // Ignore
-      }
+      reader.close();
     }
   }
-
 }

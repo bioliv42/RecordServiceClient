@@ -17,6 +17,7 @@ package com.cloudera.recordservice.mapreduce;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.List;
 
 import org.apache.hadoop.io.BooleanWritable;
 import org.apache.hadoop.io.ByteWritable;
@@ -36,6 +37,8 @@ import org.apache.thrift.protocol.TCompactProtocol;
 import com.cloudera.recordservice.thrift.TColumnDesc;
 import com.cloudera.recordservice.thrift.TSchema;
 import com.cloudera.recordservice.thrift.TTypeId;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
 
 /**
  * The Schema class provides metadata for the Record. It contains
@@ -43,7 +46,6 @@ import com.cloudera.recordservice.thrift.TTypeId;
  * of columns
  */
 public class Schema implements Writable {
-
   // The ColumnType enum is basically used to wrap the
   // Thrift classes as well as maintain a mapping to the
   // associated Writable type
@@ -58,31 +60,49 @@ public class Schema implements Writable {
     STRING(Text.class),
     BINARY(BytesWritable.class),
     // TODO : is this ok ?
-    TIMESTAMP(LongWritable.class);
+    TIMESTAMP(LongWritable.class),
     // TODO : need to hande this properly
-    // DECIMAL(BigDecimal);
+    DECIMAL(BytesWritable.class);
 
-    private Class<? extends Writable> wClass;
+    private Class<? extends Writable> wClass_;
 
     private ColumnType(Class<? extends Writable> wClass) {
-      this.wClass = wClass;
+      this.wClass_ = wClass;
     }
 
     public Writable getWritableInstance() throws InstantiationException,
         IllegalAccessException {
-      return wClass.newInstance();
+      return wClass_.newInstance();
+    }
+
+    public static ColumnType fromThrift(TTypeId typeId) {
+      switch (typeId) {
+  	    case BIGINT: return ColumnType.BIGINT;
+  	    case BOOLEAN: return ColumnType.BOOLEAN;
+  	    case DECIMAL: return ColumnType.DECIMAL;
+  	    case DOUBLE: return ColumnType.DOUBLE;
+  	    case FLOAT: return ColumnType.FLOAT;
+  	    case INT: return ColumnType.INT;
+  	    case SMALLINT: return ColumnType.SMALLINT;
+  	    case STRING: return ColumnType.STRING;
+  	    case TIMESTAMP: return ColumnType.TIMESTAMP;
+  	    case TINYINT: return ColumnType.TINYINT;
+  	    default: throw new UnsupportedOperationException("Unsupported type: " +
+  	        typeId);
+      }
     }
   }
 
-  public class ColumnInfo {
+  public static class ColumnInfo {
     private final TColumnDesc columnDesc_;
 
     ColumnInfo(TColumnDesc columnDesc) {
+      Preconditions.checkNotNull(columnDesc);
       columnDesc_ = columnDesc;
     }
 
     public ColumnType getType() {
-      return ColumnType.valueOf(columnDesc_.getType().getType_id().toString());
+      return ColumnType.fromThrift(columnDesc_.getType().getType_id());
     }
 
     public int getPrecision() {
@@ -114,20 +134,27 @@ public class Schema implements Writable {
 
   private TSchema tSchema_;
 
+  // List of columns, in order of their index in the schema.
+  private List<ColumnInfo> columnInfos_;
+
   public Schema() {
+    columnInfos_ = Lists.newArrayList();
   }
 
   public Schema(TSchema tSchema) {
-    this.tSchema_ = tSchema;
+    initialize(tSchema);
   }
 
-  public int getNumColumns() {
-    return tSchema_.getColsSize();
+  private void initialize(TSchema schema) {
+    tSchema_ = schema;
+    columnInfos_ = Lists.newArrayListWithExpectedSize(schema.getCols().size());
+    for (TColumnDesc colDesc: schema.getCols()) {
+      columnInfos_.add(new ColumnInfo(colDesc));
+    }
   }
 
-  public ColumnInfo getColumnInfo(int columnIndex) {
-    return new ColumnInfo(tSchema_.getCols().get(columnIndex));
-  }
+  public int getNumColumns() { return tSchema_.getColsSize(); }
+  public ColumnInfo getColumnInfo(int columnIdx) { return columnInfos_.get(columnIdx); }
 
   @Override
   public void readFields(DataInput in) throws IOException {
@@ -135,19 +162,22 @@ public class Schema implements Writable {
     int numBytes = in.readInt();
     byte[] schemaBytes = new byte[numBytes];
     in.readFully(schemaBytes);
-    TDeserializer deSer = new TDeserializer(new TCompactProtocol.Factory());
+
     try {
+      // TODO: Do we need to create a new instance each time?
+      TDeserializer deSer = new TDeserializer(new TCompactProtocol.Factory());
       deSer.deserialize(tSchema, schemaBytes);
-      this.tSchema_ = tSchema;
+      Preconditions.checkNotNull(tSchema);
     } catch (TException e) {
       new IOException(e);
     }
+    initialize(tSchema);
   }
 
   @Override
   public void write(DataOutput out) throws IOException {
-    TSerializer ser = new TSerializer(new TCompactProtocol.Factory());
     try {
+      TSerializer ser = new TSerializer(new TCompactProtocol.Factory());
       byte[] schemaBytes = ser.serialize(tSchema_);
       out.writeInt(schemaBytes.length);
       out.write(schemaBytes);
@@ -155,5 +185,4 @@ public class Schema implements Writable {
       throw new IOException(e);
     }
   }
-
 }

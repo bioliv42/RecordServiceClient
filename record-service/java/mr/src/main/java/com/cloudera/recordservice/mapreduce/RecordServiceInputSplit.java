@@ -27,7 +27,6 @@ import org.apache.hadoop.mapreduce.InputSplit;
  * information required for the Record Service Worker to execute the task
  */
 public class RecordServiceInputSplit extends InputSplit implements Writable {
-
   private TaskInfo taskInfo_;
   private Schema schema_;
 
@@ -68,7 +67,5 @@ public class RecordServiceInputSplit extends InputSplit implements Writable {
     this.schema_.readFields(in);
     this.taskInfo_ = new TaskInfo();
     this.taskInfo_.readFields(in);
-    
   }
-
 }

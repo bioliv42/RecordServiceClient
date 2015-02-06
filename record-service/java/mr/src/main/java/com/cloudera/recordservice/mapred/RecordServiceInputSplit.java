@@ -20,10 +20,8 @@ import java.io.IOException;
 
 import org.apache.hadoop.mapred.InputSplit;
 
-public class RecordServiceInputSplit implements InputSplit{
-
-  private com.cloudera.recordservice.mapreduce.RecordServiceInputSplit split_ =
-      null;
+public class RecordServiceInputSplit implements InputSplit {
+  private com.cloudera.recordservice.mapreduce.RecordServiceInputSplit split_;
 
   public RecordServiceInputSplit() {
   }
@@ -43,14 +41,16 @@ public class RecordServiceInputSplit implements InputSplit{
     this.split_ =
         new com.cloudera.recordservice.mapreduce.RecordServiceInputSplit();
     this.split_.readFields(in);
+
   }
 
   @Override
-  public long getLength() throws IOException {
+  public long getLength() {
     try {
       return this.split_.getLength();
-    } catch (InterruptedException e) {
-      throw new IOException(e);
+    } catch (Exception e) {
+      // Wrap in an unchecked exception.
+      throw new RuntimeException(e);
     }
   }
 

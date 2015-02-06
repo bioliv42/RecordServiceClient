@@ -82,8 +82,6 @@
       <artifactId>hadoop-yarn-api</artifactId>
       <version>${hadoop.version}</version>
     </dependency>
-
-
   </dependencies>
 
   <build>

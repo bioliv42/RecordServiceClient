@@ -24,7 +24,6 @@ import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.FloatWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.ShortWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
@@ -41,39 +40,89 @@ import com.cloudera.recordservice.thrift.TColumnarRowBatch;
 import com.cloudera.recordservice.thrift.TFetchResult;
 import com.cloudera.recordservice.thrift.TRowBatchFormat;
 import com.cloudera.recordservice.thrift.TUniqueId;
+import com.google.common.base.Preconditions;
 
 public class RecordServiceRecordReader extends
     RecordReader<WritableComparable<?>, RecordServiceRecord> {
 
-  static interface RowBatch extends Iterable<RecordServiceRecord>,
-  Iterator<RecordServiceRecord> {
+  static interface RowBatch extends Iterable<Writable[]>, Iterator<Writable[]> {
+    /**
+     * Returns the Schema for this RowBatch.
+     */
+    Schema getSchema();
   }
 
   private static long keyCounter = 0;
-
   private RecordServiceWorkerClient worker_;
-  private TUniqueId tUniqId_;
-  private RowBatch currentRowBatch_;
+  private TUniqueId handle_;
   private Schema schema_;
   private RecordServiceRecord currentRecord_;
-  private volatile boolean initialized = false;
+  private RowBatch currentRowBatch_;
+  private final LongWritable currentKey_ = new LongWritable();
+  private volatile boolean isInitialized_ = false;
+  private boolean isDone_ = false;
 
-  
+  /**
+   * Represents RowBatch in the RecordService Thrift Columnar format.
+   * This class is not thread safe (TODO: does it need to be?).
+   */
   static class ColumnnarRowBatch implements RowBatch {
-
-    private TColumnarRowBatch tRowBatch_;
-    private Schema schema_;
+    private TColumnarRowBatch rowBatch_;
+    private final Schema schema_;
     private int size_ = 0;
+    // The current row index within the row batch.
     private int currentRowIdx_ = 0;
 
+    // Contains the data for the current row. When next() is called, this array is
+    // populated with from the next row in the thrift row batch.
+    private final Writable[] currentRow_;
+
     public ColumnnarRowBatch(TColumnarRowBatch tColRowBatch, Schema schema) {
-      this.tRowBatch_ = tColRowBatch;
-      this.schema_ = schema;
-      this.size_ = getNumRows(tColRowBatch);
+      schema_ = schema;
+      setRowBatch(tColRowBatch);
+      currentRow_ = new Writable[schema_.getNumColumns()];
+      for (int i = 0; i < schema_.getNumColumns(); ++i) {
+        ColumnInfo cInfo = schema_.getColumnInfo(i);
+        Preconditions.checkNotNull(cInfo);
+        switch (cInfo.getType()) {
+          case BIGINT:
+            currentRow_[i] = new LongWritable();
+            break;
+          case BOOLEAN:
+            currentRow_[i] = new BooleanWritable();
+            break;
+          case DOUBLE:
+            currentRow_[i] = new DoubleWritable();
+            break;
+          case INT:
+            currentRow_[i] = new IntWritable();
+            break;
+          case STRING:
+            currentRow_[i] = new Text();
+            break;
+          case BINARY:
+            currentRow_[i] = new BytesWritable();
+            break;
+          case FLOAT:
+            currentRow_[i] = new FloatWritable();
+            break;
+          case SMALLINT:
+            currentRow_[i] = new ShortWritable();
+            break;
+          case TINYINT:
+            currentRow_[i] = new ByteWritable();
+            break;
+          default:
+            throw new UnsupportedOperationException(
+                "Unsupported data type: " + cInfo.getType());
+        }
+      }
     }
 
+    public int getNumRows() { return rowBatch_.getCols().get(0).getIs_null().length; }
+
     @Override
-    public Iterator<RecordServiceRecord> iterator() {
+    public Iterator<Writable[]> iterator() {
       return this;
     }
 
@@ -88,60 +137,67 @@ public class RecordServiceRecordReader extends
     }
 
     @Override
-    public RecordServiceRecord next() {
+    public Writable[] next() {
       if (currentRowIdx_ >= size_) {
         throw new RuntimeException("No nore values !!");
       }
-      Writable[] colVals = new Writable[schema_.getNumColumns()];
-      for (int i = 0; i < colVals.length; i++) {
-        colVals[i] = getColValue(i, currentRowIdx_);
-      }
-      RecordServiceRecord record = new RecordServiceRecord(schema_, colVals);
-      currentRowIdx_++;
-      return record;
+      setRow(currentRowIdx_++);
+      return currentRow_;
     }
 
-    private Writable getColValue(int colIdx, int rowIdx) {
-      TColumnData cd = tRowBatch_.getCols().get(colIdx);
-      int actualIdx = rowIdx;
-      for (int i = rowIdx; i > -1; i--) {
-        if (cd.getIs_null()[i] == 1) {
-          // Column is null
-          if (i == rowIdx) return NullWritable.get();
-          // decrement rowIdx for all cols that are null
-          actualIdx--;
+    private void setRow(int rowIdx) {
+      for (int colIdx = 0; colIdx < currentRow_.length; ++colIdx) {
+        TColumnData cd = rowBatch_.getCols().get(colIdx);
+        switch (schema_.getColumnInfo(colIdx).getType()) {
+          case BIGINT:
+            ((LongWritable) currentRow_[colIdx]).set(cd.getLong_vals().get(rowIdx));
+            break;
+          case BOOLEAN:
+            ((BooleanWritable) currentRow_[colIdx]).set(cd.getBool_vals().get(rowIdx));
+            break;
+          case DOUBLE:
+            ((DoubleWritable) currentRow_[colIdx]).set(cd.getDouble_vals().get(rowIdx));
+            break;
+          case INT:
+            ((IntWritable) currentRow_[colIdx]).set(cd.getInt_vals().get(rowIdx));
+            break;
+          case STRING:
+            ((Text) currentRow_[colIdx]).set(cd.getString_vals().get(rowIdx));
+            break;
+          case BINARY:
+            ((BytesWritable) currentRow_[colIdx]).set(
+                new BytesWritable(cd.getBinary_vals().get(rowIdx).array()));
+            break;
+          case FLOAT:
+            ((FloatWritable) currentRow_[colIdx]).set(
+                cd.getDouble_vals().get(rowIdx).floatValue());
+            break;
+          case SMALLINT:
+            ((ShortWritable) currentRow_[colIdx]).set(cd.getShort_vals().get(rowIdx));
+            break;
+          case TINYINT:
+            ((ByteWritable) currentRow_[colIdx]).set(cd.getByte_vals().get(rowIdx));
+            break;
+          default:
+            Preconditions.checkState(false);
         }
       }
-      ColumnInfo cInfo = schema_.getColumnInfo(colIdx);
-      switch (cInfo.getType()) {
-      case BIGINT:
-        return new LongWritable(cd.getLong_vals().get(actualIdx));
-      case BOOLEAN:
-        return new BooleanWritable(cd.getBool_vals().get(actualIdx));
-      case DOUBLE:
-        return new DoubleWritable(cd.getDouble_vals().get(actualIdx));
-      case INT:
-        return new IntWritable(cd.getInt_vals().get(actualIdx));
-      case STRING:
-        return new Text(cd.getString_vals().get(actualIdx));
-      case BINARY:
-        return new BytesWritable(cd.getBinary_vals().get(actualIdx).array());
-      case FLOAT:
-        return new FloatWritable(cd.getDouble_vals().get(actualIdx).floatValue());
-      case SMALLINT:
-        return new ShortWritable(cd.getShort_vals().get(actualIdx));
-//      case TIMESTAMP:
-//        return new LongWritable(cd.get);
-      case TINYINT:
-        return new ByteWritable(cd.getByte_vals().get(actualIdx));
-      default:
-        return null;
-      }
     }
 
-    private int getNumRows(TColumnarRowBatch rb) {
-      return rb.getCols().get(0).getIs_null().length;
+    /**
+     * Initializes this instance with new row batch data. Assumes the new batch matches
+     * the existing schema (no validation checks are done). Invalidates any existing
+     * iterators.
+     */
+    public void setRowBatch(TColumnarRowBatch newBatch) {
+      Preconditions.checkNotNull(schema_);
+      rowBatch_ = newBatch;
+      size_ = getNumRows();
+      currentRowIdx_ = 0;
     }
+
+    @Override
+    public Schema getSchema() { return schema_; }
   }
 
   @Override
@@ -149,18 +205,30 @@ public class RecordServiceRecordReader extends
       throws IOException, InterruptedException {
     RecordServiceInputSplit rsSplit = (RecordServiceInputSplit)split;
     schema_ = rsSplit.getSchema();
-    String[] closestHostPort =
-        RecordServiceUtils.getClosestHostPort(rsSplit.getLocations());
     worker_ = new RecordServiceWorkerClient();
     try {
-      worker_.connect(closestHostPort[0], Integer.parseInt(closestHostPort[1]));
-      tUniqId_ =
-          worker_.execTask(rsSplit.getTaskInfo()
-              .getTaskAsByteBuffer());
+      // TODO: Make port Configurable.
+      worker_.connect(rsSplit.getLocations()[0], 40100);
+      handle_ = worker_.execTask(rsSplit.getTaskInfo().getTaskAsByteBuffer());
     } catch (Exception e) {
       throw new IOException(e);
     }
-    initialized = true;
+    isInitialized_ = true;
+  }
+
+  public boolean fetchNextRowBatch() throws TException {
+    TFetchResult fetchResult = worker_.fetch(handle_);
+    if (fetchResult.getRow_batch_format() == TRowBatchFormat.ColumnarThrift) {
+      if (currentRowBatch_ == null) {
+        currentRowBatch_ = new ColumnnarRowBatch(fetchResult.getRow_batch(), schema_);
+      } else {
+        ((ColumnnarRowBatch) currentRowBatch_).setRowBatch(fetchResult.getRow_batch());
+      }
+    } else {
+      throw new UnsupportedOperationException("RowBatch format not supported: " +
+          fetchResult.getRow_batch_format().toString());
+    }
+    return fetchResult.isDone();
   }
 
   /**
@@ -171,39 +239,45 @@ public class RecordServiceRecordReader extends
    * to obtain the first RowBatch. Every subsequent call will iterate thru that
    * RowBatch. Once, the rowBatch iteration has completed, The RecordService
    * Worker will be invoked for the next RowBatch.
+   *
+   * Returns true if there are more values to retrieve, false otherwise.
    */
   @Override
   public boolean nextKeyValue() throws IOException, InterruptedException {
-    if (!initialized) {
+    if (!isInitialized_) {
       throw new IOException("Record Reader not initialized !!");
     }
-    if ((currentRowBatch_ == null) || (!currentRowBatch_.hasNext())) {
+
+    // Check if we need to fetch a new row batch.
+    if (!isDone_ && (currentRowBatch_ == null || !currentRowBatch_.hasNext())) {
       try {
-        TFetchResult fetch = worker_.fetch(tUniqId_);
-        if (fetch.isDone()) {
-          return false;
-        }
-        TRowBatchFormat format = fetch.getRow_batch_format();
-        if (format == TRowBatchFormat.ColumnarThrift) {
-          TColumnarRowBatch rowBatch = fetch.getRow_batch();
-          currentRowBatch_ = new ColumnnarRowBatch(rowBatch, schema_);
-        } else if (format == TRowBatchFormat.Parquet) {
-          // TODO : need to import Parquet libs and figure out Ser <-> DeSer
-        }
-      } catch (Exception e) {
+        isDone_ = fetchNextRowBatch();
+      } catch (TException e) {
         throw new IOException(e);
       }
+    }
+
+    Preconditions.checkNotNull(currentRowBatch_);
+
+    if (!currentRowBatch_.hasNext()) {
+      return !isDone_;
     } else {
-      currentRecord_ = currentRowBatch_.next();
+      // Initialize a new record.
+      if (currentRecord_ == null) {
+        currentRecord_ = new RecordServiceRecord(
+            currentRowBatch_.getSchema(), currentRowBatch_.next());
+      } else {
+        currentRecord_.initialize(currentRowBatch_.next());
+      }
+      currentKey_.set(keyCounter++);
       return true;
     }
-    return false;
   }
 
   @Override
   public WritableComparable<?> getCurrentKey() throws IOException,
       InterruptedException {
-    return new LongWritable(keyCounter++);
+    return currentKey_;
   }
 
   @Override
@@ -214,24 +288,31 @@ public class RecordServiceRecordReader extends
 
   @Override
   public float getProgress() throws IOException, InterruptedException {
-    try {
-      return (float)worker_.getTaskStats(tUniqId_).getCompletion_percentage();
-    } catch (TException e) {
-      throw new IOException(e);
-    }
+    return 0.0f;
+    // TODO: MR calls this so frequently that it kills performance. We need to
+    // either cache the result or included it as part of the fetch result.
+    //try {
+    // return (float) worker_.getTaskStats(handle_).getCompletion_percentage();
+    //} catch (TException e) {
+    //  throw new IOException(e);
+    //}
   }
 
   @Override
   public void close() throws IOException {
-    try {
-      worker_.closeTask(tUniqId_);
-    } catch (TException e) {
-      throw new IOException(e);
+    if (worker_ != null) {
+      try {
+        if (handle_ != null) {
+          worker_.closeTask(handle_);
+          handle_ = null;
+        }
+      } catch (TException e) {
+        throw new IOException("Error closing task: ", e);
+      } finally {
+        worker_.close();
+      }
     }
   }
-  
-  public boolean iSinitialized() {
-    return this.initialized;
-  }
 
+  public boolean isInitialized() { return isInitialized_; }
 }

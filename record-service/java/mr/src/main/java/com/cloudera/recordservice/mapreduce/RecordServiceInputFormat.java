@@ -27,9 +27,6 @@ import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 
 import com.cloudera.recordservice.client.RecordServicePlannerClient;
-import com.cloudera.recordservice.thrift.RecordServicePlanner;
-import com.cloudera.recordservice.thrift.RecordServicePlanner.Client;
-import com.cloudera.recordservice.thrift.TPlanRequestParams;
 import com.cloudera.recordservice.thrift.TPlanRequestResult;
 import com.cloudera.recordservice.thrift.TSchema;
 import com.cloudera.recordservice.thrift.TTask;
@@ -40,7 +37,7 @@ import com.google.common.base.Joiner;
  * need to use the Record Service.
  */
 public class RecordServiceInputFormat extends
-  InputFormat<WritableComparable<?>, RecordServiceRecord>{
+    InputFormat<WritableComparable<?>, RecordServiceRecord>{
 
   public final static String DB_NAME_CONF = "recordservice.db.name";
   public final static String TBL_NAME_CONF = "recordservice.table.name";
@@ -62,7 +59,7 @@ public class RecordServiceInputFormat extends
     if (tblName == null) {
       throw new IllegalArgumentException(TBL_NAME_CONF + " not specified.");
     }
-    // If length of colNames = 0, retuclientrn all possible columns
+    // If length of colNames = 0, return all possible columns
     String[] colNames = jobConf.getStrings(COL_NAMES_CONF, new String[0]);
 
     String query =
@@ -76,7 +73,7 @@ public class RecordServiceInputFormat extends
     TPlanRequestResult result = null;
     try {
       plannerClient.connect(jobConf.get(PLANNER_HOST, "localhost"),
-          jobConf.getInt(PLANNER_PORT, -1));
+          jobConf.getInt(PLANNER_PORT, 40000));
       result = plannerClient.planRequest(query);
     } catch (Exception e) {
       throw new IOException(e);
