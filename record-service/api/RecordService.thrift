@@ -160,15 +160,17 @@ struct TFetchParams {
 
 struct TFetchResult {
   1: required bool done
-  2: required i32 num_rows
+  2: required double task_completion_percentage
 
-  3: required TRowBatchFormat row_batch_format
+  3: required i32 num_rows
+
+  4: required TRowBatchFormat row_batch_format
 
   // RowBatchFormat.ColumnarThrift
-  4: optional TColumnarRowBatch row_batch
+  5: optional TColumnarRowBatch row_batch
 
   // RowBatchFormat.Parquet
-  5: optional TParquetRowBatch parquet_row_batch
+  6: optional TParquetRowBatch parquet_row_batch
 }
 
 struct TStats {
