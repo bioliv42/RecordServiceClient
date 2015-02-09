@@ -152,6 +152,9 @@ struct TExecTaskParams {
 
 struct TExecTaskResult {
   1: required TUniqueId handle
+
+  // Schema of the rows returned from Fetch().
+  2: required TSchema schema
 }
 
 struct TFetchParams {
