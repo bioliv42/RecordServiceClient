@@ -1,5 +1,8 @@
 package com.cloudera.recordservice.sample;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TProtocol;
@@ -17,6 +20,7 @@ import com.cloudera.recordservice.thrift.TPlanRequestParams;
 import com.cloudera.recordservice.thrift.TPlanRequestResult;
 import com.cloudera.recordservice.thrift.TProtocolVersion;
 import com.cloudera.recordservice.thrift.TRecordServiceException;
+import com.cloudera.recordservice.thrift.TRowBatchFormat;
 import com.cloudera.recordservice.thrift.TTask;
 
 /**
@@ -24,7 +28,7 @@ import com.cloudera.recordservice.thrift.TTask;
  * to communicate with the two services to read records.
  */
 public class SampleClient {
-  static final String DEFAULT_QUERY = "select * from tpch.nation";
+  static final String DEFAULT_QUERY = "select n_nationkey from tpch.nation";
   static final int PLANNER_PORT = 40000;
   static final int WORKER_PORT = 40100;
 
@@ -40,10 +44,7 @@ public class SampleClient {
       return new TBinaryProtocol(transport);
     }
 
-  public static void main(String[] args) throws TException {
-    String query = DEFAULT_QUERY;
-    if (args.length > 0) query = args[1];
-
+  private static void runQuery(String query) throws TException {
     /**
      * First talk to the plan service to get the list of tasks.
      */
@@ -64,11 +65,13 @@ public class SampleClient {
     }
     System.out.println("Generated " + planResult.tasks.size() + " tasks.");
 
+    long totalTimeMs = 0;
 
     /**
      * Run each task on one of the workers.
      */
     int totalRows = 0;
+    long sum = 0;
     for (TTask task: planResult.tasks) {
       /* Start executing the task */
       RecordServiceWorker.Client worker = new RecordServiceWorker.Client(
@@ -76,6 +79,7 @@ public class SampleClient {
       TExecTaskResult taskResult = null;
       try {
         TExecTaskParams taskParams = new TExecTaskParams(task.task);
+        taskParams.row_batch_format = TRowBatchFormat.Parquet;
         taskResult = worker.ExecTask(taskParams);
       } catch (TRecordServiceException e) {
         System.err.println("Could not exec task: " + e.message);
@@ -85,6 +89,7 @@ public class SampleClient {
         throw e;
       }
 
+      long start = System.currentTimeMillis();
       /* Fetch results until we're done */
       try {
         TFetchResult fetchResult = null;
@@ -92,6 +97,11 @@ public class SampleClient {
           TFetchParams fetchParams = new TFetchParams(taskResult.handle);
           fetchResult = worker.Fetch(fetchParams);
           totalRows += fetchResult.num_rows;
+          ByteBuffer data = fetchResult.parquet_row_batch.cols.get(0).
+              data.order(ByteOrder.LITTLE_ENDIAN);
+          for (int i = 0; i < fetchResult.num_rows; ++i) {
+            sum += data.getLong(i * 8);
+          }
         } while (!fetchResult.done);
       } catch (TRecordServiceException e) {
         System.err.println("Could not fetch from task: " + e.message);
@@ -102,8 +112,18 @@ public class SampleClient {
       } finally {
         worker.CloseTask(taskResult.handle);
       }
+      totalTimeMs += System.currentTimeMillis() - start;
     }
 
     System.out.println("Task complete. Returned: " + totalRows + " rows.");
+    System.out.println("Sum: " + sum);
+    System.out.println("Took " + totalTimeMs + "ms");
+  }
+
+  public static void main(String[] args) throws TException {
+    String query = DEFAULT_QUERY;
+    if (args.length > 0) query = args[1];
+    for (int i = 0; i < 10; ++i)
+    runQuery(query);
   }
 }

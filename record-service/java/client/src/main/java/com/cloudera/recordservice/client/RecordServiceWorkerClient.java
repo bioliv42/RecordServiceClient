@@ -28,6 +28,7 @@ import com.cloudera.recordservice.thrift.TExecTaskParams;
 import com.cloudera.recordservice.thrift.TExecTaskResult;
 import com.cloudera.recordservice.thrift.TFetchParams;
 import com.cloudera.recordservice.thrift.TFetchResult;
+import com.cloudera.recordservice.thrift.TRowBatchFormat;
 import com.cloudera.recordservice.thrift.TStats;
 import com.cloudera.recordservice.thrift.TUniqueId;
 import com.google.common.base.Preconditions;
@@ -38,8 +39,17 @@ import com.google.common.base.Preconditions;
  */
 public class RecordServiceWorkerClient {
   RecordServiceWorker.Client workerClient_;
+  TRowBatchFormat format_;
   TProtocol protocol_;
   boolean isClosed_ = false;
+
+  public RecordServiceWorkerClient() {
+    this(TRowBatchFormat.ColumnarThrift);
+  }
+
+  public RecordServiceWorkerClient(TRowBatchFormat format) {
+    format_ = format;
+  }
 
   /**
    * Connects to the RecordServiceWorker.
@@ -83,8 +93,22 @@ public class RecordServiceWorkerClient {
     Preconditions.checkNotNull(task);
     try {
       TExecTaskParams taskParams = new TExecTaskParams(task);
+      taskParams.row_batch_format = format_;
       TExecTaskResult result = workerClient_.ExecTask(taskParams);
       return result.getHandle();
+    } catch (TException e) {
+      System.err.println("Could not exec task: " + e.getMessage());
+      throw e;
+    }
+  }
+
+  public Rows execAndFetch(ByteBuffer task) throws TException {
+    Preconditions.checkNotNull(task);
+    try {
+      TExecTaskParams taskParams = new TExecTaskParams(task);
+      taskParams.row_batch_format = format_;
+      TExecTaskResult result = workerClient_.ExecTask(taskParams);
+      return new Rows(this, result.getHandle(), result.schema);
     } catch (TException e) {
       System.err.println("Could not exec task: " + e.getMessage());
       throw e;
