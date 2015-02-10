@@ -68,7 +68,7 @@ class RecordServiceRDD(sc: SparkContext, stmt: String, plannerHost: String = "lo
       // Register an on-task-completion callback to close the input stream.
       context.addTaskCompletionListener{ context => closeIfNeeded() }
 
-      val rows = try {
+      var rows = try {
         // Always connect to localhost. This assumes that on each node, we have
         // a RecordServiceWorker running and that Spark has scheduled for locality
         // using getPreferredLocations.
@@ -142,7 +142,14 @@ class RecordServiceRDD(sc: SparkContext, stmt: String, plannerHost: String = "lo
       }
 
       override def close() = {
-        if (rows != null) rows.close()
+        if (rows != null) {
+          rows.close()
+          rows = null
+        }
+        if (worker != null) {
+          worker.close()
+          worker = null
+        }
       }
     }
 
