@@ -14,3 +14,8 @@ data.registerTempTable("lineitem")
 sqlContext.sql("select sum(l_partkey) from lineitem").collect()
 
 
+# With RS
+val data = sc.recordServiceRecords("select l_partkey from tpch10gb_parquet.lineitem").
+    map(v => v(0).asInstanceOf[org.apache.hadoop.io.LongWritable].get()).
+    reduce(_ + _)
+

@@ -17,6 +17,7 @@
 
 package com.cloudera.recordservice.spark
 
+import com.cloudera.recordservice.client.{RecordServiceWorkerClient, RecordServicePlannerClient}
 import com.cloudera.recordservice.thrift._
 import org.apache.hadoop.io._
 import org.apache.spark._
@@ -41,19 +42,12 @@ private class RecordServicePartition(rddId: Int, idx: Int,
  * RDD that is backed by the RecordService. This returns an RDD of arrays of
  * Writable objects.
  * Each array is a row.
- * TODO: redo this using the recordservice client/recordservice MR lib
  */
 class RecordServiceRDD(sc: SparkContext, stmt: String, plannerHost: String = "localhost")
   extends RDD[Array[Writable]](sc, Nil) with Logging {
 
   val PLANNER_PORT: Int = 40000
   val WORKER_PORT: Int = 40100
-
-  private def createConnection(host: String, port: Int) : TProtocol = {
-    val transport = new TSocket(host, port)
-    transport.open()
-    new TBinaryProtocol(transport)
-  }
 
   /**
    * Executes the task against the RecordServiceWorker and returns an iterator to fetch
@@ -63,7 +57,7 @@ class RecordServiceRDD(sc: SparkContext, stmt: String, plannerHost: String = "lo
       InterruptibleIterator[Array[Writable]] = {
     val iter = new NextIterator[Array[Writable]] {
       val partition = split.asInstanceOf[RecordServicePartition]
-      var worker: RecordServiceWorker.Client = null
+      var worker: RecordServiceWorkerClient = null
 
       // Reusable writable objects.
       var writables = new Array[Writable](partition.schema.cols.size())
@@ -71,31 +65,19 @@ class RecordServiceRDD(sc: SparkContext, stmt: String, plannerHost: String = "lo
       // Array for return values. value[i] = writables[i] if the value is non-null
       var value = new Array[Writable](partition.schema.cols.size())
 
-      // Current batch, idx and batch size we are returning.
-      var rowBatch: TColumnarRowBatch = null
-      var rowIdx: Int = 0
-
-      // For each column, the index into the column data.
-      var colIdx = new Array[Int](partition.schema.cols.size())
-      var batchSize: Int = 0
-
       // Register an on-task-completion callback to close the input stream.
       context.addTaskCompletionListener{ context => closeIfNeeded() }
 
-      val execResult = try {
+      val rows = try {
         // Always connect to localhost. This assumes that on each node, we have
         // a RecordServiceWorker running and that Spark has scheduled for locality
         // using getPreferredLocations.
         // TODO: we need to support the case where there is not a worker running on
         // each host, in which case this needs to talk to get the list of all workers
         // and pick one randomly.
-        worker = new RecordServiceWorker.Client(
-            createConnection("localhost", WORKER_PORT))
-
-        val request = new TExecTaskParams()
-        request.setTask(partition.task.task)
-        request.setRow_batch_format(TRowBatchFormat.ColumnarThrift)
-        worker.ExecTask(request)
+        worker = new RecordServiceWorkerClient(TRowBatchFormat.Parquet)
+        worker.connect("localhost", WORKER_PORT)
+        worker.execAndFetch(partition.task.task)
       } catch {
         case e:TRecordServiceException => logError("Could not exec request: " + e.message)
           throw new SparkException("RecordServiceRDD failed", e)
@@ -119,72 +101,48 @@ class RecordServiceRDD(sc: SparkContext, stmt: String, plannerHost: String = "lo
         }
       }
 
-      def readNextBatch() = {
-        var gotAllBatches = false
-        while (!gotAllBatches && batchSize == rowIdx) {
-          // Fetch the next batch.
-          // TODO: require record service Fetch to only return no rows at eos.
-          val params = new TFetchParams()
-          params.handle = execResult.handle
-          val result = worker.Fetch(params)
-          batchSize = result.num_rows
-          gotAllBatches = result.done
-          rowBatch = result.row_batch
-          rowIdx = 0
-
-          for (i <- 0 until writables.length) {
-            colIdx(i) = 0
-          }
-        }
-      }
-
       override def getNext() : Array[Writable] = {
-        if (rowIdx == batchSize) {
-          // Done with current batch, get next one
-          readNextBatch()
-          if (rowIdx == batchSize) {
-            // All done.
-            finished = true
-            return value
-          }
+        if (!rows.hasNext()) {
+          finished = true
+          return value
         }
 
         // Reconstruct the row
+        val row = rows.next()
         for (i <- 0 until writables.length) {
-          if (rowBatch.cols.get(i).is_null.get(rowIdx) == 1) {
+          if (row.isNull(i)) {
             value(i) = null
           } else {
             value(i) = writables(i)
             partition.schema.cols.get(i).getType().type_id match {
-              case TTypeId.BOOLEAN => value(i).asInstanceOf[BooleanWritable].set(
-                rowBatch.cols.get(i).bool_vals.get(colIdx(i)))
-              case TTypeId.TINYINT => value(i).asInstanceOf[ByteWritable].set(
-                rowBatch.cols.get(i).byte_vals.get(colIdx(i)))
-              case TTypeId.SMALLINT => value(i).asInstanceOf[ShortWritable].set(
-                rowBatch.cols.get(i).short_vals.get(colIdx(i)))
-              case TTypeId.INT => value(i).asInstanceOf[IntWritable].set(
-                rowBatch.cols.get(i).int_vals.get(colIdx(i)))
-              case TTypeId.BIGINT => value(i).asInstanceOf[LongWritable].set(
-                rowBatch.cols.get(i).long_vals.get(colIdx(i)))
-              case TTypeId.FLOAT => value(i).asInstanceOf[FloatWritable].set(
-                rowBatch.cols.get(i).double_vals.get(colIdx(i)).toFloat)
-              case TTypeId.DOUBLE => value(i).asInstanceOf[DoubleWritable].set(
-                rowBatch.cols.get(i).double_vals.get(colIdx(i)))
-              case TTypeId.STRING => value(i).asInstanceOf[Text].set(
-                rowBatch.cols.get(i).string_vals.get(colIdx(i)))
+              case TTypeId.BOOLEAN =>
+                value(i).asInstanceOf[BooleanWritable].set(row.getBoolean(i))
+              case TTypeId.TINYINT =>
+                value(i).asInstanceOf[ByteWritable].set(row.getByte(i))
+              case TTypeId.SMALLINT =>
+                value(i).asInstanceOf[ShortWritable].set(row.getShort(i))
+              case TTypeId.INT =>
+                value(i).asInstanceOf[IntWritable].set(row.getInt(i))
+              case TTypeId.BIGINT =>
+                value(i).asInstanceOf[LongWritable].set(row.getLong(i))
+              case TTypeId.FLOAT =>
+                value(i).asInstanceOf[FloatWritable].set(row.getFloat(i))
+              case TTypeId.DOUBLE =>
+                value(i).asInstanceOf[DoubleWritable].set(row.getDouble(i))
+              case TTypeId.STRING =>
+                // TODO: ensure this doesn't copy.
+                val v = row.getByteArray(i)
+                value(i).asInstanceOf[Text].set(
+                    v.byteBuffer().array(), v.offset(), v.len())
               case _ => assert(false)
             }
-            colIdx(i) = colIdx(i) + 1
           }
         }
-        rowIdx += 1
         value
       }
 
       override def close() = {
-        if (worker != null) {
-          worker.CloseTask(execResult.handle)
-        }
+        if (rows != null) rows.close()
       }
     }
 
@@ -205,18 +163,20 @@ class RecordServiceRDD(sc: SparkContext, stmt: String, plannerHost: String = "lo
    */
   override protected def getPartitions: Array[Partition] = {
     logInfo("Running request: " + stmt)
+    var planner:RecordServicePlannerClient = null
     val planResult = try {
-      val planner = new RecordServicePlanner.Client(
-          createConnection(plannerHost, PLANNER_PORT))
-      val request = new TPlanRequestParams()
-      request.setSql_stmt(stmt)
-      planner.PlanRequest(request)
+      planner = new RecordServicePlannerClient()
+      planner.connect(plannerHost, PLANNER_PORT)
+      planner.planRequest(stmt)
     } catch {
       case e:TRecordServiceException => logError("Could not plan request: " + e.message)
         throw new SparkException("RecordServiceRDD failed", e)
       case e:TException => logError("Could not plan request: " + e.getMessage())
         throw new SparkException("RecordServiceRDD failed", e)
+    } finally {
+      planner.close()
     }
+
     val partitions = new Array[Partition](planResult.tasks.size())
     for (i <- 0 until planResult.tasks.size()) {
       val hosts = ListBuffer[String]()

@@ -33,7 +33,6 @@ public class ByteArray {
   private int offset_;
   private int len_;
 
-
   public ByteArray(ByteBuffer buffer, int offset, int len) {
     set(buffer, offset, len);
   }
