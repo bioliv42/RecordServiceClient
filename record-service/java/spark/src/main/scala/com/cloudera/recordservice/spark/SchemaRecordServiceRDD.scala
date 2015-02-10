@@ -19,6 +19,7 @@ package com.cloudera.recordservice.spark
 
 import java.lang.reflect.Method
 
+import com.cloudera.recordservice.client.{RecordServiceWorkerClient, RecordServicePlannerClient, Rows}
 import com.cloudera.recordservice.thrift._
 import org.apache.spark._
 import org.apache.spark.rdd.RDD
@@ -51,7 +52,8 @@ import scala.reflect.ClassTag
  */
 class SchemaRecordServiceRDD[T:ClassTag](sc: SparkContext,
                                          recordClass:Class[T],
-                                         byOrdinal:Boolean = false)
+                                         byOrdinal:Boolean = false,
+                                         plannerHost: String = "localhost")
     extends RDD[T](sc, Nil) with Logging {
   // Why doesn't classOf[T] work (and then you don't need to pass the recordClass arg)
 
@@ -190,12 +192,6 @@ class SchemaRecordServiceRDD[T:ClassTag](sc: SparkContext,
     }
   }
 
-  private def createConnection(host: String, port: Int) : TProtocol = {
-    val transport = new TSocket(host, port)
-    transport.open()
-    new TBinaryProtocol(transport)
-  }
-
   // Creates an object of type T, using reflection to call the constructor.
   private def createObject() : T = {
     val ctor = recordClass.getConstructors()(0)
@@ -240,15 +236,7 @@ class SchemaRecordServiceRDD[T:ClassTag](sc: SparkContext,
 
   private class RecordServiceIterator(partition: SchemaRecordServicePartition)
       extends NextIterator[T] {
-    var worker: RecordServiceWorker.Client = null
-
-    // Current batch, idx and batch size we are returning.
-    var rowBatch: TColumnarRowBatch = null
-    var rowIdx: Int = 0
-
-    // For each column, the index into the column data.
-    var colIdx = new Array[Int](partition.schema.cols.size())
-    var batchSize: Int = 0
+    var worker: RecordServiceWorkerClient = null
 
     // The object to return in getNext(). We always return the same object
     // and just update the value for each row.
@@ -288,13 +276,16 @@ class SchemaRecordServiceRDD[T:ClassTag](sc: SparkContext,
       }
     }
 
-    val execResult = try {
-      worker = new RecordServiceWorker.Client(
-        createConnection(partition.host, WORKER_PORT))
-      val request = new TExecTaskParams()
-      request.setTask(partition.task.task)
-      request.setRow_batch_format(TRowBatchFormat.ColumnarThrift)
-      worker.ExecTask(request)
+    var rows = try {
+      // Always connect to localhost. This assumes that on each node, we have
+      // a RecordServiceWorker running and that Spark has scheduled for locality
+      // using getPreferredLocations.
+      // TODO: we need to support the case where there is not a worker running on
+      // each host, in which case this needs to talk to get the list of all workers
+      // and pick one randomly.
+      worker = new RecordServiceWorkerClient(TRowBatchFormat.Parquet)
+      worker.connect("localhost", WORKER_PORT)
+      worker.execAndFetch(partition.task.task)
     } catch {
       case e:TRecordServiceException => logError("Could not exec request: " + e.message)
         throw new SparkException("RecordServiceRDD failed", e)
@@ -302,72 +293,53 @@ class SchemaRecordServiceRDD[T:ClassTag](sc: SparkContext,
         throw new SparkException("RecordServiceRDD failed", e)
     }
 
-    def readNextBatch() = {
-      var gotAllBatches = false
-      while (!gotAllBatches && batchSize == rowIdx) {
-        // Fetch the next batch.
-        // TODO: require record service Fetch to only return no rows at eos.
-        val params = new TFetchParams()
-        params.handle = execResult.handle
-        val result = worker.Fetch(params)
-        batchSize = result.num_rows
-        gotAllBatches = result.done
-        rowBatch = result.row_batch
-        rowIdx = 0
-        for (i <- 0 until fields.length) {
-          colIdx(i) = 0
-        }
-      }
-    }
-
     override def getNext() : T = {
-      if (rowIdx == batchSize) {
-        // Done with current batch, get next one
-        readNextBatch()
-        if (rowIdx == batchSize) {
-          // All done.
-          finished = true
-          return value
-        }
+      if (!rows.hasNext()) {
+        finished = true
+        return value
       }
 
       // Reconstruct the row
       // TODO: handle NULLs
+      val row = rows.next()
       for (i <- 0 until setters.length) {
         if (setters(i) != null) {
+          // TODO: make sure this is the cheapest way to do this and we're not doing
+          // unnecessary boxing
           partition.schema.cols.get(i).getType().type_id match {
-            case TTypeId.BOOLEAN => setters(i).invoke(value,
-              rowBatch.cols.get(i).bool_vals.get(colIdx(i)))
-            case TTypeId.TINYINT => setters(i).invoke(value,
-              rowBatch.cols.get(i).byte_vals.get(colIdx(i)))
-            case TTypeId.SMALLINT => setters(i).invoke(value,
-              rowBatch.cols.get(i).short_vals.get(colIdx(i)))
-            case TTypeId.INT => setters(i).invoke(value,
-              rowBatch.cols.get(i).int_vals.get(colIdx(i)))
-            case TTypeId.BIGINT => setters(i).invoke(value,
-              rowBatch.cols.get(i).long_vals.get(colIdx(i)))
-            /*
-             * TODO: how do get scala to box these?
-          case TTypeId.FLOAT => setters(i).invoke(value,
-            rowBatch.cols.get(i).double_vals.get(colIdx(i)).toFloat)
-          case TTypeId.DOUBLE => setters(i).invoke(value,
-            rowBatch.cols.get(i).double_vals.get(colIdx(i)))
-            */
-            case TTypeId.STRING => setters(i).invoke(value,
-              rowBatch.cols.get(i).string_vals.get(colIdx(i)))
+            case TTypeId.BOOLEAN =>
+                setters(i).invoke(value, row.getBoolean(i):java.lang.Boolean)
+            case TTypeId.TINYINT =>
+                // TODO: does this work? We probably need to cast it to Byte or Char
+                setters(i).invoke(value, row.getByte(i):java.lang.Byte)
+            case TTypeId.SMALLINT =>
+                setters(i).invoke(value, row.getShort(i):java.lang.Short)
+            case TTypeId.INT =>
+                setters(i).invoke(value, row.getInt(i):java.lang.Integer)
+            case TTypeId.BIGINT =>
+                setters(i).invoke(value, row.getLong(i):java.lang.Long)
+            case TTypeId.FLOAT =>
+                setters(i).invoke(value, row.getFloat(i):java.lang.Float)
+            case TTypeId.DOUBLE =>
+                setters(i).invoke(value, row.getDouble(i):java.lang.Double)
+            case TTypeId.STRING =>
+                setters(i).invoke(value, row.getByteArray(i).toString())
             case _ => assert(false)
           }
         }
-        colIdx(i) = colIdx(i) + 1
       }
 
-      rowIdx += 1
       value
     }
 
     override def close() = {
+      if (rows != null) {
+        rows.close()
+        rows = null
+      }
       if (worker != null) {
-        worker.CloseTask(execResult.handle)
+        worker.close()
+        worker = null
       }
     }
   }
@@ -390,17 +362,19 @@ class SchemaRecordServiceRDD[T:ClassTag](sc: SparkContext,
   override protected def getPartitions: Array[Partition] = {
     if (stmt == null) throw new SparkException("Statement not set.")
     logInfo("Request: " + stmt)
+
+    var planner:RecordServicePlannerClient = null
     val planResult = try {
-      val planner = new RecordServicePlanner.Client(
-        createConnection("localhost", PLANNER_PORT))
-      val request = new TPlanRequestParams()
-      request.setSql_stmt(stmt)
-      planner.PlanRequest(request)
+      planner = new RecordServicePlannerClient()
+      planner.connect(plannerHost, PLANNER_PORT)
+      planner.planRequest(stmt)
     } catch {
       case e:TRecordServiceException => logError("Could not plan request: " + e.message)
         throw new SparkException("RecordServiceRDD failed", e)
       case e:TException => logError("Could not plan request: " + e.getMessage())
         throw new SparkException("RecordServiceRDD failed", e)
+    } finally {
+      planner.close()
     }
 
     // TODO: verify that T is not an inner class, Spark shell generates it that way.
