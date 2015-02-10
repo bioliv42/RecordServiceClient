@@ -8,6 +8,7 @@ import org.apache.thrift.TException;
 import com.cloudera.recordservice.thrift.TFetchResult;
 import com.cloudera.recordservice.thrift.TRowBatchFormat;
 import com.cloudera.recordservice.thrift.TSchema;
+import com.cloudera.recordservice.thrift.TTypeId;
 import com.cloudera.recordservice.thrift.TUniqueId;
 import com.google.common.base.Preconditions;
 
@@ -17,13 +18,15 @@ import com.google.common.base.Preconditions;
  * Not thread-safe.
  */
 public class Rows {
-
   public static final class Row {
     // For each column, the current offset to return (column data is sparse)
     private int[] colOffsets_;
 
     // For each column, the serialized data values.
     private ByteBuffer[] colData_;
+
+    // Only used if col[i] is a String to prevent object creation.
+    private ByteArray[] byteArrayVals_;
 
     private int rowIdx_;
 
@@ -78,23 +81,27 @@ public class Rows {
       return val;
     }
 
-    public final ByteBuffer getByteArray(int colIdx) {
+    public final ByteArray getByteArray(int colIdx) {
       int len = colData_[colIdx].getInt(colOffsets_[colIdx]);
       colOffsets_[colIdx] += 4;
       // Convert endianness
       len = Integer.reverseBytes(len);
-      // TODO: verify this is zero copy. It should be possible with ByteBuffer.
-      ByteBuffer val = ByteBuffer.wrap(
-          colData_[colIdx].array(), colOffsets_[colIdx], len);
+      byteArrayVals_[colIdx].set(colData_[colIdx], colOffsets_[colIdx], len);
       colOffsets_[colIdx] += len;
-      return val;
+      return byteArrayVals_[colIdx];
     }
 
     protected Row(TSchema schema) {
       rowIdx_ = -1;
       colOffsets_ = new int[schema.cols.size()];
       colData_ = new ByteBuffer[schema.cols.size()];
+      byteArrayVals_ = new ByteArray[schema.cols.size()];
       schema_ = schema;
+      for (int i = 0; i < colOffsets_.length; ++i) {
+        if (schema_.cols.get(i).type.type_id == TTypeId.STRING) {
+          byteArrayVals_[i] = new ByteArray();
+        }
+      }
     }
 
     // Resets the state of the row to return the next batch.
