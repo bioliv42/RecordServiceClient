@@ -50,29 +50,40 @@ public class Schema implements Writable {
   // Thrift classes as well as maintain a mapping to the
   // associated Writable type
   public static enum ColumnType {
-    BOOLEAN(BooleanWritable.class),
-    TINYINT(ByteWritable.class),
-    SMALLINT(ShortWritable.class),
-    INT(IntWritable.class),
-    BIGINT(LongWritable.class),
-    FLOAT(FloatWritable.class),
-    DOUBLE(DoubleWritable.class),
-    STRING(Text.class),
-    BINARY(BytesWritable.class),
-    // TODO : is this ok ?
-    TIMESTAMP(LongWritable.class),
-    // TODO : need to hande this properly
-    DECIMAL(BytesWritable.class);
+    BOOLEAN,
+    TINYINT,
+    SMALLINT,
+    INT,
+    BIGINT,
+    FLOAT,
+    DOUBLE,
+    STRING,
+    BINARY,
+    TIMESTAMP,
+    DECIMAL,
+    ;
 
-    private Class<? extends Writable> wClass_;
-
-    private ColumnType(Class<? extends Writable> wClass) {
-      this.wClass_ = wClass;
-    }
-
-    public Writable getWritableInstance() throws InstantiationException,
-        IllegalAccessException {
-      return wClass_.newInstance();
+    /**
+     * Returns the corresponding Writable object for this column type.
+     */
+    public Writable getWritableInstance() {
+      switch (this) {
+        case BOOLEAN: return new BooleanWritable();
+        case TINYINT: new ByteWritable();
+        case SMALLINT: return new ShortWritable();
+        case INT: return new IntWritable();
+        case BIGINT: return new LongWritable();
+        case FLOAT: return new FloatWritable();
+        case DOUBLE: return new DoubleWritable();
+        case STRING: return new Text();
+        case BINARY: return new BytesWritable();
+        // TODO : is this ok ?
+        case TIMESTAMP: return new LongWritable();
+        // TODO : need to handle this properly
+        case DECIMAL: return new BytesWritable();
+        default: throw new UnsupportedOperationException(
+            "Unexpected type: " + toString());
+      }
     }
 
     public static ColumnType fromThrift(TTypeId typeId) {

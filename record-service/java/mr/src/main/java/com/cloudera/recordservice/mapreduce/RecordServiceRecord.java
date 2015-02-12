@@ -19,13 +19,28 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Map;
 
+import org.apache.hadoop.io.BooleanWritable;
+import org.apache.hadoop.io.ByteWritable;
+import org.apache.hadoop.io.BytesWritable;
+import org.apache.hadoop.io.DoubleWritable;
+import org.apache.hadoop.io.FloatWritable;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.ShortWritable;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 
+import com.cloudera.recordservice.client.ByteArray;
+import com.cloudera.recordservice.client.Rows.Row;
+import com.cloudera.recordservice.mapreduce.Schema.ColumnInfo;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 
 public class RecordServiceRecord implements Writable {
-  private Writable[] columnValues_;
+  // Array of Writable column values.
+  private Writable[] columnVals_;
+
+  // Schema associated with columnVals_.
   private Schema schema_ = new Schema();
 
   // Map of column name to column value index in columnValues_.
@@ -35,28 +50,76 @@ public class RecordServiceRecord implements Writable {
 
   public RecordServiceRecord() {}
 
-  public RecordServiceRecord(Schema schema, Writable[] columnValues) {
-    Preconditions.checkNotNull(schema);
-    Preconditions.checkNotNull(columnValues);
-    Preconditions.checkState(schema.getNumColumns() == columnValues.length);
-    columnValues_ = columnValues;
-    schema_ = schema;
-    colNameToIdx_ = Maps.newHashMapWithExpectedSize(schema.getNumColumns());
+  public RecordServiceRecord(Row row) {
+    Preconditions.checkNotNull(row);
+    schema_ = new Schema(row.getSchema());
+    columnVals_ = new Writable[schema_.getNumColumns()];
+    colNameToIdx_ = Maps.newHashMapWithExpectedSize(schema_.getNumColumns());
     for (int i = 0; i < schema_.getNumColumns(); ++i) {
-      colNameToIdx_.put(schema_.getColumnInfo(i).getColumnName(), i);
+      ColumnInfo columnInfo = schema_.getColumnInfo(i);
+      colNameToIdx_.put(columnInfo.getColumnName(), i);
+      columnVals_[i] = columnInfo.getType().getWritableInstance();
     }
+    reset(row);
   }
 
   /**
-   * Initializes the RecordServiceRecord with new column values. The values must
-   * match the existing schema (no validation checks are done).
+   * Resets the data in this RecordServiceRecord by translating the column data from the
+   * given Row to the internal array of Writables (columnVals_).
+   * Reads the column data from the given Row into this RecordServiceRecord. The
+   * schema are expected to match, minimal error checks are performed.
+   * This is a performance critical method.
    */
-  public void initialize(Writable[] columnValues) {
-    columnValues_ = columnValues;
+  public void reset(Row row) {
+    if (row.getSchema().getColsSize() != schema_.getNumColumns()) {
+      throw new IllegalArgumentException(String.format("Schema for new row does not " +
+        "match existing schema: %d (new) != %d (existing)",
+        row.getSchema().getColsSize(), schema_.getNumColumns()));
+    }
+
+    for (int i = 0; i < schema_.getNumColumns(); ++i) {
+      // TODO: Handle nulls.
+      ColumnInfo cInfo = schema_.getColumnInfo(i);
+      Preconditions.checkNotNull(cInfo);
+      switch (cInfo.getType()) {
+        case BIGINT:
+          ((LongWritable) columnVals_[i]).set(row.getLong(i));
+          break;
+        case BOOLEAN:
+          ((BooleanWritable) columnVals_[i]).set(row.getBoolean(i));
+          break;
+        case DOUBLE:
+          ((DoubleWritable) columnVals_[i]).set(row.getDouble(i));
+          break;
+        case INT:
+          ((IntWritable) columnVals_[i]).set(row.getInt(i));
+          break;
+        case STRING:
+          ByteArray s = row.getByteArray(i);
+          ((Text) columnVals_[i]).set(s.byteBuffer().array(), s.offset(), s.len());
+          break;
+        case BINARY:
+          ByteArray b = row.getByteArray(i);
+          ((BytesWritable) columnVals_[i]).set(
+              b.byteBuffer().array(), b.offset(), b.len());
+          break;
+        case FLOAT:
+          ((FloatWritable) columnVals_[i]).set(row.getFloat(i));
+          break;
+        case SMALLINT:
+          ((ShortWritable) columnVals_[i]).set(row.getShort(i));
+          break;
+        case TINYINT:
+          ((ByteWritable) columnVals_[i]).set(row.getByte(i));
+          break;
+        default:
+          Preconditions.checkState(false);
+      }
+    }
   }
 
   public Writable getColumnValue(int colIndex) {
-    return columnValues_[colIndex];
+    return columnVals_[colIndex];
   }
 
   /**
@@ -73,8 +136,8 @@ public class RecordServiceRecord implements Writable {
   @Override
   public void write(DataOutput out) throws IOException {
     schema_.write(out);
-    for(int i = 0; i < columnValues_.length; ++i) {
-      columnValues_[i].write(out);
+    for(int i = 0; i < columnVals_.length; ++i) {
+      columnVals_[i].write(out);
     }
   }
 
@@ -82,11 +145,11 @@ public class RecordServiceRecord implements Writable {
   public void readFields(DataInput in) throws IOException {
     schema_ = new Schema();
     schema_.readFields(in);
-    columnValues_ = new Writable[schema_.getNumColumns()];
-    for (int i = 0; i < columnValues_.length; i++) {
+    columnVals_ = new Writable[schema_.getNumColumns()];
+    for (int i = 0; i < columnVals_.length; i++) {
       try {
-        columnValues_[i] = schema_.getColumnInfo(i).getType().getWritableInstance();
-        columnValues_[i].readFields(in);
+        columnVals_[i] = schema_.getColumnInfo(i).getType().getWritableInstance();
+        columnVals_[i].readFields(in);
       } catch (Exception e) {
         throw new IOException(e);
       }
@@ -101,7 +164,7 @@ public class RecordServiceRecord implements Writable {
   public void set(RecordServiceRecord other) {
     Preconditions.checkNotNull(other);
     schema_ = other.schema_;
-    columnValues_ = other.columnValues_;
+    columnVals_ = other.columnVals_;
     colNameToIdx_ = other.colNameToIdx_;
   }
 }

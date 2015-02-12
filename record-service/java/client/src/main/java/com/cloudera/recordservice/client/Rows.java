@@ -20,19 +20,19 @@ import com.google.common.base.Preconditions;
 public class Rows {
   public static final class Row {
     // For each column, the current offset to return (column data is sparse)
-    private int[] colOffsets_;
+    private final int[] colOffsets_;
 
     // For each column, the serialized data values.
-    private ByteBuffer[] colData_;
-    private ByteBuffer[] nulls_;
+    private final ByteBuffer[] colData_;
+    private final ByteBuffer[] nulls_;
 
     // Only used if col[i] is a String to prevent object creation.
-    private ByteArray[] byteArrayVals_;
+    private final ByteArray[] byteArrayVals_;
 
     private int rowIdx_;
 
     // Schema of the row
-    private TSchema schema_;
+    private final TSchema schema_;
 
     // Returns if the col at 'colIdx' is NULL.
     public boolean isNull(int colIdx) {
@@ -130,17 +130,19 @@ public class Rows {
         }
       }
     }
+
+    public TSchema getSchema() { return schema_; }
   }
 
   // Client and task handle
-  private RecordServiceWorkerClient worker_;
-  private TUniqueId handle_;
+  private final RecordServiceWorkerClient worker_;
+  private final TUniqueId handle_;
 
   // The current fetchResult from the RecordServiceWorker. Never null.
   private TFetchResult fetchResult_;
 
   // Row object that is returned. Reused across calls to next()
-  private Row row_;
+  private final Row row_;
 
   // Current row idx being returned
   private int currentRow_;
@@ -199,4 +201,6 @@ public class Rows {
     }
     row_.reset(fetchResult_);
   }
+
+  public TSchema getSchema() { return row_.getSchema(); }
 }
