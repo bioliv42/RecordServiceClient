@@ -167,4 +167,6 @@ public class RecordServiceRecord implements Writable {
     columnVals_ = other.columnVals_;
     colNameToIdx_ = other.colNameToIdx_;
   }
+
+  public Schema getSchema() { return schema_; }
 }

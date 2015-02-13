@@ -23,7 +23,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.ql.io.IOConstants;
 import org.apache.hadoop.hive.serde2.AbstractSerDe;
-import org.apache.hadoop.hive.serde2.ColumnProjectionUtils;
 import org.apache.hadoop.hive.serde2.SerDeException;
 import org.apache.hadoop.hive.serde2.SerDeStats;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
@@ -57,19 +56,12 @@ import com.cloudera.recordservice.mapreduce.RecordServiceRecord;
 public class RecordServiceSerDe extends AbstractSerDe {
   public static final Log LOG = LogFactory.getLog(RecordServiceSerDe.class);
 
-  // TODO: SerDeStats are not current collected, but would be useful to implement.
-  private SerDeStats stats_;
-
   // ObjectInspector for extracting column values from records.
   private RecordServiceObjectInspector objInspector_;
 
   // The names of all columns in the table (not the projection), in order of their
   // position in the table.
   private List<String> columnNames_;
-
-  // The column indexes in columnNames_ that are being projected. Maps to indexes
-  // in columnNames_. Not currently used.
-  private List<Integer> columnIds_;
 
   /**
    * Initializes the RecordServiceSerde based on the table schema.
@@ -92,7 +84,6 @@ public class RecordServiceSerDe extends AbstractSerDe {
     } else {
       columnTypes = TypeInfoUtils.getTypeInfosFromTypeString(columnTypeProperty);
     }
-    columnIds_ = ColumnProjectionUtils.getReadColumnIDs(conf);
 
     if (columnNames_.size() != columnTypes.size()) {
       throw new IllegalArgumentException("Initialization failed. Number of column " +
@@ -138,5 +129,5 @@ public class RecordServiceSerDe extends AbstractSerDe {
   }
 
   @Override
-  public SerDeStats getSerDeStats() { return stats_; }
+  public SerDeStats getSerDeStats() { return null; }
 }
