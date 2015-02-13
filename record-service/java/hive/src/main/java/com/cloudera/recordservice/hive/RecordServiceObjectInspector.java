@@ -26,6 +26,7 @@ import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoFactory;
 
 import com.cloudera.recordservice.mapreduce.RecordServiceRecord;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
@@ -96,12 +97,27 @@ public class RecordServiceObjectInspector extends StructObjectInspector {
   /**
    * Given a field reference, return the data for the specified row.
    * This is on the hot path. It is called once for every column in the schema
-   * for every row. TODO: Make this more performant.
+   * for every row.
+   * TODO: Make this more performant.
    */
   @Override
   public Object getStructFieldData(Object recordData, StructField fieldRef) {
+    if (recordData == null) return null;
+    RecordServiceStructField field = (RecordServiceStructField) fieldRef;
+
+    // If this field is not selected in the projection, return null.
+    if (!field.isProjected()) return null;
+
     RecordServiceRecord record = (RecordServiceRecord) recordData;
-    return record.getColumnValue(fieldRef.getFieldName());
+
+    // Only initialize the projection index if it has not yet been set because
+    // this is expensive.
+    if (!field.isProjectedColIdxSet()) {
+      int colIdx = record.getSchema().getColIdxFromColName(fieldRef.getFieldName());
+      field.setProjectedColIdx(colIdx);
+      if (!field.isProjected()) return null;
+    }
+    return record.getColumnValue(field.getProjectedIdx());
   }
 
   @Override
@@ -130,7 +146,17 @@ public class RecordServiceObjectInspector extends StructObjectInspector {
   static class RecordServiceStructField implements StructField {
     private final String fieldName_;
     private final ObjectInspector inspector_;
+
+    // The index of this field in the struct (may not be the same as the index
+    // of the field in the RecordService schema).
     private final int fieldIdx_;
+
+    // The index of this field in a projection. -1 if not set or if not records
+    // have been received from the RecordService. Will not be set for metadata only
+    // operations (ie DESCRIBE TABLE).
+    private int projectedColIdx_ = -1;
+
+    boolean isProjectedColIdxSet_ = false;
 
     public RecordServiceStructField(final String fieldName,
         final ObjectInspector inspector, final int fieldIndex) {
@@ -139,15 +165,56 @@ public class RecordServiceObjectInspector extends StructObjectInspector {
       fieldIdx_ = fieldIndex;
     }
 
-    public int getColIndex() { return fieldIdx_; }
-    @Override
+    public int getProjectedIdx() { return projectedColIdx_; }
+
+    /**
+     * Sets the projected column index. Can only be called once.
+     */
+    public void setProjectedColIdx(int projectedColIdx) {
+      Preconditions.checkState(!isProjectedColIdxSet_);
+      isProjectedColIdxSet_ = true;
+      projectedColIdx_ = projectedColIdx;
+    }
+
+    public boolean isProjectedColIdxSet() { return isProjectedColIdxSet_; }
+
+    /**
+     * Returns true if this column is selected as part of the projection
+     * or if it is unknown whether the column is projected (setProjectedColIdx
+     * has not been called).
+     */
+    public boolean isProjected() {
+      return !isProjectedColIdxSet_ || projectedColIdx_ >= 0;
+    }
+
     public String getFieldComment() { return ""; }
-    @Override
     public String getFieldName() { return fieldName_; }
-    @Override
     public ObjectInspector getFieldObjectInspector() { return inspector_; }
-    @Override
     public int getFieldID() { return fieldIdx_; }
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (o == null || o.getClass() != getClass()) {
+      return false;
+    } else if (o == this) {
+      return true;
+    } else {
+      List<RecordServiceStructField> other = ((RecordServiceObjectInspector) o).fields_;
+      if (other.size() != fields_.size()) {
+        return false;
+      }
+      for(int i = 0; i < fields_.size(); ++i) {
+        StructField left = other.get(i);
+        StructField right = fields_.get(i);
+        if (!(left.getFieldName().equals(right.getFieldName()) &&
+              left.getFieldObjectInspector().equals
+                  (right.getFieldObjectInspector()))) {
+          return false;
+        }
+      }
+      return true;
+    }
   }
 }
 
