@@ -60,45 +60,16 @@ struct TSchema {
   1: required list<TColumnDesc> cols
 }
 
+// Row batch serialization formats.
 enum TRowBatchFormat {
-  ColumnarThrift,
-  Parquet,
-}
-
-// A union over all possible return types for a column of data
-struct TColumnData {
-  // One element in the list for every row in the column indicating if there is
-  // a value in the vals list or a null.
-  1: required binary is_null
-
-  // Only one is set, only non-null values are set.
-  2: optional list<bool> bool_vals;
-  3: optional list<byte> byte_vals;
-  4: optional list<i16> short_vals;
-  5: optional list<i32> int_vals;
-  6: optional list<i64> long_vals;
-
-  // Used for float/double
-  7: optional list<double> double_vals;
-
-  // Used for string/char/vchar
-  8: optional list<string> string_vals;
-
-  // Used for decimal, timestamp
-  9: optional list<binary> binary_vals;
-}
-
-struct TColumnarRowBatch {
-  // Each TColumnData contains the data for an entire column. Size is equal to the
-  // number of projected columns.
-  1: required list<TColumnData> cols
+  Columnar,
 }
 
 // Serialized columnar data. Instead of using a list of types, this is a custom
 // serialization. Thrift sees this as a byte buffer so we have minimal serialization
 // cost.
 // The serialization is identical to parquet's plain encoding.
-struct TParquetColumnData {
+struct TColumnData {
   // One byte for each value.
   // TODO: turn this into a bitmap.
   1: required binary is_null
@@ -112,8 +83,8 @@ struct TParquetColumnData {
   //3: required i32 num_non_null
 }
 
-struct TParquetRowBatch {
-  1: required list<TParquetColumnData> cols
+struct TColumnarRowBatch {
+  1: required list<TColumnData> cols
 }
 
 struct TPlanRequestParams {
@@ -169,11 +140,8 @@ struct TFetchResult {
 
   4: required TRowBatchFormat row_batch_format
 
-  // RowBatchFormat.ColumnarThrift
-  5: optional TColumnarRowBatch row_batch
-
-  // RowBatchFormat.Parquet
-  6: optional TParquetRowBatch parquet_row_batch
+  // RowBatchFormat.Columnar
+  5: optional TColumnarRowBatch columnar_row_batch
 }
 
 struct TStats {

@@ -7,7 +7,6 @@ import com.cloudera.recordservice.client.RecordServiceWorkerClient;
 import com.cloudera.recordservice.client.Rows;
 import com.cloudera.recordservice.client.Rows.Row;
 import com.cloudera.recordservice.thrift.TPlanRequestResult;
-import com.cloudera.recordservice.thrift.TRowBatchFormat;
 import com.cloudera.recordservice.thrift.TTask;
 
 /**
@@ -27,8 +26,7 @@ public class SampleClientLib {
 
     RecordServicePlannerClient planner = new RecordServicePlannerClient();
     planner.connect("localhost", PLANNER_PORT);
-    RecordServiceWorkerClient worker =
-        new RecordServiceWorkerClient(TRowBatchFormat.Parquet);
+    RecordServiceWorkerClient worker = new RecordServiceWorkerClient();
     worker.connect("localhost", WORKER_PORT);
 
     TPlanRequestResult planResult = planner.planRequest(query);

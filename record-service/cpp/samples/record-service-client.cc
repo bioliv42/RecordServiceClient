@@ -188,12 +188,9 @@ void ExecRequestDistributed(const char* request, TRowBatchFormat::type format) {
 #if QUERY_1
         const int64_t* values = NULL;
         const uint8_t* nulls = NULL;
-        if (fetch_result.row_batch_format == TRowBatchFormat::ColumnarThrift) {
-          values = &fetch_result.row_batch.cols[0].long_vals[0];
-          nulls = (const uint8_t*) fetch_result.row_batch.cols[0].is_null.data();
-        } else if (fetch_result.row_batch_format == TRowBatchFormat::Parquet) {
-          values = (const int64_t*)fetch_result.parquet_row_batch.cols[0].data.data();
-          nulls = (const uint8_t*)fetch_result.parquet_row_batch.cols[0].is_null.data();
+        if (fetch_result.row_batch_format == TRowBatchFormat::Columnar) {
+          values = (const int64_t*)fetch_result.columnar_row_batch.cols[0].data.data();
+          nulls = (const uint8_t*)fetch_result.columnar_row_batch.cols[0].is_null.data();
         } else {
           printf("Unknown row batch format.\n");
           return;
@@ -207,9 +204,9 @@ void ExecRequestDistributed(const char* request, TRowBatchFormat::type format) {
 #elif QUERY_2
         const char* data = NULL;
         const uint8_t* nulls = NULL;
-        if (fetch_result.row_batch_format == TRowBatchFormat::Parquet) {
-          data = fetch_result.parquet_row_batch.cols[0].data.data();
-          nulls = (const uint8_t*)fetch_result.parquet_row_batch.cols[0].is_null.data();
+        if (fetch_result.row_batch_format == TRowBatchFormat::Columnar) {
+          data = fetch_result.columnar_row_batch.cols[0].data.data();
+          nulls = (const uint8_t*)fetch_result.columnar_row_batch.cols[0].is_null.data();
         } else {
           printf("Unknown row batch format.\n");
           return;
@@ -290,6 +287,6 @@ int main(int argc, char** argv) {
     printf("usage: record-service-client <sql stmt>\n");
     return 1;
   }
-  ExecRequestDistributed(argv[1], TRowBatchFormat::Parquet);
+  ExecRequestDistributed(argv[1], TRowBatchFormat::Columnar);
   return 0;
 }

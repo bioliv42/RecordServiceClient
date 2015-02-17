@@ -20,7 +20,6 @@ import com.cloudera.recordservice.thrift.TPlanRequestParams;
 import com.cloudera.recordservice.thrift.TPlanRequestResult;
 import com.cloudera.recordservice.thrift.TProtocolVersion;
 import com.cloudera.recordservice.thrift.TRecordServiceException;
-import com.cloudera.recordservice.thrift.TRowBatchFormat;
 import com.cloudera.recordservice.thrift.TTask;
 
 /**
@@ -79,7 +78,6 @@ public class SampleClient {
       TExecTaskResult taskResult = null;
       try {
         TExecTaskParams taskParams = new TExecTaskParams(task.task);
-        taskParams.row_batch_format = TRowBatchFormat.Parquet;
         taskResult = worker.ExecTask(taskParams);
       } catch (TRecordServiceException e) {
         System.err.println("Could not exec task: " + e.message);
@@ -97,7 +95,7 @@ public class SampleClient {
           TFetchParams fetchParams = new TFetchParams(taskResult.handle);
           fetchResult = worker.Fetch(fetchParams);
           totalRows += fetchResult.num_rows;
-          ByteBuffer data = fetchResult.parquet_row_batch.cols.get(0).
+          ByteBuffer data = fetchResult.columnar_row_batch.cols.get(0).
               data.order(ByteOrder.LITTLE_ENDIAN);
           for (int i = 0; i < fetchResult.num_rows; ++i) {
             sum += data.getLong(i * 8);

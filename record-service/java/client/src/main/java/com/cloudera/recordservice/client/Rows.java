@@ -109,13 +109,13 @@ public class Rows {
     // Resets the state of the row to return the next batch.
     protected void reset(TFetchResult result) throws TException {
       for (int i = 0; i < colOffsets_.length; ++i) {
-        nulls_[i] = result.parquet_row_batch.cols.get(i).is_null;
+        nulls_[i] = result.columnar_row_batch.cols.get(i).is_null;
         colOffsets_[i] = 0;
         switch (schema_.cols.get(i).type.type_id) {
           case SMALLINT:
           case INT:
           case BIGINT:
-            colData_[i] = result.parquet_row_batch.
+            colData_[i] = result.columnar_row_batch.
                 cols.get(i).data.order(ByteOrder.LITTLE_ENDIAN);
             break;
           case BOOLEAN:
@@ -123,7 +123,7 @@ public class Rows {
           case FLOAT:
           case DOUBLE:
           case STRING:
-            colData_[i] = result.parquet_row_batch.cols.get(i).data;
+            colData_[i] = result.columnar_row_batch.cols.get(i).data;
             break;
           default:
             throw new TException("Unknown type");
@@ -196,7 +196,7 @@ public class Rows {
   private void nextBatch() throws TException {
     fetchResult_ = worker_.fetch(handle_);
     currentRow_ = 0;
-    if (fetchResult_.row_batch_format != TRowBatchFormat.Parquet) {
+    if (fetchResult_.row_batch_format != TRowBatchFormat.Columnar) {
       throw new TException("Unsupported row batch format");
     }
     row_.reset(fetchResult_);

@@ -283,7 +283,7 @@ class SchemaRecordServiceRDD[T:ClassTag](sc: SparkContext,
       // TODO: we need to support the case where there is not a worker running on
       // each host, in which case this needs to talk to get the list of all workers
       // and pick one randomly.
-      worker = new RecordServiceWorkerClient(TRowBatchFormat.Parquet)
+      worker = new RecordServiceWorkerClient()
       worker.connect("localhost", WORKER_PORT)
       worker.execAndFetch(partition.task.task)
     } catch {

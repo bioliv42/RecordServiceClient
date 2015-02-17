@@ -63,7 +63,7 @@ public class RecordServiceRecordReader extends
   public void initialize(InputSplit split, TaskAttemptContext context)
       throws IOException, InterruptedException {
     RecordServiceInputSplit rsSplit = (RecordServiceInputSplit)split;
-    worker_ = new RecordServiceWorkerClient(TRowBatchFormat.Parquet);
+    worker_ = new RecordServiceWorkerClient();
     try {
       // TODO: Make port configurable, handle multiple locations.
       worker_.connect(rsSplit.getLocations()[0], 40100);
