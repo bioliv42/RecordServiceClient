@@ -37,9 +37,12 @@ import com.google.common.base.Preconditions;
  * TODO: Don't expose raw Thrift objects, use proper logger, add Kerberos support.
  */
 public class RecordServiceWorkerClient {
-  RecordServiceWorker.Client workerClient_;
-  TProtocol protocol_;
-  boolean isClosed_ = false;
+  private RecordServiceWorker.Client workerClient_;
+  private TProtocol protocol_;
+  private boolean isClosed_ = false;
+
+  // Fetch size to pass to execTask(). If null, server will determine fetch size.
+  private Integer fetchSize_;
 
   /**
    * Connects to the RecordServiceWorker.
@@ -81,22 +84,30 @@ public class RecordServiceWorkerClient {
    */
   public TUniqueId execTask(ByteBuffer task) throws TException {
     Preconditions.checkNotNull(task);
-    try {
-      TExecTaskParams taskParams = new TExecTaskParams(task);
-      TExecTaskResult result = workerClient_.ExecTask(taskParams);
-      return result.getHandle();
-    } catch (TException e) {
-      System.err.println("Could not exec task: " + e.getMessage());
-      throw e;
-    }
+    TExecTaskParams taskParams = new TExecTaskParams(task);
+    return execTaskInternal(taskParams).getHandle();
   }
 
+  /**
+   * Executes the task asynchronously, returning a Rows object that can be
+   * used to fetch results.
+   */
   public Rows execAndFetch(ByteBuffer task) throws TException {
     Preconditions.checkNotNull(task);
+    TExecTaskParams taskParams = new TExecTaskParams(task);
+    TExecTaskResult result = execTaskInternal(taskParams);
+    return new Rows(this, result.getHandle(), result.schema);
+  }
+
+  /**
+   * Executes the task asynchronously, returning the handle the client.
+   */
+  private TExecTaskResult execTaskInternal(TExecTaskParams taskParams)
+      throws TException {
+    Preconditions.checkNotNull(taskParams);
     try {
-      TExecTaskParams taskParams = new TExecTaskParams(task);
-      TExecTaskResult result = workerClient_.ExecTask(taskParams);
-      return new Rows(this, result.getHandle(), result.schema);
+      if (fetchSize_ != null) taskParams.setFetch_size(fetchSize_);
+      return workerClient_.ExecTask(taskParams);
     } catch (TException e) {
       System.err.println("Could not exec task: " + e.getMessage());
       throw e;
@@ -143,4 +154,10 @@ public class RecordServiceWorkerClient {
   public TStats getTaskStats(TUniqueId handle) throws TException {
     return workerClient_.GetTaskStats(handle);
   }
+
+  /**
+   * Sets the fetch size. Set to null to use server default.
+   */
+  public void setFetchSize(Integer fetchSize) { fetchSize_ = fetchSize; }
+  public Integer getFetchSize() { return fetchSize_; }
 }

@@ -43,6 +43,13 @@ public class RecordServiceInputFormat extends
   public final static String TBL_NAME_CONF = "recordservice.table.name";
   public final static String COL_NAMES_CONF = "recordservice.col.names";
 
+  // Optional configuration option for performance tuning that configures
+  // the number of max number of rows returned when fetching results from
+  // the RecordService. If not set, server default will be used.
+  // TODO: It would be nice for the server to adjust this automatically based
+  // on how fast the client is able to process rows.
+  public final static String FETCH_SIZE_CONF = "recordservice.fetch.size";
+
   public final static String PLANNER_HOST = "recordservice.planner.host";
   public final static String PLANNER_PORT = "recordservice.planner.port";
 

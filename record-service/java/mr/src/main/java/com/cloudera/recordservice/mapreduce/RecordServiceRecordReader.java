@@ -26,7 +26,6 @@ import org.apache.thrift.TException;
 import com.cloudera.recordservice.client.RecordServiceWorkerClient;
 import com.cloudera.recordservice.client.Rows;
 import com.cloudera.recordservice.client.Rows.Row;
-import com.cloudera.recordservice.thrift.TRowBatchFormat;
 
 /**
  * RecordReader implementation that uses the RecordService for data access. Values
@@ -64,9 +63,14 @@ public class RecordServiceRecordReader extends
       throws IOException, InterruptedException {
     RecordServiceInputSplit rsSplit = (RecordServiceInputSplit)split;
     worker_ = new RecordServiceWorkerClient();
+
     try {
       // TODO: Make port configurable, handle multiple locations.
       worker_.connect(rsSplit.getLocations()[0], 40100);
+
+      int fetchSize = context.getConfiguration().getInt(
+          RecordServiceInputFormat.FETCH_SIZE_CONF, -1);
+      worker_.setFetchSize(fetchSize != -1 ? fetchSize : null);
       rows_ = worker_.execAndFetch(rsSplit.getTaskInfo().getTaskAsByteBuffer());
     } catch (Exception e) {
       throw new IOException(e);
