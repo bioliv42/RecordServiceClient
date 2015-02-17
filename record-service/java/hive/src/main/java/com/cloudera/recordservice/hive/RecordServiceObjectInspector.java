@@ -96,27 +96,12 @@ public class RecordServiceObjectInspector extends StructObjectInspector {
   /**
    * Given a field reference, return the data for the specified row.
    * This is on the hot path. It is called once for every column in the schema
-   * for every row.
-   * TODO: Make this more performant.
+   * for every row. TODO: Make this more performant.
    */
   @Override
   public Object getStructFieldData(Object recordData, StructField fieldRef) {
-    if (recordData == null) return null;
-    RecordServiceStructField field = (RecordServiceStructField) fieldRef;
-
-    // If this field is not selected in the projection, return null.
-    if (!field.isSelected()) return null;
-
     RecordServiceRecord record = (RecordServiceRecord) recordData;
-
-    // Only initialize the projection index if it has not yet been set because
-    // this is expensive.
-    if (!field.isProjectedColIdxSet()) {
-      int colIdx = record.getSchema().getColIdxFromColName(fieldRef.getFieldName());
-      field.setProjectedColIdx(colIdx);
-      if (!field.isSelected()) return null;
-    }
-    return record.getColumnValue(field.getProjectedIdx());
+    return record.getColumnValue(fieldRef.getFieldName());
   }
 
   @Override
@@ -145,16 +130,7 @@ public class RecordServiceObjectInspector extends StructObjectInspector {
   static class RecordServiceStructField implements StructField {
     private final String fieldName_;
     private final ObjectInspector inspector_;
-
-    // The index of this field in a base table.
     private final int fieldIdx_;
-
-    // The index of this field in a projection. Null if not set or no records have
-    // been received from the RecordService. Will not be set for metadata only
-    // operations (ie DESCRIBE TABLE).
-    private int projectedColIdx_ = -1;
-
-    boolean isProjectedColIdxSet = false;
 
     public RecordServiceStructField(final String fieldName,
         final ObjectInspector inspector, final int fieldIndex) {
@@ -163,51 +139,15 @@ public class RecordServiceObjectInspector extends StructObjectInspector {
       fieldIdx_ = fieldIndex;
     }
 
-    public int getProjectedIdx() { return projectedColIdx_; }
-    public void setProjectedColIdx(int projectedColIdx) {
-      isProjectedColIdxSet = true;
-      projectedColIdx_ = projectedColIdx;
-    }
-
-    public boolean isProjectedColIdxSet() { return isProjectedColIdxSet; }
-
-    /**
-     * Returns true if this column is selected as part of the projection
-     * or if it is unknown whether the column is selected (setProjectedColIdx
-     * has not been called).
-     */
-    public boolean isSelected() {
-      return !isProjectedColIdxSet || projectedColIdx_ >= 0;
-    }
-
+    public int getColIndex() { return fieldIdx_; }
+    @Override
     public String getFieldComment() { return ""; }
+    @Override
     public String getFieldName() { return fieldName_; }
+    @Override
     public ObjectInspector getFieldObjectInspector() { return inspector_; }
+    @Override
     public int getFieldID() { return fieldIdx_; }
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (o == null || o.getClass() != getClass()) {
-      return false;
-    } else if (o == this) {
-      return true;
-    } else {
-      List<RecordServiceStructField> other = ((RecordServiceObjectInspector) o).fields_;
-      if (other.size() != fields_.size()) {
-        return false;
-      }
-      for(int i = 0; i < fields_.size(); ++i) {
-        StructField left = other.get(i);
-        StructField right = fields_.get(i);
-        if (!(left.getFieldName().equals(right.getFieldName()) &&
-              left.getFieldObjectInspector().equals
-                  (right.getFieldObjectInspector()))) {
-          return false;
-        }
-      }
-      return true;
-    }
   }
 }
 

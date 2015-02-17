@@ -164,20 +164,6 @@ public class Schema implements Writable {
     }
   }
 
-  /**
-   * Given a column name, returns the column index in the schema using a case-sensitive
-   * check on the column name.
-   * Returns -1 if the given column name is not found.
-   */
-  public int getColIdxFromColName(String colName) {
-    for (int colIdx = 0; colIdx < columnInfos_.size(); ++colIdx) {
-      if (columnInfos_.get(colIdx).getColumnName().equals(colName)) {
-        return colIdx;
-      }
-    }
-    return -1;
-  }
-
   public int getNumColumns() { return tSchema_.getColsSize(); }
   public ColumnInfo getColumnInfo(int columnIdx) { return columnInfos_.get(columnIdx); }
 
