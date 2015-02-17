@@ -85,6 +85,7 @@ include_directories($ENV{IMPALA_HOME}/be/src)
 # compile these subdirs using their own CMakeLists.txt
 add_subdirectory(api)
 add_subdirectory(cpp/samples)
+add_subdirectory(cpp/tests)
 
 # where to put generated libraries
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${BUILD_OUTPUT_ROOT_DIRECTORY}")
