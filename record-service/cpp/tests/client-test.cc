@@ -24,9 +24,6 @@
 #include "gen-cpp/RecordServiceWorker.h"
 #include "gen-cpp/Types_types.h"
 
-#include "util/stopwatch.h"
-#include "util/time.h"
-
 using namespace boost;
 using namespace std;
 using namespace apache::thrift;
@@ -70,6 +67,7 @@ TEST(ClientTest, Nation) {
   EXPECT_EQ(plan_result.schema.cols[3].type.type_id, TTypeId::STRING);
 
   EXPECT_EQ(plan_result.tasks.size(), 1);
+  EXPECT_EQ(plan_result.tasks[0].hosts.size(), 3) << "Expecting 3x replication";
   shared_ptr<TTransport> worker_socket(
       new TSocket(plan_result.tasks[0].hosts[0], RECORD_SERVICE_WORKER_PORT));
   shared_ptr<TTransport> worker_transport(new TBufferedTransport(worker_socket));

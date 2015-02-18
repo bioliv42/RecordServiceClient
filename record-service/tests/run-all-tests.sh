@@ -13,7 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Loads the test tables.
+
+# Runs all the tests.
 
 # Exit on reference to uninitialized variables and non-zero exit codes
 set -u

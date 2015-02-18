@@ -24,4 +24,12 @@ cd $IMPALA_HOME
 bin/start-impala-cluster.py -s 1 --catalogd_args="-load_catalog_in_background=false"
 
 # Load the test data we need.
-bin/load-data.py -w tpch --table_names=nation --table_formats=text/none
+cd $RECORD_SERVICE_HOME
+impala-shell.sh -f tests/create-tbls.sql
+
+# Move any existing data files to where they need to go in HDFS
+hadoop fs -put -f $IMPALA_HOME/testdata/impala-data/tpch/nation/*\
+    /test-warehouse/tpch.nation/
+
+# Invalidate metadata after all data is moved.
+impala-shell.sh -q "invalidate metadata"
