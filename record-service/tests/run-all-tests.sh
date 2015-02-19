@@ -22,3 +22,5 @@ set -e
 
 cd $RECORD_SERVICE_HOME
 make test
+
+mvn test -f $RECORD_SERVICE_HOME/java/pom.xml

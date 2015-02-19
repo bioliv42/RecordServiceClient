@@ -115,13 +115,13 @@ public class Rows {
           case SMALLINT:
           case INT:
           case BIGINT:
+          case FLOAT:
+          case DOUBLE:
             colData_[i] = result.columnar_row_batch.
                 cols.get(i).data.order(ByteOrder.LITTLE_ENDIAN);
             break;
           case BOOLEAN:
           case TINYINT:
-          case FLOAT:
-          case DOUBLE:
           case STRING:
             colData_[i] = result.columnar_row_batch.cols.get(i).data;
             break;
