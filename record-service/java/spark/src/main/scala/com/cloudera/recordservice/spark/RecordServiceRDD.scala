@@ -164,7 +164,7 @@ class RecordServiceRDD(sc: SparkContext, stmt: String, plannerHost: String = "lo
     partition.hosts
   }
 
-    /**
+  /**
    * Sends the request to the RecordServicePlanner to generate the list of partitions
    * (tasks in RecordService terminology)
    */
