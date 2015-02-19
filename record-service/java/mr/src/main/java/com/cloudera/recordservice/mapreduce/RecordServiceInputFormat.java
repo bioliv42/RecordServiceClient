@@ -85,11 +85,7 @@ public class RecordServiceInputFormat extends
     } catch (Exception e) {
       throw new IOException(e);
     } finally {
-      try {
-        plannerClient.close();
-      } catch (Exception e) {
-        // Ignore..
-      }
+      plannerClient.close();
     }
     TSchema tSchema = result.getSchema();
     List<InputSplit> splits = new ArrayList<InputSplit>();

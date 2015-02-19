@@ -1,9 +1,11 @@
 package com.cloudera.recordservice.client;
 
+import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 
 import org.apache.thrift.TException;
+
+import sun.misc.Unsafe;
 
 import com.cloudera.recordservice.thrift.TFetchResult;
 import com.cloudera.recordservice.thrift.TRowBatchFormat;
@@ -17,10 +19,22 @@ import com.google.common.base.Preconditions;
  * This class is extremely performance sensitive.
  * Not thread-safe.
  */
+@SuppressWarnings("restriction")
 public class Rows {
+  private static final Unsafe unsafe;
+  static {
+    try {
+      Field field = Unsafe.class.getDeclaredField("theUnsafe");
+      field.setAccessible(true);
+      unsafe = (Unsafe)field.get(null);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
   public static final class Row {
     // For each column, the current offset to return (column data is sparse)
-    private final int[] colOffsets_;
+    private final long[] colOffsets_;
 
     // For each column, the serialized data values.
     private final ByteBuffer[] colData_;
@@ -39,62 +53,68 @@ public class Rows {
       return nulls_[colIdx].get(rowIdx_) != 0;
     }
 
+    private static final long byteArrayOffset = unsafe.arrayBaseOffset(byte[].class);
+
     /**
      * For all these getters, returns the value at 'colIdx'. The type of the column
      * must match. Undefined behavior if it does not match or if called on a value that
      * is NULL. (We don't want to verify because this is the hot path.
+     * TODO: add a DEBUG mode which verifies the API is being used correctly.
      */
     public final boolean getBoolean(int colIdx) {
-      return colData_[colIdx].get(colOffsets_[colIdx++]) != 0;
+      byte val = unsafe.getByte(colData_[colIdx].array(), colOffsets_[colIdx]);
+      colOffsets_[colIdx] += 1;
+      return val != 0;
     }
 
     public final byte getByte(int colIdx) {
-      return colData_[colIdx].get(colOffsets_[colIdx++]);
+      byte val = unsafe.getByte(colData_[colIdx].array(), colOffsets_[colIdx]);
+      colOffsets_[colIdx] += 1;
+      return val;
     }
 
     public final short getShort(int colIdx) {
-      short val = colData_[colIdx].getShort(colOffsets_[colIdx]);
+      short val = unsafe.getShort(colData_[colIdx].array(), colOffsets_[colIdx]);
       colOffsets_[colIdx] += 2;
       return val;
     }
 
     public final int getInt(int colIdx) {
-      int val = colData_[colIdx].getInt(colOffsets_[colIdx]);
+      int val = unsafe.getInt(colData_[colIdx].array(), colOffsets_[colIdx]);
       colOffsets_[colIdx] += 4;
       return val;
     }
 
     public final long getLong(int colIdx) {
-      long val = colData_[colIdx].getLong(colOffsets_[colIdx]);
+      long val = unsafe.getLong(colData_[colIdx].array(), colOffsets_[colIdx]);
       colOffsets_[colIdx] += 8;
       return val;
     }
 
     public final float getFloat(int colIdx) {
-      float val = colData_[colIdx].getFloat(colOffsets_[colIdx]);
+      float val = unsafe.getFloat(colData_[colIdx].array(), colOffsets_[colIdx]);
       colOffsets_[colIdx] += 4;
       return val;
     }
 
     public final double getDouble(int colIdx) {
-      double val = colData_[colIdx].getDouble(colOffsets_[colIdx]);
+      double val = unsafe.getDouble(colData_[colIdx].array(), colOffsets_[colIdx]);
       colOffsets_[colIdx] += 8;
       return val;
     }
 
     public final ByteArray getByteArray(int colIdx) {
-      int len = colData_[colIdx].getInt(colOffsets_[colIdx]);
+      int len = unsafe.getInt(colData_[colIdx].array(), colOffsets_[colIdx]);
       colOffsets_[colIdx] += 4;
-      // Convert endianness
-      len = Integer.reverseBytes(len);
-      byteArrayVals_[colIdx].set(colData_[colIdx], colOffsets_[colIdx], len);
+      long offset = colOffsets_[colIdx] - byteArrayOffset;
+      byteArrayVals_[colIdx].set(colData_[colIdx], (int)offset, len);
       colOffsets_[colIdx] += len;
       return byteArrayVals_[colIdx];
     }
 
     protected Row(TSchema schema) {
       rowIdx_ = -1;
-      colOffsets_ = new int[schema.cols.size()];
+      colOffsets_ = new long[schema.cols.size()];
       colData_ = new ByteBuffer[schema.cols.size()];
       byteArrayVals_ = new ByteArray[schema.cols.size()];
       nulls_ = new ByteBuffer[schema.cols.size()];
@@ -110,18 +130,15 @@ public class Rows {
     protected void reset(TFetchResult result) throws TException {
       for (int i = 0; i < colOffsets_.length; ++i) {
         nulls_[i] = result.columnar_row_batch.cols.get(i).is_null;
-        colOffsets_[i] = 0;
+        colOffsets_[i] = byteArrayOffset;
         switch (schema_.cols.get(i).type.type_id) {
+          case BOOLEAN:
+          case TINYINT:
           case SMALLINT:
           case INT:
           case BIGINT:
           case FLOAT:
           case DOUBLE:
-            colData_[i] = result.columnar_row_batch.
-                cols.get(i).data.order(ByteOrder.LITTLE_ENDIAN);
-            break;
-          case BOOLEAN:
-          case TINYINT:
           case STRING:
             colData_[i] = result.columnar_row_batch.cols.get(i).data;
             break;
