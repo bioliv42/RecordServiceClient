@@ -19,10 +19,10 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import org.apache.thrift.TException;
-import org.apache.thrift.transport.TTransportException;
 import org.junit.Test;
 
 import com.cloudera.recordservice.thrift.TPlanRequestResult;
+import com.cloudera.recordservice.thrift.TProtocolVersion;
 import com.cloudera.recordservice.thrift.TTypeId;
 
 
@@ -32,16 +32,79 @@ public class TestBasicClient {
   static final int WORKER_PORT = 40100;
 
   @Test
-  public void testConnection() throws TTransportException {
+  public void testPlannerConnection() throws RuntimeException, TException {
     RecordServicePlannerClient planner = new RecordServicePlannerClient();
+
+    boolean threwException = false;
+    try {
+      planner.getProtocolVersion();
+    } catch (RuntimeException e) {
+      threwException = true;
+    } finally {
+      assertTrue(threwException);
+    }
+
     planner.connect("localhost", PLANNER_PORT);
-    RecordServiceWorkerClient worker = new RecordServiceWorkerClient();
-    worker.connect("localhost", WORKER_PORT);
+    threwException = false;
+    try {
+      planner.connect("localhost", PLANNER_PORT);
+    } catch (RuntimeException e) {
+      threwException = true;
+    } finally {
+      assertTrue(threwException);
+    }
+
+    assertEquals(planner.getProtocolVersion(), TProtocolVersion.V1);
+    // Call it again and make sure it's fine.
+    assertEquals(planner.getProtocolVersion(), TProtocolVersion.V1);
+
+    planner.planRequest("select * from tpch.nation");
+
+    // Close the planner connection and test that APIs fail in a nice way.
     planner.close();
+
+    threwException = false;
+    try {
+      planner.planRequest("select * from tpch.nation");
+    } catch (RuntimeException e) {
+      threwException = true;
+    } finally {
+      assertTrue(threwException);
+    }
+  }
+
+  @Test
+  public void testWorkerConnection() throws RuntimeException, TException {
+    RecordServiceWorkerClient worker = new RecordServiceWorkerClient();
+
+    boolean threwException = false;
+    try {
+      worker.getProtocolVersion();
+    } catch (RuntimeException e) {
+      threwException = true;
+    } finally {
+      assertTrue(threwException);
+    }
+
+    worker.connect("localhost", WORKER_PORT);
+    threwException = false;
+    try {
+      worker.connect("localhost", PLANNER_PORT);
+    } catch (RuntimeException e) {
+      threwException = true;
+    } finally {
+      assertTrue(threwException);
+    }
+
+    assertEquals(worker.getProtocolVersion(), TProtocolVersion.V1);
+    // Call it again and make sure it's fine.
+    assertEquals(worker.getProtocolVersion(), TProtocolVersion.V1);
+
     worker.close();
   }
 
   @Test
+  // TODO: add more API misuse tests.
   public void testNation() throws TException {
     RecordServicePlannerClient planner = new RecordServicePlannerClient();
     planner.connect("localhost", PLANNER_PORT);

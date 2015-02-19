@@ -28,6 +28,7 @@ import com.cloudera.recordservice.thrift.TExecTaskParams;
 import com.cloudera.recordservice.thrift.TExecTaskResult;
 import com.cloudera.recordservice.thrift.TFetchParams;
 import com.cloudera.recordservice.thrift.TFetchResult;
+import com.cloudera.recordservice.thrift.TProtocolVersion;
 import com.cloudera.recordservice.thrift.TStats;
 import com.cloudera.recordservice.thrift.TUniqueId;
 import com.google.common.base.Preconditions;
@@ -40,6 +41,7 @@ public class RecordServiceWorkerClient {
   private RecordServiceWorker.Client workerClient_;
   private TProtocol protocol_;
   private boolean isClosed_ = false;
+  private TProtocolVersion protocolVersion_ = null;
 
   // Fetch size to pass to execTask(). If null, server will determine fetch size.
   private Integer fetchSize_;
@@ -47,8 +49,8 @@ public class RecordServiceWorkerClient {
   /**
    * Connects to the RecordServiceWorker.
    */
-  public void connect(String hostname, int port)
-      throws TTransportException {
+  public void connect(String hostname, int port) throws TException {
+    if (workerClient_ != null) throw new RuntimeException("Already connected.");
     TTransport transport = new TSocket(hostname, port);
     try {
       transport.open();
@@ -59,6 +61,7 @@ public class RecordServiceWorkerClient {
     }
     protocol_ = new TBinaryProtocol(transport);
     workerClient_ = new RecordServiceWorker.Client(protocol_);
+    protocolVersion_ = workerClient_.GetProtocolVersion();
   }
 
   /**
@@ -73,10 +76,23 @@ public class RecordServiceWorkerClient {
   }
 
   /**
+   * Returns the protocol version of the connected service.
+   */
+  public TProtocolVersion getProtocolVersion() throws RuntimeException {
+    validateIsConnected();
+    return protocolVersion_;
+  }
+
+  /**
    * Closes the specified task. Handle will be invalidated after making this call.
    */
-  public void closeTask(TUniqueId handle) throws TException {
-    workerClient_.CloseTask(handle);
+  public void closeTask(TUniqueId handle) {
+    validateIsConnected();
+    try {
+      workerClient_.CloseTask(handle);
+    } catch (TException e) {
+      // Ignore. TODO log.
+    }
   }
 
   /**
@@ -84,6 +100,7 @@ public class RecordServiceWorkerClient {
    */
   public TUniqueId execTask(ByteBuffer task) throws TException {
     Preconditions.checkNotNull(task);
+    validateIsConnected();
     TExecTaskParams taskParams = new TExecTaskParams(task);
     return execTaskInternal(taskParams).getHandle();
   }
@@ -94,32 +111,19 @@ public class RecordServiceWorkerClient {
    */
   public Rows execAndFetch(ByteBuffer task) throws TException {
     Preconditions.checkNotNull(task);
+    validateIsConnected();
     TExecTaskParams taskParams = new TExecTaskParams(task);
     TExecTaskResult result = execTaskInternal(taskParams);
     return new Rows(this, result.getHandle(), result.schema);
   }
 
-  /**
-   * Executes the task asynchronously, returning the handle the client.
-   */
-  private TExecTaskResult execTaskInternal(TExecTaskParams taskParams)
-      throws TException {
-    Preconditions.checkNotNull(taskParams);
-    try {
-      if (fetchSize_ != null) taskParams.setFetch_size(fetchSize_);
-      return workerClient_.ExecTask(taskParams);
-    } catch (TException e) {
-      System.err.println("Could not exec task: " + e.getMessage());
-      throw e;
-    }
-  }
 
   /**
    * Fetches a batch of rows and returns the result.
    */
   public TFetchResult fetch(TUniqueId handle) throws TException {
     Preconditions.checkNotNull(handle);
-
+    validateIsConnected();
     TFetchParams fetchParams = new TFetchParams(handle);
     try {
       return workerClient_.Fetch(fetchParams);
@@ -134,6 +138,7 @@ public class RecordServiceWorkerClient {
    * retrieved. Closes the task after executing.
    */
   public long fetchAllAndCountRows(TUniqueId handle) throws TException  {
+    validateIsConnected();
     long totalRows = 0;
     try {
       /* Fetch results until we're done */
@@ -152,6 +157,7 @@ public class RecordServiceWorkerClient {
    * Gets stats on the current task executing.
    */
   public TStats getTaskStats(TUniqueId handle) throws TException {
+    validateIsConnected();
     return workerClient_.GetTaskStats(handle);
   }
 
@@ -160,4 +166,25 @@ public class RecordServiceWorkerClient {
    */
   public void setFetchSize(Integer fetchSize) { fetchSize_ = fetchSize; }
   public Integer getFetchSize() { return fetchSize_; }
+
+  /**
+   * Executes the task asynchronously, returning the handle the client.
+   */
+  private TExecTaskResult execTaskInternal(TExecTaskParams taskParams)
+          throws TException {
+    Preconditions.checkNotNull(taskParams);
+    try {
+      if (fetchSize_ != null) taskParams.setFetch_size(fetchSize_);
+      return workerClient_.ExecTask(taskParams);
+    } catch (TException e) {
+      System.err.println("Could not exec task: " + e.getMessage());
+      throw e;
+    }
+  }
+
+  private void validateIsConnected() throws RuntimeException {
+    if (workerClient_ == null || isClosed_) {
+      throw new RuntimeException("Client not connected.");
+    }
+  }
 }

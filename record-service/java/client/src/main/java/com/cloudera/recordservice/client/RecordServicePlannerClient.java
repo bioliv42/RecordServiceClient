@@ -34,12 +34,14 @@ public class RecordServicePlannerClient {
   private RecordServicePlanner.Client plannerClient_;
   private TProtocol protocol_;
   private boolean isClosed_ = false;
+  private TProtocolVersion protocolVersion_ = null;
 
   /**
    * Opens a connection to the RecordServicePlanner.
    */
-  public void connect(String hostname, int port)
-      throws TTransportException {
+  public void connect(String hostname, int port) throws TException {
+    if (plannerClient_ != null) throw new RuntimeException("Already connected.");
+
     TTransport transport = new TSocket(hostname, port);
     try {
       transport.open();
@@ -50,6 +52,7 @@ public class RecordServicePlannerClient {
     }
     protocol_ = new TBinaryProtocol(transport);
     plannerClient_ = new RecordServicePlanner.Client(protocol_);
+    protocolVersion_ = plannerClient_.GetProtocolVersion();
   }
 
   /**
@@ -63,19 +66,36 @@ public class RecordServicePlannerClient {
   }
 
   /**
+   * Returns the protocol version of the connected service.
+   */
+  public TProtocolVersion getProtocolVersion() throws RuntimeException, TException {
+    validateIsConnected();
+    return protocolVersion_;
+  }
+
+  /**
    * Calls the RecordServicePlanner to generate a new plan - set of tasks that can be
    * executed using a RecordServiceWorker.
    */
   public TPlanRequestResult planRequest(String query) throws TException {
+    validateIsConnected();
+
     TPlanRequestResult planResult;
     try {
       TPlanRequestParams planParams = new TPlanRequestParams(TProtocolVersion.V1, query);
       planResult = plannerClient_.PlanRequest(planParams);
     } catch (TException e) {
+      // TODO: this should mark the connection as bad on some error codes.
       System.err.println("Could not plan request: " + e.getMessage());
       throw e;
     }
     System.out.println("Generated " + planResult.tasks.size() + " tasks.");
     return planResult;
+  }
+
+  private void validateIsConnected() throws RuntimeException {
+    if (plannerClient_ == null || isClosed_) {
+      throw new RuntimeException("Client not connected.");
+    }
   }
 }

@@ -193,11 +193,7 @@ public class Rows {
   }
 
   public void close() {
-    try {
-      worker_.closeTask(handle_);
-    } catch (TException e) {
-      // TODO: log
-    }
+    worker_.closeTask(handle_);
   }
 
   protected Rows(RecordServiceWorkerClient worker,
