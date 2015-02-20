@@ -62,8 +62,7 @@ public class SampleClientLib {
 
   public static void main(String[] args) throws TException {
     String query = DEFAULT_QUERY;
-    if (args.length > 0) query = args[1];
-    for (int i = 0; i < 5; ++i)
+    if (args.length > 0) query = args[0];
     runQuery(query);
   }
 

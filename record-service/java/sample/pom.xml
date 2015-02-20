@@ -24,6 +24,7 @@
     <groupId>com.cloudera.recordservice</groupId>
     <artifactId>recordservice</artifactId>
     <version>0.1</version>
+    <relativePath>../pom.xml</relativePath>
   </parent>
 
   <artifactId>recordservice-sample</artifactId>
@@ -31,16 +32,6 @@
   <description>Record Service Sample</description>
   <packaging>jar</packaging>
   <url>.</url>
-
-  <repositories>
-    <repository>
-      <id>Codehaus repository</id>
-      <url>http://repository.codehaus.org/</url>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-    </repository>
-  </repositories>
 
   <dependencies>
     <dependency>
