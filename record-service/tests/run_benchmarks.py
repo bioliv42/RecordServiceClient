@@ -64,21 +64,21 @@ def run_shell_cmd(cmd):
 # | version  | varchar(100)   | YES  |     | NULL    |       |
 # | workload | varchar(100)   | YES  |     | NULL    |       |
 # | client   | varchar(100)   | YES  |     | NULL    |       |
-# | times    | varchar(10000) | YES  |     | NULL    |       |
+# | time_ms  | float          | YES  |     | NULL    |       |
 # | labels   | varchar(2000)  | YES  |     | NULL    |       |
 # +----------+----------------+------+-----+---------+-------+
-def to_sql(suite, case, timings_ms):
+def to_sql(suite, case, timing_ms):
   cmd = "insert into " + options.perf_tbl + " values("
   cmd += "\"" + str(datetime.now()) + "\", "
   if options.build_number >= 0:
-    cmd += str(build_number) + ", "
+    cmd += str(options.build_number) + ", "
   else:
     cmd += "NULL, "
   # TODO: get version
   cmd += "NULL, "
   cmd += "\"" + suite[0] + "\", "
   cmd += "\"" + case[0] + "\", "
-  cmd += "\"" + ",".join(str(x) for x in timings_ms) + "\", "
+  cmd += str(timing_ms) + ", "
   # TODO: plumb labels
   cmd += "NULL"
   cmd += ");"
@@ -94,13 +94,11 @@ def run_suite(suite, results_sql):
     for x in range(0, options.warmup_iterations):
       run_shell_cmd(cmd)
 
-    timings_ms = []
     for x in range(0, options.iterations):
       start = time.time() * 1000
       run_shell_cmd(cmd)
-      timings_ms.append(time.time() * 1000 - start)
-
-    results_sql.write(to_sql(suite, case, timings_ms) + "\n")
+      timing_ms = time.time() * 1000 - start
+      results_sql.write(to_sql(suite, case, timing_ms) + "\n")
 
 if __name__ == "__main__":
   benchmark_start_time_ms = time.time() * 1000
