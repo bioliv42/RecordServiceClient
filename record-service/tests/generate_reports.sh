@@ -16,6 +16,7 @@ generate_report() {
 
 generate_report "Query 1 (Text/6gb)" 10 "Query1_Text_6GB"
 generate_report "Query 1 (Parquet/6gb)" 10 "Query1_Parquet_6GB"
+generate_report "Query 1 (Avro/6gb)" 10 "Query1_Avro_6GB"
 
 mkdir -p $RECORD_SERVICE_HOME/benchmark_results
 rm -f $RECORD_SERVICE_HOME/benchmark_results/*

@@ -40,6 +40,9 @@ impala-shell.sh -f tests/create-benchmark-tbls.sql
 hadoop fs -put -f $IMPALA_HOME/testdata/impala-data/tpch6gb/lineitem \
     /test-warehouse/tpch6gb.lineitem/
 
+hadoop fs -put -f $IMPALA_HOME/testdata/impala-data/tpch6gb.lineitem_avro_snap/* \
+    /test-warehouse/tpch6gb_avro_snap.lineitem/
+
 # Invalidate metadata after all data is moved.
 impala-shell.sh -q "invalidate metadata"
 

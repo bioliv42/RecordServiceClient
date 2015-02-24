@@ -17,6 +17,7 @@
 
 from optparse import OptionParser
 import os
+import sys
 import subprocess
 import time
 from datetime import datetime
@@ -29,6 +30,10 @@ parser.add_option("--iterations", dest="iterations", default=1, type="int",
 parser.add_option("--warmup_iterations", dest="warmup_iterations", default=0, type="int",
     help="Number of warmup iterations to run for each case. These iterations are not\
       counted in the timing.")
+parser.add_option("--suite_warmup_iterations", dest="suite_warmup_iterations",
+    default=0, type="int",
+    help="Number of warmup iterations to run for each suite. These iterations are not\
+      counted in the timing. This is useful to get data in the buffer cache.")
 parser.add_option("--log_file", dest="log_file", default="/tmp/rs_benchmark.log",
     help="File that contains stdout/stderr from running each case")
 parser.add_option("--result_sql_file", dest="result_sql_file",
@@ -87,8 +92,20 @@ def to_sql(suite, case, timing_ms):
 def run_suite(suite, results_sql):
   print "Running benchmark suite: " + suite[0]
   cases = suite[2]
+
+  if len(cases) == 0:
+    print "Cannot run suite with no cases. suite=" + suite[0]
+    sys.exit(1)
+
+  if options.suite_warmup_iterations > 0:
+    # Just run the first case for these many iterations
+    cmd = cases[0][1]
+    for x in range(0, options.suite_warmup_iterations):
+      run_shell_cmd(cmd)
+
   for case in cases:
     print "  Running case: " + case[0]
+    sys.stdout.flush()
     cmd = case[1]
 
     for x in range(0, options.warmup_iterations):

@@ -21,6 +21,10 @@ import os
 def impala_shell_cmd(query):
   return os.environ['IMPALA_HOME'] + "/bin/impala-shell.sh -B -q \"" + query + "\""
 
+def impala_on_rs_cmd(query):
+  return os.environ['IMPALA_HOME'] +\
+      "/bin/impala-shell.sh -B -q \"set use_record_service = true; " + query + "\""
+
 def native_client_cmd(query):
   return os.environ['RECORD_SERVICE_HOME'] +\
       "/cpp/build/release/recordservice/record-service-client \"" +\
@@ -54,6 +58,7 @@ benchmarks = [
       # Each case to run. The first element is the name of the application and
       # the second is the shell command to run to run the benchmark
       ["impala", impala_shell_cmd("select sum(l_partkey) from tpch6gb.lineitem")],
+      ["impala-rs", impala_on_rs_cmd("select sum(l_partkey) from tpch6gb.lineitem")],
       ["native-client", native_client_cmd("select l_partkey from tpch6gb.lineitem")],
       ["java-client", java_client_cmd("select l_partkey from tpch6gb.lineitem")],
       ["hive-rs", hive_rs_cmd(query='select sum(l_partkey) from rs.lineitem_hive_serde',
@@ -66,12 +71,27 @@ benchmarks = [
     "Query 1 (Parquet/6gb)", "local",
     [
       ["impala", impala_shell_cmd("select sum(l_partkey) from tpch6gb_parquet.lineitem")],
+      ["impala-rs", impala_on_rs_cmd(
+          "select sum(l_partkey) from tpch6gb_parquet.lineitem")],
       ["native-client", native_client_cmd(
           "select l_partkey from tpch6gb_parquet.lineitem")],
       ["java-client", java_client_cmd("select l_partkey from tpch6gb_parquet.lineitem")],
       ["hive-rs", hive_rs_cmd(query='select sum(l_partkey) from rs.lineitem_hive_serde',
           db_name='tpch6gb_parquet', tbl_name='lineitem', fetch_size=50000)
       ],
+    ]
+  ],
+
+  [
+    "Query 1 (Avro/6gb)", "local",
+    [
+      ["impala", impala_shell_cmd(
+          "select sum(l_partkey) from tpch6gb_avro_snap.lineitem")],
+      ["impala-rs", impala_on_rs_cmd(
+          "select sum(l_partkey) from tpch6gb_avro_snap.lineitem")],
+      ["native-client", native_client_cmd(
+          "select l_partkey from tpch6gb_avro_snap.lineitem")],
+      ["java-client", java_client_cmd("select l_partkey from tpch6gb_avro_snap.lineitem")],
     ]
   ],
 
