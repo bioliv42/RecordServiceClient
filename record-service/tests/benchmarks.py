@@ -19,7 +19,7 @@
 import os
 
 def impala_shell_cmd(query):
-  return "impala-shell -B -q \"" + query + "\""
+  return os.environ['IMPALA_HOME'] + "/bin/impala-shell.sh -B -q \"" + query + "\""
 
 def native_client_cmd(query):
   return os.environ['RECORD_SERVICE_HOME'] +\
@@ -41,18 +41,19 @@ benchmarks = [
     [
       # Each case to run. The first element is the name of the application and
       # the second is the shell command to run to run the benchmark
-      ["impala", impala_shell_cmd("select sum(l_partkey) from tpch.lineitem")],
-      ["native-client", native_client_cmd("select l_partkey from tpch.lineitem")],
-      ["java-client", java_client_cmd("select l_partkey from tpch.lineitem")],
+      ["impala", impala_shell_cmd("select sum(l_partkey) from tpch6gb.lineitem")],
+      ["native-client", native_client_cmd("select l_partkey from tpch6gb.lineitem")],
+      ["java-client", java_client_cmd("select l_partkey from tpch6gb.lineitem")],
     ]
   ],
 
   [
     "Query 1 (Parquet/6gb)", "local",
     [
-      ["impala", impala_shell_cmd("select sum(l_partkey) from tpch_parquet.lineitem")],
-      ["native-client", native_client_cmd("select l_partkey from tpch_parquet.lineitem")],
-      ["java-client", java_client_cmd("select l_partkey from tpch_parquet.lineitem")],
+      ["impala", impala_shell_cmd("select sum(l_partkey) from tpch6gb_parquet.lineitem")],
+      ["native-client", native_client_cmd(
+          "select l_partkey from tpch6gb_parquet.lineitem")],
+      ["java-client", java_client_cmd("select l_partkey from tpch6gb_parquet.lineitem")],
     ]
   ],
 
