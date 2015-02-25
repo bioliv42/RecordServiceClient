@@ -48,14 +48,14 @@ import scala.reflect.ClassTag
  * If by name, every field in the case class must exist in the query's result and the
  * types of those fields must match. Matching is case insensitive.
  *
- * TODO: redo this using the recordservice client/recordservice MR lib
+ * TODO: Why doesn't classOf[T] work (and then you don't need to
+ * pass the recordClass arg)
  */
 class SchemaRecordServiceRDD[T:ClassTag](sc: SparkContext,
                                          recordClass:Class[T],
                                          byOrdinal:Boolean = false,
                                          plannerHost: String = "localhost")
     extends RDD[T](sc, Nil) with Logging {
-  // Why doesn't classOf[T] work (and then you don't need to pass the recordClass arg)
 
   def setStatement(stmt:String) = {
     this.stmt = stmt
@@ -78,11 +78,19 @@ class SchemaRecordServiceRDD[T:ClassTag](sc: SparkContext,
     this
   }
 
+  def setDefaultValue(v:T) = {
+    defaultVal = Some(v)
+    this
+  }
+
   val PLANNER_PORT: Int = 40000
   val WORKER_PORT: Int = 40100
   var stmt:String = null
   var fields:Array[String] = extractFields()
   var types:Array[TTypeId] = extractTypes()
+
+  // Default value to use if the field is NULL
+  var defaultVal:Option[T] = None
 
   private def extractFields() = {
     val f = recordClass.getDeclaredFields()
@@ -246,14 +254,25 @@ class SchemaRecordServiceRDD[T:ClassTag](sc: SparkContext,
     // returned by the record service.
     var setters:Array[Method] = new Array[Method](partition.schema.cols.size())
 
+    // Getters for each of the fields.
+    var getters:Array[Method] = new Array[Method](partition.schema.cols.size())
+
+    // Default values for each field. Only used/populated if defaultVal is set.
+    var defaultVals:Array[AnyRef] = new Array[AnyRef](partition.schema.cols.size())
+
     val allMethods = value.getClass.getMethods()
+
+    // TODO: try to dedup some of this code.
     if (byOrdinal) {
       val declaredFields = value.getClass.getDeclaredFields()
       for (i <- 0 until declaredFields.length) {
         val setter = declaredFields(i).getName + "_$eq"
         val setterMethod = allMethods.find(_.getName() == setter)
+        val getterMethod = allMethods.find(_.getName() == declaredFields(i).getName )
         assert (setterMethod != None)
+        assert (getterMethod != None)
         setters(i) = setterMethod.get
+        getters(i) = getterMethod.get
       }
     } else {
       // Resolve the order of cols. e.g. the result from the record service could be
@@ -269,10 +288,19 @@ class SchemaRecordServiceRDD[T:ClassTag](sc: SparkContext,
           if (resultColName.equalsIgnoreCase(fields(j))) {
             val setter = fields(j) + "_$eq"
             val setterMethod = allMethods.find(_.getName() == setter)
+            val getterMethod = allMethods.find(_.getName() == fields(j))
             assert (setterMethod != None)
+            assert (getterMethod != None)
             setters(i) = setterMethod.get
+            getters(i) = getterMethod.get
           }
         }
+      }
+    }
+
+    if (defaultVal.isDefined) {
+      for (i <- 0 until getters.size) {
+        defaultVals(i) = getters(i).invoke(defaultVal.get)
       }
     }
 
@@ -300,32 +328,47 @@ class SchemaRecordServiceRDD[T:ClassTag](sc: SparkContext,
       }
 
       // Reconstruct the row
-      // TODO: handle NULLs
       val row = rows.next()
       for (i <- 0 until setters.length) {
         if (setters(i) != null) {
-          // TODO: make sure this is the cheapest way to do this and we're not doing
-          // unnecessary boxing
-          partition.schema.cols.get(i).getType().type_id match {
-            case TTypeId.BOOLEAN =>
-                setters(i).invoke(value, row.getBoolean(i):java.lang.Boolean)
-            case TTypeId.TINYINT =>
+          assert(getters(i) != null)
+          val v = if (row.isNull(i)) {
+            if (defaultVal.isEmpty) {
+              // TODO: allow nullable case classes. This seems to require scala 2.11
+              // (we normally run 2.10) to get the reflection to work.
+              // TODO: add a mode where these rows are just ignored with some metrics
+              // on how many are ignored.
+              throw new SparkException(
+                  "Data contained NULLs but no default value provided.")
+            }
+            defaultVals(i)
+          } else {
+            // TODO: make sure this is the cheapest way to do this and we're not doing
+            // unnecessary boxing
+            partition.schema.cols.get(i).getType().type_id match {
+              case TTypeId.BOOLEAN =>
+                row.getBoolean(i): java.lang.Boolean
+              case TTypeId.TINYINT =>
                 // TODO: does this work? We probably need to cast it to Byte or Char
-                setters(i).invoke(value, row.getByte(i):java.lang.Byte)
-            case TTypeId.SMALLINT =>
-                setters(i).invoke(value, row.getShort(i):java.lang.Short)
-            case TTypeId.INT =>
-                setters(i).invoke(value, row.getInt(i):java.lang.Integer)
-            case TTypeId.BIGINT =>
-                setters(i).invoke(value, row.getLong(i):java.lang.Long)
-            case TTypeId.FLOAT =>
-                setters(i).invoke(value, row.getFloat(i):java.lang.Float)
-            case TTypeId.DOUBLE =>
-                setters(i).invoke(value, row.getDouble(i):java.lang.Double)
-            case TTypeId.STRING =>
-                setters(i).invoke(value, row.getByteArray(i).toString())
-            case _ => assert(false)
+                row.getByte(i): java.lang.Byte
+              case TTypeId.SMALLINT =>
+                row.getShort(i): java.lang.Short
+              case TTypeId.INT =>
+                row.getInt(i): java.lang.Integer
+              case TTypeId.BIGINT =>
+                row.getLong(i): java.lang.Long
+              case TTypeId.FLOAT =>
+                row.getFloat(i): java.lang.Float
+              case TTypeId.DOUBLE =>
+                row.getDouble(i): java.lang.Double
+              case TTypeId.STRING =>
+                row.getByteArray(i).toString()
+              case _ =>
+                assert(false)
+                None
+            }
           }
+          setters(i).invoke(value, v)
         }
       }
 
