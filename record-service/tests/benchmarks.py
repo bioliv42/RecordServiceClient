@@ -53,6 +53,15 @@ def hive_rs_cmd(query, db_name, tbl_name, fetch_size):
 def hive_cmd(query):
   return "hive -e \"" + query + "\""
 
+#TODO: I think this spends a lot of time just starting up spark.
+def spark_cmd(cl, query):
+  return "mvn -f " + os.environ['RECORD_SERVICE_HOME'] +\
+      "/java/spark/pom.xml -Dexec.cleanupDaemonThreads=false exec:java " + \
+      "-Dexec.mainClass=" + cl + " -Dexec.args=\"'" + query + "'\""
+
+def spark_q1(query):
+  return spark_cmd("com.cloudera.recordservice.example.Query1", query)
+
 benchmarks = [
   [
     # Metadata about this suite. "local" indicates this benchmark should only be
@@ -70,6 +79,7 @@ benchmarks = [
       ["hive-rs", hive_rs_cmd(query='select sum(l_partkey) from rs.lineitem_hive_serde',
           db_name='tpch6gb', tbl_name='lineitem', fetch_size=50000)
       ],
+      ["spark-rs", spark_q1("select l_partkey from tpch6gb.lineitem")],
     ]
   ],
 
@@ -87,6 +97,7 @@ benchmarks = [
       ["hive-rs", hive_rs_cmd(query='select sum(l_partkey) from rs.lineitem_hive_serde',
           db_name='tpch6gb_parquet', tbl_name='lineitem', fetch_size=50000)
       ],
+      ["spark-rs", spark_q1("select l_partkey from tpch6gb_parquet.lineitem")],
     ]
   ],
 
@@ -106,6 +117,7 @@ benchmarks = [
       ["hive-rs", hive_rs_cmd(query='select sum(l_partkey) from rs.lineitem_hive_serde',
           db_name='tpch6gb_avro_snap', tbl_name='lineitem', fetch_size=50000)
       ],
+      ["spark-rs", spark_q1("select l_partkey from tpch6gb_avro_snap.lineitem")],
     ]
   ],
 
