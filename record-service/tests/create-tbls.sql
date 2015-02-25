@@ -26,8 +26,12 @@ CREATE TABLE rs.alltypes(
   string_col STRING)
 STORED AS TEXTFILE;
 
+DROP TABLE IF EXISTS rs.alltypes_null;
+CREATE TABLE rs.alltypes_null like rs.alltypes;
+
 -- Populate the table with two inserts, this creates two files/two blocks.
 insert overwrite rs.alltypes VALUES(true, 0, 1, 2, 3, 4.0, 5.0, "hello");
 insert into rs.alltypes VALUES(false, 6, 7, 8, 9, 10.0, 11.0, "world");
 
+insert overwrite rs.alltypes_null VALUES(NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
