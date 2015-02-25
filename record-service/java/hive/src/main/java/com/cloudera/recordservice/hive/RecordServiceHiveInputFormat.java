@@ -61,7 +61,7 @@ import com.google.common.base.Joiner;
  *
  * <property>
  *   <name>hive.input.format</name>
- *   <value>com.cloudera.recordservice.lib.RecordServiceHiveInputFormat</value>
+ *   <value>com.cloudera.recordservice.hive.RecordServiceHiveInputFormat</value>
  * </property>
  *
  * There are still some issues with this implementation:

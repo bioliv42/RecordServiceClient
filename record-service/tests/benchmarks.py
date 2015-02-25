@@ -32,6 +32,18 @@ def java_client_cmd(query):
       "-Dexec.mainClass=com.cloudera.recordservice.sample.SampleClientLib " +\
       "-Dexec.args=\"'" + query + "'\""
 
+def hive_rs_cmd(query, db_name, tbl_name, fetch_size):
+  # Builds a query string that will run using the RecordService
+  rs_query = """
+      set hive.input.format=com.cloudera.recordservice.hive.RecordServiceHiveInputFormat;
+      set recordservice.db.name={0};
+      set recordservice.table.name={1};
+      set recordservice.fetch.size={2};
+      {3}""".format(db_name, tbl_name, fetch_size, query)
+  return hive_cmd(rs_query)
+
+def hive_cmd(query):
+  return "hive -e \"" + query + "\""
 
 benchmarks = [
   [
@@ -44,6 +56,9 @@ benchmarks = [
       ["impala", impala_shell_cmd("select sum(l_partkey) from tpch6gb.lineitem")],
       ["native-client", native_client_cmd("select l_partkey from tpch6gb.lineitem")],
       ["java-client", java_client_cmd("select l_partkey from tpch6gb.lineitem")],
+      ["hive-rs", hive_rs_cmd(query='select sum(l_partkey) from rs.lineitem_hive_serde',
+          db_name='tpch6gb', tbl_name='lineitem', fetch_size=50000)
+      ],
     ]
   ],
 
@@ -54,6 +69,9 @@ benchmarks = [
       ["native-client", native_client_cmd(
           "select l_partkey from tpch6gb_parquet.lineitem")],
       ["java-client", java_client_cmd("select l_partkey from tpch6gb_parquet.lineitem")],
+      ["hive-rs", hive_rs_cmd(query='select sum(l_partkey) from rs.lineitem_hive_serde',
+          db_name='tpch6gb_parquet', tbl_name='lineitem', fetch_size=50000)
+      ],
     ]
   ],
 

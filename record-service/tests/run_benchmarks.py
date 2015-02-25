@@ -52,7 +52,7 @@ def run_shell_cmd(cmd):
   ret = subprocess.call(cmd, shell = True)
   if ret != 0:
     raise Exception("Failed to run cmd: %s ret=%s" % (cmd, ret))
-  return 1
+  return 0
 
 # Schema is:
 # mysql> describe perf_db;

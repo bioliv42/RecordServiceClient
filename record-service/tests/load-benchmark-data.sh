@@ -26,6 +26,12 @@ cd $IMPALA_HOME
 bin/start-impala-cluster.py -s 1 --build_type=release\
     --catalogd_args="-load_catalog_in_background=false"
 
+# Copy the JARs Hive needs to the local and HDFS AUX_JARS_PATH.
+# TODO: Why does Hive need them in both places?
+find $RECORD_SERVICE_HOME/java -name "*.jar" -exec cp '{}' ${HIVE_AUX_JARS_PATH} \;
+find $RECORD_SERVICE_HOME/java -name "*.jar" \
+    -exec  hadoop fs -put -f '{}' ${HIVE_AUX_JARS_PATH} \;
+
 # Load the test data we need.
 cd $RECORD_SERVICE_HOME
 impala-shell.sh -f tests/create-benchmark-tbls.sql
