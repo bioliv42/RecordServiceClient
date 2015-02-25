@@ -9,7 +9,10 @@ Below are steps for how to get configure your environment and get started:
 1) Build the JARs:
    cd $RECORD_SERVICE_HOME/java && mvn package -DskipTests
 2) Copy the RecordService JAR's to a location where Hive can find them:
-   find $RECORD_SERVICE_HOME/java -name "*.jar" | xargs -I{} cp {} ${HIVE_AUX_JARS_PATH}
+   find $RECORD_SERVICE_HOME/java -name "*.jar" -exec cp '{}' ${HIVE_AUX_JARS_PATH} \;
+
+   Hive also likes these JARs to be in HDFS:
+   find $RECORD_SERVICE_HOME/java -name "*.jar" -exec hadoop fs -put -f '{}' ${HIVE_AUX_JARS_PATH} \;
 
 3) Open hive shell and create the re-direction table with the following SerDe/InputFormat:
 
