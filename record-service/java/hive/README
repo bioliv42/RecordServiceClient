@@ -24,6 +24,10 @@ Below are steps for how to get configure your environment and get started:
   OUTPUTFORMAT
     'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat'
 
+  or in the impala-shell:
+  CREATE EXTERNAL TABLE <table name>(<columnDescs>) 
+  STORED BY RECORDSERVICE
+
 
 4) Set the following jobconf properties (could also be set in hive-site.xml):
    hive>
@@ -33,6 +37,7 @@ Below are steps for how to get configure your environment and get started:
 
 5) Run a query (example):
    hive>
+   set hive.input.format=com.cloudera.recordservice.hive.RecordServiceHiveInputFormat;
    set recordservice.table.name=lineitem;
-   set recordservice.db.name=tpch6gb;
-   select sum(l_partkey) from record_service.lineitem;
+   set recordservice.db.name=tpch10gb_parquet;
+   select sum(l_partkey) from rs.lineitem_hive_serde;

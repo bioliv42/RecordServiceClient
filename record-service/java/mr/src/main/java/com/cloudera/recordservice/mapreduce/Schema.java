@@ -88,33 +88,33 @@ public class Schema implements Writable {
 
     public static ColumnType fromThrift(TTypeId typeId) {
       switch (typeId) {
-  	    case BIGINT: return ColumnType.BIGINT;
-  	    case BOOLEAN: return ColumnType.BOOLEAN;
-  	    case DECIMAL: return ColumnType.DECIMAL;
-  	    case DOUBLE: return ColumnType.DOUBLE;
-  	    case FLOAT: return ColumnType.FLOAT;
-  	    case INT: return ColumnType.INT;
-  	    case SMALLINT: return ColumnType.SMALLINT;
-  	    case STRING: return ColumnType.STRING;
-  	    case TIMESTAMP: return ColumnType.TIMESTAMP;
-  	    case TINYINT: return ColumnType.TINYINT;
-  	    default: throw new UnsupportedOperationException("Unsupported type: " +
-  	        typeId);
+        case BIGINT: return ColumnType.BIGINT;
+        case BOOLEAN: return ColumnType.BOOLEAN;
+        case DECIMAL: return ColumnType.DECIMAL;
+        case DOUBLE: return ColumnType.DOUBLE;
+        case FLOAT: return ColumnType.FLOAT;
+        case INT: return ColumnType.INT;
+        case SMALLINT: return ColumnType.SMALLINT;
+        case STRING: return ColumnType.STRING;
+        case TIMESTAMP: return ColumnType.TIMESTAMP;
+        case TINYINT: return ColumnType.TINYINT;
+        default: throw new UnsupportedOperationException("Unsupported type: " +
+            typeId);
       }
     }
   }
 
   public static class ColumnInfo {
     private final TColumnDesc columnDesc_;
+    private final ColumnType type_;
 
     ColumnInfo(TColumnDesc columnDesc) {
       Preconditions.checkNotNull(columnDesc);
       columnDesc_ = columnDesc;
+      type_ = ColumnType.fromThrift(columnDesc_.getType().getType_id());
     }
 
-    public ColumnType getType() {
-      return ColumnType.fromThrift(columnDesc_.getType().getType_id());
-    }
+    public ColumnType getType() { return type_; }
 
     public int getPrecision() {
       if (columnDesc_.getType().isSetPrecision()) {

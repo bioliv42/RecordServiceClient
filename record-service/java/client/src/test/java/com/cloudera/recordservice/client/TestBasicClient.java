@@ -18,6 +18,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.io.IOException;
+
 import org.apache.thrift.TException;
 import org.junit.Test;
 
@@ -105,7 +107,7 @@ public class TestBasicClient {
 
   @Test
   // TODO: add more API misuse tests.
-  public void testNation() throws TException {
+  public void testNation() throws TException, IOException {
     RecordServicePlannerClient planner = new RecordServicePlannerClient();
     planner.connect("localhost", PLANNER_PORT);
     RecordServiceWorkerClient worker = new RecordServiceWorkerClient();
@@ -149,7 +151,7 @@ public class TestBasicClient {
   }
 
   @Test
-  public void testAllTypes() throws TException {
+  public void testAllTypes() throws TException, IOException {
     RecordServicePlannerClient planner = new RecordServicePlannerClient();
     planner.connect("localhost", PLANNER_PORT);
     RecordServiceWorkerClient worker = new RecordServiceWorkerClient();

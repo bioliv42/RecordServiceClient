@@ -16,7 +16,7 @@ package com.cloudera.recordservice.mapred;
 
 import java.io.IOException;
 
-import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.mapred.RecordReader;
 
@@ -27,62 +27,50 @@ public class RecordServiceRecordReader implements
     RecordReader<WritableComparable<?>, RecordServiceRecord> {
 
   private final com.cloudera.recordservice.mapreduce.RecordServiceRecordReader reader_;
-  private RecordServiceRecord currentRecord_;
-  private LongWritable currentKey_;
 
   public RecordServiceRecordReader(
       com.cloudera.recordservice.mapreduce.RecordServiceRecordReader reader) {
     Preconditions.checkNotNull(reader);
-    // The reader has to be initialized at this point !!
+    Preconditions.checkState(reader.isInitialized());
     this.reader_ = reader;
   }
 
+  /**
+   * Advances to the next record, populating key,value with the results.
+   * This is the hot path.
+   */
   @Override
   public boolean next(WritableComparable<?> key, RecordServiceRecord value)
       throws IOException {
-    try {
-      boolean hasNext = reader_.nextKeyValue();
-      if (hasNext) {
-        ((LongWritable)key).set(((LongWritable) reader_.getCurrentKey()).get());
-        value.set(this.reader_.getCurrentValue());
-      }
-      return hasNext;
-    } catch (InterruptedException e) {
-      throw new IOException(e);
-    }
+    if (!reader_.nextRecord()) return false;
+    value.reset(reader_.currentRow());
+    return true;
   }
 
   @Override
   public WritableComparable<?> createKey() {
-    return currentKey_ == null ? new LongWritable() : currentKey_;
+    // TODO: is this legit?
+    return NullWritable.get();
   }
 
   @Override
   public RecordServiceRecord createValue() {
-    return currentRecord_ == null ? new RecordServiceRecord() : currentRecord_;
+    return new RecordServiceRecord(reader_.schema());
   }
 
   @Override
   public long getPos() throws IOException {
-    try {
-      return (long)this.reader_.getProgress();
-    } catch (InterruptedException e) {
-      throw new IOException(e);
-    }
+    // TODO: what does this mean for us?
+    return 0;
   }
 
   @Override
   public void close() throws IOException {
-    this.reader_.close();
+    reader_.close();
   }
 
   @Override
-  public float getProgress() throws IOException {
-    try {
-      return this.reader_.getProgress();
-    } catch (InterruptedException e) {
-      throw new IOException(e);
-    }
+  public float getProgress() {
+    return reader_.getProgress();
   }
-
 }

@@ -1,5 +1,6 @@
 package com.cloudera.recordservice.client;
 
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 
@@ -127,7 +128,7 @@ public class Rows {
     }
 
     // Resets the state of the row to return the next batch.
-    protected void reset(TFetchResult result) throws TException {
+    protected void reset(TFetchResult result) throws RuntimeException {
       for (int i = 0; i < colOffsets_.length; ++i) {
         nulls_[i] = result.columnar_row_batch.cols.get(i).is_null;
         colOffsets_[i] = byteArrayOffset;
@@ -143,7 +144,7 @@ public class Rows {
             colData_[i] = result.columnar_row_batch.cols.get(i).data;
             break;
           default:
-            throw new TException("Unknown type");
+            throw new RuntimeException("Unknown type");
         }
       }
     }
@@ -168,10 +169,13 @@ public class Rows {
   // transition to false.
   private boolean hasNext_;
 
+  // Completion percentage.
+  private float progress_;
+
   /**
    * Returns true if there are more rows.
    */
-  public boolean hasNext() throws TException {
+  public boolean hasNext() throws IOException {
     Preconditions.checkNotNull(fetchResult_);
     while (currentRow_ == fetchResult_.num_rows) {
       if (fetchResult_.done) {
@@ -186,8 +190,8 @@ public class Rows {
   /**
    * Returns and advances to the next row.
    */
-  public Row next() throws TException {
-    if (!hasNext_) throw new TException("End of stream");
+  public Row next() throws IOException {
+    if (!hasNext_) throw new IOException("End of stream");
     row_.rowIdx_ = currentRow_++;
     return row_;
   }
@@ -196,8 +200,12 @@ public class Rows {
     worker_.closeTask(handle_);
   }
 
+  public TSchema getSchema() { return row_.getSchema(); }
+
+  public float progress() { return progress_; }
+
   protected Rows(RecordServiceWorkerClient worker,
-      TUniqueId handle, TSchema schema) throws TException {
+      TUniqueId handle, TSchema schema) throws IOException {
     worker_ = worker;
     handle_ = handle;
 
@@ -206,14 +214,18 @@ public class Rows {
     hasNext_ = hasNext();
   }
 
-  private void nextBatch() throws TException {
-    fetchResult_ = worker_.fetch(handle_);
+  private void nextBatch() throws IOException {
+    try {
+      fetchResult_ = worker_.fetch(handle_);
+    } catch (TException e) {
+      throw new IOException(e);
+    }
     currentRow_ = 0;
     if (fetchResult_.row_batch_format != TRowBatchFormat.Columnar) {
-      throw new TException("Unsupported row batch format");
+      throw new RuntimeException("Unsupported row batch format");
     }
     row_.reset(fetchResult_);
+    progress_ = (float)fetchResult_.task_completion_percentage;
   }
 
-  public TSchema getSchema() { return row_.getSchema(); }
 }

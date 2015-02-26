@@ -14,6 +14,7 @@
 
 package com.cloudera.recordservice.client;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import org.apache.thrift.TException;
@@ -109,12 +110,16 @@ public class RecordServiceWorkerClient {
    * Executes the task asynchronously, returning a Rows object that can be
    * used to fetch results.
    */
-  public Rows execAndFetch(ByteBuffer task) throws TException {
+  public Rows execAndFetch(ByteBuffer task) throws IOException {
     Preconditions.checkNotNull(task);
     validateIsConnected();
     TExecTaskParams taskParams = new TExecTaskParams(task);
-    TExecTaskResult result = execTaskInternal(taskParams);
-    return new Rows(this, result.getHandle(), result.schema);
+    try {
+      TExecTaskResult result = execTaskInternal(taskParams);
+      return new Rows(this, result.getHandle(), result.schema);
+    } catch (TException e) {
+      throw new IOException(e);
+    }
   }
 
 

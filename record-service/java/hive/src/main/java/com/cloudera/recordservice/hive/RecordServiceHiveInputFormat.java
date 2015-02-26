@@ -317,6 +317,7 @@ public class RecordServiceHiveInputFormat<K extends WritableComparable,
     } catch (InterruptedException e1) {
       throw new IllegalStateException(e1);
     }
+
     RecordServiceRecordReader rsRr = new RecordServiceRecordReader(reader);
 
     // Pass the RecordService as the target InputFormat (this will override

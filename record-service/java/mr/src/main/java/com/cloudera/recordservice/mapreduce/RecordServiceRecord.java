@@ -41,18 +41,15 @@ public class RecordServiceRecord implements Writable {
   private Writable[] columnVals_;
 
   // Schema associated with columnVals_.
-  private Schema schema_ = new Schema();
+  private Schema schema_;
 
   // Map of column name to column value index in columnValues_.
   // TODO: Handle column names should be case-insensitive, we need to handle
   // that efficiently.
   private Map<String, Integer> colNameToIdx_ = Maps.newHashMap();
 
-  public RecordServiceRecord() {}
-
-  public RecordServiceRecord(Row row) {
-    Preconditions.checkNotNull(row);
-    schema_ = new Schema(row.getSchema());
+  public RecordServiceRecord(Schema schema) {
+    schema_ = schema;
     columnVals_ = new Writable[schema_.getNumColumns()];
     colNameToIdx_ = Maps.newHashMapWithExpectedSize(schema_.getNumColumns());
     for (int i = 0; i < schema_.getNumColumns(); ++i) {
@@ -60,7 +57,6 @@ public class RecordServiceRecord implements Writable {
       colNameToIdx_.put(columnInfo.getColumnName(), i);
       columnVals_[i] = columnInfo.getType().getWritableInstance();
     }
-    reset(row);
   }
 
   /**
@@ -118,8 +114,8 @@ public class RecordServiceRecord implements Writable {
     }
   }
 
-  public Writable getColumnValue(int colIndex) {
-    return columnVals_[colIndex];
+  public Writable getColumnValue(int colIdx) {
+    return columnVals_[colIdx];
   }
 
   /**
@@ -154,18 +150,6 @@ public class RecordServiceRecord implements Writable {
         throw new IOException(e);
       }
     }
-  }
-
-  /**
-   * Sets this RecordServiceRecord's internal state to be equal to another
-   * RecordServiceRecord (shallow copy). This is on the hot path - it is called for every
-   * value in the mapreduce -> mapred conversion.
-   */
-  public void set(RecordServiceRecord other) {
-    Preconditions.checkNotNull(other);
-    schema_ = other.schema_;
-    columnVals_ = other.columnVals_;
-    colNameToIdx_ = other.colNameToIdx_;
   }
 
   public Schema getSchema() { return schema_; }

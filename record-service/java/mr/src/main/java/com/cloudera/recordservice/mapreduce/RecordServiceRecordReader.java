@@ -21,7 +21,6 @@ import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
-import org.apache.thrift.TException;
 
 import com.cloudera.recordservice.client.RecordServiceWorkerClient;
 import com.cloudera.recordservice.client.Rows;
@@ -41,6 +40,12 @@ public class RecordServiceRecordReader extends
 
   // Current row batch that is being processed.
   private Rows rows_;
+
+  // Schema for rows_;
+  private Schema schema_;
+
+  // Current row being processed
+  private Rows.Row currentRow_;
 
   // The current record being processed. Updated in-place when nextKeyValue() is called.
   private RecordServiceRecord currentRecord_;
@@ -75,6 +80,8 @@ public class RecordServiceRecordReader extends
     } catch (Exception e) {
       throw new IOException(e);
     }
+    schema_ = new Schema(rows_.getSchema());
+    currentRecord_ = new RecordServiceRecord(schema_);
     isInitialized_ = true;
   }
 
@@ -88,23 +95,11 @@ public class RecordServiceRecordReader extends
   @Override
   public boolean nextKeyValue() throws IOException, InterruptedException {
     if (!isInitialized_) {
-      throw new IOException("Record Reader not initialized !!");
+      throw new RuntimeException("Record Reader not initialized !!");
     }
 
-    Row row;
-    try {
-      if (!rows_.hasNext()) return false;
-      row = rows_.next();
-    } catch (TException e) {
-      throw new IOException(e);
-    }
-
-    if (currentRecord_ == null) {
-      currentRecord_ = new RecordServiceRecord(row);
-    } else {
-      currentRecord_.reset(row);
-    }
-
+    if (!nextRecord()) return false;
+    currentRecord_.reset(currentRow_);
     currentKey_.set(rowNum_++);
     return true;
   }
@@ -122,15 +117,8 @@ public class RecordServiceRecordReader extends
   }
 
   @Override
-  public float getProgress() throws IOException, InterruptedException {
-    return 0.0f;
-    // TODO: MR calls this so frequently that it kills performance. We need to
-    // either cache the result or included it as part of the fetch result.
-    //try {
-    // return (float) worker_.getTaskStats(handle_).getCompletion_percentage();
-    //} catch (TException e) {
-    //  throw new IOException(e);
-    //}
+  public float getProgress() {
+    return rows_.progress();
   }
 
   @Override
@@ -139,5 +127,19 @@ public class RecordServiceRecordReader extends
     if (worker_ != null) worker_.close();
   }
 
+  /**
+   * Advances to the next record. Return false if there are no more records.
+   */
+  public boolean nextRecord() throws IOException {
+    //if (!isInitialized_) {
+    //  throw new RuntimeException("Record Reader not initialized !!");
+    //}
+    if (!rows_.hasNext()) return false;
+    currentRow_ = rows_.next();
+    return true;
+  }
+
+  public Schema schema() { return schema_; }
+  public Row currentRow() { return currentRow_; }
   public boolean isInitialized() { return isInitialized_; }
 }
