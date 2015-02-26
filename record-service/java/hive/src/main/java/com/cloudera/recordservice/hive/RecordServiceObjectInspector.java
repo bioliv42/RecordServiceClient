@@ -21,9 +21,12 @@ import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.StructField;
 import org.apache.hadoop.hive.serde2.objectinspector.StructObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectInspectorFactory;
+import org.apache.hadoop.hive.serde2.typeinfo.CharTypeInfo;
+import org.apache.hadoop.hive.serde2.typeinfo.DecimalTypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.StructTypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoFactory;
+import org.apache.hadoop.hive.serde2.typeinfo.VarcharTypeInfo;
 
 import com.cloudera.recordservice.mapreduce.RecordServiceRecord;
 import com.google.common.base.Preconditions;
@@ -81,6 +84,15 @@ public class RecordServiceObjectInspector extends StructObjectInspector {
       return PrimitiveObjectInspectorFactory.writableLongObjectInspector;
     } else if (typeInfo.equals(TypeInfoFactory.stringTypeInfo)) {
       return PrimitiveObjectInspectorFactory.writableStringObjectInspector;
+    }  else if (typeInfo instanceof DecimalTypeInfo) {
+      return PrimitiveObjectInspectorFactory.getPrimitiveWritableObjectInspector(
+          (DecimalTypeInfo) typeInfo);
+    } else if (typeInfo instanceof VarcharTypeInfo) {
+      return PrimitiveObjectInspectorFactory.getPrimitiveWritableObjectInspector(
+          (VarcharTypeInfo) typeInfo);
+    } else if (typeInfo instanceof CharTypeInfo) {
+      return PrimitiveObjectInspectorFactory.getPrimitiveWritableObjectInspector(
+          (CharTypeInfo) typeInfo);
     } else {
       throw new UnsupportedOperationException("Unknown field type: " + typeInfo);
     }
