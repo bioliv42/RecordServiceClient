@@ -28,6 +28,7 @@ import org.apache.thrift.protocol.{TProtocol, TBinaryProtocol}
 import org.apache.thrift.transport.{TSocket}
 
 import scala.reflect.ClassTag
+import scala.util.control.Breaks
 
 /**
  * RDD that is backed by the RecordService. This returns an RDD of case class objects.
@@ -50,6 +51,8 @@ import scala.reflect.ClassTag
  *
  * TODO: Why doesn't classOf[T] work (and then you don't need to
  * pass the recordClass arg)
+ * TODO: metrics
+ * TODO: think about NULLs some more.
  */
 class SchemaRecordServiceRDD[T:ClassTag](sc: SparkContext,
                                          recordClass:Class[T],
@@ -78,8 +81,21 @@ class SchemaRecordServiceRDD[T:ClassTag](sc: SparkContext,
     this
   }
 
+  /**
+   * Sets v as the default record. For fields that are non-nullable but the data
+   * contained NULL, the field is instead populated from v.
+   */
   def setDefaultValue(v:T) = {
     defaultVal = Some(v)
+    this
+  }
+
+  /**
+   * If true, records containing unhandled (field is not nullable and no default value)
+   * null fields are ignored. Otherwise, the task is aborted.
+   */
+  def setIgnoreUnhandledNull(v:Boolean) = {
+    ignoreUnhandledNull = v
     this
   }
 
@@ -89,8 +105,8 @@ class SchemaRecordServiceRDD[T:ClassTag](sc: SparkContext,
   var fields:Array[String] = extractFields()
   var types:Array[TTypeId] = extractTypes()
 
-  // Default value to use if the field is NULL
   var defaultVal:Option[T] = None
+  var ignoreUnhandledNull:Boolean = false
 
   private def extractFields() = {
     val f = recordClass.getDeclaredFields()
@@ -322,57 +338,66 @@ class SchemaRecordServiceRDD[T:ClassTag](sc: SparkContext,
     }
 
     override def getNext() : T = {
-      if (!rows.hasNext()) {
-        finished = true
-        return value
-      }
+      while (true) {
+        if (!rows.hasNext()) {
+          finished = true
+          return value
+        }
 
-      // Reconstruct the row
-      val row = rows.next()
-      for (i <- 0 until setters.length) {
-        if (setters(i) != null) {
-          assert(getters(i) != null)
-          val v = if (row.isNull(i)) {
-            if (defaultVal.isEmpty) {
-              // TODO: allow nullable case classes. This seems to require scala 2.11
-              // (we normally run 2.10) to get the reflection to work.
-              // TODO: add a mode where these rows are just ignored with some metrics
-              // on how many are ignored.
-              throw new SparkException(
-                  "Data contained NULLs but no default value provided.")
-            }
-            defaultVals(i)
-          } else {
-            // TODO: make sure this is the cheapest way to do this and we're not doing
-            // unnecessary boxing
-            partition.schema.cols.get(i).getType().type_id match {
-              case TTypeId.BOOLEAN =>
-                row.getBoolean(i): java.lang.Boolean
-              case TTypeId.TINYINT =>
-                // TODO: does this work? We probably need to cast it to Byte or Char
-                row.getByte(i): java.lang.Byte
-              case TTypeId.SMALLINT =>
-                row.getShort(i): java.lang.Short
-              case TTypeId.INT =>
-                row.getInt(i): java.lang.Integer
-              case TTypeId.BIGINT =>
-                row.getLong(i): java.lang.Long
-              case TTypeId.FLOAT =>
-                row.getFloat(i): java.lang.Float
-              case TTypeId.DOUBLE =>
-                row.getDouble(i): java.lang.Double
-              case TTypeId.STRING =>
-                row.getByteArray(i).toString()
-              case _ =>
-                assert(false)
-                None
+        // Reconstruct the row
+        val row = rows.next()
+        val loop = new Breaks
+        loop.breakable {
+          for (i <- 0 until setters.length) {
+            if (setters(i) != null) {
+              assert(getters(i) != null)
+              val v = if (row.isNull(i)) {
+                if (defaultVal.isEmpty) {
+                  // TODO: this really needs to be collected with metrics. How do you do
+                  // this in spark? Accumulators?
+                  if (ignoreUnhandledNull) loop.break
+
+                  // TODO: allow nullable case classes. This seems to require scala 2.11
+                  // (we normally run 2.10) to get the reflection to work.
+                  // TODO: add a mode where these rows are just ignored with some metrics
+                  // on how many are ignored.
+                  throw new SparkException(
+                    "Data contained NULLs but no default value provided.")
+                }
+                defaultVals(i)
+              } else {
+                // TODO: make sure this is the cheapest way to do this and we're not doing
+                // unnecessary boxing
+                partition.schema.cols.get(i).getType().type_id match {
+                  case TTypeId.BOOLEAN =>
+                    row.getBoolean(i): java.lang.Boolean
+                  case TTypeId.TINYINT =>
+                    // TODO: does this work? We probably need to cast it to Byte or Char
+                    row.getByte(i): java.lang.Byte
+                  case TTypeId.SMALLINT =>
+                    row.getShort(i): java.lang.Short
+                  case TTypeId.INT =>
+                    row.getInt(i): java.lang.Integer
+                  case TTypeId.BIGINT =>
+                    row.getLong(i): java.lang.Long
+                  case TTypeId.FLOAT =>
+                    row.getFloat(i): java.lang.Float
+                  case TTypeId.DOUBLE =>
+                    row.getDouble(i): java.lang.Double
+                  case TTypeId.STRING =>
+                    row.getByteArray(i).toString()
+                  case _ =>
+                    assert(false)
+                    None
+                }
+              }
+              setters(i).invoke(value, v)
             }
           }
-          setters(i).invoke(value, v)
+          return value
         }
       }
-
-      value
+      return value
     }
 
     override def close() = {
