@@ -110,6 +110,7 @@ TEST(ClientTest, Nation) {
     }
     worker_rows += fetch_result.num_rows;
   } while (!fetch_result.done);
+  worker.CloseTask(exec_result.handle);
 
   EXPECT_EQ(worker_rows, 25);
 }

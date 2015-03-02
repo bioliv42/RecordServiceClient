@@ -25,6 +25,8 @@ import org.junit.Test;
 
 import com.cloudera.recordservice.thrift.TPlanRequestResult;
 import com.cloudera.recordservice.thrift.TProtocolVersion;
+import com.cloudera.recordservice.thrift.TRecordServiceException;
+import com.cloudera.recordservice.thrift.TSchema;
 import com.cloudera.recordservice.thrift.TTypeId;
 
 
@@ -150,6 +152,29 @@ public class TestBasicClient {
     worker.close();
   }
 
+  /*
+   * Verifies that the schema matches the alltypes table schema.
+   */
+  private void verifyAllTypesSchema(TSchema schema) {
+    assertEquals(schema.cols.size(), 8);
+    assertEquals(schema.cols.get(0).name, "bool_col");
+    assertEquals(schema.cols.get(0).type.type_id, TTypeId.BOOLEAN);
+    assertEquals(schema.cols.get(1).name, "tinyint_col");
+    assertEquals(schema.cols.get(1).type.type_id, TTypeId.TINYINT);
+    assertEquals(schema.cols.get(2).name, "smallint_col");
+    assertEquals(schema.cols.get(2).type.type_id, TTypeId.SMALLINT);
+    assertEquals(schema.cols.get(3).name, "int_col");
+    assertEquals(schema.cols.get(3).type.type_id, TTypeId.INT);
+    assertEquals(schema.cols.get(4).name, "bigint_col");
+    assertEquals(schema.cols.get(4).type.type_id, TTypeId.BIGINT);
+    assertEquals(schema.cols.get(5).name, "float_col");
+    assertEquals(schema.cols.get(5).type.type_id, TTypeId.FLOAT);
+    assertEquals(schema.cols.get(6).name, "double_col");
+    assertEquals(schema.cols.get(6).type.type_id, TTypeId.DOUBLE);
+    assertEquals(schema.cols.get(7).name, "string_col");
+    assertEquals(schema.cols.get(7).type.type_id, TTypeId.STRING);
+  }
+
   @Test
   public void testAllTypes() throws TException, IOException {
     RecordServicePlannerClient planner = new RecordServicePlannerClient();
@@ -160,24 +185,7 @@ public class TestBasicClient {
     // Plan the request
     TPlanRequestResult plan = planner.planRequest("select * from rs.alltypes");
 
-    // Verify schema
-    assertEquals(plan.schema.cols.size(), 8);
-    assertEquals(plan.schema.cols.get(0).name, "bool_col");
-    assertEquals(plan.schema.cols.get(0).type.type_id, TTypeId.BOOLEAN);
-    assertEquals(plan.schema.cols.get(1).name, "tinyint_col");
-    assertEquals(plan.schema.cols.get(1).type.type_id, TTypeId.TINYINT);
-    assertEquals(plan.schema.cols.get(2).name, "smallint_col");
-    assertEquals(plan.schema.cols.get(2).type.type_id, TTypeId.SMALLINT);
-    assertEquals(plan.schema.cols.get(3).name, "int_col");
-    assertEquals(plan.schema.cols.get(3).type.type_id, TTypeId.INT);
-    assertEquals(plan.schema.cols.get(4).name, "bigint_col");
-    assertEquals(plan.schema.cols.get(4).type.type_id, TTypeId.BIGINT);
-    assertEquals(plan.schema.cols.get(5).name, "float_col");
-    assertEquals(plan.schema.cols.get(5).type.type_id, TTypeId.FLOAT);
-    assertEquals(plan.schema.cols.get(6).name, "double_col");
-    assertEquals(plan.schema.cols.get(6).type.type_id, TTypeId.DOUBLE);
-    assertEquals(plan.schema.cols.get(7).name, "string_col");
-    assertEquals(plan.schema.cols.get(7).type.type_id, TTypeId.STRING);
+    verifyAllTypesSchema(plan.schema);
 
     // Execute the task
     assertEquals(plan.tasks.size(), 2);
@@ -210,6 +218,41 @@ public class TestBasicClient {
       assertFalse(rows.hasNext());
       rows.close();
     }
+
+    planner.close();
+    worker.close();
+  }
+
+  @Test
+  public void testAllTypesEmpty() throws TException, IOException {
+    RecordServicePlannerClient planner = new RecordServicePlannerClient();
+    planner.connect("localhost", PLANNER_PORT);
+    RecordServiceWorkerClient worker = new RecordServiceWorkerClient();
+    worker.connect("localhost", WORKER_PORT);
+
+    TPlanRequestResult plan = planner.planRequest("select * from rs.alltypes_empty");
+    assertEquals(plan.tasks.size(), 0);
+    verifyAllTypesSchema(plan.schema);
+
+    planner.close();
+    worker.close();
+  }
+
+  @Test
+  public void testConstant() throws TException, IOException {
+    RecordServicePlannerClient planner = new RecordServicePlannerClient();
+    planner.connect("localhost", PLANNER_PORT);
+    RecordServiceWorkerClient worker = new RecordServiceWorkerClient();
+    worker.connect("localhost", WORKER_PORT);
+
+    boolean exceptionThrown = false;
+    try {
+      planner.planRequest("select 1");
+    } catch (TRecordServiceException e) {
+      assertTrue(e.message.contains("No scan nodes found for this query"));
+      exceptionThrown = true;
+    }
+    assertTrue(exceptionThrown);
 
     planner.close();
     worker.close();
