@@ -117,8 +117,8 @@ abstract class RecordServiceRDDBase[T:ClassTag](sc: SparkContext, plannerHost: S
     val partitions = new Array[Partition](planResult.tasks.size())
     for (i <- 0 until planResult.tasks.size()) {
       val hosts = ListBuffer[String]()
-      for (j <- 0 until planResult.tasks.get(i).hosts.size()) {
-        hosts += planResult.tasks.get(i).hosts.get(j)
+      for (j <- 0 until planResult.tasks.get(i).local_hosts.size()) {
+        hosts += planResult.tasks.get(i).local_hosts.get(j).hostname
       }
       partitions(i) = new RecordServicePartition(id, i, hosts.seq,
         planResult.tasks.get(i), planResult.schema)

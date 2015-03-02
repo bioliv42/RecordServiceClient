@@ -30,6 +30,16 @@ import org.apache.spark._
 class RecordServiceRDD(sc: SparkContext, plannerHost: String = "localhost")
   extends RecordServiceRDDBase[Array[Writable]](sc, plannerHost) with Logging {
 
+  override def setTable(table:String) = {
+    super.setTable(table)
+    this
+  }
+
+  override def setStatement(stmt:String) = {
+    super.setStatement(stmt)
+    this
+  }
+
   /**
    * Executes the task against the RecordServiceWorker and returns an iterator to fetch
    * result for the entire task.
@@ -127,15 +137,5 @@ class RecordServiceRDD(sc: SparkContext, plannerHost: String = "localhost")
    */
   override protected def getPartitions: Array[Partition] = {
     super.planRequest._2
-  }
-
-  override def setTable(table:String) = {
-    super.setTable(table)
-    this
-  }
-
-  override def setStatement(stmt:String) = {
-    super.setStatement(stmt)
-    this
   }
 }

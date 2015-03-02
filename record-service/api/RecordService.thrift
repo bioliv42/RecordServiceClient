@@ -24,6 +24,11 @@ struct TUniqueId {
   2: required i64 lo
 }
 
+struct TNetworkAddress {
+  1: required string hostname
+  2: required i32 port
+}
+
 enum TTypeId {
   BOOLEAN,
   TINYINT,
@@ -96,7 +101,7 @@ struct TPlanRequestParams {
 
 struct TTask {
   // The list of hosts where this task can run locally.
-  1: required list<string> hosts
+  1: required list<TNetworkAddress> local_hosts
 
   // An opaque blob that is produced by the RecordServicePlanner and passed to
   // the RecordServiceWorker.
@@ -106,6 +111,9 @@ struct TTask {
 struct TPlanRequestResult {
   1: required list<TTask> tasks
   2: required TSchema schema
+
+  // The list of all hosts running workers.
+  3: required list<TNetworkAddress> hosts
 }
 
 struct TExecTaskParams {

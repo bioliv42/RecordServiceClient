@@ -131,7 +131,7 @@ public class TestBasicClient {
 
     // Execute the task
     assertEquals(plan.tasks.size(), 1);
-    assertEquals(plan.tasks.get(0).hosts.size(), 3);
+    assertEquals(plan.tasks.get(0).local_hosts.size(), 3);
     Rows rows = worker.execAndFetch(plan.tasks.get(0).task);
     int numRows = 0;
     while (rows.hasNext()) {
@@ -190,7 +190,7 @@ public class TestBasicClient {
     // Execute the task
     assertEquals(plan.tasks.size(), 2);
     for (int t = 0; t < 2; ++t) {
-      assertEquals(plan.tasks.get(t).hosts.size(), 3);
+      assertEquals(plan.tasks.get(t).local_hosts.size(), 3);
       Rows rows = worker.execAndFetch(plan.tasks.get(t).task);
       assertTrue(rows.hasNext());
       Rows.Row row = rows.next();

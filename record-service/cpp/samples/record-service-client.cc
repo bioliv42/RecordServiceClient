@@ -34,9 +34,8 @@ using namespace apache::thrift::transport;
 
 using namespace recordservice;
 
-const char* HOST = "localhost";
+const char* PLANNER_HOST = "localhost";
 const int RECORD_SERVICE_PLANNER_PORT = 40000;
-const int RECORD_SERVICE_WORKER_PORT = 40100;
 
 // If true, runs the aggregation portion of "select sum(l_orderkey)" logic.
 #define QUERY_1 1
@@ -109,11 +108,18 @@ int CompareString(const string& x, const char* y_data, int y_len) {
   return x.size() - y_len;
 }
 
+const TNetworkAddress& GetHost(const TPlanRequestResult& plan, int task_id) {
+  if (plan.tasks[task_id].local_hosts.empty()) {
+    return plan.hosts[0];
+  }
+  return plan.tasks[task_id].local_hosts[0];
+}
+
 void ExecRequestDistributed(const char* request, TRowBatchFormat::type format) {
   printf("Planning request: %s\n", request);
 
   shared_ptr<TTransport> planner_socket(
-      new TSocket("localhost", RECORD_SERVICE_PLANNER_PORT));
+      new TSocket(PLANNER_HOST, RECORD_SERVICE_PLANNER_PORT));
   shared_ptr<TTransport> planner_transport(new TBufferedTransport(planner_socket));
   shared_ptr<TProtocol> planner_protocol(new TBinaryProtocol(planner_transport));
 
@@ -135,10 +141,9 @@ void ExecRequestDistributed(const char* request, TRowBatchFormat::type format) {
   printf("Done planning. Generated %ld tasks.\n", plan_result.tasks.size());
   printf("Tasks:\n");
   for (int i = 0; i < plan_result.tasks.size(); ++i) {
-    // TODO: generally, this task is not printable.
-    printf("  %d: %s\n", i + 1, plan_result.tasks[i].task.c_str());
-    for (int j = 0; j < plan_result.tasks[i].hosts.size(); ++j) {
-      printf("     %s\n", plan_result.tasks[i].hosts[j].c_str());
+    printf("  %d\n", i + 1);
+    for (int j = 0; j < plan_result.tasks[i].local_hosts.size(); ++j) {
+      printf("     %s\n", plan_result.tasks[i].local_hosts[j].hostname.c_str());
     }
   }
 
@@ -160,8 +165,8 @@ void ExecRequestDistributed(const char* request, TRowBatchFormat::type format) {
   for (int i = 0; i < plan_result.tasks.size(); ++i) {
     const TTask& task = plan_result.tasks[i];
     // Run each task on the first host it reported
-    // TODO: since to worker port and interface
-    shared_ptr<TTransport> socket(new TSocket(task.hosts[0], RECORD_SERVICE_WORKER_PORT));
+    const TNetworkAddress& host = GetHost(plan_result, i);
+    shared_ptr<TTransport> socket(new TSocket(host.hostname, host.port));
     shared_ptr<TTransport> transport(new TBufferedTransport(socket));
     shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
 

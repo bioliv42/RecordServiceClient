@@ -43,7 +43,11 @@ public class TaskInfo implements Writable {
   }
 
   public String[] getLocations() {
-    return task_.getHosts().toArray(new String[0]);
+    String[] result = new String[task_.getLocal_hosts().size()];
+    for (int i = 0; i < task_.getLocal_hosts().size(); ++i) {
+      result[i] = task_.getLocal_hosts().get(i).hostname;
+    }
+    return result;
   }
 
   public byte[] getTask() {

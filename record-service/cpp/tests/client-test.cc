@@ -32,9 +32,8 @@ using namespace apache::thrift::transport;
 
 using namespace recordservice;
 
-const char* HOST = "localhost";
+const char* PLANNER_HOST = "localhost";
 const int RECORD_SERVICE_PLANNER_PORT = 40000;
-const int RECORD_SERVICE_WORKER_PORT = 40100;
 
 static struct {
   int16_t c0;
@@ -47,7 +46,7 @@ static struct {
 
 TEST(ClientTest, Nation) {
   shared_ptr<TTransport> planner_socket(
-      new TSocket("localhost", RECORD_SERVICE_PLANNER_PORT));
+      new TSocket(PLANNER_HOST, RECORD_SERVICE_PLANNER_PORT));
   shared_ptr<TTransport> planner_transport(new TBufferedTransport(planner_socket));
   shared_ptr<TProtocol> planner_protocol(new TBinaryProtocol(planner_transport));
 
@@ -67,9 +66,10 @@ TEST(ClientTest, Nation) {
   EXPECT_EQ(plan_result.schema.cols[3].type.type_id, TTypeId::STRING);
 
   EXPECT_EQ(plan_result.tasks.size(), 1);
-  EXPECT_EQ(plan_result.tasks[0].hosts.size(), 3) << "Expecting 3x replication";
-  shared_ptr<TTransport> worker_socket(
-      new TSocket(plan_result.tasks[0].hosts[0], RECORD_SERVICE_WORKER_PORT));
+  EXPECT_EQ(plan_result.tasks[0].local_hosts.size(), 3) << "Expecting 3x replication";
+  shared_ptr<TTransport> worker_socket(new TSocket(
+      plan_result.tasks[0].local_hosts[0].hostname,
+      plan_result.tasks[0].local_hosts[0].port));
   shared_ptr<TTransport> worker_transport(new TBufferedTransport(worker_socket));
   shared_ptr<TProtocol> worker_protocol(new TBinaryProtocol(worker_transport));
 
