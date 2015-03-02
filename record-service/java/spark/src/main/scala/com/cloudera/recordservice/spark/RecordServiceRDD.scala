@@ -17,37 +17,18 @@
 
 package com.cloudera.recordservice.spark
 
-import com.cloudera.recordservice.client.{RecordServiceWorkerClient, RecordServicePlannerClient}
 import com.cloudera.recordservice.thrift._
 import org.apache.hadoop.io._
 import org.apache.spark._
-import org.apache.spark.rdd.RDD
-import org.apache.thrift.TException
-import org.apache.thrift.protocol.{TProtocol, TBinaryProtocol}
-import org.apache.thrift.transport.{TSocket}
-
-import scala.collection.mutable.ListBuffer
-
-private class RecordServicePartition(rddId: Int, idx: Int,
-                                             h:Seq[String], t: TTask, s: TSchema)
-    extends Partition {
-  override def hashCode(): Int = 41 * (41 + rddId) + idx
-  override val index: Int = idx
-  val task: TTask = t
-  val schema: TSchema = s
-  val hosts: Seq[String] = h
-}
 
 /**
  * RDD that is backed by the RecordService. This returns an RDD of arrays of
  * Writable objects.
  * Each array is a row.
+ * TODO: remove default localhost param. This should pull it from the configs.
  */
-class RecordServiceRDD(sc: SparkContext, stmt: String, plannerHost: String = "localhost")
-  extends RDD[Array[Writable]](sc, Nil) with Logging {
-
-  val PLANNER_PORT: Int = 40000
-  val WORKER_PORT: Int = 40100
+class RecordServiceRDD(sc: SparkContext, plannerHost: String = "localhost")
+  extends RecordServiceRDDBase[Array[Writable]](sc, plannerHost) with Logging {
 
   /**
    * Executes the task against the RecordServiceWorker and returns an iterator to fetch
@@ -57,7 +38,6 @@ class RecordServiceRDD(sc: SparkContext, stmt: String, plannerHost: String = "lo
       InterruptibleIterator[Array[Writable]] = {
     val iter = new NextIterator[Array[Writable]] {
       val partition = split.asInstanceOf[RecordServicePartition]
-      var worker: RecordServiceWorkerClient = null
 
       // Reusable writable objects.
       var writables = new Array[Writable](partition.schema.cols.size())
@@ -68,22 +48,7 @@ class RecordServiceRDD(sc: SparkContext, stmt: String, plannerHost: String = "lo
       // Register an on-task-completion callback to close the input stream.
       context.addTaskCompletionListener{ context => closeIfNeeded() }
 
-      var rows = try {
-        // Always connect to localhost. This assumes that on each node, we have
-        // a RecordServiceWorker running and that Spark has scheduled for locality
-        // using getPreferredLocations.
-        // TODO: we need to support the case where there is not a worker running on
-        // each host, in which case this needs to talk to get the list of all workers
-        // and pick one randomly.
-        worker = new RecordServiceWorkerClient()
-        worker.connect("localhost", WORKER_PORT)
-        worker.execAndFetch(partition.task.task)
-      } catch {
-        case e:TRecordServiceException => logError("Could not exec request: " + e.message)
-          throw new SparkException("RecordServiceRDD failed", e)
-        case e:TException => logError("Could not exec request: " + e.getMessage())
-          throw new SparkException("RecordServiceRDD failed", e)
-      }
+      var (worker, rows) = execTask(partition)
 
       // Iterate over the schema to create the correct writable types
       for (i <- 0 until writables.length) {
@@ -157,42 +122,20 @@ class RecordServiceRDD(sc: SparkContext, stmt: String, plannerHost: String = "lo
   }
 
   /**
-   * Returns the list of preferred hosts to run this partition.
-   */
-  override def getPreferredLocations(split: Partition): Seq[String] = {
-    val partition = split.asInstanceOf[RecordServicePartition]
-    partition.hosts
-  }
-
-  /**
    * Sends the request to the RecordServicePlanner to generate the list of partitions
    * (tasks in RecordService terminology)
    */
   override protected def getPartitions: Array[Partition] = {
-    logInfo("Running request: " + stmt)
-    var planner:RecordServicePlannerClient = null
-    val planResult = try {
-      planner = new RecordServicePlannerClient()
-      planner.connect(plannerHost, PLANNER_PORT)
-      planner.planRequest(stmt)
-    } catch {
-      case e:TRecordServiceException => logError("Could not plan request: " + e.message)
-        throw new SparkException("RecordServiceRDD failed", e)
-      case e:TException => logError("Could not plan request: " + e.getMessage())
-        throw new SparkException("RecordServiceRDD failed", e)
-    } finally {
-      planner.close()
-    }
+    super.planRequest._2
+  }
 
-    val partitions = new Array[Partition](planResult.tasks.size())
-    for (i <- 0 until planResult.tasks.size()) {
-      val hosts = ListBuffer[String]()
-      for (j <- 0 until planResult.tasks.get(i).hosts.size()) {
-        hosts += planResult.tasks.get(i).hosts.get(j)
-      }
-      partitions(i) = new RecordServicePartition(id, i, hosts.seq,
-          planResult.tasks.get(i), planResult.schema)
-    }
-    partitions
+  override def setTable(table:String) = {
+    super.setTable(table)
+    this
+  }
+
+  override def setStatement(stmt:String) = {
+    super.setStatement(stmt)
+    this
   }
 }

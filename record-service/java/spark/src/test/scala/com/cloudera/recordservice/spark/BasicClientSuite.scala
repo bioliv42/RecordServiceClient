@@ -46,7 +46,7 @@ object Helpers {
 
 class BasicClient extends FunSuite with SharedSparkContext {
   test("NationTest") {
-    val rdd = new RecordServiceRDD(sc, "select * from tpch.nation")
+    val rdd = new RecordServiceRDD(sc).setStatement("select * from tpch.nation")
     assert(rdd.count() == 25)
 
     val col1Vals = rdd.map(d => (d(0).asInstanceOf[ShortWritable].get().toInt)).collect()
@@ -71,7 +71,7 @@ class BasicClient extends FunSuite with SharedSparkContext {
   }
 
   test("AllTypesTest") {
-    val rdd = new RecordServiceRDD(sc, "select * from rs.alltypes")
+    val rdd = new RecordServiceRDD(sc).setTable("rs.alltypes")
     assert(rdd.count() == 2)
 
     val results = rdd.map(m => Helpers.allTypesFromWritables(m)).
@@ -85,7 +85,7 @@ class BasicClient extends FunSuite with SharedSparkContext {
   }
 
   test("AllTypesNullTest") {
-    val rdd = new RecordServiceRDD(sc, "select * from rs.alltypes_null")
+    val rdd = new RecordServiceRDD(sc).setTable("rs.alltypes_null")
     assert(rdd.count() == 1)
 
     val results = rdd.map(m => Helpers.allTypesFromWritables(m)).collect()

@@ -19,13 +19,8 @@ package com.cloudera.recordservice.spark
 
 import java.lang.reflect.Method
 
-import com.cloudera.recordservice.client.{RecordServiceWorkerClient, RecordServicePlannerClient, Rows}
 import com.cloudera.recordservice.thrift._
 import org.apache.spark._
-import org.apache.spark.rdd.RDD
-import org.apache.thrift.TException
-import org.apache.thrift.protocol.{TProtocol, TBinaryProtocol}
-import org.apache.thrift.transport.{TSocket}
 
 import scala.reflect.ClassTag
 import scala.util.control.Breaks
@@ -58,14 +53,9 @@ class SchemaRecordServiceRDD[T:ClassTag](sc: SparkContext,
                                          recordClass:Class[T],
                                          byOrdinal:Boolean = false,
                                          plannerHost: String = "localhost")
-    extends RDD[T](sc, Nil) with Logging {
+    extends RecordServiceRDDBase[T](sc, plannerHost) with Logging {
 
-  def setStatement(stmt:String) = {
-    this.stmt = stmt
-    this
-  }
-
-  def setTable(table:String) = {
+  override def setTable(table:String) = {
     if (byOrdinal) {
       // TODO: add API to RecordService to get the table schema so we can do projection
       this.stmt = "SELECT * from " + table
@@ -78,6 +68,11 @@ class SchemaRecordServiceRDD[T:ClassTag](sc: SparkContext,
       sb.append(" FROM " + table)
       this.stmt = sb.toString()
     }
+    this
+  }
+
+  override def setStatement(stmt:String) = {
+    super.setStatement(stmt)
     this
   }
 
@@ -99,9 +94,6 @@ class SchemaRecordServiceRDD[T:ClassTag](sc: SparkContext,
     this
   }
 
-  val PLANNER_PORT: Int = 40000
-  val WORKER_PORT: Int = 40100
-  var stmt:String = null
   var fields:Array[String] = extractFields()
   var types:Array[TTypeId] = extractTypes()
 
@@ -248,20 +240,8 @@ class SchemaRecordServiceRDD[T:ClassTag](sc: SparkContext,
     ctor.newInstance(args:_*).asInstanceOf[T]
   }
 
-  private class SchemaRecordServicePartition(rddId: Int, idx: Int,
-                                             h:String, t: TTask, s: TSchema)
-    extends Partition {
-    override def hashCode(): Int = 41 * (41 + rddId) + idx
-    override val index: Int = idx
-    val task: TTask = t
-    val schema: TSchema = s
-    val host: String = h
-  }
-
-  private class RecordServiceIterator(partition: SchemaRecordServicePartition)
+  private class RecordServiceIterator(partition: RecordServicePartition)
       extends NextIterator[T] {
-    var worker: RecordServiceWorkerClient = null
-
     // The object to return in getNext(). We always return the same object
     // and just update the value for each row.
     var value:T = createObject()
@@ -320,22 +300,7 @@ class SchemaRecordServiceRDD[T:ClassTag](sc: SparkContext,
       }
     }
 
-    var rows = try {
-      // Always connect to localhost. This assumes that on each node, we have
-      // a RecordServiceWorker running and that Spark has scheduled for locality
-      // using getPreferredLocations.
-      // TODO: we need to support the case where there is not a worker running on
-      // each host, in which case this needs to talk to get the list of all workers
-      // and pick one randomly.
-      worker = new RecordServiceWorkerClient()
-      worker.connect("localhost", WORKER_PORT)
-      worker.execAndFetch(partition.task.task)
-    } catch {
-      case e:TRecordServiceException => logError("Could not exec request: " + e.message)
-        throw new SparkException("RecordServiceRDD failed", e)
-      case e:TException => logError("Could not exec request: " + e.getMessage())
-        throw new SparkException("RecordServiceRDD failed", e)
-    }
+    var (worker, rows) = execTask(partition)
 
     override def getNext() : T = {
       while (true) {
@@ -419,7 +384,7 @@ class SchemaRecordServiceRDD[T:ClassTag](sc: SparkContext,
   override def compute(split: Partition, context: TaskContext):
       InterruptibleIterator[T] = {
     new InterruptibleIterator[T](context,
-        new RecordServiceIterator(split.asInstanceOf[SchemaRecordServicePartition]))
+        new RecordServiceIterator(split.asInstanceOf[RecordServicePartition]))
   }
 
   /**
@@ -428,33 +393,10 @@ class SchemaRecordServiceRDD[T:ClassTag](sc: SparkContext,
    * TODO: How does this handle locality.
    */
   override protected def getPartitions: Array[Partition] = {
-    if (stmt == null) throw new SparkException("Statement not set.")
-    logInfo("Request: " + stmt)
-
-    var planner:RecordServicePlannerClient = null
-    val planResult = try {
-      planner = new RecordServicePlannerClient()
-      planner.connect(plannerHost, PLANNER_PORT)
-      planner.planRequest(stmt)
-    } catch {
-      case e:TRecordServiceException => logError("Could not plan request: " + e.message)
-        throw new SparkException("RecordServiceRDD failed", e)
-      case e:TException => logError("Could not plan request: " + e.getMessage())
-        throw new SparkException("RecordServiceRDD failed", e)
-    } finally {
-      planner.close()
-    }
-
+    val (request, partitions) = planRequest
     // TODO: verify that T is not an inner class, Spark shell generates it that way.
-    verifySchema(planResult.schema)
+    verifySchema(request.schema)
     logInfo("Schema matched")
-
-    val partitions = new Array[Partition](planResult.tasks.size())
-    for (i <- 0 until planResult.tasks.size()) {
-      partitions(i) = new SchemaRecordServicePartition(
-        id, i, planResult.tasks.get(i).hosts.get(0),
-        planResult.tasks.get(i), planResult.schema)
-    }
     partitions
   }
 }
