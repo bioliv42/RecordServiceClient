@@ -1,3 +1,17 @@
+// Copyright 2014 Cloudera Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package com.cloudera.recordservice.client;
 
 import java.io.IOException;
@@ -154,7 +168,7 @@ public class Rows {
 
   // Client and task handle
   private final RecordServiceWorkerClient worker_;
-  private final TUniqueId handle_;
+  private TUniqueId handle_;
 
   // The current fetchResult from the RecordServiceWorker. Never null.
   private TFetchResult fetchResult_;
@@ -196,8 +210,13 @@ public class Rows {
     return row_;
   }
 
+  /*
+   * Closes the task. Idempotent.
+   */
   public void close() {
+    if (handle_ == null) return;
     worker_.closeTask(handle_);
+    handle_ = null;
   }
 
   public TSchema getSchema() { return row_.getSchema(); }
@@ -215,6 +234,9 @@ public class Rows {
   }
 
   private void nextBatch() throws IOException {
+    if (handle_ == null) {
+      throw new RuntimeException("Task has been closed already.");
+    }
     try {
       fetchResult_ = worker_.fetch(handle_);
     } catch (TException e) {

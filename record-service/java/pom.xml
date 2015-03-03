@@ -32,6 +32,7 @@
     <module>sample</module>
     <module>mr</module>
     <module>spark</module>
+    <module>avro</module>
   </modules>
 
   <properties>
@@ -41,6 +42,7 @@
     <junit.version>4.11</junit.version>
     <hadoop.version>2.5.0-cdh5.4.0-SNAPSHOT</hadoop.version>
     <hive.version>0.13.1-cdh5.4.0-SNAPSHOT</hive.version>
+    <avro.version>1.7.7</avro.version>
   </properties>
 
   <repositories>

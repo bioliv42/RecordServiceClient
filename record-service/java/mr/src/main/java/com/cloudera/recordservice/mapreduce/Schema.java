@@ -43,7 +43,9 @@ import com.google.common.collect.Lists;
 /**
  * The Schema class provides metadata for the Record. It contains
  * the information of all columns for the record as well as the number
- * of columns
+ * of columns.
+ *
+ * TODO: this should move into the client package.
  */
 public class Schema implements Writable {
   // The ColumnType enum is basically used to wrap the
