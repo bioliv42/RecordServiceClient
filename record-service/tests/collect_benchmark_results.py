@@ -13,8 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# This script collects benchmark results and from the mysql perf database
-# and outputs (to stdout) the result in tsv.
+# This script collects benchmark results and from the mysql perf database.
 
 from optparse import OptionParser
 import MySQLdb as mdb
@@ -35,19 +34,29 @@ parser.add_option("--db_db", dest="db", default="recordservice",
 
 options, args = parser.parse_args()
 
-if len(sys.argv) < 3:
-  sys.exit("usage: %s <workload> <days_count_to_fetch>" % sys.argv[0])
+if len(sys.argv) < 4:
+  sys.exit("usage: %s <workload> <days_count_to_fetch> [query]" % sys.argv[0])
 
 con = mdb.connect(options.db_host, options.db_user, options.db_password, options.db)
 with con:
   cur = con.cursor()
   workload = sys.argv[1]
   days = sys.argv[2]
-  cur.execute("select client, runtime_ms, build from perf_db " +\
-    "where workload like %s AND date >= DATE_SUB(NOW(), INTERVAL %s DAY) AND "+\
-    "build is not NULL " +\
-    "ORDER BY client, build, date", (workload, days))
-  rows = cur.fetchall()
-  print 'client', '\t', 'runtime', '\t', 'build_number'
-  for row in rows:
-    print row[0], '\t', row[1], '\t', row[2]
+  query = sys.argv[3]
+  if query == "timings":
+    cur.execute("select client, runtime_ms, build from perf_db " +\
+      "where workload like %s AND date >= DATE_SUB(NOW(), INTERVAL %s DAY) AND "+\
+      "build is not NULL " +\
+      "ORDER BY client, build, date", (workload, days))
+    rows = cur.fetchall()
+    print 'client', '\t', 'runtime', '\t', 'build_number'
+    for row in rows:
+      print row[0], '\t', row[1], '\t', row[2]
+  elif query == "max_build":
+    cur.execute("select max(build) from perf_db " +\
+      "where workload like %s AND date >= DATE_SUB(NOW(), INTERVAL %s DAY) AND "+\
+      "build is not NULL", (workload, days))
+    rows = cur.fetchall()
+    print rows[0][0]
+  else:
+    sys.exit("Query must be: timings OR max_build")

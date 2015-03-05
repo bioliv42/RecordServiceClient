@@ -34,13 +34,21 @@ parser.add_option("--suite_warmup_iterations", dest="suite_warmup_iterations",
     default=0, type="int",
     help="Number of warmup iterations to run for each suite. These iterations are not\
       counted in the timing. This is useful to get data in the buffer cache.")
+
 parser.add_option("--log_file", dest="log_file", default="/tmp/rs_benchmark.log",
     help="File that contains stdout/stderr from running each case")
 parser.add_option("--result_sql_file", dest="result_sql_file",
     default="/tmp/rs_benchmark.sql",
     help="File that contains the benchmark results as sql statement.")
+
 parser.add_option("--build_number", dest="build_number", default=-1, type="int",
     help="The (jenkins) build number. -1 if not from jenkins.")
+
+# This option is used to run and generate results without storing them in the
+# perf db. This is useful for unofficial runs. If this is set, build_number and
+# db_host are ignored.
+parser.add_option("--result_tsv_dir", dest = "result_tsv_dir", default="",
+    help="Directory to put resulting tsv files.")
 
 parser.add_option("--perf_tbl", dest="perf_tbl", default="recordservice.perf_db",
     help="The table to insert the results into")
@@ -97,6 +105,10 @@ def run_suite(suite, results_sql):
     print "Cannot run suite with no cases. suite=" + suite[0]
     sys.exit(1)
 
+  result_tsv = None
+  if (options.result_tsv_dir != ""):
+    result_tsv = open(options.result_tsv_dir + "/" + suite[0], "w")
+
   if options.suite_warmup_iterations > 0:
     # Just run the first case for these many iterations
     cmd = cases[0][1]
@@ -116,6 +128,10 @@ def run_suite(suite, results_sql):
       run_shell_cmd(cmd)
       timing_ms = time.time() * 1000 - start
       results_sql.write(to_sql(suite, case, timing_ms) + "\n")
+      if (result_tsv != None):
+        # Write the results in the form that's normally output from the DB.
+        # Write a marker build number.
+        result_tsv.write(case[0] + "\t" + str(timing_ms) + "\tBUILD_NUMBER\n")
 
 if __name__ == "__main__":
   benchmark_start_time_ms = time.time() * 1000
@@ -124,6 +140,8 @@ if __name__ == "__main__":
   run_shell_cmd("rm -f " + options.log_file)
 
   results_sql = open(options.result_sql_file, "w")
+  if (options.result_tsv_dir != ""):
+    run_shell_cmd("mkdir -p " + options.result_tsv_dir)
 
   for suite in benchmarks.benchmarks:
     run_suite(suite, results_sql)
@@ -133,7 +151,7 @@ if __name__ == "__main__":
   duration_ms = time.time() * 1000 - benchmark_start_time_ms
   print("Finished benchmark: " + str(duration_ms) + "ms")
 
-  if (options.db_host != ""):
+  if (options.db_host != "" and options.result_tsv_dir == ""):
     print("Inserting results into db@" + options.db_host + "\n")
     cmd = "mysql -h " + options.db_host + " -u " + options.db_user +\
         " -p" + options.db_password + " < " + options.result_sql_file

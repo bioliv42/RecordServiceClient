@@ -6,17 +6,42 @@
 # This script pulls data from the perf database and uses R to generate
 # the results plot.
 
+set -e
+
 generate_report() {
   local WORKLOAD=$1
   local DAYS=$2
-  local OUTPUT=$3
-  ./collect_benchmark_results.py "$WORKLOAD" $DAYS > /tmp/data.tsv
-  Rscript generate_runtime_plots.R /tmp/data.tsv $OUTPUT
+  local RESULTS_DIR=$3
+
+  ./collect_benchmark_results.py "$WORKLOAD" $DAYS timings > /tmp/data.tsv
+  if [ -n "$RESULTS_DIR" ]; then
+    # In this case, we have local results (not in DB) that need to be merged into
+    # /tmp/data/tsv. The local results don't have a build number and we want to
+    # assign it the next highest build number. 
+    local MAX_BUILD=`./collect_benchmark_results.py "$WORKLOAD" $DAYS max_build`
+    NEXT_BUILD=$((MAX_BUILD+1))
+
+    # Replace the BUILD_NUMBER in results dir with the max build number + 1
+    # This means the results from RESULT_DIR always comes right after the results
+    # from the DB.
+    sed -i "s/BUILD_NUMBER/$NEXT_BUILD/" "$RESULT_DIR/$WORKLOAD"
+
+    # Append the local results (not stored in the data base) before plotting.
+    cat "$RESULTS_DIR/$WORKLOAD" >> /tmp/data.tsv
+  fi
+  Rscript generate_runtime_plots.R /tmp/data.tsv $WORKLOAD
 }
 
-generate_report "Query 1 (Text/6gb)" 10 "Query1_Text_6GB"
-generate_report "Query 1 (Parquet/6gb)" 10 "Query1_Parquet_6GB"
-generate_report "Query 1 (Avro/6gb)" 10 "Query1_Avro_6GB"
+# The number of days to go back to get results.
+DAYS=10
+
+# Additional results to append to the ones stored in the DB. These results are
+# not stored in the DB.
+RESULTS_DIR=$1
+
+generate_report "Query1_Text_6GB" $DAYS $RESULTS_DIR
+generate_report "Query1_Parquet_6GB" $DAYS $RESULTS_DIR
+generate_report "Query1_Avro_6GB" $DAYS $RESULTS_DIR
 
 mkdir -p $RECORD_SERVICE_HOME/benchmark_results
 rm -f $RECORD_SERVICE_HOME/benchmark_results/*

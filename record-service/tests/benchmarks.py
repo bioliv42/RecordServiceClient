@@ -66,7 +66,9 @@ benchmarks = [
   [
     # Metadata about this suite. "local" indicates this benchmark should only be
     # run on a single node.
-    "Query 1 (Text/6gb)", "local",
+    # The first argument is used for file paths so cannot contain characters that
+    # need to be escaped.
+    "Query1_Text_6GB", "local",
     [
       # Each case to run. The first element is the name of the application and
       # the second is the shell command to run to run the benchmark
@@ -84,7 +86,7 @@ benchmarks = [
   ],
 
   [
-    "Query 1 (Parquet/6gb)", "local",
+    "Query1_Parquet_6GB", "local",
     [
       ["impala", impala_shell_cmd("select sum(l_partkey) from tpch6gb_parquet.lineitem")],
       ["impala-single-thread", impala_single_thread_cmd(
@@ -102,7 +104,7 @@ benchmarks = [
   ],
 
   [
-    "Query 1 (Avro/6gb)", "local",
+    "Query1_Avro_6GB", "local",
     [
       ["impala", impala_shell_cmd(
           "select sum(l_partkey) from tpch6gb_avro_snap.lineitem")],
