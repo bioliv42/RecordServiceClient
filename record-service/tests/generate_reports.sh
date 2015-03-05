@@ -22,9 +22,9 @@ generate_report() {
     NEXT_BUILD=$((MAX_BUILD+1))
 
     # Replace the BUILD_NUMBER in results dir with the max build number + 1
-    # This means the results from RESULT_DIR always comes right after the results
+    # This means the results from RESULTS_DIR always comes right after the results
     # from the DB.
-    sed -i "s/BUILD_NUMBER/$NEXT_BUILD/" "$RESULT_DIR/$WORKLOAD"
+    sed -i "s/BUILD_NUMBER/$NEXT_BUILD/" "$RESULTS_DIR/$WORKLOAD"
 
     # Append the local results (not stored in the data base) before plotting.
     cat "$RESULTS_DIR/$WORKLOAD" >> /tmp/data.tsv
