@@ -49,10 +49,6 @@ public class RecordServicePlannerClient {
     try {
       client = new RecordServicePlannerClient(hostname, port);
       return client.planRequest(stmt);
-    } catch (TRecordServiceException e) {
-      throw e;
-    } catch (TException e) {
-      throw new IOException("Could not connect to planner service.", e);
     } finally {
       if (client != null) client.close();
     }
@@ -61,18 +57,23 @@ public class RecordServicePlannerClient {
   /**
    * Opens a connection to the RecordServicePlanner.
    */
-  public RecordServicePlannerClient(String hostname, int port) throws TException {
+  public RecordServicePlannerClient(String hostname, int port) throws IOException {
     TTransport transport = new TSocket(hostname, port);
     try {
       transport.open();
     } catch (TTransportException e) {
-      System.err.println(String.format(
-          "Could not connect to RecordServicePlanner: %s:%d", hostname, port));
-      throw e;
+      throw new IOException(String.format(
+          "Could not connect to RecordServicePlanner: %s:%d", hostname, port), e);
     }
     protocol_ = new TBinaryProtocol(transport);
     plannerClient_ = new RecordServicePlanner.Client(protocol_);
-    protocolVersion_ = ThriftUtils.fromThrift(plannerClient_.GetProtocolVersion());
+    try {
+      protocolVersion_ = ThriftUtils.fromThrift(plannerClient_.GetProtocolVersion());
+    } catch (TException e) {
+      // TODO: this probably means they connected to a thrift service that is not the
+      // planner service (i.e. wrong port). Improve this message.
+      throw new IOException("Could not get service protocol version.", e);
+    }
   }
 
   /**
@@ -88,7 +89,7 @@ public class RecordServicePlannerClient {
   /**
    * Returns the protocol version of the connected service.
    */
-  public ProtocolVersion getProtocolVersion() throws RuntimeException, TException {
+  public ProtocolVersion getProtocolVersion() throws RuntimeException {
     validateIsConnected();
     return protocolVersion_;
   }
@@ -97,17 +98,19 @@ public class RecordServicePlannerClient {
    * Calls the RecordServicePlanner to generate a new plan - set of tasks that can be
    * executed using a RecordServiceWorker.
    */
-  public TPlanRequestResult planRequest(String query) throws TException {
+  public TPlanRequestResult planRequest(String query)
+      throws IOException, TRecordServiceException {
     validateIsConnected();
 
     TPlanRequestResult planResult;
     try {
       TPlanRequestParams planParams = new TPlanRequestParams(TProtocolVersion.V1, query);
       planResult = plannerClient_.PlanRequest(planParams);
+    } catch (TRecordServiceException e) {
+      throw e;
     } catch (TException e) {
       // TODO: this should mark the connection as bad on some error codes.
-      System.err.println("Could not plan request: " + e.getMessage());
-      throw e;
+      throw new IOException("Could not plan request.", e);
     }
     System.out.println("Generated " + planResult.tasks.size() + " tasks.");
     return planResult;

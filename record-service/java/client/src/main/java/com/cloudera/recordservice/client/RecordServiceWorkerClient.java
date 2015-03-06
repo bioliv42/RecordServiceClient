@@ -16,6 +16,7 @@ package com.cloudera.recordservice.client;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Set;
 
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
@@ -32,6 +33,7 @@ import com.cloudera.recordservice.thrift.TFetchResult;
 import com.cloudera.recordservice.thrift.TStats;
 import com.cloudera.recordservice.thrift.TUniqueId;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Sets;
 
 /**
  * Java client for the RecordServiceWorker. This class is not thread safe.
@@ -43,6 +45,9 @@ public class RecordServiceWorkerClient {
   private boolean isClosed_ = false;
   private ProtocolVersion protocolVersion_ = null;
 
+  // The set of all active tasks.
+  private Set<TUniqueId> activeTasks_ = Sets.newHashSet();
+
   // Fetch size to pass to execTask(). If null, server will determine fetch size.
   private Integer fetchSize_;
 
@@ -50,7 +55,10 @@ public class RecordServiceWorkerClient {
    * Connects to the RecordServiceWorker.
    */
   public void connect(String hostname, int port) throws TException {
-    if (workerClient_ != null) throw new RuntimeException("Already connected.");
+    if (workerClient_ != null) {
+      throw new RuntimeException("Already connected. Must call close() first.");
+    }
+
     TTransport transport = new TSocket(hostname, port);
     try {
       transport.open();
@@ -62,6 +70,7 @@ public class RecordServiceWorkerClient {
     protocol_ = new TBinaryProtocol(transport);
     workerClient_ = new RecordServiceWorker.Client(protocol_);
     protocolVersion_ = ThriftUtils.fromThrift(workerClient_.GetProtocolVersion());
+    isClosed_ = false;
   }
 
   /**
@@ -70,8 +79,17 @@ public class RecordServiceWorkerClient {
    */
   public void close() {
     if (protocol_ != null && !isClosed_) {
+      for (TUniqueId handle: activeTasks_) {
+        try {
+          workerClient_.CloseTask(handle);
+        } catch (TException e) {
+          // Ignore. TODO: log
+        }
+      }
+      activeTasks_.clear();
       protocol_.getTransport().close();
       isClosed_ = true;
+      workerClient_ = null;
     }
   }
 
@@ -88,21 +106,23 @@ public class RecordServiceWorkerClient {
    */
   public void closeTask(TUniqueId handle) {
     validateIsConnected();
-    try {
-      workerClient_.CloseTask(handle);
-    } catch (TException e) {
-      // Ignore. TODO log.
+    if (activeTasks_.contains(handle)) {
+      try {
+        workerClient_.CloseTask(handle);
+      } catch (TException e) {
+        // Ignore. TODO log.
+      }
+      activeTasks_.remove(handle);
     }
+    // TODO: what if it doesn't exist?
   }
 
   /**
    * Executes the task asynchronously, returning the handle the client.
    */
   public TUniqueId execTask(ByteBuffer task) throws TException {
-    Preconditions.checkNotNull(task);
     validateIsConnected();
-    TExecTaskParams taskParams = new TExecTaskParams(task);
-    return execTaskInternal(taskParams).getHandle();
+    return execTaskInternal(task).getHandle();
   }
 
   /**
@@ -110,11 +130,9 @@ public class RecordServiceWorkerClient {
    * used to fetch results.
    */
   public Records execAndFetch(ByteBuffer task) throws IOException {
-    Preconditions.checkNotNull(task);
     validateIsConnected();
-    TExecTaskParams taskParams = new TExecTaskParams(task);
     try {
-      TExecTaskResult result = execTaskInternal(taskParams);
+      TExecTaskResult result = execTaskInternal(task);
       return new Records(this, result.getHandle(), result.schema);
     } catch (TException e) {
       throw new IOException(e);
@@ -126,8 +144,8 @@ public class RecordServiceWorkerClient {
    * Fetches a batch of records and returns the result.
    */
   public TFetchResult fetch(TUniqueId handle) throws TException {
-    Preconditions.checkNotNull(handle);
     validateIsConnected();
+    validateHandleIsActive(handle);
     TFetchParams fetchParams = new TFetchParams(handle);
     try {
       return workerClient_.Fetch(fetchParams);
@@ -142,6 +160,7 @@ public class RecordServiceWorkerClient {
    */
   public TStats getTaskStats(TUniqueId handle) throws TException {
     validateIsConnected();
+    validateHandleIsActive(handle);
     return workerClient_.GetTaskStats(handle);
   }
 
@@ -152,14 +171,23 @@ public class RecordServiceWorkerClient {
   public Integer getFetchSize() { return fetchSize_; }
 
   /**
+   * Returns the number of active tasks for this worker.
+   */
+  public int numActiveTasks() { return activeTasks_.size(); }
+
+  /**
    * Executes the task asynchronously, returning the handle the client.
    */
-  private TExecTaskResult execTaskInternal(TExecTaskParams taskParams)
+  private TExecTaskResult execTaskInternal(ByteBuffer task)
           throws TException {
-    Preconditions.checkNotNull(taskParams);
+    Preconditions.checkNotNull(task);
+    TExecTaskParams taskParams = new TExecTaskParams(task);
     try {
       if (fetchSize_ != null) taskParams.setFetch_size(fetchSize_);
-      return workerClient_.ExecTask(taskParams);
+      TExecTaskResult result = workerClient_.ExecTask(taskParams);
+      Preconditions.checkState(!activeTasks_.contains(result.handle));
+      activeTasks_.add(result.handle);
+      return result;
     } catch (TException e) {
       System.err.println("Could not exec task: " + e.getMessage());
       throw e;
@@ -169,6 +197,12 @@ public class RecordServiceWorkerClient {
   private void validateIsConnected() throws RuntimeException {
     if (workerClient_ == null || isClosed_) {
       throw new RuntimeException("Client not connected.");
+    }
+  }
+
+  private void validateHandleIsActive(TUniqueId handle) {
+    if (!activeTasks_.contains(handle)) {
+      throw new RuntimeException("Invalid task handle.");
     }
   }
 }

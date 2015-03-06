@@ -26,16 +26,20 @@ import org.junit.Test;
 import com.cloudera.recordservice.thrift.TPlanRequestResult;
 import com.cloudera.recordservice.thrift.TRecordServiceException;
 import com.cloudera.recordservice.thrift.TSchema;
+import com.cloudera.recordservice.thrift.TStats;
 import com.cloudera.recordservice.thrift.TTypeId;
+import com.cloudera.recordservice.thrift.TUniqueId;
 
-
+// TODO: add more API misuse tests.
+// TODO: add more stats tests.
 public class TestBasicClient {
 
   static final int PLANNER_PORT = 40000;
   static final int WORKER_PORT = 40100;
 
   @Test
-  public void testPlannerConnection() throws RuntimeException, TException {
+  public void testPlannerConnection()
+      throws RuntimeException, IOException, TRecordServiceException {
     RecordServicePlannerClient planner =
         new RecordServicePlannerClient("localhost", PLANNER_PORT);
 
@@ -46,6 +50,7 @@ public class TestBasicClient {
       planner.getProtocolVersion();
     } catch (RuntimeException e) {
       threwException = true;
+      assertTrue(e.getMessage().contains("Client not connected."));
     } finally {
       assertTrue(threwException);
     }
@@ -55,6 +60,7 @@ public class TestBasicClient {
       planner.planRequest("ABCD");
     } catch (RuntimeException e) {
       threwException = true;
+      assertTrue(e.getMessage().contains("Client not connected."));
     } finally {
       assertTrue(threwException);
     }
@@ -71,8 +77,9 @@ public class TestBasicClient {
     threwException = false;
     try {
       new RecordServicePlannerClient("localhost", 12345);
-    } catch (TException e) {
+    } catch (IOException e) {
       threwException = true;
+      assertTrue(e.getMessage().contains("Could not connect to RecordServicePlanner"));
     } finally {
       assertTrue(threwException);
     }
@@ -87,6 +94,7 @@ public class TestBasicClient {
       worker.getProtocolVersion();
     } catch (RuntimeException e) {
       threwException = true;
+      assertTrue(e.getMessage().contains("Client not connected."));
     } finally {
       assertTrue(threwException);
     }
@@ -97,6 +105,8 @@ public class TestBasicClient {
       worker.connect("localhost", PLANNER_PORT);
     } catch (RuntimeException e) {
       threwException = true;
+      assertTrue(e.getMessage().contains(
+          "Already connected. Must call close() first."));
     } finally {
       assertTrue(threwException);
     }
@@ -106,14 +116,70 @@ public class TestBasicClient {
     assertEquals(worker.getProtocolVersion(), ProtocolVersion.V1);
 
     worker.close();
+
+    // Should be able to connect now.
+    worker.connect("localhost", PLANNER_PORT);
+    worker.close();
   }
 
   @Test
-  // TODO: add more API misuse tests.
-  public void testNation() throws TException, IOException {
+  public void testTaskClose() throws TException, IOException {
+    // Plan the request
+    TPlanRequestResult plan = RecordServicePlannerClient.planRequest(
+        "localhost", PLANNER_PORT,
+        "select * from tpch.nation");
+
+    RecordServiceWorkerClient worker = new RecordServiceWorkerClient();
+    worker.connect("localhost", WORKER_PORT);
+    assertEquals(worker.numActiveTasks(), 0);
+
+    worker.execTask(plan.tasks.get(0).task);
+    assertEquals(worker.numActiveTasks(), 1);
+    worker.execTask(plan.tasks.get(0).task);
+    TUniqueId handle = worker.execTask(plan.tasks.get(0).task);
+    assertEquals(worker.numActiveTasks(), 3);
+    worker.closeTask(handle);
+    assertEquals(worker.numActiveTasks(), 2);
+
+    // Close again. Should be fine.
+    worker.closeTask(handle);
+    assertEquals(worker.numActiveTasks(), 2);
+
+    // Closing the worker should close them all.
+    worker.close();
+    assertEquals(worker.numActiveTasks(), 0);
+  }
+
+  @Test
+  public void testBadHandle() throws TException, IOException {
     RecordServiceWorkerClient worker = new RecordServiceWorkerClient();
     worker.connect("localhost", WORKER_PORT);
 
+    TUniqueId badHandle = new TUniqueId();
+    worker.closeTask(badHandle);
+
+    boolean threwException = false;
+    try {
+      worker.fetch(badHandle);
+    } catch (RuntimeException e) {
+      threwException = true;
+      assertTrue(e.getMessage().contains("Invalid task handle."));
+    }
+    assertTrue(threwException);
+
+    threwException = false;
+    try {
+      worker.getTaskStats(badHandle);
+    } catch (RuntimeException e) {
+      threwException = true;
+      assertTrue(e.getMessage().contains("Invalid task handle."));
+    }
+    assertTrue(threwException);
+
+  }
+
+  @Test
+  public void testNation() throws TException, IOException {
     // Plan the request
     TPlanRequestResult plan = RecordServicePlannerClient.planRequest(
         "localhost", PLANNER_PORT,
@@ -131,25 +197,67 @@ public class TestBasicClient {
     assertEquals(plan.schema.cols.get(3).type.type_id, TTypeId.STRING);
 
     // Execute the task
+    RecordServiceWorkerClient worker = new RecordServiceWorkerClient();
+    worker.connect("localhost", WORKER_PORT);
+
     assertEquals(plan.tasks.size(), 1);
     assertEquals(plan.tasks.get(0).local_hosts.size(), 3);
-    Records records = worker.execAndFetch(plan.tasks.get(0).task);
-    int numRows = 0;
-    while (records.hasNext()) {
-      Records.Record record = records.next();
-      ++numRows;
-      if (numRows == 1) {
-        assertEquals(record.getShort(0), 0);
-        assertEquals(record.getByteArray(1).toString(), "ALGERIA");
-        assertEquals(record.getShort(2), 0);
-        assertEquals(record.getByteArray(3).toString(),
-            " haggle. carefully final deposits detect slyly agai");
+    for (int i = 0; i < 2; ++i) {
+      Records records = worker.execAndFetch(plan.tasks.get(0).task);
+      int numRows = 0;
+      while (records.hasNext()) {
+        Records.Record record = records.next();
+        ++numRows;
+        if (numRows == 1) {
+          assertEquals(record.getShort(0), 0);
+          assertEquals(record.getByteArray(1).toString(), "ALGERIA");
+          assertEquals(record.getShort(2), 0);
+          assertEquals(record.getByteArray(3).toString(),
+              " haggle. carefully final deposits detect slyly agai");
+        }
       }
-    }
-    records.close();
 
-    assertEquals(numRows, 25);
+      // Verify stats
+      TStats stats = records.getStats();
+      assertEquals(stats.completion_percentage, 100, 0.1);
+      assertEquals(stats.num_rows_read, 25);
+      assertEquals(stats.num_rows_returned, 25);
+
+      records.close();
+
+      assertEquals(numRows, 25);
+
+      // Close and run this again. The worker object should still work.
+      worker.close();
+      worker.connect("localhost", WORKER_PORT);
+    }
     worker.close();
+  }
+
+  @Test
+  public void testNationWithUtility() throws TException, IOException {
+    // Plan the request
+    TPlanRequestResult plan = RecordServicePlannerClient.planRequest(
+        "localhost", PLANNER_PORT,
+        "select * from tpch.nation");
+
+    for (int i = 0; i < plan.tasks.size(); ++i) {
+      Records records = WorkerClientUtil.execTask(plan, i);
+      int numRows = 0;
+      while (records.hasNext()) {
+        Records.Record record = records.next();
+        ++numRows;
+        if (numRows == 1) {
+          assertEquals(record.getShort(0), 0);
+          assertEquals(record.getByteArray(1).toString(), "ALGERIA");
+          assertEquals(record.getShort(2), 0);
+          assertEquals(record.getByteArray(3).toString(),
+              " haggle. carefully final deposits detect slyly agai");
+        }
+      }
+      records.close();
+      assertEquals(numRows, 25);
+    }
   }
 
   /*
@@ -223,7 +331,7 @@ public class TestBasicClient {
   }
 
   @Test
-  public void testAllTypesEmpty() throws TException, IOException {
+  public void testAllTypesEmpty() throws TRecordServiceException, IOException {
     TPlanRequestResult plan = RecordServicePlannerClient.planRequest(
         "localhost", PLANNER_PORT,
         "select * from rs.alltypes_empty");

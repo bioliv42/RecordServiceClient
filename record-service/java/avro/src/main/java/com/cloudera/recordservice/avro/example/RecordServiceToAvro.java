@@ -23,7 +23,7 @@ import org.apache.thrift.TException;
 import com.cloudera.recordservice.avro.GenericRecords;
 import com.cloudera.recordservice.avro.SchemaUtils;
 import com.cloudera.recordservice.client.RecordServicePlannerClient;
-import com.cloudera.recordservice.client.RecordServiceWorkerClient;
+import com.cloudera.recordservice.client.WorkerClientUtil;
 import com.cloudera.recordservice.thrift.TPlanRequestResult;
 
 /**
@@ -32,14 +32,10 @@ import com.cloudera.recordservice.thrift.TPlanRequestResult;
  */
 public class RecordServiceToAvro {
   static final int PLANNER_PORT = 40000;
-  static final int WORKER_PORT = 40100;
 
   public static void main(String[] args) throws TException, IOException {
     String query = "select * from tpch.nation";
     if (args.length == 2) query = args[1];
-
-    RecordServiceWorkerClient worker = new RecordServiceWorkerClient();
-    worker.connect("localhost", WORKER_PORT);
 
     TPlanRequestResult plan = RecordServicePlannerClient.planRequest(
         "localhost", PLANNER_PORT, query);
@@ -48,15 +44,16 @@ public class RecordServiceToAvro {
 
     System.out.println("Records:");
     for (int t = 0; t < plan.tasks.size(); ++t) {
-      GenericRecords records = new GenericRecords(
-          worker.execAndFetch(plan.tasks.get(t).task));
-      while (records.hasNext()) {
-        GenericData.Record record = records.next();
-        System.out.println(record);
+      GenericRecords records = null;
+      try {
+        records = new GenericRecords(WorkerClientUtil.execTask(plan, t));
+        while (records.hasNext()) {
+          GenericData.Record record = records.next();
+          System.out.println(record);
+        }
+      } finally {
+        if (records != null) records.close();
       }
-      records.close();
     }
-
-    worker.close();
   }
 }

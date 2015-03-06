@@ -19,18 +19,16 @@ import java.io.IOException;
 import org.apache.thrift.TException;
 
 import com.cloudera.recordservice.client.RecordServicePlannerClient;
-import com.cloudera.recordservice.client.RecordServiceWorkerClient;
 import com.cloudera.recordservice.client.Records;
 import com.cloudera.recordservice.client.Records.Record;
+import com.cloudera.recordservice.client.WorkerClientUtil;
 import com.cloudera.recordservice.thrift.TPlanRequestResult;
-import com.cloudera.recordservice.thrift.TTask;
 
 /**
  * This is similar to SampleClient except built using the client APIs.
  */
 public class SampleClientLib {
   static final int PLANNER_PORT = 40000;
-  static final int WORKER_PORT = 40100;
 
   static final String DEFAULT_QUERY = "select n_nationkey from tpch.nation";
 
@@ -40,23 +38,19 @@ public class SampleClientLib {
      */
     System.out.println("Running request: " + query);
 
-    RecordServiceWorkerClient worker = new RecordServiceWorkerClient();
-    worker.connect("localhost", WORKER_PORT);
-
     TPlanRequestResult planResult = RecordServicePlannerClient.planRequest(
         "localhost", PLANNER_PORT, query);
     long totalTimeMs = 0;
-    /**
-     * Run each task on one of the workers.
-     */
+
     int totalRows = 0;
     long sum = 0;
-    for (TTask task: planResult.tasks) {
-      Records records = null;
+
+    // Run each task and fetch results until we're done
+    for (int i = 0; i < planResult.tasks.size(); ++i) {
       long start = System.currentTimeMillis();
-      /* Fetch results until we're done */
+      Records records = null;
       try {
-        records = worker.execAndFetch(task.task);
+        records = WorkerClientUtil.execTask(planResult, i);
         while (records.hasNext()) {
           Record record = records.next();
           sum += record.getLong(0);

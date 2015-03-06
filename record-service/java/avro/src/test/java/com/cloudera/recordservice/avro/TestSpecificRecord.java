@@ -17,7 +17,6 @@ package com.cloudera.recordservice.avro;
 import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 
 import org.apache.thrift.TException;
 import org.junit.Test;
@@ -26,19 +25,11 @@ import com.cloudera.recordservice.avro.SpecificRecords.ResolveBy;
 import com.cloudera.recordservice.avro.nation.NationAll;
 import com.cloudera.recordservice.avro.nation.NationKeyName;
 import com.cloudera.recordservice.client.RecordServicePlannerClient;
-import com.cloudera.recordservice.client.RecordServiceWorkerClient;
-import com.cloudera.recordservice.client.Records;
+import com.cloudera.recordservice.client.WorkerClientUtil;
 import com.cloudera.recordservice.thrift.TPlanRequestResult;
 
 public class TestSpecificRecord {
   static final int PLANNER_PORT = 40000;
-  static final int WORKER_PORT = 40100;
-
-  Records execAndFetch(ByteBuffer task) throws TException, IOException {
-    RecordServiceWorkerClient worker = new RecordServiceWorkerClient();
-    worker.connect("localhost", WORKER_PORT);
-    return worker.execAndFetch(task);
-  }
 
   @Test
   public void testNationAll() throws TException, IOException {
@@ -46,23 +37,25 @@ public class TestSpecificRecord {
         "localhost", PLANNER_PORT, "select * from tpch.nation");
 
     assertEquals(plan.tasks.size(), 1);
-    SpecificRecords<NationAll> records = new SpecificRecords<NationAll>(
-        NationAll.class, execAndFetch(plan.tasks.get(0).task),
-        ResolveBy.ORDINAL);
-
-    int numRecords = 0;
-    while (records.hasNext()) {
-      NationAll record = records.next();
-      ++numRecords;
-      if (numRecords == 3) {
-        assertEquals(record.getKey().intValue(), 2);
-        assertEquals(record.getName(), "BRAZIL");
-        assertEquals(record.getRegionKey().intValue(), 1);
-        assertEquals(record.getComment(), "y alongside of the pending deposits. carefully special packages are about the ironic forges. slyly special ");
+    SpecificRecords<NationAll> records = null;
+    try {
+      records = new SpecificRecords<NationAll>(NationAll.class,
+          WorkerClientUtil.execTask(plan, 0), ResolveBy.ORDINAL);
+      int numRecords = 0;
+      while (records.hasNext()) {
+        NationAll record = records.next();
+        ++numRecords;
+        if (numRecords == 3) {
+          assertEquals(record.getKey().intValue(), 2);
+          assertEquals(record.getName(), "BRAZIL");
+          assertEquals(record.getRegionKey().intValue(), 1);
+          assertEquals(record.getComment(), "y alongside of the pending deposits. carefully special packages are about the ironic forges. slyly special ");
+        }
       }
+      assertEquals(numRecords, 25);
+    } finally {
+      if (records != null) records.close();
     }
-    records.close();
-    assertEquals(numRecords, 25);
   }
 
   @Test
@@ -71,21 +64,22 @@ public class TestSpecificRecord {
         "localhost", PLANNER_PORT, "select n_nationkey, n_name from tpch.nation");
 
     assertEquals(plan.tasks.size(), 1);
-    SpecificRecords<NationKeyName> records = new SpecificRecords<NationKeyName>(
-        NationKeyName.class, execAndFetch(plan.tasks.get(0).task),
-        ResolveBy.NAME);
-
-    int numRecords = 0;
-    while (records.hasNext()) {
-      NationKeyName record = records.next();
-      ++numRecords;
-      if (numRecords == 4) {
-        assertEquals(record.getNName(), "CANADA");
-        assertEquals(record.getNNationkey().intValue(), 3);
+    SpecificRecords<NationKeyName> records = null;
+    try {
+      records = new SpecificRecords<NationKeyName>(NationKeyName.class,
+          WorkerClientUtil.execTask(plan, 0), ResolveBy.NAME);
+      int numRecords = 0;
+      while (records.hasNext()) {
+        NationKeyName record = records.next();
+        ++numRecords;
+        if (numRecords == 4) {
+          assertEquals(record.getNName(), "CANADA");
+          assertEquals(record.getNNationkey().intValue(), 3);
+        }
       }
+      assertEquals(numRecords, 25);
+    } finally {
+      if (records != null) records.close();
     }
-    records.close();
-    assertEquals(numRecords, 25);
   }
-
 }

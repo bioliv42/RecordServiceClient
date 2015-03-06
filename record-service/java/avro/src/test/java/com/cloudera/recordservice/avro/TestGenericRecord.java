@@ -26,19 +26,15 @@ import org.apache.thrift.TException;
 import org.junit.Test;
 
 import com.cloudera.recordservice.client.RecordServicePlannerClient;
-import com.cloudera.recordservice.client.RecordServiceWorkerClient;
+import com.cloudera.recordservice.client.WorkerClientUtil;
 import com.cloudera.recordservice.thrift.TPlanRequestResult;
 
 public class TestGenericRecord {
 
   static final int PLANNER_PORT = 40000;
-  static final int WORKER_PORT = 40100;
 
   @Test
   public void testNation() throws TException, IOException {
-    RecordServiceWorkerClient worker = new RecordServiceWorkerClient();
-    worker.connect("localhost", WORKER_PORT);
-
     TPlanRequestResult plan = RecordServicePlannerClient.planRequest(
         "localhost", PLANNER_PORT, "select * from tpch.nation");
 
@@ -59,29 +55,28 @@ public class TestGenericRecord {
 
     // Execute the task
     assertEquals(plan.tasks.size(), 1);
-    GenericRecords records =
-        new GenericRecords(worker.execAndFetch(plan.tasks.get(0).task));
+    GenericRecords records = null;
+    try {
+      records = new GenericRecords(WorkerClientUtil.execTask(plan, 0));
+      int numRecords = 0;
+      while (records.hasNext()) {
+        GenericData.Record record = records.next();
+        ++numRecords;
+        if (numRecords == 2) {
+          assertEquals(record.get("n_nationkey"), record.get(0));
+          assertEquals(record.get("n_name"), record.get(1));
+          assertEquals(record.get("n_regionkey"), record.get(2));
+          assertEquals(record.get("n_comment"), record.get(3));
 
-    int numRecords = 0;
-    while (records.hasNext()) {
-      GenericData.Record record = records.next();
-      ++numRecords;
-      if (numRecords == 2) {
-        assertEquals(record.get("n_nationkey"), record.get(0));
-        assertEquals(record.get("n_name"), record.get(1));
-        assertEquals(record.get("n_regionkey"), record.get(2));
-        assertEquals(record.get("n_comment"), record.get(3));
-
-        assertEquals(record.get("n_nationkey"), 1);
-        assertEquals(record.get("n_name"), "ARGENTINA");
-        assertEquals(record.get("n_regionkey"), 1);
-        assertEquals(record.get("n_comment"), "al foxes promise slyly according to the regular accounts. bold requests alon");
+          assertEquals(record.get("n_nationkey"), 1);
+          assertEquals(record.get("n_name"), "ARGENTINA");
+          assertEquals(record.get("n_regionkey"), 1);
+          assertEquals(record.get("n_comment"), "al foxes promise slyly according to the regular accounts. bold requests alon");
+        }
       }
+      assertEquals(numRecords, 25);
+    } finally {
+      if (records != null) records.close();
     }
-    records.close();
-
-    assertEquals(numRecords, 25);
-
-    worker.close();
   }
 }
