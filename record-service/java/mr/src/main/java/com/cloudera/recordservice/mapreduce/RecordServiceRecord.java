@@ -31,7 +31,7 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 
 import com.cloudera.recordservice.client.ByteArray;
-import com.cloudera.recordservice.client.Rows.Row;
+import com.cloudera.recordservice.client.Records.Record;
 import com.cloudera.recordservice.mapreduce.Schema.ColumnInfo;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
@@ -66,11 +66,11 @@ public class RecordServiceRecord implements Writable {
    * schema are expected to match, minimal error checks are performed.
    * This is a performance critical method.
    */
-  public void reset(Row row) {
-    if (row.getSchema().getColsSize() != schema_.getNumColumns()) {
-      throw new IllegalArgumentException(String.format("Schema for new row does not " +
-        "match existing schema: %d (new) != %d (existing)",
-        row.getSchema().getColsSize(), schema_.getNumColumns()));
+  public void reset(Record record) {
+    if (record.getSchema().getColsSize() != schema_.getNumColumns()) {
+      throw new IllegalArgumentException(String.format("Schema for new record does " +
+        "not match existing schema: %d (new) != %d (existing)",
+        record.getSchema().getColsSize(), schema_.getNumColumns()));
     }
 
     for (int i = 0; i < schema_.getNumColumns(); ++i) {
@@ -79,34 +79,34 @@ public class RecordServiceRecord implements Writable {
       Preconditions.checkNotNull(cInfo);
       switch (cInfo.getType()) {
         case BIGINT:
-          ((LongWritable) columnVals_[i]).set(row.getLong(i));
+          ((LongWritable) columnVals_[i]).set(record.getLong(i));
           break;
         case BOOLEAN:
-          ((BooleanWritable) columnVals_[i]).set(row.getBoolean(i));
+          ((BooleanWritable) columnVals_[i]).set(record.getBoolean(i));
           break;
         case DOUBLE:
-          ((DoubleWritable) columnVals_[i]).set(row.getDouble(i));
+          ((DoubleWritable) columnVals_[i]).set(record.getDouble(i));
           break;
         case INT:
-          ((IntWritable) columnVals_[i]).set(row.getInt(i));
+          ((IntWritable) columnVals_[i]).set(record.getInt(i));
           break;
         case STRING:
-          ByteArray s = row.getByteArray(i);
+          ByteArray s = record.getByteArray(i);
           ((Text) columnVals_[i]).set(s.byteBuffer().array(), s.offset(), s.len());
           break;
         case BINARY:
-          ByteArray b = row.getByteArray(i);
+          ByteArray b = record.getByteArray(i);
           ((BytesWritable) columnVals_[i]).set(
               b.byteBuffer().array(), b.offset(), b.len());
           break;
         case FLOAT:
-          ((FloatWritable) columnVals_[i]).set(row.getFloat(i));
+          ((FloatWritable) columnVals_[i]).set(record.getFloat(i));
           break;
         case SMALLINT:
-          ((ShortWritable) columnVals_[i]).set(row.getShort(i));
+          ((ShortWritable) columnVals_[i]).set(record.getShort(i));
           break;
         case TINYINT:
-          ((ByteWritable) columnVals_[i]).set(row.getByte(i));
+          ((ByteWritable) columnVals_[i]).set(record.getByte(i));
           break;
         default:
           Preconditions.checkState(false);

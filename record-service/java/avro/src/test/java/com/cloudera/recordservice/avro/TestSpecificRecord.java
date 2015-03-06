@@ -27,14 +27,14 @@ import com.cloudera.recordservice.avro.nation.NationAll;
 import com.cloudera.recordservice.avro.nation.NationKeyName;
 import com.cloudera.recordservice.client.RecordServicePlannerClient;
 import com.cloudera.recordservice.client.RecordServiceWorkerClient;
-import com.cloudera.recordservice.client.Rows;
+import com.cloudera.recordservice.client.Records;
 import com.cloudera.recordservice.thrift.TPlanRequestResult;
 
 public class TestSpecificRecord {
   static final int PLANNER_PORT = 40000;
   static final int WORKER_PORT = 40100;
 
-  Rows execAndFetch(ByteBuffer task) throws TException, IOException {
+  Records execAndFetch(ByteBuffer task) throws TException, IOException {
     RecordServiceWorkerClient worker = new RecordServiceWorkerClient();
     worker.connect("localhost", WORKER_PORT);
     return worker.execAndFetch(task);

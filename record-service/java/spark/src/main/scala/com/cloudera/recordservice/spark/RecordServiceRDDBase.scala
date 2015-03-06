@@ -59,7 +59,7 @@ abstract class RecordServiceRDDBase[T:ClassTag](sc: SparkContext, plannerHost: S
   }
 
   /**
-   * Executes 'stmt' and returns the worker and rows object associated with it.
+   * Executes 'stmt' and returns the worker and Records object associated with it.
    */
   protected def execTask(partition: RecordServicePartition) = {
     try {
@@ -71,8 +71,8 @@ abstract class RecordServiceRDDBase[T:ClassTag](sc: SparkContext, plannerHost: S
       // and pick one randomly.
       val worker = new RecordServiceWorkerClient()
       worker.connect("localhost", WORKER_PORT)
-      val rows = worker.execAndFetch(partition.task.task)
-      (worker, rows)
+      val records = worker.execAndFetch(partition.task.task)
+      (worker, records)
     } catch {
       case e:TRecordServiceException => logError("Could not exec request: " + e.message)
         throw new SparkException("RecordServiceRDD failed", e)

@@ -24,7 +24,7 @@ import org.apache.spark._
 /**
  * RDD that is backed by the RecordService. This returns an RDD of arrays of
  * Writable objects.
- * Each array is a row.
+ * Each record is an array.
  * TODO: remove default localhost param. This should pull it from the configs.
  */
 class RecordServiceRDD(sc: SparkContext, plannerHost: String = "localhost")
@@ -58,7 +58,7 @@ class RecordServiceRDD(sc: SparkContext, plannerHost: String = "localhost")
       // Register an on-task-completion callback to close the input stream.
       context.addTaskCompletionListener{ context => closeIfNeeded() }
 
-      var (worker, rows) = execTask(partition)
+      var (worker, records) = execTask(partition)
 
       // Iterate over the schema to create the correct writable types
       for (i <- 0 until writables.length) {
@@ -77,36 +77,36 @@ class RecordServiceRDD(sc: SparkContext, plannerHost: String = "localhost")
       }
 
       override def getNext() : Array[Writable] = {
-        if (!rows.hasNext()) {
+        if (!records.hasNext()) {
           finished = true
           return value
         }
 
-        // Reconstruct the row
-        val row = rows.next()
+        // Reconstruct the record
+        val record = records.next()
         for (i <- 0 until writables.length) {
-          if (row.isNull(i)) {
+          if (record.isNull(i)) {
             value(i) = null
           } else {
             value(i) = writables(i)
             partition.schema.cols.get(i).getType().type_id match {
               case TTypeId.BOOLEAN =>
-                value(i).asInstanceOf[BooleanWritable].set(row.getBoolean(i))
+                value(i).asInstanceOf[BooleanWritable].set(record.getBoolean(i))
               case TTypeId.TINYINT =>
-                value(i).asInstanceOf[ByteWritable].set(row.getByte(i))
+                value(i).asInstanceOf[ByteWritable].set(record.getByte(i))
               case TTypeId.SMALLINT =>
-                value(i).asInstanceOf[ShortWritable].set(row.getShort(i))
+                value(i).asInstanceOf[ShortWritable].set(record.getShort(i))
               case TTypeId.INT =>
-                value(i).asInstanceOf[IntWritable].set(row.getInt(i))
+                value(i).asInstanceOf[IntWritable].set(record.getInt(i))
               case TTypeId.BIGINT =>
-                value(i).asInstanceOf[LongWritable].set(row.getLong(i))
+                value(i).asInstanceOf[LongWritable].set(record.getLong(i))
               case TTypeId.FLOAT =>
-                value(i).asInstanceOf[FloatWritable].set(row.getFloat(i))
+                value(i).asInstanceOf[FloatWritable].set(record.getFloat(i))
               case TTypeId.DOUBLE =>
-                value(i).asInstanceOf[DoubleWritable].set(row.getDouble(i))
+                value(i).asInstanceOf[DoubleWritable].set(record.getDouble(i))
               case TTypeId.STRING =>
                 // TODO: ensure this doesn't copy.
-                val v = row.getByteArray(i)
+                val v = record.getByteArray(i)
                 value(i).asInstanceOf[Text].set(
                     v.byteBuffer().array(), v.offset(), v.len())
               case _ => assert(false)
@@ -117,9 +117,9 @@ class RecordServiceRDD(sc: SparkContext, plannerHost: String = "localhost")
       }
 
       override def close() = {
-        if (rows != null) {
-          rows.close()
-          rows = null
+        if (records != null) {
+          records.close()
+          records = null
         }
         if (worker != null) {
           worker.close()

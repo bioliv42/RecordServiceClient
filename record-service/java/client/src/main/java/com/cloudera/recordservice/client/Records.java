@@ -30,12 +30,12 @@ import com.cloudera.recordservice.thrift.TUniqueId;
 import com.google.common.base.Preconditions;
 
 /**
- * Abstraction over rows returned from the RecordService.
+ * Abstraction over records returned from the RecordService.
  * This class is extremely performance sensitive.
  * Not thread-safe.
  */
 @SuppressWarnings("restriction")
-public class Rows {
+public class Records {
   private static final Unsafe unsafe;
   static {
     try {
@@ -47,7 +47,7 @@ public class Rows {
     }
   }
 
-  public static final class Row {
+  public static final class Record {
     // For each column, the current offset to return (column data is sparse)
     private final long[] colOffsets_;
 
@@ -58,14 +58,15 @@ public class Rows {
     // Only used if col[i] is a String to prevent object creation.
     private final ByteArray[] byteArrayVals_;
 
-    private int rowIdx_;
+    // Current record idx (in the current batch)  being returned
+    private int recordIdx_;
 
-    // Schema of the row
+    // Schema of the record
     private final TSchema schema_;
 
     // Returns if the col at 'colIdx' is NULL.
     public boolean isNull(int colIdx) {
-      return nulls_[colIdx].get(rowIdx_) != 0;
+      return nulls_[colIdx].get(recordIdx_) != 0;
     }
 
     private static final long byteArrayOffset = unsafe.arrayBaseOffset(byte[].class);
@@ -127,8 +128,8 @@ public class Rows {
       return byteArrayVals_[colIdx];
     }
 
-    protected Row(TSchema schema) {
-      rowIdx_ = -1;
+    protected Record(TSchema schema) {
+      recordIdx_ = -1;
       colOffsets_ = new long[schema.cols.size()];
       colData_ = new ByteBuffer[schema.cols.size()];
       byteArrayVals_ = new ByteArray[schema.cols.size()];
@@ -143,6 +144,7 @@ public class Rows {
 
     // Resets the state of the row to return the next batch.
     protected void reset(TFetchResult result) throws RuntimeException {
+      recordIdx_ = -1;
       for (int i = 0; i < colOffsets_.length; ++i) {
         nulls_[i] = result.columnar_row_batch.cols.get(i).is_null;
         colOffsets_[i] = byteArrayOffset;
@@ -173,11 +175,8 @@ public class Rows {
   // The current fetchResult from the RecordServiceWorker. Never null.
   private TFetchResult fetchResult_;
 
-  // Row object that is returned. Reused across calls to next()
-  private final Row row_;
-
-  // Current row idx being returned
-  private int currentRow_;
+  // Record object that is returned. Reused across calls to next()
+  private final Record record_;
 
   // Cache of result from hasNext(). This starts out as true and makes one
   // transition to false.
@@ -187,11 +186,11 @@ public class Rows {
   private float progress_;
 
   /**
-   * Returns true if there are more rows.
+   * Returns true if there are more records.
    */
   public boolean hasNext() throws IOException {
     Preconditions.checkNotNull(fetchResult_);
-    while (currentRow_ == fetchResult_.num_rows) {
+    while (record_.recordIdx_ == fetchResult_.num_rows - 1) {
       if (fetchResult_.done) {
         hasNext_ = false;
         return false;
@@ -202,12 +201,12 @@ public class Rows {
   }
 
   /**
-   * Returns and advances to the next row.
+   * Returns and advances to the next record.
    */
-  public Row next() throws IOException {
+  public Record next() throws IOException {
     if (!hasNext_) throw new IOException("End of stream");
-    row_.rowIdx_ = currentRow_++;
-    return row_;
+    record_.recordIdx_++;
+    return record_;
   }
 
   /*
@@ -219,16 +218,16 @@ public class Rows {
     handle_ = null;
   }
 
-  public TSchema getSchema() { return row_.getSchema(); }
+  public TSchema getSchema() { return record_.getSchema(); }
 
   public float progress() { return progress_; }
 
-  protected Rows(RecordServiceWorkerClient worker,
+  protected Records(RecordServiceWorkerClient worker,
       TUniqueId handle, TSchema schema) throws IOException {
     worker_ = worker;
     handle_ = handle;
 
-    row_ = new Row(schema);
+    record_ = new Record(schema);
     nextBatch();
     hasNext_ = hasNext();
   }
@@ -242,11 +241,10 @@ public class Rows {
     } catch (TException e) {
       throw new IOException(e);
     }
-    currentRow_ = 0;
     if (fetchResult_.row_batch_format != TRowBatchFormat.Columnar) {
       throw new RuntimeException("Unsupported row batch format");
     }
-    row_.reset(fetchResult_);
+    record_.reset(fetchResult_);
     progress_ = (float)fetchResult_.task_completion_percentage;
   }
 

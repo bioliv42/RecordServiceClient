@@ -21,7 +21,7 @@ import java.util.List;
 import org.apache.avro.Schema;
 import org.apache.avro.specific.SpecificRecordBase;
 
-import com.cloudera.recordservice.client.Rows;
+import com.cloudera.recordservice.client.Records;
 import com.cloudera.recordservice.thrift.TTypeId;
 import com.google.common.base.Preconditions;
 
@@ -34,7 +34,7 @@ import com.google.common.base.Preconditions;
  * TODO: map STRING to BYTES?
  */
 public class SpecificRecords<T extends SpecificRecordBase> {
-  private Rows rows_;
+  private Records records_;
   private org.apache.avro.Schema avroSchema_;
   private com.cloudera.recordservice.thrift.TSchema schema_;
   private Class<T> class_;
@@ -49,10 +49,10 @@ public class SpecificRecords<T extends SpecificRecordBase> {
     NAME,
   }
 
-  public SpecificRecords(Class<T> cl, Rows rows, ResolveBy resolveBy) {
+  public SpecificRecords(Class<T> cl, Records records, ResolveBy resolveBy) {
     class_ = cl;
-    rows_ = rows;
-    schema_ = rows_.getSchema();
+    records_ = records;
+    schema_ = records_.getSchema();
     try {
       // The first field is the static schema field.
       // TODO: should we try harder to verify? This is auto-generated and
@@ -73,7 +73,7 @@ public class SpecificRecords<T extends SpecificRecordBase> {
    * Returns true if there are more records, false otherwise.
    */
   public boolean hasNext() throws IOException {
-    return rows_.hasNext();
+    return records_.hasNext();
   }
 
   /**
@@ -88,18 +88,18 @@ public class SpecificRecords<T extends SpecificRecordBase> {
       throw new RuntimeException("Could not create new record instance.", e);
     }
 
-    Rows.Row row = rows_.next();
+    Records.Record rsRecord = records_.next();
     for (int i = 0; i < schema_.getColsSize(); ++i) {
       int rsIndex = rsIndexToRecordIndex_[i];
       switch(schema_.getCols().get(i).type.type_id) {
-        case BOOLEAN: record.put(rsIndex, row.getBoolean(i)); break;
-        case TINYINT: record.put(rsIndex, (int)row.getByte(i)); break;
-        case SMALLINT: record.put(rsIndex, (int)row.getShort(i)); break;
-        case INT: record.put(rsIndex, row.getInt(i)); break;
-        case BIGINT: record.put(rsIndex, row.getLong(i)); break;
-        case FLOAT: record.put(rsIndex, row.getFloat(i)); break;
-        case DOUBLE: record.put(rsIndex, row.getDouble(i)); break;
-        case STRING: record.put(rsIndex, row.getByteArray(i).toString()); break;
+        case BOOLEAN: record.put(rsIndex, rsRecord.getBoolean(i)); break;
+        case TINYINT: record.put(rsIndex, (int)rsRecord.getByte(i)); break;
+        case SMALLINT: record.put(rsIndex, (int)rsRecord.getShort(i)); break;
+        case INT: record.put(rsIndex, rsRecord.getInt(i)); break;
+        case BIGINT: record.put(rsIndex, rsRecord.getLong(i)); break;
+        case FLOAT: record.put(rsIndex, rsRecord.getFloat(i)); break;
+        case DOUBLE: record.put(rsIndex, rsRecord.getDouble(i)); break;
+        case STRING: record.put(rsIndex, rsRecord.getByteArray(i).toString()); break;
         default:
           Preconditions.checkState(false,
               "Unsupported type: " + schema_.getCols().get(i).type);
@@ -113,7 +113,7 @@ public class SpecificRecords<T extends SpecificRecordBase> {
    * created. Invalid to call other APIs after this. Idempotent.
    */
   public void close() {
-    rows_.close();
+    records_.close();
   }
 
   // Verifies that

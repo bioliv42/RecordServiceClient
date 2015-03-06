@@ -37,7 +37,7 @@ import scala.util.control.Breaks
  * The schema and specified case class can be resolved either by ordinal or by name.
  *
  * If by ordinal, the ith field of the case class must match the type of the ith field of
- * the RecordService row. i.e. the case class types has to be a prefix of the query's
+ * the RecordService record. i.e. the case class types has to be a prefix of the query's
  * result types.
  * The names of the field in the case class are ignored.
  *
@@ -243,7 +243,7 @@ class SchemaRecordServiceRDD[T:ClassTag](sc: SparkContext,
   private class RecordServiceIterator(partition: RecordServicePartition)
       extends NextIterator[T] {
     // The object to return in getNext(). We always return the same object
-    // and just update the value for each row.
+    // and just update the value for each record.
     var value:T = createObject()
 
     // The array of setters to populate 'value'. This is always indexed by the ordinal
@@ -300,23 +300,23 @@ class SchemaRecordServiceRDD[T:ClassTag](sc: SparkContext,
       }
     }
 
-    var (worker, rows) = execTask(partition)
+    var (worker, records) = execTask(partition)
 
     override def getNext() : T = {
       while (true) {
-        if (!rows.hasNext()) {
+        if (!records.hasNext()) {
           finished = true
           return value
         }
 
-        // Reconstruct the row
-        val row = rows.next()
+        // Reconstruct the record
+        val record = records.next()
         val loop = new Breaks
         loop.breakable {
           for (i <- 0 until setters.length) {
             if (setters(i) != null) {
               assert(getters(i) != null)
-              val v = if (row.isNull(i)) {
+              val v = if (record.isNull(i)) {
                 if (defaultVal.isEmpty) {
                   // TODO: this really needs to be collected with metrics. How do you do
                   // this in spark? Accumulators?
@@ -324,7 +324,7 @@ class SchemaRecordServiceRDD[T:ClassTag](sc: SparkContext,
 
                   // TODO: allow nullable case classes. This seems to require scala 2.11
                   // (we normally run 2.10) to get the reflection to work.
-                  // TODO: add a mode where these rows are just ignored with some metrics
+                  // TODO: add a mode where these records are just ignored with some metrics
                   // on how many are ignored.
                   throw new SparkException(
                     "Data contained NULLs but no default value provided.")
@@ -335,22 +335,22 @@ class SchemaRecordServiceRDD[T:ClassTag](sc: SparkContext,
                 // unnecessary boxing
                 partition.schema.cols.get(i).getType().type_id match {
                   case TTypeId.BOOLEAN =>
-                    row.getBoolean(i): java.lang.Boolean
+                    record.getBoolean(i): java.lang.Boolean
                   case TTypeId.TINYINT =>
                     // TODO: does this work? We probably need to cast it to Byte or Char
-                    row.getByte(i): java.lang.Byte
+                    record.getByte(i): java.lang.Byte
                   case TTypeId.SMALLINT =>
-                    row.getShort(i): java.lang.Short
+                    record.getShort(i): java.lang.Short
                   case TTypeId.INT =>
-                    row.getInt(i): java.lang.Integer
+                    record.getInt(i): java.lang.Integer
                   case TTypeId.BIGINT =>
-                    row.getLong(i): java.lang.Long
+                    record.getLong(i): java.lang.Long
                   case TTypeId.FLOAT =>
-                    row.getFloat(i): java.lang.Float
+                    record.getFloat(i): java.lang.Float
                   case TTypeId.DOUBLE =>
-                    row.getDouble(i): java.lang.Double
+                    record.getDouble(i): java.lang.Double
                   case TTypeId.STRING =>
-                    row.getByteArray(i).toString()
+                    record.getByteArray(i).toString()
                   case _ =>
                     assert(false)
                     None
@@ -366,9 +366,9 @@ class SchemaRecordServiceRDD[T:ClassTag](sc: SparkContext,
     }
 
     override def close() = {
-      if (rows != null) {
-        rows.close()
-        rows = null
+      if (records != null) {
+        records.close()
+        records = null
       }
       if (worker != null) {
         worker.close()

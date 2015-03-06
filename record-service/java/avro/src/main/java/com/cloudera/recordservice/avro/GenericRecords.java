@@ -18,11 +18,11 @@ import java.io.IOException;
 
 import org.apache.avro.generic.GenericData.Record;
 
-import com.cloudera.recordservice.client.Rows;
+import com.cloudera.recordservice.client.Records;
 import com.google.common.base.Preconditions;
 
 /**
- * This class takes a Rows object and provides an iterator interface to
+ * This class takes a Records object and provides an iterator interface to
  * return generic records.
  *
  * TODO: reuse records?
@@ -30,13 +30,13 @@ import com.google.common.base.Preconditions;
  * TODO: map STRING to BYTES?
  */
 public class GenericRecords {
-  private Rows rows_;
+  private Records records_;
   private org.apache.avro.Schema avroSchema_;
   private com.cloudera.recordservice.thrift.TSchema schema_;
 
-  public GenericRecords(Rows rows) {
-    rows_ = rows;
-    schema_ = rows_.getSchema();
+  public GenericRecords(Records records) {
+    records_ = records  ;
+    schema_ = records_.getSchema();
     avroSchema_ = SchemaUtils.convertSchema(schema_);
   }
 
@@ -49,7 +49,7 @@ public class GenericRecords {
    * Returns true if there are more records, false otherwise.
    */
   public boolean hasNext() throws IOException {
-    return rows_.hasNext();
+    return records_.hasNext();
   }
 
   /**
@@ -57,18 +57,18 @@ public class GenericRecords {
    * there are no more records.
    */
   public Record next() throws IOException {
-    Rows.Row row = rows_.next();
+    Records.Record rsRecord = records_.next();
     Record record = new Record(avroSchema_);
     for (int i = 0; i < schema_.getColsSize(); ++i) {
       switch(schema_.getCols().get(i).type.type_id) {
-      case BOOLEAN: record.put(i, row.getBoolean(i)); break;
-      case TINYINT: record.put(i, (int)row.getByte(i)); break;
-      case SMALLINT: record.put(i, (int)row.getShort(i)); break;
-      case INT: record.put(i, row.getInt(i)); break;
-      case BIGINT: record.put(i, row.getLong(i)); break;
-      case FLOAT: record.put(i, row.getFloat(i)); break;
-      case DOUBLE: record.put(i, row.getDouble(i)); break;
-      case STRING: record.put(i, row.getByteArray(i).toString()); break;
+      case BOOLEAN: record.put(i, rsRecord.getBoolean(i)); break;
+      case TINYINT: record.put(i, (int)rsRecord.getByte(i)); break;
+      case SMALLINT: record.put(i, (int)rsRecord.getShort(i)); break;
+      case INT: record.put(i, rsRecord.getInt(i)); break;
+      case BIGINT: record.put(i, rsRecord.getLong(i)); break;
+      case FLOAT: record.put(i, rsRecord.getFloat(i)); break;
+      case DOUBLE: record.put(i, rsRecord.getDouble(i)); break;
+      case STRING: record.put(i, rsRecord.getByteArray(i).toString()); break;
       default:
         Preconditions.checkState(false,
             "Unsupported type: " + schema_.getCols().get(i).type);
@@ -82,6 +82,6 @@ public class GenericRecords {
    * created. Invalid to call other APIs after this. Idempotent.
    */
   public void close() {
-    rows_.close();
+    records_.close();
   }
 }

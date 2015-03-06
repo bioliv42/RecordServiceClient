@@ -133,20 +133,20 @@ public class TestBasicClient {
     // Execute the task
     assertEquals(plan.tasks.size(), 1);
     assertEquals(plan.tasks.get(0).local_hosts.size(), 3);
-    Rows rows = worker.execAndFetch(plan.tasks.get(0).task);
+    Records records = worker.execAndFetch(plan.tasks.get(0).task);
     int numRows = 0;
-    while (rows.hasNext()) {
-      Rows.Row row = rows.next();
+    while (records.hasNext()) {
+      Records.Record record = records.next();
       ++numRows;
       if (numRows == 1) {
-        assertEquals(row.getShort(0), 0);
-        assertEquals(row.getByteArray(1).toString(), "ALGERIA");
-        assertEquals(row.getShort(2), 0);
-        assertEquals(row.getByteArray(3).toString(),
+        assertEquals(record.getShort(0), 0);
+        assertEquals(record.getByteArray(1).toString(), "ALGERIA");
+        assertEquals(record.getShort(2), 0);
+        assertEquals(record.getByteArray(3).toString(),
             " haggle. carefully final deposits detect slyly agai");
       }
     }
-    rows.close();
+    records.close();
 
     assertEquals(numRows, 25);
     worker.close();
@@ -191,32 +191,32 @@ public class TestBasicClient {
     assertEquals(plan.tasks.size(), 2);
     for (int t = 0; t < 2; ++t) {
       assertEquals(plan.tasks.get(t).local_hosts.size(), 3);
-      Rows rows = worker.execAndFetch(plan.tasks.get(t).task);
-      assertTrue(rows.hasNext());
-      Rows.Row row = rows.next();
+      Records records = worker.execAndFetch(plan.tasks.get(t).task);
+      assertTrue(records.hasNext());
+      Records.Record record = records.next();
 
-      if (row.getBoolean(0)) {
-        assertEquals(row.getByte(1), 0);
-        assertEquals(row.getShort(2), 1);
-        assertEquals(row.getInt(3), 2);
-        assertEquals(row.getLong(4), 3);
-        assertEquals(row.getFloat(5), 4.0, 0.1);
-        assertEquals(row.getDouble(6), 5.0, 0.1);
-        assertEquals(row.getByteArray(7).toString(), "hello");
+      if (record.getBoolean(0)) {
+        assertEquals(record.getByte(1), 0);
+        assertEquals(record.getShort(2), 1);
+        assertEquals(record.getInt(3), 2);
+        assertEquals(record.getLong(4), 3);
+        assertEquals(record.getFloat(5), 4.0, 0.1);
+        assertEquals(record.getDouble(6), 5.0, 0.1);
+        assertEquals(record.getByteArray(7).toString(), "hello");
       } else {
-        assertEquals(row.getByte(1), 6);
-        assertEquals(row.getShort(2), 7);
-        assertEquals(row.getInt(3), 8);
-        assertEquals(row.getLong(4), 9);
-        assertEquals(row.getFloat(5), 10.0, 0.1);
-        assertEquals(row.getDouble(6), 11.0, 0.1);
-        assertEquals(row.getByteArray(7).toString(), "world");
+        assertEquals(record.getByte(1), 6);
+        assertEquals(record.getShort(2), 7);
+        assertEquals(record.getInt(3), 8);
+        assertEquals(record.getLong(4), 9);
+        assertEquals(record.getFloat(5), 10.0, 0.1);
+        assertEquals(record.getDouble(6), 11.0, 0.1);
+        assertEquals(record.getByteArray(7).toString(), "world");
       }
 
-      // TODO: the rows API needs to be renamed or carefully documented.
+      // TODO: the Records API needs to be renamed or carefully documented.
       // Calling hasNext()/get*() mutate the objects.
-      assertFalse(rows.hasNext());
-      rows.close();
+      assertFalse(records.hasNext());
+      records.close();
     }
 
     worker.close();

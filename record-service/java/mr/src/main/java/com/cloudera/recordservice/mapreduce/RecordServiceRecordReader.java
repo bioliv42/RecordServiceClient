@@ -23,13 +23,14 @@ import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 
 import com.cloudera.recordservice.client.RecordServiceWorkerClient;
-import com.cloudera.recordservice.client.Rows;
-import com.cloudera.recordservice.client.Rows.Row;
+import com.cloudera.recordservice.client.Records;
+import com.cloudera.recordservice.client.Records.Record;
 
 /**
  * RecordReader implementation that uses the RecordService for data access. Values
- * are returned as RecordServiceRecords, which contain schema and data for a single row.
- * Keys are the row number returned by this RecordReader.
+ * are returned as RecordServiceRecords, which contain schema and data for a single
+ * record.
+ * Keys are the record number returned by this RecordReader.
  * To reduce the creation of new objects, existing storage is reused for both
  * keys and values (objects are updated in-place).
  * TODO: Should keys just be NullWritables?
@@ -39,20 +40,20 @@ public class RecordServiceRecordReader extends
   private RecordServiceWorkerClient worker_;
 
   // Current row batch that is being processed.
-  private Rows rows_;
+  private Records records_;
 
-  // Schema for rows_;
+  // Schema for records_
   private Schema schema_;
 
-  // Current row being processed
-  private Rows.Row currentRow_;
+  // Current record being processed
+  private Records.Record currentRSRecord_;
 
-  // The current record being processed. Updated in-place when nextKeyValue() is called.
-  private RecordServiceRecord currentRecord_;
+  // The record that is returned. Updated in-place when nextKeyValue() is called.
+  private RecordServiceRecord record_;
 
-  // The current row number assigned this record. Incremented each time nextKeyValue() is
+  // The current record number assigned this record. Incremented each time nextKeyValue() is
   // called and assigned to currentKey_.
-  private static long rowNum_ = 0;
+  private static long recordNum_ = 0;
 
   // The key corresponding to the record.
   private final LongWritable currentKey_ = new LongWritable();
@@ -76,12 +77,12 @@ public class RecordServiceRecordReader extends
       int fetchSize = context.getConfiguration().getInt(
           RecordServiceInputFormat.FETCH_SIZE_CONF, -1);
       worker_.setFetchSize(fetchSize != -1 ? fetchSize : null);
-      rows_ = worker_.execAndFetch(rsSplit.getTaskInfo().getTaskAsByteBuffer());
+      records_ = worker_.execAndFetch(rsSplit.getTaskInfo().getTaskAsByteBuffer());
     } catch (Exception e) {
       throw new IOException(e);
     }
-    schema_ = new Schema(rows_.getSchema());
-    currentRecord_ = new RecordServiceRecord(schema_);
+    schema_ = new Schema(records_.getSchema());
+    record_ = new RecordServiceRecord(schema_);
     isInitialized_ = true;
   }
 
@@ -99,8 +100,8 @@ public class RecordServiceRecordReader extends
     }
 
     if (!nextRecord()) return false;
-    currentRecord_.reset(currentRow_);
-    currentKey_.set(rowNum_++);
+    record_.reset(currentRSRecord_);
+    currentKey_.set(recordNum_++);
     return true;
   }
 
@@ -113,17 +114,17 @@ public class RecordServiceRecordReader extends
   @Override
   public RecordServiceRecord getCurrentValue() throws IOException,
       InterruptedException {
-    return currentRecord_;
+    return record_;
   }
 
   @Override
   public float getProgress() {
-    return rows_.progress();
+    return records_.progress();
   }
 
   @Override
   public void close() throws IOException {
-    if (rows_ != null) rows_.close();
+    if (records_ != null) records_.close();
     if (worker_ != null) worker_.close();
   }
 
@@ -131,15 +132,15 @@ public class RecordServiceRecordReader extends
    * Advances to the next record. Return false if there are no more records.
    */
   public boolean nextRecord() throws IOException {
-    //if (!isInitialized_) {
-    //  throw new RuntimeException("Record Reader not initialized !!");
-    //}
-    if (!rows_.hasNext()) return false;
-    currentRow_ = rows_.next();
+    if (!isInitialized_) {
+      throw new RuntimeException("Record Reader not initialized !!");
+    }
+    if (!records_.hasNext()) return false;
+    currentRSRecord_ = records_.next();
     return true;
   }
 
   public Schema schema() { return schema_; }
-  public Row currentRow() { return currentRow_; }
+  public Record currentRecord() { return currentRSRecord_; }
   public boolean isInitialized() { return isInitialized_; }
 }

@@ -24,7 +24,6 @@ import com.cloudera.recordservice.avro.GenericRecords;
 import com.cloudera.recordservice.avro.SchemaUtils;
 import com.cloudera.recordservice.client.RecordServicePlannerClient;
 import com.cloudera.recordservice.client.RecordServiceWorkerClient;
-import com.cloudera.recordservice.client.Rows;
 import com.cloudera.recordservice.thrift.TPlanRequestResult;
 
 /**
@@ -49,13 +48,13 @@ public class RecordServiceToAvro {
 
     System.out.println("Records:");
     for (int t = 0; t < plan.tasks.size(); ++t) {
-      Rows rows = worker.execAndFetch(plan.tasks.get(t).task);
-      GenericRecords records = new GenericRecords(rows);
+      GenericRecords records = new GenericRecords(
+          worker.execAndFetch(plan.tasks.get(t).task));
       while (records.hasNext()) {
         GenericData.Record record = records.next();
         System.out.println(record);
       }
-      rows.close();
+      records.close();
     }
 
     worker.close();

@@ -43,7 +43,7 @@ public class RecordServiceRecordReader implements
   public boolean next(WritableComparable<?> key, RecordServiceRecord value)
       throws IOException {
     if (!reader_.nextRecord()) return false;
-    value.reset(reader_.currentRow());
+    value.reset(reader_.currentRecord());
     return true;
   }
 

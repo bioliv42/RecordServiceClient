@@ -20,8 +20,8 @@ import org.apache.thrift.TException;
 
 import com.cloudera.recordservice.client.RecordServicePlannerClient;
 import com.cloudera.recordservice.client.RecordServiceWorkerClient;
-import com.cloudera.recordservice.client.Rows;
-import com.cloudera.recordservice.client.Rows.Row;
+import com.cloudera.recordservice.client.Records;
+import com.cloudera.recordservice.client.Records.Record;
 import com.cloudera.recordservice.thrift.TPlanRequestResult;
 import com.cloudera.recordservice.thrift.TTask;
 
@@ -52,18 +52,18 @@ public class SampleClientLib {
     int totalRows = 0;
     long sum = 0;
     for (TTask task: planResult.tasks) {
-      Rows rows = null;
+      Records records = null;
       long start = System.currentTimeMillis();
       /* Fetch results until we're done */
       try {
-        rows = worker.execAndFetch(task.task);
-        while (rows.hasNext()) {
-          Row row = rows.next();
-          sum += row.getLong(0);
+        records = worker.execAndFetch(task.task);
+        while (records.hasNext()) {
+          Record record = records.next();
+          sum += record.getLong(0);
           ++totalRows;
         }
       } finally {
-        if (rows != null) rows.close();
+        if (records != null) records.close();
       }
       totalTimeMs += System.currentTimeMillis() - start;
     }

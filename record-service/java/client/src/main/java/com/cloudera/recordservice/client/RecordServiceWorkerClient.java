@@ -109,13 +109,13 @@ public class RecordServiceWorkerClient {
    * Executes the task asynchronously, returning a Rows object that can be
    * used to fetch results.
    */
-  public Rows execAndFetch(ByteBuffer task) throws IOException {
+  public Records execAndFetch(ByteBuffer task) throws IOException {
     Preconditions.checkNotNull(task);
     validateIsConnected();
     TExecTaskParams taskParams = new TExecTaskParams(task);
     try {
       TExecTaskResult result = execTaskInternal(taskParams);
-      return new Rows(this, result.getHandle(), result.schema);
+      return new Records(this, result.getHandle(), result.schema);
     } catch (TException e) {
       throw new IOException(e);
     }
@@ -123,7 +123,7 @@ public class RecordServiceWorkerClient {
 
 
   /**
-   * Fetches a batch of rows and returns the result.
+   * Fetches a batch of records and returns the result.
    */
   public TFetchResult fetch(TUniqueId handle) throws TException {
     Preconditions.checkNotNull(handle);
@@ -135,26 +135,6 @@ public class RecordServiceWorkerClient {
       System.err.println("Could not fetch from task: " + e.getMessage());
       throw e;
     }
-  }
-
-  /**
-   * Fetches all rows from the server and returns the total number of rows
-   * retrieved. Closes the task after executing.
-   */
-  public long fetchAllAndCountRows(TUniqueId handle) throws TException  {
-    validateIsConnected();
-    long totalRows = 0;
-    try {
-      /* Fetch results until we're done */
-      TFetchResult fetchResult = null;
-      do {
-        fetchResult = fetch(handle);
-        totalRows += fetchResult.num_rows;
-      } while (!fetchResult.done);
-    } finally {
-      workerClient_.CloseTask(handle);
-    }
-    return totalRows;
   }
 
   /**
