@@ -31,21 +31,8 @@ import com.cloudera.recordservice.client.Rows;
 import com.cloudera.recordservice.thrift.TPlanRequestResult;
 
 public class TestSpecificRecord {
-
   static final int PLANNER_PORT = 40000;
   static final int WORKER_PORT = 40100;
-
-  // TODO: move this into RecordServicePlannerClient?
-  TPlanRequestResult planRequest(String query) throws TException {
-    RecordServicePlannerClient planner = new RecordServicePlannerClient();
-    planner.connect("localhost", PLANNER_PORT);
-    try {
-      TPlanRequestResult plan = planner.planRequest(query);
-      return plan;
-    } finally {
-      planner.close();
-    }
-  }
 
   Rows execAndFetch(ByteBuffer task) throws TException, IOException {
     RecordServiceWorkerClient worker = new RecordServiceWorkerClient();
@@ -55,7 +42,8 @@ public class TestSpecificRecord {
 
   @Test
   public void testNationAll() throws TException, IOException {
-    TPlanRequestResult plan = planRequest("select * from tpch.nation");
+    TPlanRequestResult plan = RecordServicePlannerClient.planRequest(
+        "localhost", PLANNER_PORT, "select * from tpch.nation");
 
     assertEquals(plan.tasks.size(), 1);
     SpecificRecords<NationAll> records = new SpecificRecords<NationAll>(
@@ -79,7 +67,8 @@ public class TestSpecificRecord {
 
   @Test
   public void testNationProjection() throws TException, IOException {
-    TPlanRequestResult plan = planRequest("select n_nationkey, n_name from tpch.nation");
+    TPlanRequestResult plan = RecordServicePlannerClient.planRequest(
+        "localhost", PLANNER_PORT, "select n_nationkey, n_name from tpch.nation");
 
     assertEquals(plan.tasks.size(), 1);
     SpecificRecords<NationKeyName> records = new SpecificRecords<NationKeyName>(

@@ -29,7 +29,6 @@ import com.cloudera.recordservice.thrift.TExecTaskParams;
 import com.cloudera.recordservice.thrift.TExecTaskResult;
 import com.cloudera.recordservice.thrift.TFetchParams;
 import com.cloudera.recordservice.thrift.TFetchResult;
-import com.cloudera.recordservice.thrift.TProtocolVersion;
 import com.cloudera.recordservice.thrift.TStats;
 import com.cloudera.recordservice.thrift.TUniqueId;
 import com.google.common.base.Preconditions;
@@ -42,7 +41,7 @@ public class RecordServiceWorkerClient {
   private RecordServiceWorker.Client workerClient_;
   private TProtocol protocol_;
   private boolean isClosed_ = false;
-  private TProtocolVersion protocolVersion_ = null;
+  private ProtocolVersion protocolVersion_ = null;
 
   // Fetch size to pass to execTask(). If null, server will determine fetch size.
   private Integer fetchSize_;
@@ -62,7 +61,7 @@ public class RecordServiceWorkerClient {
     }
     protocol_ = new TBinaryProtocol(transport);
     workerClient_ = new RecordServiceWorker.Client(protocol_);
-    protocolVersion_ = workerClient_.GetProtocolVersion();
+    protocolVersion_ = ThriftUtils.fromThrift(workerClient_.GetProtocolVersion());
   }
 
   /**
@@ -79,7 +78,7 @@ public class RecordServiceWorkerClient {
   /**
    * Returns the protocol version of the connected service.
    */
-  public TProtocolVersion getProtocolVersion() throws RuntimeException {
+  public ProtocolVersion getProtocolVersion() throws RuntimeException {
     validateIsConnected();
     return protocolVersion_;
   }

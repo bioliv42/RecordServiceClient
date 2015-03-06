@@ -36,13 +36,11 @@ public class TestGenericRecord {
 
   @Test
   public void testNation() throws TException, IOException {
-    RecordServicePlannerClient planner = new RecordServicePlannerClient();
-    planner.connect("localhost", PLANNER_PORT);
     RecordServiceWorkerClient worker = new RecordServiceWorkerClient();
     worker.connect("localhost", WORKER_PORT);
 
-    // Plan the request
-    TPlanRequestResult plan = planner.planRequest("select * from tpch.nation");
+    TPlanRequestResult plan = RecordServicePlannerClient.planRequest(
+        "localhost", PLANNER_PORT, "select * from tpch.nation");
 
     // Verify schema
     Schema avroSchema = SchemaUtils.convertSchema(plan.schema);
@@ -84,7 +82,6 @@ public class TestGenericRecord {
 
     assertEquals(numRecords, 25);
 
-    planner.close();
     worker.close();
   }
 }

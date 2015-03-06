@@ -14,6 +14,8 @@
 
 package com.cloudera.recordservice.client;
 
+import java.io.IOException;
+
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TProtocol;
@@ -25,6 +27,7 @@ import com.cloudera.recordservice.thrift.RecordServicePlanner;
 import com.cloudera.recordservice.thrift.TPlanRequestParams;
 import com.cloudera.recordservice.thrift.TPlanRequestResult;
 import com.cloudera.recordservice.thrift.TProtocolVersion;
+import com.cloudera.recordservice.thrift.TRecordServiceException;
 
 /**
  * Java client for the RecordServicePlanner. This class is not thread safe.
@@ -34,14 +37,31 @@ public class RecordServicePlannerClient {
   private RecordServicePlanner.Client plannerClient_;
   private TProtocol protocol_;
   private boolean isClosed_ = false;
-  private TProtocolVersion protocolVersion_ = null;
+  private ProtocolVersion protocolVersion_ = null;
+
+  /**
+   * Generates a plan for 'stmt', connecting to the planner service at
+   * hostname/port.
+   */
+  public static TPlanRequestResult planRequest(String hostname, int port, String stmt)
+      throws IOException, TRecordServiceException {
+    RecordServicePlannerClient client = null;
+    try {
+      client = new RecordServicePlannerClient(hostname, port);
+      return client.planRequest(stmt);
+    } catch (TRecordServiceException e) {
+      throw e;
+    } catch (TException e) {
+      throw new IOException("Could not connect to planner service.", e);
+    } finally {
+      if (client != null) client.close();
+    }
+  }
 
   /**
    * Opens a connection to the RecordServicePlanner.
    */
-  public void connect(String hostname, int port) throws TException {
-    if (plannerClient_ != null) throw new RuntimeException("Already connected.");
-
+  public RecordServicePlannerClient(String hostname, int port) throws TException {
     TTransport transport = new TSocket(hostname, port);
     try {
       transport.open();
@@ -52,7 +72,7 @@ public class RecordServicePlannerClient {
     }
     protocol_ = new TBinaryProtocol(transport);
     plannerClient_ = new RecordServicePlanner.Client(protocol_);
-    protocolVersion_ = plannerClient_.GetProtocolVersion();
+    protocolVersion_ = ThriftUtils.fromThrift(plannerClient_.GetProtocolVersion());
   }
 
   /**
@@ -68,7 +88,7 @@ public class RecordServicePlannerClient {
   /**
    * Returns the protocol version of the connected service.
    */
-  public TProtocolVersion getProtocolVersion() throws RuntimeException, TException {
+  public ProtocolVersion getProtocolVersion() throws RuntimeException, TException {
     validateIsConnected();
     return protocolVersion_;
   }

@@ -24,7 +24,6 @@ import org.apache.thrift.TException;
 import org.junit.Test;
 
 import com.cloudera.recordservice.thrift.TPlanRequestResult;
-import com.cloudera.recordservice.thrift.TProtocolVersion;
 import com.cloudera.recordservice.thrift.TRecordServiceException;
 import com.cloudera.recordservice.thrift.TSchema;
 import com.cloudera.recordservice.thrift.TTypeId;
@@ -37,8 +36,11 @@ public class TestBasicClient {
 
   @Test
   public void testPlannerConnection() throws RuntimeException, TException {
-    RecordServicePlannerClient planner = new RecordServicePlannerClient();
+    RecordServicePlannerClient planner =
+        new RecordServicePlannerClient("localhost", PLANNER_PORT);
 
+    // Test calling the APIs after close.
+    planner.close();
     boolean threwException = false;
     try {
       planner.getProtocolVersion();
@@ -48,29 +50,28 @@ public class TestBasicClient {
       assertTrue(threwException);
     }
 
-    planner.connect("localhost", PLANNER_PORT);
     threwException = false;
     try {
-      planner.connect("localhost", PLANNER_PORT);
+      planner.planRequest("ABCD");
     } catch (RuntimeException e) {
       threwException = true;
     } finally {
       assertTrue(threwException);
     }
 
-    assertEquals(planner.getProtocolVersion(), TProtocolVersion.V1);
+    planner = new RecordServicePlannerClient("localhost", PLANNER_PORT);
+    assertEquals(planner.getProtocolVersion(), ProtocolVersion.V1);
     // Call it again and make sure it's fine.
-    assertEquals(planner.getProtocolVersion(), TProtocolVersion.V1);
+    assertEquals(planner.getProtocolVersion(), ProtocolVersion.V1);
 
+    // Plan a request.
     planner.planRequest("select * from tpch.nation");
 
-    // Close the planner connection and test that APIs fail in a nice way.
-    planner.close();
-
+    // Try connecting to a bad planner.
     threwException = false;
     try {
-      planner.planRequest("select * from tpch.nation");
-    } catch (RuntimeException e) {
+      new RecordServicePlannerClient("localhost", 12345);
+    } catch (TException e) {
       threwException = true;
     } finally {
       assertTrue(threwException);
@@ -100,9 +101,9 @@ public class TestBasicClient {
       assertTrue(threwException);
     }
 
-    assertEquals(worker.getProtocolVersion(), TProtocolVersion.V1);
+    assertEquals(worker.getProtocolVersion(), ProtocolVersion.V1);
     // Call it again and make sure it's fine.
-    assertEquals(worker.getProtocolVersion(), TProtocolVersion.V1);
+    assertEquals(worker.getProtocolVersion(), ProtocolVersion.V1);
 
     worker.close();
   }
@@ -110,13 +111,13 @@ public class TestBasicClient {
   @Test
   // TODO: add more API misuse tests.
   public void testNation() throws TException, IOException {
-    RecordServicePlannerClient planner = new RecordServicePlannerClient();
-    planner.connect("localhost", PLANNER_PORT);
     RecordServiceWorkerClient worker = new RecordServiceWorkerClient();
     worker.connect("localhost", WORKER_PORT);
 
     // Plan the request
-    TPlanRequestResult plan = planner.planRequest("select * from tpch.nation");
+    TPlanRequestResult plan = RecordServicePlannerClient.planRequest(
+        "localhost", PLANNER_PORT,
+        "select * from tpch.nation");
 
     // Verify schema
     assertEquals(plan.schema.cols.size(), 4);
@@ -148,7 +149,6 @@ public class TestBasicClient {
     rows.close();
 
     assertEquals(numRows, 25);
-    planner.close();
     worker.close();
   }
 
@@ -177,13 +177,13 @@ public class TestBasicClient {
 
   @Test
   public void testAllTypes() throws TException, IOException {
-    RecordServicePlannerClient planner = new RecordServicePlannerClient();
-    planner.connect("localhost", PLANNER_PORT);
     RecordServiceWorkerClient worker = new RecordServiceWorkerClient();
     worker.connect("localhost", WORKER_PORT);
 
     // Plan the request
-    TPlanRequestResult plan = planner.planRequest("select * from rs.alltypes");
+    TPlanRequestResult plan = RecordServicePlannerClient.planRequest(
+        "localhost", PLANNER_PORT,
+        "select * from rs.alltypes");
 
     verifyAllTypesSchema(plan.schema);
 
@@ -219,42 +219,27 @@ public class TestBasicClient {
       rows.close();
     }
 
-    planner.close();
     worker.close();
   }
 
   @Test
   public void testAllTypesEmpty() throws TException, IOException {
-    RecordServicePlannerClient planner = new RecordServicePlannerClient();
-    planner.connect("localhost", PLANNER_PORT);
-    RecordServiceWorkerClient worker = new RecordServiceWorkerClient();
-    worker.connect("localhost", WORKER_PORT);
-
-    TPlanRequestResult plan = planner.planRequest("select * from rs.alltypes_empty");
+    TPlanRequestResult plan = RecordServicePlannerClient.planRequest(
+        "localhost", PLANNER_PORT,
+        "select * from rs.alltypes_empty");
     assertEquals(plan.tasks.size(), 0);
     verifyAllTypesSchema(plan.schema);
-
-    planner.close();
-    worker.close();
   }
 
   @Test
   public void testConstant() throws TException, IOException {
-    RecordServicePlannerClient planner = new RecordServicePlannerClient();
-    planner.connect("localhost", PLANNER_PORT);
-    RecordServiceWorkerClient worker = new RecordServiceWorkerClient();
-    worker.connect("localhost", WORKER_PORT);
-
     boolean exceptionThrown = false;
     try {
-      planner.planRequest("select 1");
+      RecordServicePlannerClient.planRequest("localhost", PLANNER_PORT, "select 1");
     } catch (TRecordServiceException e) {
       assertTrue(e.message.contains("No scan nodes found for this query"));
       exceptionThrown = true;
     }
     assertTrue(exceptionThrown);
-
-    planner.close();
-    worker.close();
   }
 }

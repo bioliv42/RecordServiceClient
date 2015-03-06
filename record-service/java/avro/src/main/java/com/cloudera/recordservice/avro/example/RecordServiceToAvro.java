@@ -39,12 +39,11 @@ public class RecordServiceToAvro {
     String query = "select * from tpch.nation";
     if (args.length == 2) query = args[1];
 
-    RecordServicePlannerClient planner = new RecordServicePlannerClient();
-    planner.connect("localhost", PLANNER_PORT);
     RecordServiceWorkerClient worker = new RecordServiceWorkerClient();
     worker.connect("localhost", WORKER_PORT);
 
-    TPlanRequestResult plan = planner.planRequest(query);
+    TPlanRequestResult plan = RecordServicePlannerClient.planRequest(
+        "localhost", PLANNER_PORT, query);
     Schema avroSchema = SchemaUtils.convertSchema(plan.schema);
     System.out.println("Avro Schema:\n" + avroSchema);
 
@@ -59,7 +58,6 @@ public class RecordServiceToAvro {
       rows.close();
     }
 
-    planner.close();
     worker.close();
   }
 }

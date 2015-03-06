@@ -76,16 +76,14 @@ public class RecordServiceInputFormat extends
             .append(dbName).append('.').append(tblName)
             .toString();
 
-    RecordServicePlannerClient plannerClient = new RecordServicePlannerClient();
     TPlanRequestResult result = null;
     try {
-      plannerClient.connect(jobConf.get(PLANNER_HOST, "localhost"),
-          jobConf.getInt(PLANNER_PORT, 40000));
-      result = plannerClient.planRequest(query);
+      result = RecordServicePlannerClient.planRequest(
+          jobConf.get(PLANNER_HOST, "localhost"),
+          jobConf.getInt(PLANNER_PORT, 40000),
+          query);
     } catch (Exception e) {
       throw new IOException(e);
-    } finally {
-      plannerClient.close();
     }
     TSchema tSchema = result.getSchema();
     List<InputSplit> splits = new ArrayList<InputSplit>();

@@ -100,18 +100,13 @@ abstract class RecordServiceRDDBase[T:ClassTag](sc: SparkContext, plannerHost: S
     }
 
     logInfo("Running request: " + stmt)
-    var planner:RecordServicePlannerClient = null
     val planResult = try {
-      planner = new RecordServicePlannerClient()
-      planner.connect(plannerHost, PLANNER_PORT)
-      planner.planRequest(stmt)
+      RecordServicePlannerClient.planRequest(plannerHost, PLANNER_PORT, stmt)
     } catch {
       case e:TRecordServiceException => logError("Could not plan request: " + e.message)
         throw new SparkException("RecordServiceRDD failed", e)
       case e:TException => logError("Could not plan request: " + e.getMessage())
         throw new SparkException("RecordServiceRDD failed", e)
-    } finally {
-      planner.close()
     }
 
     val partitions = new Array[Partition](planResult.tasks.size())

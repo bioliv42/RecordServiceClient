@@ -40,14 +40,11 @@ public class SampleClientLib {
      */
     System.out.println("Running request: " + query);
 
-    RecordServicePlannerClient planner = new RecordServicePlannerClient();
-    planner.connect("localhost", PLANNER_PORT);
     RecordServiceWorkerClient worker = new RecordServiceWorkerClient();
     worker.connect("localhost", WORKER_PORT);
 
-    TPlanRequestResult planResult = planner.planRequest(query);
-    planner.close();
-
+    TPlanRequestResult planResult = RecordServicePlannerClient.planRequest(
+        "localhost", PLANNER_PORT, query);
     long totalTimeMs = 0;
     /**
      * Run each task on one of the workers.
