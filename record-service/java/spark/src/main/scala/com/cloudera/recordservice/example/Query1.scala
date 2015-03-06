@@ -26,7 +26,7 @@ object Query1 {
     if (args.length == 1) query = args(0)
 
     val sc = new SparkContext(sparkConf)
-    val data = new RecordServiceRDD(sc, query)
+    val data = new RecordServiceRDD(sc).setStatement(query)
     val keys = data.map(v => v(0).asInstanceOf[org.apache.hadoop.io.LongWritable].get())
     System.out.println("Result: " + keys.reduce(_ + _))
     sc.stop()
