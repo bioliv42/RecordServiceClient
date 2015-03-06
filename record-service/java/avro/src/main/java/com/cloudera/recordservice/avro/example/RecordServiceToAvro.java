@@ -23,6 +23,7 @@ import org.apache.thrift.TException;
 import com.cloudera.recordservice.avro.GenericRecords;
 import com.cloudera.recordservice.avro.SchemaUtils;
 import com.cloudera.recordservice.client.RecordServicePlannerClient;
+import com.cloudera.recordservice.client.Request;
 import com.cloudera.recordservice.client.WorkerClientUtil;
 import com.cloudera.recordservice.thrift.TPlanRequestResult;
 
@@ -38,7 +39,7 @@ public class RecordServiceToAvro {
     if (args.length == 2) query = args[1];
 
     TPlanRequestResult plan = RecordServicePlannerClient.planRequest(
-        "localhost", PLANNER_PORT, query);
+        "localhost", PLANNER_PORT, Request.createSqlRequest(query));
     Schema avroSchema = SchemaUtils.convertSchema(plan.schema);
     System.out.println("Avro Schema:\n" + avroSchema);
 

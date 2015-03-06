@@ -26,6 +26,7 @@ import org.apache.thrift.TException;
 import org.junit.Test;
 
 import com.cloudera.recordservice.client.RecordServicePlannerClient;
+import com.cloudera.recordservice.client.Request;
 import com.cloudera.recordservice.client.WorkerClientUtil;
 import com.cloudera.recordservice.thrift.TPlanRequestResult;
 
@@ -36,7 +37,8 @@ public class TestGenericRecord {
   @Test
   public void testNation() throws TException, IOException {
     TPlanRequestResult plan = RecordServicePlannerClient.planRequest(
-        "localhost", PLANNER_PORT, "select * from tpch.nation");
+        "localhost", PLANNER_PORT,
+        Request.createSqlRequest("select * from tpch.nation"));
 
     // Verify schema
     Schema avroSchema = SchemaUtils.convertSchema(plan.schema);

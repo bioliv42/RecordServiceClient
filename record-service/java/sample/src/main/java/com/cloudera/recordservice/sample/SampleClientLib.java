@@ -21,6 +21,7 @@ import org.apache.thrift.TException;
 import com.cloudera.recordservice.client.RecordServicePlannerClient;
 import com.cloudera.recordservice.client.Records;
 import com.cloudera.recordservice.client.Records.Record;
+import com.cloudera.recordservice.client.Request;
 import com.cloudera.recordservice.client.WorkerClientUtil;
 import com.cloudera.recordservice.thrift.TPlanRequestResult;
 
@@ -39,7 +40,7 @@ public class SampleClientLib {
     System.out.println("Running request: " + query);
 
     TPlanRequestResult planResult = RecordServicePlannerClient.planRequest(
-        "localhost", PLANNER_PORT, query);
+        "localhost", PLANNER_PORT, Request.createSqlRequest(query));
     long totalTimeMs = 0;
 
     int totalRows = 0;

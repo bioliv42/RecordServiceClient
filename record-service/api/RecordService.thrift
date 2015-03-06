@@ -92,11 +92,45 @@ struct TColumnarRowBatch {
   1: required list<TColumnData> cols
 }
 
+// The type of request specified by the client. Clients can specify read
+// requests in multiple ways.
+enum TRequestType {
+  Sql,
+  Path,
+}
+
+struct TPathRequest {
+  // The URI to read.
+  1: required string path
+
+  // Optional query (for predicate push down). The query must be valid SQL with
+  // __PATH__ used instead of the table.
+  // TODO: revisit.
+  2: optional string query
+
+  // The file format of the file at this path.
+  // TODO: is this a good idea? How hard should we have the service try to figure
+  // it out? What do you do if the path is a directory with different file formats or
+  // different schemas?
+  //3: optional TFileFormat file_format
+
+  // If the application knows the schema from somewhere else, they can specify it
+  // here.
+  //4: optional TSchema schema
+}
+
 struct TPlanRequestParams {
   // The version of the client
   1: required TProtocolVersion client_version = TProtocolVersion.V1
 
-  2: required string sql_stmt
+  2: required TRequestType request_type
+
+  // TODO: things like abort on error, sampling, etc.
+  //3: required TRequestOptions request_options
+
+  // Only one of the below is set depending on request type
+  4: optional string sql_stmt
+  5: optional TPathRequest path
 }
 
 struct TTask {

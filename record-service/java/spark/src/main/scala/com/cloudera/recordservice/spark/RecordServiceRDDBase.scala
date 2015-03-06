@@ -17,7 +17,7 @@
 
 package com.cloudera.recordservice.spark
 
-import com.cloudera.recordservice.client.{RecordServiceWorkerClient, RecordServicePlannerClient}
+import com.cloudera.recordservice.client._
 import com.cloudera.recordservice.thrift._
 import org.apache.spark._
 import org.apache.spark.rdd.RDD
@@ -101,7 +101,8 @@ abstract class RecordServiceRDDBase[T:ClassTag](sc: SparkContext, plannerHost: S
 
     logInfo("Running request: " + stmt)
     val planResult = try {
-      RecordServicePlannerClient.planRequest(plannerHost, PLANNER_PORT, stmt)
+      RecordServicePlannerClient.planRequest(plannerHost, PLANNER_PORT,
+          Request.createSqlRequest(stmt))
     } catch {
       case e:TRecordServiceException => logError("Could not plan request: " + e.message)
         throw new SparkException("RecordServiceRDD failed", e)

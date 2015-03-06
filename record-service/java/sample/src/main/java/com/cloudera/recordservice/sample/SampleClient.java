@@ -34,11 +34,14 @@ import com.cloudera.recordservice.thrift.TPlanRequestParams;
 import com.cloudera.recordservice.thrift.TPlanRequestResult;
 import com.cloudera.recordservice.thrift.TProtocolVersion;
 import com.cloudera.recordservice.thrift.TRecordServiceException;
+import com.cloudera.recordservice.thrift.TRequestType;
 import com.cloudera.recordservice.thrift.TTask;
 
 /**
  * This is a simple example RecordService client that demonstrates how
  * to communicate with the two services to read records.
+ * This example explicitly does not use the abstractions in the client
+ * package but drives the Thrift interfaces directly.
  */
 public class SampleClient {
   static final String DEFAULT_QUERY = "select n_nationkey from tpch.nation";
@@ -67,7 +70,10 @@ public class SampleClient {
         createConnection(PLANNER_PORT, "Planner"));
     TPlanRequestResult planResult;
     try {
-      TPlanRequestParams planParams = new TPlanRequestParams(TProtocolVersion.V1, query);
+      TPlanRequestParams planParams = new TPlanRequestParams();
+      planParams.client_version = TProtocolVersion.V1;
+      planParams.request_type = TRequestType.Sql;
+      planParams.sql_stmt = query;
       planResult = planner.PlanRequest(planParams);
     } catch (TRecordServiceException e) {
       System.err.println("Could not plan request: " + e.message);

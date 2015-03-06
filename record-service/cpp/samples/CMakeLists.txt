@@ -25,3 +25,6 @@ target_link_libraries(record-service-client
   -lboost_date_time
   -lrt)
 
+add_executable(rs-grep rs-grep.cc)
+target_link_libraries(rs-grep ImpalaThrift thriftstatic gflagsstatic)
+

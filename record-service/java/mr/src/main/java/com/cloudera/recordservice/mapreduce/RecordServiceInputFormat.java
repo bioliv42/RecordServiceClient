@@ -27,6 +27,7 @@ import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 
 import com.cloudera.recordservice.client.RecordServicePlannerClient;
+import com.cloudera.recordservice.client.Request;
 import com.cloudera.recordservice.thrift.TPlanRequestResult;
 import com.cloudera.recordservice.thrift.TSchema;
 import com.cloudera.recordservice.thrift.TTask;
@@ -81,7 +82,7 @@ public class RecordServiceInputFormat extends
       result = RecordServicePlannerClient.planRequest(
           jobConf.get(PLANNER_HOST, "localhost"),
           jobConf.getInt(PLANNER_PORT, 40000),
-          query);
+          Request.createSqlRequest(query));
     } catch (Exception e) {
       throw new IOException(e);
     }

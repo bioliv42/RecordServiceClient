@@ -25,6 +25,7 @@ import com.cloudera.recordservice.avro.SpecificRecords.ResolveBy;
 import com.cloudera.recordservice.avro.nation.NationAll;
 import com.cloudera.recordservice.avro.nation.NationKeyName;
 import com.cloudera.recordservice.client.RecordServicePlannerClient;
+import com.cloudera.recordservice.client.Request;
 import com.cloudera.recordservice.client.WorkerClientUtil;
 import com.cloudera.recordservice.thrift.TPlanRequestResult;
 
@@ -34,7 +35,8 @@ public class TestSpecificRecord {
   @Test
   public void testNationAll() throws TException, IOException {
     TPlanRequestResult plan = RecordServicePlannerClient.planRequest(
-        "localhost", PLANNER_PORT, "select * from tpch.nation");
+        "localhost", PLANNER_PORT,
+        Request.createSqlRequest("select * from tpch.nation"));
 
     assertEquals(plan.tasks.size(), 1);
     SpecificRecords<NationAll> records = null;
@@ -61,7 +63,8 @@ public class TestSpecificRecord {
   @Test
   public void testNationProjection() throws TException, IOException {
     TPlanRequestResult plan = RecordServicePlannerClient.planRequest(
-        "localhost", PLANNER_PORT, "select n_nationkey, n_name from tpch.nation");
+        "localhost", PLANNER_PORT,
+        Request.createSqlRequest("select n_nationkey, n_name from tpch.nation"));
 
     assertEquals(plan.tasks.size(), 1);
     SpecificRecords<NationKeyName> records = null;

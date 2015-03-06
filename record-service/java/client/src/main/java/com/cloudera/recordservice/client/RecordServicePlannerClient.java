@@ -40,15 +40,16 @@ public class RecordServicePlannerClient {
   private ProtocolVersion protocolVersion_ = null;
 
   /**
-   * Generates a plan for 'stmt', connecting to the planner service at
+   * Generates a plan for 'request', connecting to the planner service at
    * hostname/port.
    */
-  public static TPlanRequestResult planRequest(String hostname, int port, String stmt)
+  public static TPlanRequestResult planRequest(
+      String hostname, int port, Request request)
       throws IOException, TRecordServiceException {
     RecordServicePlannerClient client = null;
     try {
       client = new RecordServicePlannerClient(hostname, port);
-      return client.planRequest(stmt);
+      return client.planRequest(request);
     } finally {
       if (client != null) client.close();
     }
@@ -98,13 +99,14 @@ public class RecordServicePlannerClient {
    * Calls the RecordServicePlanner to generate a new plan - set of tasks that can be
    * executed using a RecordServiceWorker.
    */
-  public TPlanRequestResult planRequest(String query)
+  public TPlanRequestResult planRequest(Request request)
       throws IOException, TRecordServiceException {
     validateIsConnected();
 
     TPlanRequestResult planResult;
     try {
-      TPlanRequestParams planParams = new TPlanRequestParams(TProtocolVersion.V1, query);
+      TPlanRequestParams planParams = request.request_;
+      planParams.client_version = TProtocolVersion.V1;
       planResult = plannerClient_.PlanRequest(planParams);
     } catch (TRecordServiceException e) {
       throw e;

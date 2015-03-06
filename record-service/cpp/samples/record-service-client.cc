@@ -128,7 +128,8 @@ void ExecRequestDistributed(const char* request, TRowBatchFormat::type format) {
   try {
     planner_transport->open();
     TPlanRequestParams plan_params;
-    plan_params.sql_stmt = request;
+    plan_params.request_type = TRequestType::Sql;
+    plan_params.__set_sql_stmt(request);
     planner.PlanRequest(plan_result, plan_params);
   } catch (const TRecordServiceException& e) {
     printf("Failed with exception:\n%s\n", e.message.c_str());

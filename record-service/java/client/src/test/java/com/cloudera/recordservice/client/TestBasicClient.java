@@ -57,7 +57,7 @@ public class TestBasicClient {
 
     threwException = false;
     try {
-      planner.planRequest("ABCD");
+      planner.planRequest(Request.createSqlRequest("ABCD"));
     } catch (RuntimeException e) {
       threwException = true;
       assertTrue(e.getMessage().contains("Client not connected."));
@@ -71,7 +71,7 @@ public class TestBasicClient {
     assertEquals(planner.getProtocolVersion(), ProtocolVersion.V1);
 
     // Plan a request.
-    planner.planRequest("select * from tpch.nation");
+    planner.planRequest(Request.createSqlRequest("select * from tpch.nation"));
 
     // Try connecting to a bad planner.
     threwException = false;
@@ -127,7 +127,7 @@ public class TestBasicClient {
     // Plan the request
     TPlanRequestResult plan = RecordServicePlannerClient.planRequest(
         "localhost", PLANNER_PORT,
-        "select * from tpch.nation");
+        Request.createSqlRequest("select * from tpch.nation"));
 
     RecordServiceWorkerClient worker = new RecordServiceWorkerClient();
     worker.connect("localhost", WORKER_PORT);
@@ -183,7 +183,7 @@ public class TestBasicClient {
     // Plan the request
     TPlanRequestResult plan = RecordServicePlannerClient.planRequest(
         "localhost", PLANNER_PORT,
-        "select * from tpch.nation");
+        Request.createSqlRequest("select * from tpch.nation"));
 
     // Verify schema
     assertEquals(plan.schema.cols.size(), 4);
@@ -239,7 +239,7 @@ public class TestBasicClient {
     // Plan the request
     TPlanRequestResult plan = RecordServicePlannerClient.planRequest(
         "localhost", PLANNER_PORT,
-        "select * from tpch.nation");
+        Request.createSqlRequest("select * from tpch.nation"));
 
     for (int i = 0; i < plan.tasks.size(); ++i) {
       Records records = WorkerClientUtil.execTask(plan, i);
@@ -291,7 +291,7 @@ public class TestBasicClient {
     // Plan the request
     TPlanRequestResult plan = RecordServicePlannerClient.planRequest(
         "localhost", PLANNER_PORT,
-        "select * from rs.alltypes");
+        Request.createSqlRequest("select * from rs.alltypes"));
 
     verifyAllTypesSchema(plan.schema);
 
@@ -334,7 +334,7 @@ public class TestBasicClient {
   public void testAllTypesEmpty() throws TRecordServiceException, IOException {
     TPlanRequestResult plan = RecordServicePlannerClient.planRequest(
         "localhost", PLANNER_PORT,
-        "select * from rs.alltypes_empty");
+        Request.createSqlRequest("select * from rs.alltypes_empty"));
     assertEquals(plan.tasks.size(), 0);
     verifyAllTypesSchema(plan.schema);
   }
@@ -343,7 +343,8 @@ public class TestBasicClient {
   public void testConstant() throws TException, IOException {
     boolean exceptionThrown = false;
     try {
-      RecordServicePlannerClient.planRequest("localhost", PLANNER_PORT, "select 1");
+      RecordServicePlannerClient.planRequest("localhost", PLANNER_PORT,
+          Request.createSqlRequest("select 1"));
     } catch (TRecordServiceException e) {
       assertTrue(e.message.contains("No scan nodes found for this query"));
       exceptionThrown = true;
