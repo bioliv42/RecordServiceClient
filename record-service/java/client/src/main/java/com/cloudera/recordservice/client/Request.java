@@ -14,6 +14,7 @@
 
 package com.cloudera.recordservice.client;
 
+import com.cloudera.recordservice.thrift.TPathRequest;
 import com.cloudera.recordservice.thrift.TPlanRequestParams;
 import com.cloudera.recordservice.thrift.TRequestType;
 
@@ -26,6 +27,21 @@ public class Request {
     request.request_type = TRequestType.Sql;
     request.sql_stmt = query;
     return new Request(request);
+  }
+
+  // Creates a request that is a PATH query.
+  public static Request createPathRequest(String uri) {
+    TPlanRequestParams request = new TPlanRequestParams();
+    request.request_type = TRequestType.Path;
+    request.path = new TPathRequest(uri);
+    return new Request(request);
+  }
+
+  // Creates a request that is a PATH query with filtering
+  public static Request createPathRequest(String uri, String query) {
+    Request request = createPathRequest(uri);
+    request.request_.path.setQuery(query);
+    return request;
   }
 
   protected TPlanRequestParams request_;

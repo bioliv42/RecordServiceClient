@@ -19,6 +19,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
+import java.util.List;
 
 import org.apache.thrift.TException;
 import org.junit.Test;
@@ -29,6 +30,7 @@ import com.cloudera.recordservice.thrift.TSchema;
 import com.cloudera.recordservice.thrift.TStats;
 import com.cloudera.recordservice.thrift.TTypeId;
 import com.cloudera.recordservice.thrift.TUniqueId;
+import com.google.common.collect.Lists;
 
 // TODO: add more API misuse tests.
 // TODO: add more stats tests.
@@ -350,5 +352,49 @@ public class TestBasicClient {
       exceptionThrown = true;
     }
     assertTrue(exceptionThrown);
+  }
+
+  // Returns all the strings from running plan as a list. The plan must
+  // have a schema that returns a single string column.
+  List<String> getAllStrings(TPlanRequestResult plan) throws TException, IOException {
+    List<String> results = Lists.newArrayList();
+    assertEquals(plan.schema.cols.size(), 1);
+    assertEquals(plan.schema.cols.get(0).type.type_id, TTypeId.STRING);
+    for (int i = 0; i < plan.tasks.size(); ++i) {
+      Records records = null;
+      try {
+        records = WorkerClientUtil.execTask(plan, i);
+        while (records.hasNext()) {
+          Records.Record record = records.next();
+          results.add(record.getByteArray(0).toString());
+        }
+      } finally {
+        if (records != null) records.close();
+      }
+    }
+    return results;
+  }
+
+  @Test
+  public void testNationPath() throws IOException, TException {
+    TPlanRequestResult plan = RecordServicePlannerClient.planRequest(
+        "localhost", PLANNER_PORT,
+        Request.createPathRequest("/test-warehouse/tpch.nation/"));
+    assertEquals(plan.tasks.size(), 1);
+    List<String> lines = getAllStrings(plan);
+    assertEquals(lines.size(), 25);
+    assertEquals(lines.get(6), "6|FRANCE|3|refully final requests. regular, ironi");
+  }
+
+  @Test
+  public void testNationPathFiltering() throws IOException, TException {
+    TPlanRequestResult plan = RecordServicePlannerClient.planRequest(
+        "localhost", PLANNER_PORT,
+        Request.createPathRequest("/test-warehouse/tpch.nation/",
+            "select * from __PATH__ where record like '6|FRANCE%'"));
+    assertEquals(plan.tasks.size(), 1);
+    List<String> lines = getAllStrings(plan);
+    assertEquals(lines.size(), 1);
+    assertEquals(lines.get(0), "6|FRANCE|3|refully final requests. regular, ironi");
   }
 }
