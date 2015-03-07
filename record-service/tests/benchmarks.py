@@ -35,10 +35,10 @@ def native_client_cmd(query):
       query + "\""
 
 def java_client_cmd(query):
-  return "mvn -f " + os.environ['RECORD_SERVICE_HOME'] +\
-      "/java/sample/pom.xml exec:java " + \
-      "-Dexec.mainClass=com.cloudera.recordservice.sample.SampleClientLib " +\
-      "-Dexec.args=\"'" + query + "'\""
+  return "java -classpath " + os.environ['RECORD_SERVICE_HOME'] +\
+      "/java/sample/target/recordservice-sample-0.1.jar " +\
+      "com.cloudera.recordservice.sample.SampleClientLib " +\
+      "\"" + query + "\""
 
 def hive_rs_cmd(query, db_name, tbl_name, fetch_size):
   # Builds a query string that will run using the RecordService

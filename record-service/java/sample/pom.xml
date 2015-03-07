@@ -55,6 +55,32 @@
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <version>2.3</version>
+        <executions>
+          <execution>
+           <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <configuration>
+              <artifactSet>
+                <includes>
+                  <include>com.cloudera.recordservice:*</include>
+                  <include>commons-lang:*</include>
+                  <include>org.apache.thrift:*</include>
+                  <include>org.slf4j:*</include>
+                  <include>log4j:*</include>
+                  <include>com.google.guava:*</include>
+                </includes>
+              </artifactSet>
+              <minimizeJar>true</minimizeJar>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-source-plugin</artifactId>
         <executions>
           <execution>

@@ -94,6 +94,7 @@
                   <include>org.apache.thrift:*</include>
                 </includes>
               </artifactSet>
+              <minimizeJar>true</minimizeJar>
             </configuration>
           </execution>
         </executions>
