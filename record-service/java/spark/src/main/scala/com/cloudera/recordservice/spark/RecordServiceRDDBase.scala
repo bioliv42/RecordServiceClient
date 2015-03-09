@@ -46,16 +46,35 @@ abstract class RecordServiceRDDBase[T:ClassTag](sc: SparkContext, plannerHost: S
   val PLANNER_PORT: Int = 40000
   val WORKER_PORT: Int = 40100
 
+  // Request type, only one can be set.
   var stmt:String = null
+  var path:String = null
 
   def setStatement(stmt:String) = {
+    verifySetRequest()
     this.stmt = stmt
     this
   }
 
   def setTable(table:String) = {
+    verifySetRequest()
     this.stmt = "SELECT * from " + table
     this
+  }
+
+  def setPath(path:String) = {
+    verifySetRequest()
+    this.path = path
+    this
+  }
+
+  protected def verifySetRequest() = {
+    if (path != null) {
+      throw new SparkException("Request already set via setPath().")
+    }
+    if (stmt != null) {
+      throw new SparkException("Statement already set.")
+    }
   }
 
   /**
@@ -94,15 +113,29 @@ abstract class RecordServiceRDDBase[T:ClassTag](sc: SparkContext, plannerHost: S
    * partitions.
    */
   protected def planRequest = {
-    if (stmt == null) {
+    if (stmt == null && path == null) {
       throw new SparkException(
-          "Statement not set. Must call setStatement() or setTable()")
+          "Request not set. Must call setStatement(), setTable() or setPath()")
+    }
+    if (stmt != null && path != null) {
+      throw new SparkException(
+          "Cannot call setStatement()/setTable() and setPath()")
     }
 
-    logInfo("Running request: " + stmt)
+    val request:Request =
+      if (stmt != null) {
+        logInfo("Running sql request: " + stmt)
+        Request.createSqlRequest(stmt)
+      } else if (path != null) {
+        logInfo("Running path request: " + path)
+        Request.createPathRequest(path)
+      } else {
+        assert(false)
+        null
+      }
+
     val planResult = try {
-      RecordServicePlannerClient.planRequest(plannerHost, PLANNER_PORT,
-          Request.createSqlRequest(stmt))
+      RecordServicePlannerClient.planRequest(plannerHost, PLANNER_PORT, request)
     } catch {
       case e:TRecordServiceException => logError("Could not plan request: " + e.message)
         throw new SparkException("RecordServiceRDD failed", e)

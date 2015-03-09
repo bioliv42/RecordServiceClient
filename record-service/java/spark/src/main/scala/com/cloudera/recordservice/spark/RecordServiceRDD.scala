@@ -40,6 +40,11 @@ class RecordServiceRDD(sc: SparkContext, plannerHost: String = "localhost")
     this
   }
 
+  override def setPath(path:String) = {
+    super.setPath(path)
+    this
+  }
+
   /**
    * Executes the task against the RecordServiceWorker and returns an iterator to fetch
    * result for the entire task.

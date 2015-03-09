@@ -56,6 +56,7 @@ class SchemaRecordServiceRDD[T:ClassTag](sc: SparkContext,
     extends RecordServiceRDDBase[T](sc, plannerHost) with Logging {
 
   override def setTable(table:String) = {
+    verifySetRequest()
     if (byOrdinal) {
       // TODO: add API to RecordService to get the table schema so we can do projection
       this.stmt = "SELECT * from " + table
@@ -73,6 +74,11 @@ class SchemaRecordServiceRDD[T:ClassTag](sc: SparkContext,
 
   override def setStatement(stmt:String) = {
     super.setStatement(stmt)
+    this
+  }
+
+  override def setPath(path:String) = {
+    super.setPath(path)
     this
   }
 
@@ -166,7 +172,7 @@ class SchemaRecordServiceRDD[T:ClassTag](sc: SparkContext,
     if (schema.cols.size() < fields.length) {
       // TODO: default values?
       throw new SparkException("Schema mismatch. Cannot match if the case class " +
-        " contains more fields than the table")
+        "contains more fields than the table")
     }
 
     if (byOrdinal) {

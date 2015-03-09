@@ -14,7 +14,6 @@
 
 package com.cloudera.recordservice.spark
 
-import org.apache.hadoop.io.LongWritable
 import org.scalatest.FunSuite
 
 // It's important that these classes and helpers are defined outside of the test class
@@ -25,6 +24,8 @@ case class Nation(var key:Short, var name:String,
 case class AllTypesProjection(var int_col:Int, var string_col:String)
 
 case class Query1(var v:Long)
+
+case class StringRecord(var record:String)
 
 // TODO: add error tests.
 class SchemaClientSuite extends FunSuite with SharedSparkContext {
@@ -56,6 +57,14 @@ class SchemaClientSuite extends FunSuite with SharedSparkContext {
       .setTable("rs.alltypes_null")
       .setIgnoreUnhandledNull(true)
     assert(data.count() == 0)
+  }
+
+  test("Nation By Path") {
+    val rdd = new SchemaRecordServiceRDD[StringRecord](sc, classOf[StringRecord], true).
+      setPath("/test-warehouse/tpch.nation/").map(v => v.record)
+    assert(rdd.count() == 25)
+    assert(rdd.collect()(10) ==
+        "10|IRAN|4|efully alongside of the slyly final dependencies. ")
   }
 
   /*

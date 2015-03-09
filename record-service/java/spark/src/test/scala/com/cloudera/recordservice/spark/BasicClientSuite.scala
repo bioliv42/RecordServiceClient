@@ -15,6 +15,7 @@
 package com.cloudera.recordservice.spark
 
 import org.apache.hadoop.io._
+import org.apache.spark.SparkException
 import org.scalatest.FunSuite
 
 // It's important that these classes and helpers are defined outside of the test class
@@ -93,5 +94,47 @@ class BasicClient extends FunSuite with SharedSparkContext {
     assert(results.length == 1)
     assert(results(0).equals(
       new AllTypes(None, None, None, None, None, None, None, None)))
+  }
+
+  test("Nation By Path") {
+    val rdd = new RecordServiceRDD(sc).setPath("/test-warehouse/tpch.nation/")
+    assert(rdd.count() == 25)
+    val results = rdd.map(v => v(0).asInstanceOf[Text].toString).collect()
+    assert(results.length == 25)
+    assert(results(10) == "10|IRAN|4|efully alongside of the slyly final dependencies. ")
+  }
+
+  test("Invalid Request") {
+    val rdd = new RecordServiceRDD(sc)
+    var threwException = false
+    try {
+      rdd.count()
+    } catch {
+      case e:SparkException =>
+        threwException = true
+        assert(e.getMessage.contains("Request not set"))
+    }
+    assert(threwException)
+
+    rdd.setStatement("select 1")
+    threwException = false
+    try {
+      rdd.setTable("foo")
+    } catch {
+      case e:SparkException =>
+        threwException = true
+        assert(e.getMessage.contains("Statement already set"))
+    }
+    assert(threwException)
+
+    threwException = false
+    try {
+      rdd.setPath("/a/b/c")
+    } catch {
+      case e:SparkException =>
+        threwException = true
+        assert(e.getMessage.contains("Statement already set"))
+    }
+    assert(threwException)
   }
 }
