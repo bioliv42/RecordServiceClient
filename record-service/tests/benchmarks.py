@@ -55,12 +55,12 @@ def hive_cmd(query):
 
 #TODO: I think this spends a lot of time just starting up spark.
 def spark_cmd(cl, query):
-  return "mvn -f " + os.environ['RECORD_SERVICE_HOME'] +\
-      "/java/spark/pom.xml -Dexec.cleanupDaemonThreads=false exec:java " + \
-      "-Dexec.mainClass=" + cl + " -Dexec.args=\"'" + query + "'\""
+  return "java -classpath " + os.environ['RECORD_SERVICE_HOME'] +\
+      "/java/spark-benchmark/target/recordservice-spark-benchmark-0.1.jar " + cl +\
+      " \"" + query + "\""
 
 def spark_q1(query):
-  return spark_cmd("com.cloudera.recordservice.example.Query1", query)
+  return spark_cmd("com.cloudera.recordservice.benchmark.Query1", query)
 
 benchmarks = [
   [
