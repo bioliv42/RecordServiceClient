@@ -259,8 +259,7 @@ public class RecordServiceHiveInputFormat<K extends WritableComparable,
     // SerDe. Until then, the create a separate table and set the job conf properties.
     // String fqTblName[] = table.getTableName().split("\\.");
     //
-    // conf.set("recordservice.db.name", fqTblName[0]);
-    // conf.set("recordservice.table.name", fqTblName[1]);
+    // conf.set("recordservice.table.name", table.getTableName());
 
     if (tableScan != null) {
       pushFilters(conf, tableScan);
@@ -268,8 +267,8 @@ public class RecordServiceHiveInputFormat<K extends WritableComparable,
       conf.set("recordservice.col.names",
           Joiner.on(",").join(tableScan.getNeededColumns()));
     }
-
-    FileInputFormat.setInputPaths(conf, dirs.toArray(new Path[dirs.size()]));
+    // Unset the file config. We're going to be just reading from the table.
+    conf.unset(org.apache.hadoop.mapreduce.lib.input.FileInputFormat.INPUT_DIR);
     conf.setInputFormat(inputFormat.getClass());
 
     // Generate the RecordService
@@ -294,7 +293,7 @@ public class RecordServiceHiveInputFormat<K extends WritableComparable,
    * version.
    */
   @Override
-  public RecordReader getRecordReader(InputSplit split, JobConf job,
+  public RecordReader<K, V> getRecordReader(InputSplit split, JobConf job,
       Reporter reporter) throws IOException {
     // Initialize everything needed to read the projection information.
     HiveInputSplit hsplit = (HiveInputSplit) split;
