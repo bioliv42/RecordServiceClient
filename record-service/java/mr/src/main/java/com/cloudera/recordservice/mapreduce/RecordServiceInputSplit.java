@@ -52,7 +52,11 @@ public class RecordServiceInputSplit extends InputSplit implements Writable {
 
   @Override
   public String[] getLocations() throws IOException, InterruptedException {
-    return taskInfo_.getLocations();
+    String[] locations = new String[taskInfo_.getLocations().length];
+    for (int i = 0; i < taskInfo_.getLocations().length; ++i) {
+      locations[i] = taskInfo_.getLocations()[i].hostname;
+    }
+    return locations;
   }
 
   @Override

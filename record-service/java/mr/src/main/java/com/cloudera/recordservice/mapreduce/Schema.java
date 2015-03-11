@@ -71,7 +71,7 @@ public class Schema implements Writable {
     public Writable getWritableInstance() {
       switch (this) {
         case BOOLEAN: return new BooleanWritable();
-        case TINYINT: new ByteWritable();
+        case TINYINT: return new ByteWritable();
         case SMALLINT: return new ShortWritable();
         case INT: return new IntWritable();
         case BIGINT: return new LongWritable();

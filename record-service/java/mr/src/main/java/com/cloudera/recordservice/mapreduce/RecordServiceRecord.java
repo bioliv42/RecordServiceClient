@@ -37,7 +37,11 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 
 public class RecordServiceRecord implements Writable {
-  // Array of Writable column values.
+  // Array of Writable objects. This is created once and reused.
+  private Writable[] columnValObjects_;
+
+  // The values for the current record. If column[i] is NULL,
+  // columnVals_[i] is null, otherwise it is columnValObjects_[i].
   private Writable[] columnVals_;
 
   // Schema associated with columnVals_.
@@ -51,11 +55,12 @@ public class RecordServiceRecord implements Writable {
   public RecordServiceRecord(Schema schema) {
     schema_ = schema;
     columnVals_ = new Writable[schema_.getNumColumns()];
+    columnValObjects_ = new Writable[schema_.getNumColumns()];
     colNameToIdx_ = Maps.newHashMapWithExpectedSize(schema_.getNumColumns());
     for (int i = 0; i < schema_.getNumColumns(); ++i) {
       ColumnInfo columnInfo = schema_.getColumnInfo(i);
       colNameToIdx_.put(columnInfo.getColumnName(), i);
-      columnVals_[i] = columnInfo.getType().getWritableInstance();
+      columnValObjects_[i] = columnInfo.getType().getWritableInstance();
     }
   }
 
@@ -74,39 +79,43 @@ public class RecordServiceRecord implements Writable {
     }
 
     for (int i = 0; i < schema_.getNumColumns(); ++i) {
-      // TODO: Handle nulls.
+      if (record.isNull(i)) {
+        columnVals_[i] = null;
+        continue;
+      }
+      columnVals_[i] = columnValObjects_[i];
       ColumnInfo cInfo = schema_.getColumnInfo(i);
       Preconditions.checkNotNull(cInfo);
       switch (cInfo.getType()) {
         case BIGINT:
-          ((LongWritable) columnVals_[i]).set(record.getLong(i));
+          ((LongWritable) columnValObjects_[i]).set(record.getLong(i));
           break;
         case BOOLEAN:
-          ((BooleanWritable) columnVals_[i]).set(record.getBoolean(i));
+          ((BooleanWritable) columnValObjects_[i]).set(record.getBoolean(i));
           break;
         case DOUBLE:
-          ((DoubleWritable) columnVals_[i]).set(record.getDouble(i));
+          ((DoubleWritable) columnValObjects_[i]).set(record.getDouble(i));
           break;
         case INT:
-          ((IntWritable) columnVals_[i]).set(record.getInt(i));
+          ((IntWritable) columnValObjects_[i]).set(record.getInt(i));
           break;
         case STRING:
           ByteArray s = record.getByteArray(i);
-          ((Text) columnVals_[i]).set(s.byteBuffer().array(), s.offset(), s.len());
+          ((Text) columnValObjects_[i]).set(s.byteBuffer().array(), s.offset(), s.len());
           break;
         case BINARY:
           ByteArray b = record.getByteArray(i);
-          ((BytesWritable) columnVals_[i]).set(
+          ((BytesWritable) columnValObjects_[i]).set(
               b.byteBuffer().array(), b.offset(), b.len());
           break;
         case FLOAT:
-          ((FloatWritable) columnVals_[i]).set(record.getFloat(i));
+          ((FloatWritable) columnValObjects_[i]).set(record.getFloat(i));
           break;
         case SMALLINT:
-          ((ShortWritable) columnVals_[i]).set(record.getShort(i));
+          ((ShortWritable) columnValObjects_[i]).set(record.getShort(i));
           break;
         case TINYINT:
-          ((ByteWritable) columnVals_[i]).set(record.getByte(i));
+          ((ByteWritable) columnValObjects_[i]).set(record.getByte(i));
           break;
         default:
           Preconditions.checkState(false);
@@ -130,10 +139,11 @@ public class RecordServiceRecord implements Writable {
   }
 
   @Override
+  // TODO: what is the contract here? Handle NULLs
   public void write(DataOutput out) throws IOException {
     schema_.write(out);
-    for(int i = 0; i < columnVals_.length; ++i) {
-      columnVals_[i].write(out);
+    for(int i = 0; i < columnValObjects_.length; ++i) {
+      columnValObjects_[i].write(out);
     }
   }
 
@@ -141,11 +151,11 @@ public class RecordServiceRecord implements Writable {
   public void readFields(DataInput in) throws IOException {
     schema_ = new Schema();
     schema_.readFields(in);
-    columnVals_ = new Writable[schema_.getNumColumns()];
-    for (int i = 0; i < columnVals_.length; i++) {
+    columnValObjects_ = new Writable[schema_.getNumColumns()];
+    for (int i = 0; i < columnValObjects_.length; i++) {
       try {
-        columnVals_[i] = schema_.getColumnInfo(i).getType().getWritableInstance();
-        columnVals_[i].readFields(in);
+        columnValObjects_[i] = schema_.getColumnInfo(i).getType().getWritableInstance();
+        columnValObjects_[i].readFields(in);
       } catch (Exception e) {
         throw new IOException(e);
       }

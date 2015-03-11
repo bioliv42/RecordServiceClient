@@ -16,8 +16,8 @@ package com.cloudera.recordservice.mapreduce;
 
 import java.io.IOException;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
@@ -25,6 +25,8 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import com.cloudera.recordservice.client.RecordServiceWorkerClient;
 import com.cloudera.recordservice.client.Records;
 import com.cloudera.recordservice.client.Records.Record;
+import com.cloudera.recordservice.thrift.TNetworkAddress;
+import com.google.common.annotations.VisibleForTesting;
 
 /**
  * RecordReader implementation that uses the RecordService for data access. Values
@@ -36,7 +38,7 @@ import com.cloudera.recordservice.client.Records.Record;
  * TODO: Should keys just be NullWritables?
  */
 public class RecordServiceRecordReader extends
-    RecordReader<WritableComparable<?>, RecordServiceRecord> {
+    RecordReader<LongWritable, RecordServiceRecord> {
   private RecordServiceWorkerClient worker_;
 
   // Current row batch that is being processed.
@@ -51,8 +53,8 @@ public class RecordServiceRecordReader extends
   // The record that is returned. Updated in-place when nextKeyValue() is called.
   private RecordServiceRecord record_;
 
-  // The current record number assigned this record. Incremented each time nextKeyValue() is
-  // called and assigned to currentKey_.
+  // The current record number assigned this record. Incremented each time
+  // nextKeyValue() is called and assigned to currentKey_.
   private static long recordNum_ = 0;
 
   // The key corresponding to the record.
@@ -68,22 +70,7 @@ public class RecordServiceRecordReader extends
   public void initialize(InputSplit split, TaskAttemptContext context)
       throws IOException, InterruptedException {
     RecordServiceInputSplit rsSplit = (RecordServiceInputSplit)split;
-    worker_ = new RecordServiceWorkerClient();
-
-    try {
-      // TODO: Make port configurable, handle multiple locations.
-      worker_.connect(rsSplit.getLocations()[0], 40100);
-
-      int fetchSize = context.getConfiguration().getInt(
-          RecordServiceInputFormat.FETCH_SIZE_CONF, -1);
-      worker_.setFetchSize(fetchSize != -1 ? fetchSize : null);
-      records_ = worker_.execAndFetch(rsSplit.getTaskInfo().getTaskAsByteBuffer());
-    } catch (Exception e) {
-      throw new IOException(e);
-    }
-    schema_ = new Schema(records_.getSchema());
-    record_ = new RecordServiceRecord(schema_);
-    isInitialized_ = true;
+    initialize(rsSplit, context.getConfiguration());
   }
 
   /**
@@ -106,7 +93,7 @@ public class RecordServiceRecordReader extends
   }
 
   @Override
-  public WritableComparable<?> getCurrentKey() throws IOException,
+  public LongWritable getCurrentKey() throws IOException,
       InterruptedException {
     return currentKey_;
   }
@@ -143,4 +130,27 @@ public class RecordServiceRecordReader extends
   public Schema schema() { return schema_; }
   public Record currentRecord() { return currentRSRecord_; }
   public boolean isInitialized() { return isInitialized_; }
+
+  @VisibleForTesting
+  void initialize(RecordServiceInputSplit split, Configuration config)
+      throws IOException {
+    close();
+    worker_ = new RecordServiceWorkerClient();
+
+    try {
+      // TODO: handle multiple locations.
+      TNetworkAddress task = split.getTaskInfo().getLocations()[0];
+      worker_.connect(task.hostname, task.port);
+
+      int fetchSize = config.getInt(
+          RecordServiceInputFormat.FETCH_SIZE_CONF, -1);
+      worker_.setFetchSize(fetchSize != -1 ? fetchSize : null);
+      records_ = worker_.execAndFetch(split.getTaskInfo().getTaskAsByteBuffer());
+    } catch (Exception e) {
+      throw new IOException("Failed to execute task.", e);
+    }
+    schema_ = new Schema(records_.getSchema());
+    record_ = new RecordServiceRecord(schema_);
+    isInitialized_ = true;
+  }
 }

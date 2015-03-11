@@ -25,6 +25,7 @@ import org.apache.thrift.TException;
 import org.apache.thrift.TSerializer;
 import org.apache.thrift.protocol.TCompactProtocol;
 
+import com.cloudera.recordservice.thrift.TNetworkAddress;
 import com.cloudera.recordservice.thrift.TTask;
 
 public class TaskInfo implements Writable {
@@ -42,12 +43,12 @@ public class TaskInfo implements Writable {
     return 100;
   }
 
-  public String[] getLocations() {
-    String[] result = new String[task_.getLocal_hosts().size()];
-    for (int i = 0; i < task_.getLocal_hosts().size(); ++i) {
-      result[i] = task_.getLocal_hosts().get(i).hostname;
+  public TNetworkAddress[] getLocations() {
+    TNetworkAddress[] hosts = new TNetworkAddress[task_.getLocal_hostsSize()];
+    for (int i = 0; i < task_.getLocal_hostsSize(); ++i) {
+      hosts[i] = task_.getLocal_hosts().get(i);
     }
-    return result;
+    return hosts;
   }
 
   public byte[] getTask() {
