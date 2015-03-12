@@ -40,14 +40,13 @@ def java_client_cmd(query):
       "com.cloudera.recordservice.sample.SampleClientLib " +\
       "\"" + query + "\""
 
-def hive_rs_cmd(query, db_name, tbl_name, fetch_size):
+def hive_rs_cmd(query, tbl_name, fetch_size):
   # Builds a query string that will run using the RecordService
   rs_query = """
       set hive.input.format=com.cloudera.recordservice.hive.RecordServiceHiveInputFormat;
-      set recordservice.db.name={0};
-      set recordservice.table.name={1};
-      set recordservice.fetch.size={2};
-      {3}""".format(db_name, tbl_name, fetch_size, query)
+      set recordservice.table.name={0};
+      set recordservice.fetch.size={1};
+      {2}""".format(tbl_name, fetch_size, query)
   return hive_cmd(rs_query)
 
 def hive_cmd(query):
@@ -80,7 +79,7 @@ benchmarks = [
       ["java-client", java_client_cmd("select l_partkey from tpch6gb.lineitem")],
       ["spark-rs", spark_q1("select l_partkey from tpch6gb.lineitem")],
       ["hive-rs", hive_rs_cmd(query='select sum(l_partkey) from rs.lineitem_hive_serde',
-          db_name='tpch6gb', tbl_name='lineitem', fetch_size=50000)
+          tbl_name='tpch6gb.lineitem', fetch_size=50000)
       ],
     ]
   ],
@@ -98,7 +97,7 @@ benchmarks = [
       ["java-client", java_client_cmd("select l_partkey from tpch6gb_parquet.lineitem")],
       ["spark-rs", spark_q1("select l_partkey from tpch6gb_parquet.lineitem")],
       ["hive-rs", hive_rs_cmd(query='select sum(l_partkey) from rs.lineitem_hive_serde',
-          db_name='tpch6gb_parquet', tbl_name='lineitem', fetch_size=50000)
+          tbl_name='tpch6gb_parquet.lineitem', fetch_size=50000)
       ],
     ]
   ],
@@ -118,7 +117,7 @@ benchmarks = [
           "select l_partkey from tpch6gb_avro_snap.lineitem")],
       ["spark-rs", spark_q1("select l_partkey from tpch6gb_avro_snap.lineitem")],
       ["hive-rs", hive_rs_cmd(query='select sum(l_partkey) from rs.lineitem_hive_serde',
-          db_name='tpch6gb_avro_snap', tbl_name='lineitem', fetch_size=50000)
+          tbl_name='tpch6gb_avro_snap.lineitem', fetch_size=50000)
       ],
     ]
   ],
