@@ -23,6 +23,17 @@ case class Nation(var key:Short, var name:String,
 
 case class AllTypesProjection(var int_col:Int, var string_col:String)
 
+case class AllTypesNonNull(var boolCol:Boolean,
+                    var tinyIntCol:Byte,
+                    var smallIntCol:Short,
+                    var intCol:Int,
+                    var bigIntCol:Long,
+                    var floatCol:Float,
+                    var doubleCol:Double,
+                    var stringCol:String,
+                    var vcharCol:String,
+                    var charCol:String)
+
 case class Query1(var v:Long)
 
 case class StringRecord(var record:String)
@@ -38,6 +49,13 @@ class SchemaClientSuite extends FunSuite with SharedSparkContext {
     assert(rdd.map(m => m.regionKey.toInt).reduce(_ + _) == 50)
     assert(rdd.map(m => m.name).reduce( (x,y) => if (x < y) x else y) == "ALGERIA")
     assert(rdd.map(m => m.comment).reduce( (x,y) => if (x > y) x else y) == "y final packages. slow foxes cajole quickly. quickly silent platelets breach ironic accounts. unusual pinto be")
+  }
+
+  test("AllTypes") {
+    val data = new SchemaRecordServiceRDD[AllTypesNonNull](
+      sc, classOf[AllTypesNonNull], true)
+      .setTable("rs.alltypes").collect()
+    assert(data.size == 2)
   }
 
   test("DefaultValues") {

@@ -60,6 +60,8 @@ class RecordServiceRDD(sc: SparkContext, plannerHost: String = "localhost")
       // Array for return values. value[i] = writables[i] if the value is non-null
       var value = new Array[Writable](partition.schema.cols.size())
 
+      var schema:Array[TTypeId] = simplifySchema(partition.schema)
+
       // Register an on-task-completion callback to close the input stream.
       context.addTaskCompletionListener{ context => closeIfNeeded() }
 
@@ -67,7 +69,7 @@ class RecordServiceRDD(sc: SparkContext, plannerHost: String = "localhost")
 
       // Iterate over the schema to create the correct writable types
       for (i <- 0 until writables.length) {
-        partition.schema.cols.get(i).getType().type_id match {
+        schema(i) match {
           case TTypeId.BOOLEAN => writables(i) = new BooleanWritable()
           case TTypeId.TINYINT => writables(i) = new ByteWritable()
           case TTypeId.SMALLINT => writables(i) = new ShortWritable()
@@ -94,7 +96,7 @@ class RecordServiceRDD(sc: SparkContext, plannerHost: String = "localhost")
             value(i) = null
           } else {
             value(i) = writables(i)
-            partition.schema.cols.get(i).getType().type_id match {
+            schema(i) match {
               case TTypeId.BOOLEAN =>
                 value(i).asInstanceOf[BooleanWritable].set(record.getBoolean(i))
               case TTypeId.TINYINT =>

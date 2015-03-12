@@ -38,7 +38,10 @@ public class SchemaUtils {
         case BIGINT: fieldSchema = Schema.create(Type.LONG); break;
         case FLOAT: fieldSchema = Schema.create(Type.FLOAT); break;
         case DOUBLE: fieldSchema = Schema.create(Type.DOUBLE); break;
-        case STRING: fieldSchema = Schema.create(Type.STRING); break;
+        case STRING:
+        case VARCHAR:
+        case CHAR:
+          fieldSchema = Schema.create(Type.STRING); break;
         default:
           throw new RuntimeException(
               "Unsupported type: " + schema.getCols().get(i).type);

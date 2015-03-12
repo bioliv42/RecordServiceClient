@@ -28,7 +28,9 @@ case class AllTypes(
  val bigintCol: Option[Long],
  val floatCol: Option[Float],
  val doubleCol: Option[Double],
- val stringCol: Option[String]
+ val stringCol: Option[String],
+ val vcharCol: Option[String],
+ val charCol: Option[String]
 )
 
 object Helpers {
@@ -41,7 +43,9 @@ object Helpers {
       if (m(4) == null) None else Some(m(4).asInstanceOf[LongWritable].get()),
       if (m(5) == null) None else Some(m(5).asInstanceOf[FloatWritable].get()),
       if (m(6) == null) None else Some(m(6).asInstanceOf[DoubleWritable].get()),
-      if (m(7) == null) None else Some(m(7).asInstanceOf[Text].toString))
+      if (m(7) == null) None else Some(m(7).asInstanceOf[Text].toString),
+      if (m(8) == null) None else Some(m(8).asInstanceOf[Text].toString),
+      if (m(9) == null) None else Some(m(9).asInstanceOf[Text].toString))
   }
 }
 
@@ -80,9 +84,9 @@ class BasicClient extends FunSuite with SharedSparkContext {
 
     assert(results.length == 2)
     assert(results(0).equals(new AllTypes(Some(true), Some(0), Some(1), Some(2), Some(3),
-        Some(4.0f), Some(5.0), Some("hello"))))
+        Some(4.0f), Some(5.0), Some("hello"), Some("vchar1"), Some("char1"))))
     assert(results(1).equals(new AllTypes(Some(false), Some(6), Some(7), Some(8), Some(9),
-      Some(10.0f), Some(11.0), Some("world"))))
+      Some(10.0f), Some(11.0), Some("world"), Some("vchar2"), Some("char2"))))
   }
 
   test("AllTypesNullTest") {
@@ -93,7 +97,7 @@ class BasicClient extends FunSuite with SharedSparkContext {
 
     assert(results.length == 1)
     assert(results(0).equals(
-      new AllTypes(None, None, None, None, None, None, None, None)))
+      new AllTypes(None, None, None, None, None, None, None, None, None, None)))
   }
 
   test("Nation By Path") {

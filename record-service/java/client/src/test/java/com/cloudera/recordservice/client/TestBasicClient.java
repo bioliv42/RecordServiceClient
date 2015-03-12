@@ -266,7 +266,7 @@ public class TestBasicClient {
    * Verifies that the schema matches the alltypes table schema.
    */
   private void verifyAllTypesSchema(TSchema schema) {
-    assertEquals(schema.cols.size(), 8);
+    assertEquals(schema.cols.size(), 10);
     assertEquals(schema.cols.get(0).name, "bool_col");
     assertEquals(schema.cols.get(0).type.type_id, TTypeId.BOOLEAN);
     assertEquals(schema.cols.get(1).name, "tinyint_col");
@@ -283,6 +283,12 @@ public class TestBasicClient {
     assertEquals(schema.cols.get(6).type.type_id, TTypeId.DOUBLE);
     assertEquals(schema.cols.get(7).name, "string_col");
     assertEquals(schema.cols.get(7).type.type_id, TTypeId.STRING);
+    assertEquals(schema.cols.get(8).name, "varchar_col");
+    assertEquals(schema.cols.get(8).type.type_id, TTypeId.VARCHAR);
+    assertEquals(schema.cols.get(8).type.len, 10);
+    assertEquals(schema.cols.get(9).name, "char_col");
+    assertEquals(schema.cols.get(9).type.type_id, TTypeId.CHAR);
+    assertEquals(schema.cols.get(9).type.len, 5);
   }
 
   @Test
@@ -313,6 +319,8 @@ public class TestBasicClient {
         assertEquals(record.getFloat(5), 4.0, 0.1);
         assertEquals(record.getDouble(6), 5.0, 0.1);
         assertEquals(record.getByteArray(7).toString(), "hello");
+        assertEquals(record.getByteArray(8).toString(), "vchar1");
+        assertEquals(record.getByteArray(9).toString(), "char1");
       } else {
         assertEquals(record.getByte(1), 6);
         assertEquals(record.getShort(2), 7);
@@ -321,6 +329,8 @@ public class TestBasicClient {
         assertEquals(record.getFloat(5), 10.0, 0.1);
         assertEquals(record.getDouble(6), 11.0, 0.1);
         assertEquals(record.getByteArray(7).toString(), "world");
+        assertEquals(record.getByteArray(8).toString(), "vchar2");
+        assertEquals(record.getByteArray(9).toString(), "char2");
       }
 
       // TODO: the Records API needs to be renamed or carefully documented.

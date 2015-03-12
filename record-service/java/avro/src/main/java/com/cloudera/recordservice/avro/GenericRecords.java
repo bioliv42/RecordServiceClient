@@ -68,7 +68,10 @@ public class GenericRecords {
       case BIGINT: record.put(i, rsRecord.getLong(i)); break;
       case FLOAT: record.put(i, rsRecord.getFloat(i)); break;
       case DOUBLE: record.put(i, rsRecord.getDouble(i)); break;
-      case STRING: record.put(i, rsRecord.getByteArray(i).toString()); break;
+      case STRING:
+      case VARCHAR:
+      case CHAR:
+        record.put(i, rsRecord.getByteArray(i).toString()); break;
       default:
         Preconditions.checkState(false,
             "Unsupported type: " + schema_.getCols().get(i).type);

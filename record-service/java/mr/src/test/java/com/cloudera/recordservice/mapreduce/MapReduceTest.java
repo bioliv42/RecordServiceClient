@@ -109,7 +109,7 @@ public class MapReduceTest {
 
     // Test some cases that work
     verifyInputSplitsTable(1, 4, "tpch.nation");
-    verifyInputSplitsTable(2, 8, "rs.alltypes");
+    verifyInputSplitsTable(2, 10, "rs.alltypes");
     verifyInputSplitsTable(1, 1, "tpch.nation", "n_name");
     verifyInputSplitsTable(2, 3, "rs.alltypes", "int_col", "double_col", "string_col");
     verifyInputSplitsPath(1, 1, "/test-warehouse/tpch.nation");
@@ -213,6 +213,8 @@ public class MapReduceTest {
             assertEquals(((FloatWritable)value.getColumnValue(5)).get(), 4.0, 0.1);
             assertEquals(((DoubleWritable)value.getColumnValue(6)).get(), 5.0, 0.1);
             assertEquals(((Text)value.getColumnValue(7)).toString(), "hello");
+            assertEquals(((Text)value.getColumnValue(8)).toString(), "vchar1");
+            assertEquals(((Text)value.getColumnValue(9)).toString(), "char1");
           } else {
             assertEquals(((ByteWritable)value.getColumnValue(1)).get(), 6);
             assertEquals(((ShortWritable)value.getColumnValue(2)).get(), 7);
@@ -221,6 +223,8 @@ public class MapReduceTest {
             assertEquals(((FloatWritable)value.getColumnValue(5)).get(), 10.0, 0.1);
             assertEquals(((DoubleWritable)value.getColumnValue(6)).get(), 11.0, 0.1);
             assertEquals(((Text)value.getColumnValue(7)).toString(), "world");
+            assertEquals(((Text)value.getColumnValue(8)).toString(), "vchar2");
+            assertEquals(((Text)value.getColumnValue(9)).toString(), "char2");
           }
           ++numRows;
         }

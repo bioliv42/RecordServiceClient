@@ -100,6 +100,21 @@ abstract class RecordServiceRDDBase[T:ClassTag](sc: SparkContext, plannerHost: S
     }
   }
 
+  // Returns a simplified schema for 'schema'. The RecordService supports richer types
+  // than Spark so collapse types.
+  protected def simplifySchema(schema:TSchema) : Array[TTypeId] = {
+    val result = new Array[TTypeId](schema.cols.size())
+    for (i <- 0 until schema.cols.size()) {
+      val t = schema.cols.get(i).getType.type_id
+      if (t == TTypeId.VARCHAR || t == TTypeId.CHAR) {
+        result(i) = TTypeId.STRING
+      } else {
+        result(i) = t
+      }
+    }
+    result
+  }
+
   /**
    * Returns the list of preferred hosts to run this partition.
    */

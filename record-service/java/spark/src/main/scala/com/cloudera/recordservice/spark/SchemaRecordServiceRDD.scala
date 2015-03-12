@@ -169,6 +169,8 @@ class SchemaRecordServiceRDD[T:ClassTag](sc: SparkContext,
   }
 
   private def verifySchema(schema: TSchema) = {
+    val simplifiedSchema:Array[TTypeId] = simplifySchema(schema)
+
     if (schema.cols.size() < fields.length) {
       // TODO: default values?
       throw new SparkException("Schema mismatch. Cannot match if the case class " +
@@ -177,7 +179,7 @@ class SchemaRecordServiceRDD[T:ClassTag](sc: SparkContext,
 
     if (byOrdinal) {
       for (i <- 0 until fields.length) {
-        if (types(i) != schema.cols.get(i).getType.type_id) {
+        if (types(i) != simplifiedSchema(i)) {
           throw new SparkException("Schema mismatch. The type of field '" + fields(i) +
             "' does not match the result type. " +
              "Expected type: " + types(i) + " Actual type: " +
@@ -197,7 +199,7 @@ class SchemaRecordServiceRDD[T:ClassTag](sc: SparkContext,
         for (j <- 0 until schema.cols.size()) {
           if (fields(i).equalsIgnoreCase(schema.cols.get(j).name)) {
             found = true
-            if (types(i) != schema.cols.get(j).getType.type_id) {
+            if (types(i) != simplifiedSchema(j)) {
               throw new SparkException("Schema mismatch. The type of field '" +
                 fields(i) + "' does not match the result type. " +
                 "Expected type: " + types(i) + " Actual type: " +
@@ -262,8 +264,9 @@ class SchemaRecordServiceRDD[T:ClassTag](sc: SparkContext,
     // Default values for each field. Only used/populated if defaultVal is set.
     var defaultVals:Array[AnyRef] = new Array[AnyRef](partition.schema.cols.size())
 
-    val allMethods = value.getClass.getMethods()
+    val schema:Array[TTypeId] = simplifySchema(partition.schema)
 
+    val allMethods = value.getClass.getMethods()
     // TODO: try to dedup some of this code.
     if (byOrdinal) {
       val declaredFields = value.getClass.getDeclaredFields()
@@ -339,7 +342,7 @@ class SchemaRecordServiceRDD[T:ClassTag](sc: SparkContext,
               } else {
                 // TODO: make sure this is the cheapest way to do this and we're not doing
                 // unnecessary boxing
-                partition.schema.cols.get(i).getType().type_id match {
+                schema(i) match {
                   case TTypeId.BOOLEAN =>
                     record.getBoolean(i): java.lang.Boolean
                   case TTypeId.TINYINT =>

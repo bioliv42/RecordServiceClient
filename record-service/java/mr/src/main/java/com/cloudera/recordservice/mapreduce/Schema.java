@@ -61,6 +61,8 @@ public class Schema implements Writable {
     DOUBLE,
     STRING,
     BINARY,
+    VARCHAR,
+    CHAR,
     TIMESTAMP,
     DECIMAL,
     ;
@@ -77,6 +79,8 @@ public class Schema implements Writable {
         case BIGINT: return new LongWritable();
         case FLOAT: return new FloatWritable();
         case DOUBLE: return new DoubleWritable();
+        case VARCHAR:
+        case CHAR:
         case STRING: return new Text();
         case BINARY: return new BytesWritable();
         // TODO : is this ok ?
@@ -98,6 +102,8 @@ public class Schema implements Writable {
         case INT: return ColumnType.INT;
         case SMALLINT: return ColumnType.SMALLINT;
         case STRING: return ColumnType.STRING;
+        case VARCHAR: return ColumnType.VARCHAR;
+        case CHAR: return ColumnType.CHAR;
         case TIMESTAMP: return ColumnType.TIMESTAMP;
         case TINYINT: return ColumnType.TINYINT;
         default: throw new UnsupportedOperationException("Unsupported type: " +
@@ -119,27 +125,40 @@ public class Schema implements Writable {
     public ColumnType getType() { return type_; }
 
     public int getPrecision() {
-      if (columnDesc_.getType().isSetPrecision()) {
-        return columnDesc_.getType().getPrecision();
-      } else {
-        if (columnDesc_.getType().getType_id() != TTypeId.DECIMAL) {
-          throw new UnsupportedOperationException(
-              "Type does not have a precision !!");
-        }
+      if (columnDesc_.getType().getType_id() != TTypeId.DECIMAL) {
+        throw new UnsupportedOperationException(
+            "Type does not have a precision !!");
       }
-      return -1;
+      if (!columnDesc_.getType().isSetPrecision()) {
+        throw new UnsupportedOperationException(
+            "Service did not set precision !!");
+      }
+      return columnDesc_.getType().getPrecision();
     }
 
     public int getScale() {
-      if (columnDesc_.getType().isSetScale()) {
-        return columnDesc_.getType().getScale();
-      } else {
-        if (columnDesc_.getType().getType_id() != TTypeId.DECIMAL) {
-          throw new UnsupportedOperationException(
-              "Type does not have a scale !!");
-        }
+      if (columnDesc_.getType().getType_id() != TTypeId.DECIMAL) {
+        throw new UnsupportedOperationException(
+            "Type does not have a scale !!");
       }
-      return -1;
+      if (!columnDesc_.getType().isSetScale()) {
+        throw new UnsupportedOperationException(
+            "Service did not set scale !!");
+      }
+      return columnDesc_.getType().getScale();
+    }
+
+    public int getLength() {
+      if (columnDesc_.getType().getType_id() != TTypeId.VARCHAR &&
+          columnDesc_.getType().getType_id() != TTypeId.CHAR) {
+        throw new UnsupportedOperationException(
+            "Type does not have a length !!");
+      }
+      if (!columnDesc_.getType().isSetLen()) {
+        throw new UnsupportedOperationException(
+            "Service did not set length !!");
+      }
+      return columnDesc_.getType().getLen();
     }
 
     public String getColumnName() { return columnDesc_.getName(); }

@@ -99,7 +99,10 @@ public class SpecificRecords<T extends SpecificRecordBase> {
         case BIGINT: record.put(rsIndex, rsRecord.getLong(i)); break;
         case FLOAT: record.put(rsIndex, rsRecord.getFloat(i)); break;
         case DOUBLE: record.put(rsIndex, rsRecord.getDouble(i)); break;
-        case STRING: record.put(rsIndex, rsRecord.getByteArray(i).toString()); break;
+        case STRING:
+        case VARCHAR:
+        case CHAR:
+          record.put(rsIndex, rsRecord.getByteArray(i).toString()); break;
         default:
           Preconditions.checkState(false,
               "Unsupported type: " + schema_.getCols().get(i).type);

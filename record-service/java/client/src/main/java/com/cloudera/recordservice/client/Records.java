@@ -62,6 +62,10 @@ public class Records {
     // Current record idx (in the current batch)  being returned
     private int recordIdx_;
 
+    // If the type is a CHAR, this contains the length of the value.
+    // -1 otherwise.
+    private final int[] byteArrayLen_;
+
     // Schema of the record
     private final TSchema schema_;
 
@@ -121,8 +125,11 @@ public class Records {
     }
 
     public final ByteArray getByteArray(int colIdx) {
-      int len = unsafe.getInt(colData_[colIdx].array(), colOffsets_[colIdx]);
-      colOffsets_[colIdx] += 4;
+      int len = byteArrayLen_[colIdx];
+      if (len < 0) {
+        len = unsafe.getInt(colData_[colIdx].array(), colOffsets_[colIdx]);
+        colOffsets_[colIdx] += 4;
+      }
       long offset = colOffsets_[colIdx] - byteArrayOffset;
       byteArrayVals_[colIdx].set(colData_[colIdx], (int)offset, len);
       colOffsets_[colIdx] += len;
@@ -135,10 +142,19 @@ public class Records {
       colData_ = new ByteBuffer[schema.cols.size()];
       byteArrayVals_ = new ByteArray[schema.cols.size()];
       nulls_ = new ByteBuffer[schema.cols.size()];
+      byteArrayLen_ = new int[schema.cols.size()];
       schema_ = schema;
       for (int i = 0; i < colOffsets_.length; ++i) {
-        if (schema_.cols.get(i).type.type_id == TTypeId.STRING) {
+        if (schema_.cols.get(i).type.type_id == TTypeId.STRING ||
+            schema_.cols.get(i).type.type_id == TTypeId.VARCHAR) {
           byteArrayVals_[i] = new ByteArray();
+        }
+
+        if (schema_.cols.get(i).type.type_id == TTypeId.CHAR) {
+          byteArrayVals_[i] = new ByteArray();
+          byteArrayLen_[i] = schema_.cols.get(i).type.len;
+        } else {
+          byteArrayLen_[i] = -1;
         }
       }
     }
@@ -158,6 +174,8 @@ public class Records {
           case FLOAT:
           case DOUBLE:
           case STRING:
+          case VARCHAR:
+          case CHAR:
             colData_[i] = result.columnar_row_batch.cols.get(i).data;
             break;
           default:

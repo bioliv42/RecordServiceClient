@@ -100,6 +100,8 @@ public class RecordServiceRecord implements Writable {
           ((IntWritable) columnValObjects_[i]).set(record.getInt(i));
           break;
         case STRING:
+        case VARCHAR:
+        case CHAR:
           ByteArray s = record.getByteArray(i);
           ((Text) columnValObjects_[i]).set(s.byteBuffer().array(), s.offset(), s.len());
           break;

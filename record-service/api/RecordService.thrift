@@ -38,10 +38,10 @@ enum TTypeId {
   FLOAT,
   DOUBLE,
   STRING,
+  VARCHAR,
+  CHAR,
   TIMESTAMP,
   DECIMAL,
-
-  // TODO: other types
 }
 
 // TODO: how to extend this for complex types.
@@ -54,6 +54,9 @@ struct TType {
   // Only set if id == DECIMAL
   2: optional i32 precision
   3: optional i32 scale
+
+  // Only set if id == VARCHAR
+  4: optional i32 len
 }
 
 struct TColumnDesc {
