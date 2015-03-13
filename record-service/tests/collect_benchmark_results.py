@@ -23,7 +23,7 @@ import os
 parser = OptionParser()
 parser.add_option("--perf_tbl", dest="perf_tbl", default="recordservice.perf_db",
     help="The table to insert the results into")
-parser.add_option("--db_host", dest="db_host", default="e1515.halxg.cloudera.com",
+parser.add_option("--db_host", dest="db_host", default="vd0230.halxg.cloudera.com",
     help="The host with the mysql database")
 parser.add_option("--db_user", dest="db_user", default="rs",
     help="The user name on the host")

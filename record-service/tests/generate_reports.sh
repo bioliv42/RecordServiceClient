@@ -33,7 +33,7 @@ generate_report() {
 }
 
 # The number of days to go back to get results.
-DAYS=10
+DAYS=15
 
 # Additional results to append to the ones stored in the DB. These results are
 # not stored in the DB.
