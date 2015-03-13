@@ -33,7 +33,8 @@ case class AllTypesNonNull(var boolCol:Boolean,
                            var stringCol:String,
                            var vcharCol:String,
                            var charCol:String,
-                           var timestampCol:String)
+                           var timestampCol:String,
+                           var decimalCol:String)
 
 case class Query1(var v:Long)
 
@@ -68,17 +69,18 @@ class SchemaClientSuite extends FunSuite with SharedSparkContext {
       assert(data(0).vcharCol == "vchar1")
       assert(data(0).charCol == "char1")
       assert(data(0).timestampCol == "2015-01-01")
+      assert(data(0).decimalCol == "3.1415920000")
     } else {
-      assert(data(1).tinyIntCol == 6)
-      assert(data(1).smallIntCol == 7)
-      assert(data(1).intCol == 8)
-      assert(data(1).bigIntCol == 9)
-      assert(data(1).floatCol == 10.0f)
-      assert(data(1).doubleCol == 11.0)
-      assert(data(1).stringCol == "world")
-      assert(data(1).vcharCol == "vchar2")
-      assert(data(1).charCol == "char2")
-      assert(data(1).timestampCol == "2016-01-01")
+      assert(data(0).tinyIntCol == 6)
+      assert(data(0).smallIntCol == 7)
+      assert(data(0).intCol == 8)
+      assert(data(0).bigIntCol == 9)
+      assert(data(0).floatCol == 10.0f)
+      assert(data(0).doubleCol == 11.0)
+      assert(data(0).stringCol == "world")
+      assert(data(0).vcharCol == "vchar2")
+      assert(data(0).charCol == "char2")
+      assert(data(0).timestampCol == "1234.5678900000")
     }
   }
 

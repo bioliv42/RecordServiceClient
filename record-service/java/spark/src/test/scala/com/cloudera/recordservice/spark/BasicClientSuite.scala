@@ -14,9 +14,11 @@
 
 package com.cloudera.recordservice.spark
 
+import java.math.BigDecimal
 import java.text.SimpleDateFormat
 import java.util.TimeZone
 
+import com.cloudera.recordservice.mapreduce.DecimalWritable
 import com.cloudera.recordservice.mapreduce.TimestampNanosWritable
 import org.apache.hadoop.io._
 import org.apache.spark.SparkException
@@ -35,7 +37,8 @@ case class AllTypes(
   val stringCol: Option[String],
   val vcharCol: Option[String],
   val charCol: Option[String],
-  val timestampCol: Option[String]
+  val timestampCol: Option[String],
+  val decimalCol: Option[String]
 )
 
 object Helpers {
@@ -58,7 +61,12 @@ object Helpers {
       if (m(10) == null)
         None
       else
-        Some(format.format(m(10).asInstanceOf[TimestampNanosWritable].get().toTimeStamp))
+        Some(format.format(m(10).asInstanceOf[TimestampNanosWritable].get().toTimeStamp)),
+
+      if (m(11) == null)
+        None
+      else
+        Some(m(11).asInstanceOf[DecimalWritable].get().toBigDecimal().toString)
     )
   }
 }
@@ -99,10 +107,10 @@ class BasicClient extends FunSuite with SharedSparkContext {
     assert(results.length == 2)
     assert(results(0).equals(new AllTypes(Some(true), Some(0), Some(1), Some(2), Some(3),
         Some(4.0f), Some(5.0), Some("hello"), Some("vchar1"), Some("char1"),
-        Some("2015-01-01"))))
+        Some("2015-01-01"), Some("3.1415920000"))))
     assert(results(1).equals(new AllTypes(Some(false), Some(6), Some(7), Some(8), Some(9),
-      Some(10.0f), Some(11.0), Some("world"), Some("vchar2"), Some("char2"),
-      Some("2016-01-01"))))
+        Some(10.0f), Some(11.0), Some("world"), Some("vchar2"), Some("char2"),
+        Some("2016-01-01"), Some("1234.5678900000"))))
   }
 
   test("AllTypesNullTest") {
@@ -113,7 +121,8 @@ class BasicClient extends FunSuite with SharedSparkContext {
 
     assert(results.length == 1)
     assert(results(0).equals(
-      new AllTypes(None, None, None, None, None, None, None, None, None, None, None)))
+      new AllTypes(None, None, None, None, None, None, None,
+          None, None, None, None, None)))
   }
 
   test("Nation By Path") {

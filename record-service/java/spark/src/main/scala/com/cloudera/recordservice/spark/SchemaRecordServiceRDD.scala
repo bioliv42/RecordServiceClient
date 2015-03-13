@@ -18,6 +18,7 @@
 package com.cloudera.recordservice.spark
 
 import java.lang.reflect.Method
+import java.math.BigDecimal
 import java.text.SimpleDateFormat
 import java.util.TimeZone
 
@@ -177,8 +178,9 @@ class SchemaRecordServiceRDD[T:ClassTag](sc: SparkContext,
   private def verifySchema(schema: TSchema) = {
     val simplifiedSchema:Array[TTypeId] = simplifySchema(schema)
     for (i <- 0 until simplifiedSchema.length) {
-      // TODO: best way to handle timestamp in spark/scala?
-      if (simplifiedSchema(i) == TTypeId.TIMESTAMP_NANOS) {
+      // TODO: best way to handle timestamp/decimal in spark/scala?
+      if (simplifiedSchema(i) == TTypeId.TIMESTAMP_NANOS ||
+          simplifiedSchema(i) == TTypeId.DECIMAL) {
         simplifiedSchema(i) = TTypeId.STRING
       }
     }
@@ -374,6 +376,8 @@ class SchemaRecordServiceRDD[T:ClassTag](sc: SparkContext,
                     record.getByteArray(i).toString()
                   case TTypeId.TIMESTAMP_NANOS =>
                     timeStampFormat.format(record.getTimestampNanos(i).toTimeStamp())
+                  case TTypeId.DECIMAL =>
+                    record.getDecimal(i).toBigDecimal().toString
                   case _ =>
                     assert(false)
                     None
@@ -413,7 +417,6 @@ class SchemaRecordServiceRDD[T:ClassTag](sc: SparkContext,
   /**
    * Sends the request to the RecordServicePlanner to generate the list of partitions
    * (tasks in RecordService terminology)
-   * TODO: How does this handle locality.
    */
   override protected def getPartitions: Array[Partition] = {
     val (request, partitions) = planRequest

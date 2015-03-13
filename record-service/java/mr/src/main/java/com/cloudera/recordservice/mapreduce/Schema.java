@@ -84,8 +84,7 @@ public class Schema implements Writable {
         case STRING: return new Text();
         case BINARY: return new BytesWritable();
         case TIMESTAMP: return new TimestampNanosWritable();
-        // TODO : need to handle this properly
-        case DECIMAL: return new BytesWritable();
+        case DECIMAL: return new DecimalWritable();
         default: throw new UnsupportedOperationException(
             "Unexpected type: " + toString());
       }
@@ -93,18 +92,18 @@ public class Schema implements Writable {
 
     public static ColumnType fromThrift(TTypeId typeId) {
       switch (typeId) {
-        case BIGINT: return ColumnType.BIGINT;
         case BOOLEAN: return ColumnType.BOOLEAN;
-        case DECIMAL: return ColumnType.DECIMAL;
-        case DOUBLE: return ColumnType.DOUBLE;
-        case FLOAT: return ColumnType.FLOAT;
-        case INT: return ColumnType.INT;
+        case TINYINT: return ColumnType.TINYINT;
         case SMALLINT: return ColumnType.SMALLINT;
-        case STRING: return ColumnType.STRING;
+        case INT: return ColumnType.INT;
+        case BIGINT: return ColumnType.BIGINT;
+        case FLOAT: return ColumnType.FLOAT;
+        case DOUBLE: return ColumnType.DOUBLE;
         case VARCHAR: return ColumnType.VARCHAR;
         case CHAR: return ColumnType.CHAR;
+        case STRING: return ColumnType.STRING;
         case TIMESTAMP_NANOS: return ColumnType.TIMESTAMP;
-        case TINYINT: return ColumnType.TINYINT;
+        case DECIMAL: return ColumnType.DECIMAL;
         default: throw new UnsupportedOperationException("Unsupported type: " +
             typeId);
       }

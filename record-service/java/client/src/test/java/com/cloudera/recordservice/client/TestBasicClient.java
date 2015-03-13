@@ -19,6 +19,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.TimeZone;
@@ -268,7 +269,7 @@ public class TestBasicClient {
    * Verifies that the schema matches the alltypes table schema.
    */
   private void verifyAllTypesSchema(TSchema schema) {
-    assertEquals(schema.cols.size(), 11);
+    assertEquals(schema.cols.size(), 12);
     assertEquals(schema.cols.get(0).name, "bool_col");
     assertEquals(schema.cols.get(0).type.type_id, TTypeId.BOOLEAN);
     assertEquals(schema.cols.get(1).name, "tinyint_col");
@@ -293,6 +294,10 @@ public class TestBasicClient {
     assertEquals(schema.cols.get(9).type.len, 5);
     assertEquals(schema.cols.get(10).name, "timestamp_col");
     assertEquals(schema.cols.get(10).type.type_id, TTypeId.TIMESTAMP_NANOS);
+    assertEquals(schema.cols.get(11).name, "decimal_col");
+    assertEquals(schema.cols.get(11).type.type_id, TTypeId.DECIMAL);
+    assertEquals(schema.cols.get(11).type.precision, 24);
+    assertEquals(schema.cols.get(11).type.scale, 10);
   }
 
   @Test
@@ -330,6 +335,8 @@ public class TestBasicClient {
         assertEquals(record.getByteArray(9).toString(), "char1");
         assertEquals(
             format.format(record.getTimestampNanos(10).toTimeStamp()), "2015-01-01");
+        assertEquals(record.getDecimal(11).toBigDecimal(),
+            new BigDecimal("3.1415920000"));
       } else {
         assertEquals(record.getByte(1), 6);
         assertEquals(record.getShort(2), 7);
@@ -342,6 +349,8 @@ public class TestBasicClient {
         assertEquals(record.getByteArray(9).toString(), "char2");
         assertEquals(
             format.format(record.getTimestampNanos(10).toTimeStamp()), "2016-01-01");
+        assertEquals(record.getDecimal(11).toBigDecimal(),
+            new BigDecimal("1234.5678900000"));
       }
 
       // TODO: the Records API needs to be renamed or carefully documented.

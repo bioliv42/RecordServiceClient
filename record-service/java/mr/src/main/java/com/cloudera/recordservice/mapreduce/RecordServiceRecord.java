@@ -116,6 +116,7 @@ public class RecordServiceRecord implements Writable {
           ((Text) columnValObjects_[i]).set(
               s.byteBuffer().array(), s.offset(), s.len());
           break;
+
         case BINARY:
           ByteArray b = record.getByteArray(i);
           ((BytesWritable) columnValObjects_[i]).set(
@@ -125,8 +126,12 @@ public class RecordServiceRecord implements Writable {
           ((TimestampNanosWritable) columnValObjects_[i]).set(
               record.getTimestampNanos(i));
           break;
+        case DECIMAL:
+          ((DecimalWritable) columnValObjects_[i]).set(
+              record.getDecimal(i));
+          break;
         default:
-          Preconditions.checkState(false, "Unsupported type: " + cInfo.getType());
+          throw new RuntimeException("Unsupported type: " + cInfo.getType());
       }
     }
   }

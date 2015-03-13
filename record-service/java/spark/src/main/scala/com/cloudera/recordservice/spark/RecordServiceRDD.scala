@@ -18,6 +18,7 @@
 package com.cloudera.recordservice.spark
 
 import com.cloudera.recordservice.client.TimestampNanos
+import com.cloudera.recordservice.mapreduce.DecimalWritable
 import com.cloudera.recordservice.mapreduce.TimestampNanosWritable
 import com.cloudera.recordservice.thrift._
 import org.apache.hadoop.io._
@@ -81,6 +82,7 @@ class RecordServiceRDD(sc: SparkContext, plannerHost: String = "localhost")
           case TTypeId.DOUBLE => writables(i) = new DoubleWritable()
           case TTypeId.STRING => writables(i) = new Text()
           case TTypeId.TIMESTAMP_NANOS => writables(i) = new TimestampNanosWritable()
+          case TTypeId.DECIMAL => writables(i) = new DecimalWritable()
           case _ => throw new SparkException(
             "Unsupported type: " + partition.schema.cols.get(i).getType().type_id)
         }
@@ -122,6 +124,8 @@ class RecordServiceRDD(sc: SparkContext, plannerHost: String = "localhost")
               case TTypeId.TIMESTAMP_NANOS =>
                 val ts:TimestampNanos = record.getTimestampNanos(i)
                 value(i).asInstanceOf[TimestampNanosWritable].set(ts)
+              case TTypeId.DECIMAL =>
+                value(i).asInstanceOf[DecimalWritable].set(record.getDecimal(i))
               case _ => assert(false)
             }
           }

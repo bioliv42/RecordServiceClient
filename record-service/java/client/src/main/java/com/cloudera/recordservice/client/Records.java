@@ -26,14 +26,14 @@ import com.cloudera.recordservice.thrift.TFetchResult;
 import com.cloudera.recordservice.thrift.TRowBatchFormat;
 import com.cloudera.recordservice.thrift.TSchema;
 import com.cloudera.recordservice.thrift.TStats;
+import com.cloudera.recordservice.thrift.TType;
 import com.cloudera.recordservice.thrift.TTypeId;
 import com.cloudera.recordservice.thrift.TUniqueId;
 import com.google.common.base.Preconditions;
 
 /**
- * Abstraction over records returned from the RecordService.
- * This class is extremely performance sensitive.
- * Not thread-safe.
+ * Abstraction over records returned from the RecordService. This class is
+ * extremely performance sensitive. Not thread-safe.
  */
 @SuppressWarnings("restriction")
 public class Records {
@@ -42,7 +42,7 @@ public class Records {
     try {
       Field field = Unsafe.class.getDeclaredField("theUnsafe");
       field.setAccessible(true);
-      unsafe = (Unsafe)field.get(null);
+      unsafe = (Unsafe) field.get(null);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
@@ -62,10 +62,13 @@ public class Records {
     // Only used if col[i] is a TimestampNano to prevent object creation.
     private final TimestampNanos[] timestampNanos_;
 
-    // Current record idx (in the current batch)  being returned
+    // Only used if col[i] is a Decimal to prevent object creation.
+    private final Decimal[] decimalVals_;
+
+    // Current record idx (in the current batch) being returned
     private int recordIdx_;
 
-    // If the type is a CHAR, this contains the length of the value.
+    // If the type is a CHAR or DECIMAL, this contains the length of the value.
     // -1 otherwise.
     private final int[] byteArrayLen_;
 
@@ -80,10 +83,11 @@ public class Records {
     private static final long byteArrayOffset = unsafe.arrayBaseOffset(byte[].class);
 
     /**
-     * For all these getters, returns the value at 'colIdx'. The type of the column
-     * must match. Undefined behavior if it does not match or if called on a value that
-     * is NULL. (We don't want to verify because this is the hot path.
-     * TODO: add a DEBUG mode which verifies the API is being used correctly.
+     * For all these getters, returns the value at 'colIdx'. The type of the
+     * column must match. Undefined behavior if it does not match or if called
+     * on a value that is NULL. (We don't want to verify because this is the hot
+     * path. TODO: add a DEBUG mode which verifies the API is being used
+     * correctly.
      */
     public final boolean getBoolean(int colIdx) {
       byte val = unsafe.getByte(colData_[colIdx].array(), colOffsets_[colIdx]);
@@ -98,7 +102,8 @@ public class Records {
     }
 
     public final short getShort(int colIdx) {
-      short val = unsafe.getShort(colData_[colIdx].array(), colOffsets_[colIdx]);
+      short val = unsafe
+          .getShort(colData_[colIdx].array(), colOffsets_[colIdx]);
       colOffsets_[colIdx] += 2;
       return val;
     }
@@ -149,29 +154,43 @@ public class Records {
       return timestamp;
     }
 
+    public final Decimal getDecimal(int colIdx) {
+      int len = byteArrayLen_[colIdx];
+      long offset = colOffsets_[colIdx] - byteArrayOffset;
+      decimalVals_[colIdx].set(colData_[colIdx], (int)offset, len);
+      colOffsets_[colIdx] += len;
+      return decimalVals_[colIdx];
+    }
+
     protected Record(TSchema schema) {
       recordIdx_ = -1;
       colOffsets_ = new long[schema.cols.size()];
       colData_ = new ByteBuffer[schema.cols.size()];
       byteArrayVals_ = new ByteArray[schema.cols.size()];
       timestampNanos_ = new TimestampNanos[schema.cols.size()];
+      decimalVals_ = new Decimal[schema.cols.size()];
       nulls_ = new ByteBuffer[schema.cols.size()];
       byteArrayLen_ = new int[schema.cols.size()];
       schema_ = schema;
       for (int i = 0; i < colOffsets_.length; ++i) {
-        if (schema_.cols.get(i).type.type_id == TTypeId.STRING ||
-            schema_.cols.get(i).type.type_id == TTypeId.VARCHAR) {
+        TType type = schema_.cols.get(i).type;
+        if (type.type_id == TTypeId.STRING || type.type_id == TTypeId.VARCHAR) {
           byteArrayVals_[i] = new ByteArray();
         }
-        if (schema.cols.get(i).type.type_id == TTypeId.TIMESTAMP_NANOS) {
+        if (type.type_id == TTypeId.TIMESTAMP_NANOS) {
           timestampNanos_[i] = new TimestampNanos();
         }
 
-        if (schema_.cols.get(i).type.type_id == TTypeId.CHAR) {
+        if (type.type_id == TTypeId.CHAR) {
           byteArrayVals_[i] = new ByteArray();
-          byteArrayLen_[i] = schema_.cols.get(i).type.len;
+          byteArrayLen_[i] = type.len;
         } else {
           byteArrayLen_[i] = -1;
+        }
+
+        if (type.type_id == TTypeId.DECIMAL) {
+          decimalVals_[i] = new Decimal(type.precision, type.scale);
+          byteArrayLen_[i] = Decimal.computeByteSize(type.precision, type.scale);
         }
       }
     }
@@ -182,22 +201,25 @@ public class Records {
       for (int i = 0; i < colOffsets_.length; ++i) {
         nulls_[i] = result.columnar_row_batch.cols.get(i).is_null;
         colOffsets_[i] = byteArrayOffset;
-        switch (schema_.cols.get(i).type.type_id) {
-          case BOOLEAN:
-          case TINYINT:
-          case SMALLINT:
-          case INT:
-          case BIGINT:
-          case FLOAT:
-          case DOUBLE:
-          case STRING:
-          case VARCHAR:
-          case CHAR:
-          case TIMESTAMP_NANOS:
-            colData_[i] = result.columnar_row_batch.cols.get(i).data;
-            break;
-          default:
-            throw new RuntimeException("Unknown type");
+        TType type = schema_.cols.get(i).type;
+        switch (type.type_id) {
+        case BOOLEAN:
+        case TINYINT:
+        case SMALLINT:
+        case INT:
+        case BIGINT:
+        case FLOAT:
+        case DOUBLE:
+        case STRING:
+        case VARCHAR:
+        case CHAR:
+        case TIMESTAMP_NANOS:
+        case DECIMAL:
+          colData_[i] = result.columnar_row_batch.cols.get(i).data;
+          break;
+        default:
+          throw new RuntimeException(
+              "Service returned type that is not supported. Type = " + type);
         }
       }
     }
@@ -256,8 +278,8 @@ public class Records {
   }
 
   /*
-   * Returns the stats of the underlying task. This issues an RPC to the
-   * server and cannot be used in the hot path.
+   * Returns the stats of the underlying task. This issues an RPC to the server
+   * and cannot be used in the hot path.
    */
   public TStats getStats() throws TException {
     if (handle_ == null) throw new RuntimeException("Cannot call on closed object.");
@@ -265,11 +287,10 @@ public class Records {
   }
 
   public TSchema getSchema() { return record_.getSchema(); }
-
   public float progress() { return progress_; }
 
-  protected Records(RecordServiceWorkerClient worker,
-      TUniqueId handle, TSchema schema) throws IOException {
+  protected Records(RecordServiceWorkerClient worker, TUniqueId handle,
+      TSchema schema) throws IOException {
     worker_ = worker;
     handle_ = handle;
 

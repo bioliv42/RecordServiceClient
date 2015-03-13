@@ -19,6 +19,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.TimeZone;
@@ -36,6 +37,7 @@ import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.junit.Test;
 
+import com.cloudera.recordservice.client.Decimal;
 import com.cloudera.recordservice.thrift.TErrorCode;
 import com.cloudera.recordservice.thrift.TRecordServiceException;
 
@@ -111,7 +113,7 @@ public class MapReduceTest {
 
     // Test some cases that work
     verifyInputSplitsTable(1, 4, "tpch.nation");
-    verifyInputSplitsTable(2, 11, "rs.alltypes");
+    verifyInputSplitsTable(2, 12, "rs.alltypes");
     verifyInputSplitsTable(1, 1, "tpch.nation", "n_name");
     verifyInputSplitsTable(2, 3, "rs.alltypes", "int_col", "double_col", "string_col");
     verifyInputSplitsPath(1, 1, "/test-warehouse/tpch.nation");
@@ -223,7 +225,9 @@ public class MapReduceTest {
             assertEquals(format.format(
                 ((TimestampNanosWritable)value.getColumnValue(10)).get().toTimeStamp()),
                 "2015-01-01");
-
+            assertEquals(
+                ((DecimalWritable)value.getColumnValue(11)).get().toBigDecimal(),
+                new BigDecimal("3.1415920000"));
           } else {
             assertEquals(((ByteWritable)value.getColumnValue(1)).get(), 6);
             assertEquals(((ShortWritable)value.getColumnValue(2)).get(), 7);
@@ -237,6 +241,9 @@ public class MapReduceTest {
             assertEquals(format.format(
                 ((TimestampNanosWritable)value.getColumnValue(10)).get().toTimeStamp()),
                 "2016-01-01");
+            assertEquals(
+                ((DecimalWritable)value.getColumnValue(11)).get().toBigDecimal(),
+                new BigDecimal("1234.5678900000"));
           }
           ++numRows;
         }
