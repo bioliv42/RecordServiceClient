@@ -42,6 +42,7 @@
     </repository>
   </repositories>
 
+  <!-- TODO: this pulls in a lot dependencies, we should exclude as much as possible -->
   <dependencies>
     <dependency>
       <groupId>com.cloudera.recordservice</groupId>

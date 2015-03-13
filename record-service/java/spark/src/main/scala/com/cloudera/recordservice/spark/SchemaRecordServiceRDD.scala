@@ -18,6 +18,8 @@
 package com.cloudera.recordservice.spark
 
 import java.lang.reflect.Method
+import java.text.SimpleDateFormat
+import java.util.TimeZone
 
 import com.cloudera.recordservice.thrift._
 import org.apache.spark._
@@ -106,6 +108,10 @@ class SchemaRecordServiceRDD[T:ClassTag](sc: SparkContext,
   var defaultVal:Option[T] = None
   var ignoreUnhandledNull:Boolean = false
 
+  // TODO: best way to handle this?
+  var timeStampFormat = new SimpleDateFormat("yyyy-MM-dd")
+  timeStampFormat.setTimeZone(TimeZone.getTimeZone("GMT"))
+
   private def extractFields() = {
     val f = recordClass.getDeclaredFields()
     val result = new Array[String](f.size)
@@ -170,6 +176,12 @@ class SchemaRecordServiceRDD[T:ClassTag](sc: SparkContext,
 
   private def verifySchema(schema: TSchema) = {
     val simplifiedSchema:Array[TTypeId] = simplifySchema(schema)
+    for (i <- 0 until simplifiedSchema.length) {
+      // TODO: best way to handle timestamp in spark/scala?
+      if (simplifiedSchema(i) == TTypeId.TIMESTAMP_NANOS) {
+        simplifiedSchema(i) = TTypeId.STRING
+      }
+    }
 
     if (schema.cols.size() < fields.length) {
       // TODO: default values?
@@ -360,6 +372,8 @@ class SchemaRecordServiceRDD[T:ClassTag](sc: SparkContext,
                     record.getDouble(i): java.lang.Double
                   case TTypeId.STRING =>
                     record.getByteArray(i).toString()
+                  case TTypeId.TIMESTAMP_NANOS =>
+                    timeStampFormat.format(record.getTimestampNanos(i).toTimeStamp())
                   case _ =>
                     assert(false)
                     None

@@ -40,8 +40,8 @@ enum TTypeId {
   STRING,
   VARCHAR,
   CHAR,
-  TIMESTAMP,
   DECIMAL,
+  TIMESTAMP_NANOS,
 }
 
 // TODO: how to extend this for complex types.
@@ -76,7 +76,9 @@ enum TRowBatchFormat {
 // Serialized columnar data. Instead of using a list of types, this is a custom
 // serialization. Thrift sees this as a byte buffer so we have minimal serialization
 // cost.
-// The serialization is identical to parquet's plain encoding.
+// The serialization is identical to parquet's plain encoding with these exceptions:
+//   - TimestampNanos: Parquet encodes as 8 byte nanos in day and 4 byte julian day.
+//     RecordService encoding is 8 byte millis since epoch and 4 byte nanos.
 struct TColumnData {
   // One byte for each value.
   // TODO: turn this into a bitmap.

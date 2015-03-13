@@ -52,8 +52,14 @@
   <dependencies>
     <dependency>
       <groupId>com.cloudera.recordservice</groupId>
-      <artifactId>recordservice-client</artifactId>
+      <artifactId>recordservice-mr</artifactId>
       <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>javax.servlet</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.spark</groupId>

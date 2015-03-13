@@ -17,6 +17,8 @@
 
 package com.cloudera.recordservice.spark
 
+import com.cloudera.recordservice.client.TimestampNanos
+import com.cloudera.recordservice.mapreduce.TimestampNanosWritable
 import com.cloudera.recordservice.thrift._
 import org.apache.hadoop.io._
 import org.apache.spark._
@@ -78,6 +80,7 @@ class RecordServiceRDD(sc: SparkContext, plannerHost: String = "localhost")
           case TTypeId.FLOAT => writables(i) = new FloatWritable()
           case TTypeId.DOUBLE => writables(i) = new DoubleWritable()
           case TTypeId.STRING => writables(i) = new Text()
+          case TTypeId.TIMESTAMP_NANOS => writables(i) = new TimestampNanosWritable()
           case _ => throw new SparkException(
             "Unsupported type: " + partition.schema.cols.get(i).getType().type_id)
         }
@@ -116,6 +119,9 @@ class RecordServiceRDD(sc: SparkContext, plannerHost: String = "localhost")
                 val v = record.getByteArray(i)
                 value(i).asInstanceOf[Text].set(
                     v.byteBuffer().array(), v.offset(), v.len())
+              case TTypeId.TIMESTAMP_NANOS =>
+                val ts:TimestampNanos = record.getTimestampNanos(i)
+                value(i).asInstanceOf[TimestampNanosWritable].set(ts)
               case _ => assert(false)
             }
           }

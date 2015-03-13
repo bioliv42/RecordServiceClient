@@ -87,40 +87,46 @@ public class RecordServiceRecord implements Writable {
       ColumnInfo cInfo = schema_.getColumnInfo(i);
       Preconditions.checkNotNull(cInfo);
       switch (cInfo.getType()) {
-        case BIGINT:
-          ((LongWritable) columnValObjects_[i]).set(record.getLong(i));
-          break;
         case BOOLEAN:
           ((BooleanWritable) columnValObjects_[i]).set(record.getBoolean(i));
           break;
-        case DOUBLE:
-          ((DoubleWritable) columnValObjects_[i]).set(record.getDouble(i));
+        case TINYINT:
+          ((ByteWritable) columnValObjects_[i]).set(record.getByte(i));
+          break;
+        case SMALLINT:
+          ((ShortWritable) columnValObjects_[i]).set(record.getShort(i));
           break;
         case INT:
           ((IntWritable) columnValObjects_[i]).set(record.getInt(i));
           break;
+        case BIGINT:
+          ((LongWritable) columnValObjects_[i]).set(record.getLong(i));
+          break;
+        case FLOAT:
+          ((FloatWritable) columnValObjects_[i]).set(record.getFloat(i));
+          break;
+        case DOUBLE:
+          ((DoubleWritable) columnValObjects_[i]).set(record.getDouble(i));
+          break;
+
         case STRING:
         case VARCHAR:
         case CHAR:
           ByteArray s = record.getByteArray(i);
-          ((Text) columnValObjects_[i]).set(s.byteBuffer().array(), s.offset(), s.len());
+          ((Text) columnValObjects_[i]).set(
+              s.byteBuffer().array(), s.offset(), s.len());
           break;
         case BINARY:
           ByteArray b = record.getByteArray(i);
           ((BytesWritable) columnValObjects_[i]).set(
               b.byteBuffer().array(), b.offset(), b.len());
           break;
-        case FLOAT:
-          ((FloatWritable) columnValObjects_[i]).set(record.getFloat(i));
-          break;
-        case SMALLINT:
-          ((ShortWritable) columnValObjects_[i]).set(record.getShort(i));
-          break;
-        case TINYINT:
-          ((ByteWritable) columnValObjects_[i]).set(record.getByte(i));
+        case TIMESTAMP:
+          ((TimestampNanosWritable) columnValObjects_[i]).set(
+              record.getTimestampNanos(i));
           break;
         default:
-          Preconditions.checkState(false);
+          Preconditions.checkState(false, "Unsupported type: " + cInfo.getType());
       }
     }
   }

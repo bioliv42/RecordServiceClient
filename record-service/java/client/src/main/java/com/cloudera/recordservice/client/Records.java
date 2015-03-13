@@ -59,6 +59,9 @@ public class Records {
     // Only used if col[i] is a String to prevent object creation.
     private final ByteArray[] byteArrayVals_;
 
+    // Only used if col[i] is a TimestampNano to prevent object creation.
+    private final TimestampNanos[] timestampNanos_;
+
     // Current record idx (in the current batch)  being returned
     private int recordIdx_;
 
@@ -136,11 +139,22 @@ public class Records {
       return byteArrayVals_[colIdx];
     }
 
+    public final TimestampNanos getTimestampNanos(int colIdx) {
+      TimestampNanos timestamp = timestampNanos_[colIdx];
+      long millis = unsafe.getLong(colData_[colIdx].array(), colOffsets_[colIdx]);
+      colOffsets_[colIdx] += 8;
+      int nanos = unsafe.getInt(colData_[colIdx].array(), colOffsets_[colIdx]);
+      colOffsets_[colIdx] += 4;
+      timestamp.set(millis, nanos);
+      return timestamp;
+    }
+
     protected Record(TSchema schema) {
       recordIdx_ = -1;
       colOffsets_ = new long[schema.cols.size()];
       colData_ = new ByteBuffer[schema.cols.size()];
       byteArrayVals_ = new ByteArray[schema.cols.size()];
+      timestampNanos_ = new TimestampNanos[schema.cols.size()];
       nulls_ = new ByteBuffer[schema.cols.size()];
       byteArrayLen_ = new int[schema.cols.size()];
       schema_ = schema;
@@ -148,6 +162,9 @@ public class Records {
         if (schema_.cols.get(i).type.type_id == TTypeId.STRING ||
             schema_.cols.get(i).type.type_id == TTypeId.VARCHAR) {
           byteArrayVals_[i] = new ByteArray();
+        }
+        if (schema.cols.get(i).type.type_id == TTypeId.TIMESTAMP_NANOS) {
+          timestampNanos_[i] = new TimestampNanos();
         }
 
         if (schema_.cols.get(i).type.type_id == TTypeId.CHAR) {
@@ -176,6 +193,7 @@ public class Records {
           case STRING:
           case VARCHAR:
           case CHAR:
+          case TIMESTAMP_NANOS:
             colData_[i] = result.columnar_row_batch.cols.get(i).data;
             break;
           default:

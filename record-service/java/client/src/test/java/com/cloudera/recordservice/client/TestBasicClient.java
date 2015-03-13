@@ -19,7 +19,9 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.List;
+import java.util.TimeZone;
 
 import org.apache.thrift.TException;
 import org.junit.Test;
@@ -266,7 +268,7 @@ public class TestBasicClient {
    * Verifies that the schema matches the alltypes table schema.
    */
   private void verifyAllTypesSchema(TSchema schema) {
-    assertEquals(schema.cols.size(), 10);
+    assertEquals(schema.cols.size(), 11);
     assertEquals(schema.cols.get(0).name, "bool_col");
     assertEquals(schema.cols.get(0).type.type_id, TTypeId.BOOLEAN);
     assertEquals(schema.cols.get(1).name, "tinyint_col");
@@ -289,6 +291,8 @@ public class TestBasicClient {
     assertEquals(schema.cols.get(9).name, "char_col");
     assertEquals(schema.cols.get(9).type.type_id, TTypeId.CHAR);
     assertEquals(schema.cols.get(9).type.len, 5);
+    assertEquals(schema.cols.get(10).name, "timestamp_col");
+    assertEquals(schema.cols.get(10).type.type_id, TTypeId.TIMESTAMP_NANOS);
   }
 
   @Test
@@ -302,6 +306,9 @@ public class TestBasicClient {
         Request.createSqlRequest("select * from rs.alltypes"));
 
     verifyAllTypesSchema(plan.schema);
+
+    SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+    format.setTimeZone(TimeZone.getTimeZone("GMT"));
 
     // Execute the task
     assertEquals(plan.tasks.size(), 2);
@@ -321,6 +328,8 @@ public class TestBasicClient {
         assertEquals(record.getByteArray(7).toString(), "hello");
         assertEquals(record.getByteArray(8).toString(), "vchar1");
         assertEquals(record.getByteArray(9).toString(), "char1");
+        assertEquals(
+            format.format(record.getTimestampNanos(10).toTimeStamp()), "2015-01-01");
       } else {
         assertEquals(record.getByte(1), 6);
         assertEquals(record.getShort(2), 7);
@@ -331,6 +340,8 @@ public class TestBasicClient {
         assertEquals(record.getByteArray(7).toString(), "world");
         assertEquals(record.getByteArray(8).toString(), "vchar2");
         assertEquals(record.getByteArray(9).toString(), "char2");
+        assertEquals(
+            format.format(record.getTimestampNanos(10).toTimeStamp()), "2016-01-01");
       }
 
       // TODO: the Records API needs to be renamed or carefully documented.

@@ -84,7 +84,7 @@ string PrintResultSchema(const TSchema& schema) {
       case TTypeId::STRING:
         ss << "STRING";
         break;
-      case TTypeId::TIMESTAMP:
+      case TTypeId::TIMESTAMP_NANOS:
         ss << "TIMESTAMP";
         break;
       case TTypeId::DECIMAL:

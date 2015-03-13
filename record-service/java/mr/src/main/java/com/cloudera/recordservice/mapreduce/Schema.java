@@ -83,8 +83,7 @@ public class Schema implements Writable {
         case CHAR:
         case STRING: return new Text();
         case BINARY: return new BytesWritable();
-        // TODO : is this ok ?
-        case TIMESTAMP: return new LongWritable();
+        case TIMESTAMP: return new TimestampNanosWritable();
         // TODO : need to handle this properly
         case DECIMAL: return new BytesWritable();
         default: throw new UnsupportedOperationException(
@@ -104,7 +103,7 @@ public class Schema implements Writable {
         case STRING: return ColumnType.STRING;
         case VARCHAR: return ColumnType.VARCHAR;
         case CHAR: return ColumnType.CHAR;
-        case TIMESTAMP: return ColumnType.TIMESTAMP;
+        case TIMESTAMP_NANOS: return ColumnType.TIMESTAMP;
         case TINYINT: return ColumnType.TINYINT;
         default: throw new UnsupportedOperationException("Unsupported type: " +
             typeId);

@@ -14,6 +14,10 @@
 
 package com.cloudera.recordservice.spark
 
+import java.text.SimpleDateFormat
+import java.util.TimeZone
+
+import com.cloudera.recordservice.mapreduce.TimestampNanosWritable
 import org.apache.hadoop.io._
 import org.apache.spark.SparkException
 import org.scalatest.FunSuite
@@ -21,20 +25,24 @@ import org.scalatest.FunSuite
 // It's important that these classes and helpers are defined outside of the test class
 // to ensure that spark can serialize the task.
 case class AllTypes(
- val boolCol: Option[Boolean],
- val tinyIntCol: Option[Byte],
- val smallIntCol: Option[Short],
- val intCol: Option[Int],
- val bigintCol: Option[Long],
- val floatCol: Option[Float],
- val doubleCol: Option[Double],
- val stringCol: Option[String],
- val vcharCol: Option[String],
- val charCol: Option[String]
+  val boolCol: Option[Boolean],
+  val tinyIntCol: Option[Byte],
+  val smallIntCol: Option[Short],
+  val intCol: Option[Int],
+  val bigintCol: Option[Long],
+  val floatCol: Option[Float],
+  val doubleCol: Option[Double],
+  val stringCol: Option[String],
+  val vcharCol: Option[String],
+  val charCol: Option[String],
+  val timestampCol: Option[String]
 )
 
 object Helpers {
   def allTypesFromWritables(m: Array[Writable]) : AllTypes = {
+    val format = new SimpleDateFormat("yyyy-MM-dd")
+    format.setTimeZone(TimeZone.getTimeZone("GMT"))
+
     new AllTypes(
       if (m(0) == null) None else Some(m(0).asInstanceOf[BooleanWritable].get()),
       if (m(1) == null) None else Some(m(1).asInstanceOf[ByteWritable].get()),
@@ -45,7 +53,13 @@ object Helpers {
       if (m(6) == null) None else Some(m(6).asInstanceOf[DoubleWritable].get()),
       if (m(7) == null) None else Some(m(7).asInstanceOf[Text].toString),
       if (m(8) == null) None else Some(m(8).asInstanceOf[Text].toString),
-      if (m(9) == null) None else Some(m(9).asInstanceOf[Text].toString))
+      if (m(9) == null) None else Some(m(9).asInstanceOf[Text].toString),
+
+      if (m(10) == null)
+        None
+      else
+        Some(format.format(m(10).asInstanceOf[TimestampNanosWritable].get().toTimeStamp))
+    )
   }
 }
 
@@ -84,9 +98,11 @@ class BasicClient extends FunSuite with SharedSparkContext {
 
     assert(results.length == 2)
     assert(results(0).equals(new AllTypes(Some(true), Some(0), Some(1), Some(2), Some(3),
-        Some(4.0f), Some(5.0), Some("hello"), Some("vchar1"), Some("char1"))))
+        Some(4.0f), Some(5.0), Some("hello"), Some("vchar1"), Some("char1"),
+        Some("2015-01-01"))))
     assert(results(1).equals(new AllTypes(Some(false), Some(6), Some(7), Some(8), Some(9),
-      Some(10.0f), Some(11.0), Some("world"), Some("vchar2"), Some("char2"))))
+      Some(10.0f), Some(11.0), Some("world"), Some("vchar2"), Some("char2"),
+      Some("2016-01-01"))))
   }
 
   test("AllTypesNullTest") {
@@ -97,7 +113,7 @@ class BasicClient extends FunSuite with SharedSparkContext {
 
     assert(results.length == 1)
     assert(results(0).equals(
-      new AllTypes(None, None, None, None, None, None, None, None, None, None)))
+      new AllTypes(None, None, None, None, None, None, None, None, None, None, None)))
   }
 
   test("Nation By Path") {

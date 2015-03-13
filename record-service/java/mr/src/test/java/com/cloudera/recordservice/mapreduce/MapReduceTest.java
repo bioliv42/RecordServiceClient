@@ -19,7 +19,9 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.List;
+import java.util.TimeZone;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.BooleanWritable;
@@ -109,7 +111,7 @@ public class MapReduceTest {
 
     // Test some cases that work
     verifyInputSplitsTable(1, 4, "tpch.nation");
-    verifyInputSplitsTable(2, 10, "rs.alltypes");
+    verifyInputSplitsTable(2, 11, "rs.alltypes");
     verifyInputSplitsTable(1, 1, "tpch.nation", "n_name");
     verifyInputSplitsTable(2, 3, "rs.alltypes", "int_col", "double_col", "string_col");
     verifyInputSplitsPath(1, 1, "/test-warehouse/tpch.nation");
@@ -196,6 +198,9 @@ public class MapReduceTest {
     RecordServiceInputFormat inputFormat = new RecordServiceInputFormat();
     RecordServiceRecordReader reader = new RecordServiceRecordReader();
 
+    SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+    format.setTimeZone(TimeZone.getTimeZone("GMT"));
+
     try {
       RecordServiceInputFormat.setInputTable(config, null, "rs.alltypes");
       List<InputSplit> splits = inputFormat.getSplits(config);
@@ -215,6 +220,10 @@ public class MapReduceTest {
             assertEquals(((Text)value.getColumnValue(7)).toString(), "hello");
             assertEquals(((Text)value.getColumnValue(8)).toString(), "vchar1");
             assertEquals(((Text)value.getColumnValue(9)).toString(), "char1");
+            assertEquals(format.format(
+                ((TimestampNanosWritable)value.getColumnValue(10)).get().toTimeStamp()),
+                "2015-01-01");
+
           } else {
             assertEquals(((ByteWritable)value.getColumnValue(1)).get(), 6);
             assertEquals(((ShortWritable)value.getColumnValue(2)).get(), 7);
@@ -225,6 +234,9 @@ public class MapReduceTest {
             assertEquals(((Text)value.getColumnValue(7)).toString(), "world");
             assertEquals(((Text)value.getColumnValue(8)).toString(), "vchar2");
             assertEquals(((Text)value.getColumnValue(9)).toString(), "char2");
+            assertEquals(format.format(
+                ((TimestampNanosWritable)value.getColumnValue(10)).get().toTimeStamp()),
+                "2016-01-01");
           }
           ++numRows;
         }

@@ -24,15 +24,16 @@ case class Nation(var key:Short, var name:String,
 case class AllTypesProjection(var int_col:Int, var string_col:String)
 
 case class AllTypesNonNull(var boolCol:Boolean,
-                    var tinyIntCol:Byte,
-                    var smallIntCol:Short,
-                    var intCol:Int,
-                    var bigIntCol:Long,
-                    var floatCol:Float,
-                    var doubleCol:Double,
-                    var stringCol:String,
-                    var vcharCol:String,
-                    var charCol:String)
+                           var tinyIntCol:Byte,
+                           var smallIntCol:Short,
+                           var intCol:Int,
+                           var bigIntCol:Long,
+                           var floatCol:Float,
+                           var doubleCol:Double,
+                           var stringCol:String,
+                           var vcharCol:String,
+                           var charCol:String,
+                           var timestampCol:String)
 
 case class Query1(var v:Long)
 
@@ -56,6 +57,29 @@ class SchemaClientSuite extends FunSuite with SharedSparkContext {
       sc, classOf[AllTypesNonNull], true)
       .setTable("rs.alltypes").collect()
     assert(data.size == 2)
+    if (data(0).boolCol) {
+      assert(data(0).tinyIntCol == 0)
+      assert(data(0).smallIntCol == 1)
+      assert(data(0).intCol == 2)
+      assert(data(0).bigIntCol == 3)
+      assert(data(0).floatCol == 4.0f)
+      assert(data(0).doubleCol == 5.0)
+      assert(data(0).stringCol == "hello")
+      assert(data(0).vcharCol == "vchar1")
+      assert(data(0).charCol == "char1")
+      assert(data(0).timestampCol == "2015-01-01")
+    } else {
+      assert(data(1).tinyIntCol == 6)
+      assert(data(1).smallIntCol == 7)
+      assert(data(1).intCol == 8)
+      assert(data(1).bigIntCol == 9)
+      assert(data(1).floatCol == 10.0f)
+      assert(data(1).doubleCol == 11.0)
+      assert(data(1).stringCol == "world")
+      assert(data(1).vcharCol == "vchar2")
+      assert(data(1).charCol == "char2")
+      assert(data(1).timestampCol == "2016-01-01")
+    }
   }
 
   test("DefaultValues") {
