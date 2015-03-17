@@ -37,6 +37,8 @@ export LD_PRELOAD=""
 # Re-source impala-config since JAVA_HOME has changed.
 cd $IMPALA_HOME
 . bin/impala-config.sh &> /dev/null
+export PATH=/usr/lib/ccache:$PATH
+export BOOST_ROOT=/opt/toolchain/boost-pic-1.55.0/
 
 # Enable core dumps
 ulimit -c unlimited
@@ -46,11 +48,6 @@ env
 java -version
 ulimit -a
 
-echo
-echo
 echo "********************************************************************************"
 echo " Environment setup complete, build proper follows"
 echo "********************************************************************************"
-echo
-echo
-

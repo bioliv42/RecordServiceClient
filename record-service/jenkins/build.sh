@@ -23,6 +23,10 @@ else
       >> $WORKSPACE/buildall.log 2>&1 || { echo "buildall.sh failed"; exit 1; }
 fi
 
+pushd $RECORD_SERVICE_HOME
+make
+popd
+
 popd
 
 echo
