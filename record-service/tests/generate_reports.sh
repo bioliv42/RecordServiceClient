@@ -42,6 +42,8 @@ RESULTS_DIR=$1
 generate_report "Query1_Text_6GB" $DAYS $RESULTS_DIR
 generate_report "Query1_Parquet_6GB" $DAYS $RESULTS_DIR
 generate_report "Query1_Avro_6GB" $DAYS $RESULTS_DIR
+generate_report "Query2_Parquet_6GB" $DAYS $RESULTS_DIR
+generate_report "Query2_Avro_6GB" $DAYS $RESULTS_DIR
 
 mkdir -p $RECORD_SERVICE_HOME/benchmark_results
 rm -f $RECORD_SERVICE_HOME/benchmark_results/*

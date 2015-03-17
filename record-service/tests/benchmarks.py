@@ -122,4 +122,35 @@ benchmarks = [
     ]
   ],
 
+  [
+    "Query2_Parquet_6GB", "local",
+    [
+      ["impala", impala_shell_cmd(
+          "select sum(l_partkey) from tpch6gb_parquet.lineitem group by l_returnflag")],
+      ["impala-single-thread", impala_single_thread_cmd(
+          "select sum(l_partkey) from tpch6gb_parquet.lineitem group by l_returnflag")],
+      ["impala-rs", impala_on_rs_cmd(
+          "select sum(l_partkey) from tpch6gb_parquet.lineitem group by l_returnflag")],
+      ["native-client", native_client_cmd(
+          "select l_partkey, l_returnflag from tpch6gb_parquet.lineitem")],
+      ["java-client", java_client_cmd(
+          "select l_partkey, l_returnflag from tpch6gb_parquet.lineitem")],
+    ]
+  ],
+
+  [
+    "Query2_Avro_6GB", "local",
+    [
+      ["impala", impala_shell_cmd(
+          "select sum(l_partkey) from tpch6gb_avro_snap.lineitem group by l_returnflag")],
+      ["impala-single-thread", impala_single_thread_cmd(
+          "select sum(l_partkey) from tpch6gb_avro_snap.lineitem group by l_returnflag")],
+      ["impala-rs", impala_on_rs_cmd(
+          "select sum(l_partkey) from tpch6gb_avro_snap.lineitem group by l_returnflag")],
+      ["native-client", native_client_cmd(
+          "select l_partkey, l_returnflag from tpch6gb_avro_snap.lineitem")],
+      ["java-client", java_client_cmd(
+          "select l_partkey, l_returnflag from tpch6gb_avro_snap.lineitem")],
+    ]
+  ],
 ]
