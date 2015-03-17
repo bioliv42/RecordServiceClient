@@ -80,7 +80,8 @@ class SchemaClientSuite extends FunSuite with SharedSparkContext {
       assert(data(0).stringCol == "world")
       assert(data(0).vcharCol == "vchar2")
       assert(data(0).charCol == "char2")
-      assert(data(0).timestampCol == "1234.5678900000")
+      assert(data(0).timestampCol == "2016-01-01")
+      assert(data(0).decimalCol == "1234.5678900000")
     }
   }
 
