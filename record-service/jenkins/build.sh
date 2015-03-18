@@ -16,7 +16,7 @@ echo
 if $CLEAN; then
   echo ">>> Cleaning workspace"
   git clean -dfx && git reset --hard HEAD
-  ./buildall.sh -clean -notests -skiptests -format_metastore\
+  ./buildall.sh -notests -skiptests -format_metastore\
       >> $WORKSPACE/buildall.log 2>&1 || { echo "buildall.sh failed"; exit 1; }
 else
   ./buildall.sh -noclean -notests -skiptests \
