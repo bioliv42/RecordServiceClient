@@ -61,6 +61,9 @@ def spark_cmd(cl, query):
 def spark_q1(query):
   return spark_cmd("com.cloudera.recordservice.benchmark.Query1", query)
 
+def spark_q2(query):
+  return spark_cmd("com.cloudera.recordservice.benchmark.Query2", query)
+
 benchmarks = [
   [
     # Metadata about this suite. "local" indicates this benchmark should only be
@@ -135,6 +138,8 @@ benchmarks = [
           "select l_partkey, l_returnflag from tpch6gb_parquet.lineitem")],
       ["java-client", java_client_cmd(
           "select l_partkey, l_returnflag from tpch6gb_parquet.lineitem")],
+      ["spark-rs", spark_q2(
+          "select l_partkey, l_returnflag from tpch6gb_parquet.lineitem")],
     ]
   ],
 
@@ -150,6 +155,8 @@ benchmarks = [
       ["native-client", native_client_cmd(
           "select l_partkey, l_returnflag from tpch6gb_avro_snap.lineitem")],
       ["java-client", java_client_cmd(
+          "select l_partkey, l_returnflag from tpch6gb_avro_snap.lineitem")],
+      ["spark-rs", spark_q2(
           "select l_partkey, l_returnflag from tpch6gb_avro_snap.lineitem")],
     ]
   ],

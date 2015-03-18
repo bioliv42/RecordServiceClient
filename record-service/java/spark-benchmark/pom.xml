@@ -173,6 +173,8 @@
                     <include>org.apache.hadoop:hadoop-client*</include>
                     <include>org.apache.hadoop:hadoop-common*</include>
                     <include>org.apache.hadoop:hadoop-auth*</include>
+                    <include>org.apache.hadoop:hadoop-mapreduce-client-common*</include>
+                    <include>org.apache.hadoop:hadoop-mapreduce-client-core*</include>
                     <include>org.slf4j:*</include>
                     <include>log4j:*</include>
                     <include>com.typesafe:*</include>
