@@ -40,14 +40,14 @@ if $LOAD_DATA; then
   tar -xzf tpch6gb.tar.gz
   tar -xf tpch6gb_avro_snap.tar.gz
   popd
+
+  cd $IMPALA_HOME/record-service/tests
+  ./load-benchmark-data.sh
 else
   echo ">>> Starting impala"
   cd $IMPALA_HOME
-  bin/start-impala-cluster.py -s 1 --catalogd_args="-load_catalog_in_background=false"
+  bin/start-impala-cluster.py -s 1 --build_type=release --catalogd_args="-load_catalog_in_background=false"
 fi
-
-cd $IMPALA_HOME/record-service/tests
-./load-benchmark-data.sh
 
 cd $IMPALA_HOME/record-service/java
 mvn install -DskipTests
