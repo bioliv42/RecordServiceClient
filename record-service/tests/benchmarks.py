@@ -19,7 +19,8 @@
 import os
 
 def impala_shell_cmd(query):
-  return os.environ['IMPALA_HOME'] + "/bin/impala-shell.sh -B -q \"" + query + "\""
+  return os.environ['IMPALA_HOME'] +\
+      "/bin/impala-shell.sh -i LOCALHOST -B -q \"" + query + "\""
 
 def impala_single_thread_cmd(query):
   query = "set num_scanner_threads=1;" + query
@@ -158,6 +159,17 @@ benchmarks = [
           "select l_partkey, l_returnflag from tpch6gb_avro_snap.lineitem")],
       ["spark-rs", spark_q2(
           "select l_partkey, l_returnflag from tpch6gb_avro_snap.lineitem")],
+    ]
+  ],
+
+  [
+    "Query1_Parquet_500GB", "cluster",
+    [
+      ["impala", impala_shell_cmd(
+          "select count(ss_item_sk) from tpcds500gb_parquet.store_sales")],
+# TODO: this doesn't run. We hit a thrift serialization size issue.
+#      ["impala-rs", impala_on_rs_cmd(
+#          "select count(ss_item_sk) from tpcds500gb_parquet.store_sales")],
     ]
   ],
 ]

@@ -44,6 +44,11 @@ parser.add_option("--result_sql_file", dest="result_sql_file",
 parser.add_option("--build_number", dest="build_number", default=-1, type="int",
     help="The (jenkins) build number. -1 if not from jenkins.")
 
+parser.add_option("--cluster", dest="cluster", default=False, action="store_true",
+    help="If true, this is running the cluster benchmarks")
+parser.add_option("--impalad", dest="impalad", default="localhost",
+    help="The impalad to connect to.")
+
 # This option is used to run and generate results without storing them in the
 # perf db. This is useful for unofficial runs. If this is set, build_number and
 # db_host are ignored.
@@ -97,8 +102,25 @@ def to_sql(suite, case, timing_ms):
   cmd += ");"
   return cmd
 
+# Replaces LOCALHOST with the cluster host.
+# TODO: this works fine for impala-shell but we might need something more complex
+# for the other things.
+def replace_host(cmd):
+  if (options.cluster):
+    return cmd.replace("LOCALHOST", options.impalad)
+  return cmd
+
 def run_suite(suite, results_sql):
+  if (options.cluster):
+    if (suite[1] != "cluster"):
+      print "Skipping local suite: " + suite[0]
+      return
+  else:
+    if (suite[1] != "local"):
+      print "Skipping cluster suite: " + suite[0]
+      return
   print "Running benchmark suite: " + suite[0]
+
   cases = suite[2]
 
   if len(cases) == 0:
@@ -111,14 +133,14 @@ def run_suite(suite, results_sql):
 
   if options.suite_warmup_iterations > 0:
     # Just run the first case for these many iterations
-    cmd = cases[0][1]
+    cmd = replace_host(cases[0][1])
     for x in range(0, options.suite_warmup_iterations):
       run_shell_cmd(cmd)
 
   for case in cases:
     print "  Running case: " + case[0]
     sys.stdout.flush()
-    cmd = case[1]
+    cmd = replace_host(case[1])
 
     for x in range(0, options.warmup_iterations):
       run_shell_cmd(cmd)
