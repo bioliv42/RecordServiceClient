@@ -28,3 +28,6 @@ target_link_libraries(record-service-client
 add_executable(rs-grep rs-grep.cc)
 target_link_libraries(rs-grep ImpalaThrift thriftstatic gflagsstatic)
 
+add_executable(plan-request plan-request.cc)
+target_link_libraries(plan-request ImpalaThrift thriftstatic gflagsstatic)
+

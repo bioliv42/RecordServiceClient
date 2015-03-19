@@ -232,6 +232,9 @@ enum TErrorCode {
   // The handle is invalid or closed.
   INVALID_HANDLE,
 
+  // The task is malformed.
+  INVALID_TASK,
+
   // Service is busy and not unable to process the request. Try later.
   SERVICE_BUSY,
 

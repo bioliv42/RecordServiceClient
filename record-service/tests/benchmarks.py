@@ -167,9 +167,8 @@ benchmarks = [
     [
       ["impala", impala_shell_cmd(
           "select count(ss_item_sk) from tpcds500gb_parquet.store_sales")],
-# TODO: this doesn't run. We hit a thrift serialization size issue.
-#      ["impala-rs", impala_on_rs_cmd(
-#          "select count(ss_item_sk) from tpcds500gb_parquet.store_sales")],
+      ["impala-rs", impala_on_rs_cmd(
+          "select count(ss_item_sk) from tpcds500gb_parquet.store_sales")],
     ]
   ],
 ]
