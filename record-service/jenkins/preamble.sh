@@ -18,7 +18,7 @@ echo ">>> Setting up Jenkins environment..."
 echo ">>> Mounting toolchain"
 . /mnt/toolchain/toolchain.sh
 export IMPALA_HOME=$WORKSPACE/repos/Impala
-export IMPALA_LZO=$WORKSPACE/repos/Impala-lzo
+#export IMPALA_LZO=$WORKSPACE/repos/Impala-lzo
 export HADOOP_LZO=$WORKSPACE/repos/hadoop-lzo
 
 unset THRIFT_HOME

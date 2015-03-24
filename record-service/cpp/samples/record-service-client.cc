@@ -14,6 +14,7 @@
 
 #include <stdio.h>
 #include <exception>
+#include <sstream>
 
 #include <thrift/protocol/TBinaryProtocol.h>
 #include <thrift/transport/TSocket.h>
@@ -152,7 +153,7 @@ void ExecRequestDistributed(const char* request, TRowBatchFormat::type format) {
 
   printf("\nExecuting tasks...\n");
   int64_t total_rows = 0;
-  int64_t start_time = impala::ms_since_epoch();
+  int64_t start_time = impala::UnixMillis();
   TStats total_stats;
   impala::MonotonicStopWatch task_time;
 
@@ -259,7 +260,7 @@ void ExecRequestDistributed(const char* request, TRowBatchFormat::type format) {
   }
 
   int64_t task_time_ms = task_time.ElapsedTime() / 1000000;
-  int64_t end_time = impala::ms_since_epoch();
+  int64_t end_time = impala::UnixMillis();
   double duration_ms = end_time - start_time;
   printf("Fetched %ld rows in %fms.\n", total_rows, duration_ms);
   if (duration_ms != 0) {

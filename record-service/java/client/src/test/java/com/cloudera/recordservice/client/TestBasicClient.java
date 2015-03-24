@@ -378,7 +378,8 @@ public class TestBasicClient {
       RecordServicePlannerClient.planRequest("localhost", PLANNER_PORT,
           Request.createSqlRequest("select 1"));
     } catch (TRecordServiceException e) {
-      assertTrue(e.message.contains("No scan nodes found for this query"));
+      assertTrue(e.message.contains("Could not plan request."));
+      assertTrue(e.detail.contains("No scan nodes found for this query"));
       exceptionThrown = true;
     }
     assertTrue(exceptionThrown);
