@@ -20,6 +20,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.ql.exec.Operator;
 import org.apache.hadoop.hive.ql.exec.TableScanOperator;
@@ -75,6 +78,9 @@ import com.google.common.base.Joiner;
 @SuppressWarnings("rawtypes")
 public class RecordServiceHiveInputFormat<K extends WritableComparable,
     V extends Writable> extends HiveInputFormat<K, V> {
+
+  private static final Log LOG =
+      LogFactory.getLog(RecordServiceHiveInputFormat.class.getName());
 
   /**
    * Wrapper around the HiveInputSplit to force it to have the right behavior for
