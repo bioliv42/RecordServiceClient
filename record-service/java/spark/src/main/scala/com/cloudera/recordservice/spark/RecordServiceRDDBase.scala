@@ -50,6 +50,9 @@ abstract class RecordServiceRDDBase[T:ClassTag](sc: SparkContext, plannerHost: S
   var stmt:String = null
   var path:String = null
 
+  // Result schema (after projection)
+  var schema:TSchema = null
+
   def setStatement(stmt:String) = {
     verifySetRequest()
     this.stmt = stmt
@@ -66,6 +69,14 @@ abstract class RecordServiceRDDBase[T:ClassTag](sc: SparkContext, plannerHost: S
     verifySetRequest()
     this.path = path
     this
+  }
+
+  def getSchema(): TSchema = {
+    if (schema == null) {
+      // TODO: this is kind of awkard. Introduce a new plan() API?
+      throw new SparkException("getSchema() can only be called after getPartitions")
+    }
+    schema
   }
 
   protected def verifySetRequest() = {
@@ -167,6 +178,7 @@ abstract class RecordServiceRDDBase[T:ClassTag](sc: SparkContext, plannerHost: S
       partitions(i) = new RecordServicePartition(id, i, hosts.seq,
         planResult.tasks.get(i), planResult.schema)
     }
+    schema = planResult.schema
     (planResult, partitions)
   }
 }
