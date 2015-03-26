@@ -165,6 +165,11 @@ struct TPlanRequestResult {
   4: required list<TLogMessage> warnings
 }
 
+struct TGetSchemaResult {
+  1: required TSchema schema
+  2: required list<TLogMessage> warnings
+}
+
 struct TExecTaskParams {
   // This is produced by the RecordServicePlanner and must be passed to the worker
   // unmodified.
@@ -287,6 +292,10 @@ service RecordServicePlanner {
   // Plans the request. This generates the tasks and the list of machines
   // that each task can run on.
   TPlanRequestResult PlanRequest(1:TPlanRequestParams params)
+      throws(1:TRecordServiceException ex);
+
+  // Returns the schema for a plan request.
+  TGetSchemaResult GetSchema(1:TPlanRequestParams params)
       throws(1:TRecordServiceException ex);
 }
 

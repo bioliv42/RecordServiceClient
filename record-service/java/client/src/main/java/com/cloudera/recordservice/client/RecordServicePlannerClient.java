@@ -24,6 +24,7 @@ import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
 
 import com.cloudera.recordservice.thrift.RecordServicePlanner;
+import com.cloudera.recordservice.thrift.TGetSchemaResult;
 import com.cloudera.recordservice.thrift.TPlanRequestParams;
 import com.cloudera.recordservice.thrift.TPlanRequestResult;
 import com.cloudera.recordservice.thrift.TProtocolVersion;
@@ -50,6 +51,22 @@ public class RecordServicePlannerClient {
     try {
       client = new RecordServicePlannerClient(hostname, port);
       return client.planRequest(request);
+    } finally {
+      if (client != null) client.close();
+    }
+  }
+
+  /**
+   * Gets the schema for 'request', connecting to the planner service at
+   * hostname/port.
+   */
+  public static TGetSchemaResult getSchema(
+      String hostname, int port, Request request)
+      throws IOException, TRecordServiceException {
+    RecordServicePlannerClient client = null;
+    try {
+      client = new RecordServicePlannerClient(hostname, port);
+      return client.getSchema(request);
     } finally {
       if (client != null) client.close();
     }
@@ -116,6 +133,26 @@ public class RecordServicePlannerClient {
     }
     System.out.println("Generated " + planResult.tasks.size() + " tasks.");
     return planResult;
+  }
+
+  /**
+   * Calls the RecordServicePlanner to return the schema for a request.
+   */
+  public TGetSchemaResult getSchema(Request request)
+    throws IOException, TRecordServiceException {
+    validateIsConnected();
+    TGetSchemaResult result;
+    try {
+      TPlanRequestParams planParams = request.request_;
+      planParams.client_version = TProtocolVersion.V1;
+      result = plannerClient_.GetSchema(planParams);
+    } catch (TRecordServiceException e) {
+      throw e;
+    } catch (TException e) {
+      // TODO: this should mark the connection as bad on some error codes.
+      throw new IOException("Could not plan request.", e);
+    }
+    return result;
   }
 
   private void validateIsConnected() throws RuntimeException {

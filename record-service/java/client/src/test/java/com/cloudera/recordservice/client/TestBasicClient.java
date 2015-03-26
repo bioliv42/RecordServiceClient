@@ -27,6 +27,7 @@ import java.util.TimeZone;
 import org.apache.thrift.TException;
 import org.junit.Test;
 
+import com.cloudera.recordservice.thrift.TGetSchemaResult;
 import com.cloudera.recordservice.thrift.TPlanRequestResult;
 import com.cloudera.recordservice.thrift.TRecordServiceException;
 import com.cloudera.recordservice.thrift.TSchema;
@@ -310,6 +311,12 @@ public class TestBasicClient {
   public void testAllTypes() throws TException, IOException {
     RecordServiceWorkerClient worker = new RecordServiceWorkerClient();
     worker.connect("localhost", WORKER_PORT);
+
+    // Just ask for the schema.
+    TGetSchemaResult schemaResult = RecordServicePlannerClient.getSchema(
+        "localhost", PLANNER_PORT,
+        Request.createTableRequest("rs.alltypes"));
+    verifyAllTypesSchema(schemaResult.schema);
 
     // Plan the request
     TPlanRequestResult plan = RecordServicePlannerClient.planRequest(

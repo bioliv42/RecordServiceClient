@@ -29,6 +29,14 @@ public class Request {
     return new Request(request);
   }
 
+  // Creates a request to read an entire table.
+  public static Request createTableRequest(String table) {
+    TPlanRequestParams request = new TPlanRequestParams();
+    request.request_type = TRequestType.Sql;
+    request.sql_stmt = "SELECT * FROM " + table;
+    return new Request(request);
+  }
+
   // Creates a request that is a PATH query.
   public static Request createPathRequest(String uri) {
     TPlanRequestParams request = new TPlanRequestParams();
