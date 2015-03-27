@@ -428,4 +428,48 @@ public class TestBasicClient {
     assertEquals(lines.size(), 1);
     assertEquals(lines.get(0), "6|FRANCE|3|refully final requests. regular, ironi");
   }
+
+  @Test
+  public void testNationView() throws IOException, TException {
+    TPlanRequestResult plan = RecordServicePlannerClient.planRequest(
+        "localhost", PLANNER_PORT,
+        Request.createTableRequest("rs.nation_projection"));
+    assertEquals(plan.tasks.size(), 1);
+    assertEquals(plan.schema.cols.size(), 2);
+    assertEquals(plan.schema.cols.get(0).name, "n_nationkey");
+    assertEquals(plan.schema.cols.get(1).name, "n_name");
+
+    for (int i = 0; i < plan.tasks.size(); ++i) {
+      Records records = WorkerClientUtil.execTask(plan, i);
+      int numRows = 0;
+      while (records.hasNext()) {
+        Records.Record record = records.next();
+        ++numRows;
+        switch (numRows) {
+        case 1:
+          assertEquals(record.getShort(0), 0);
+          assertEquals(record.getByteArray(1).toString(), "ALGERIA");
+          break;
+        case 2:
+          assertEquals(record.getShort(0), 1);
+          assertEquals(record.getByteArray(1).toString(), "ARGENTINA");
+          break;
+        case 3:
+          assertEquals(record.getShort(0), 2);
+          assertEquals(record.getByteArray(1).toString(), "BRAZIL");
+          break;
+        case 4:
+          assertEquals(record.getShort(0), 3);
+          assertEquals(record.getByteArray(1).toString(), "CANADA");
+          break;
+        case 5:
+          assertEquals(record.getShort(0), 4);
+          assertEquals(record.getByteArray(1).toString(), "EGYPT");
+          break;
+        }
+      }
+      records.close();
+      assertEquals(numRows, 5);
+    }
+  }
 }

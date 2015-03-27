@@ -13,6 +13,12 @@ ROW FORMAT DELIMITED FIELDS TERMINATED BY '|'
 STORED AS TEXTFILE
 LOCATION '/test-warehouse/tpch.nation';
 
+-- Create a view that is a projection of tpch.nation
+DROP VIEW IF EXISTS rs.nation_projection;
+CREATE VIEW rs.nation_projection AS
+SELECT n_nationkey, n_name from tpch.nation where n_nationkey < 5;
+
+-- Create all types table.
 DROP TABLE IF EXISTS rs.alltypes;
 CREATE TABLE rs.alltypes(
   bool_col BOOLEAN,
