@@ -384,20 +384,6 @@ public class TestBasicClient {
     verifyAllTypesSchema(plan.schema);
   }
 
-  @Test
-  public void testConstant() throws TException, IOException {
-    boolean exceptionThrown = false;
-    try {
-      RecordServicePlannerClient.planRequest("localhost", PLANNER_PORT,
-          Request.createSqlRequest("select 1"));
-    } catch (TRecordServiceException e) {
-      assertTrue(e.message.contains("Could not plan request."));
-      assertTrue(e.detail.contains("No scan nodes found for this query"));
-      exceptionThrown = true;
-    }
-    assertTrue(exceptionThrown);
-  }
-
   // Returns all the strings from running plan as a list. The plan must
   // have a schema that returns a single string column.
   List<String> getAllStrings(TPlanRequestResult plan) throws TException, IOException {
