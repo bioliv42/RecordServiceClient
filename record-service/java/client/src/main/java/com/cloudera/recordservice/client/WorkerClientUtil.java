@@ -33,8 +33,8 @@ public class WorkerClientUtil {
    */
   public static Records execTask(TPlanRequestResult plan, int taskId)
       throws TException, IOException {
-    if (taskId >= plan.tasks.size()) {
-      throw new RuntimeException("Invalid taskId.");
+    if (taskId >= plan.tasks.size() || taskId < 0) {
+      throw new RuntimeException("Invalid task id.");
     }
 
     TTask task = plan.tasks.get(taskId);

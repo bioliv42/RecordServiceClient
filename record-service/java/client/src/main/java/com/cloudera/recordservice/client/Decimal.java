@@ -28,12 +28,15 @@ public class Decimal {
   private int precision_;
   private int scale_;
 
+  // Returns the byte size for 'precision' and 'scale'.
+  // FIXME: we shouldn't round this up to a power of 2.
   public static int computeByteSize(int precision, int scale) {
     if (scale < 0 || precision < 0) {
       throw new IllegalArgumentException("Precision and scale must be non-negative.");
     }
     if (precision > MAX_PRECISION) {
-      throw new IllegalArgumentException("Max supported precision is " + MAX_PRECISION);
+      throw new IllegalArgumentException(
+          "Max supported precision is " + MAX_PRECISION + ".");
     }
     if (scale > precision) {
       throw new IllegalArgumentException("Scale cannot be greater than precision.");

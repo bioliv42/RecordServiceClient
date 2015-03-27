@@ -282,7 +282,7 @@ public class Records {
    * and cannot be used in the hot path.
    */
   public TTaskStatus getStatus() throws TException {
-    if (handle_ == null) throw new RuntimeException("Cannot call on closed object.");
+    if (handle_ == null) throw new RuntimeException("Task already closed.");
     return worker_.getTaskStatus(handle_);
   }
 

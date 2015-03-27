@@ -32,6 +32,7 @@ import com.cloudera.recordservice.thrift.TPlanRequestResult;
 import com.cloudera.recordservice.thrift.TRecordServiceException;
 import com.cloudera.recordservice.thrift.TSchema;
 import com.cloudera.recordservice.thrift.TStats;
+import com.cloudera.recordservice.thrift.TTask;
 import com.cloudera.recordservice.thrift.TTaskStatus;
 import com.cloudera.recordservice.thrift.TTypeId;
 import com.cloudera.recordservice.thrift.TUniqueId;
@@ -84,6 +85,16 @@ public class TestBasicClient {
     threwException = false;
     try {
       new RecordServicePlannerClient("localhost", 12345);
+    } catch (IOException e) {
+      threwException = true;
+      assertTrue(e.getMessage().contains("Could not connect to RecordServicePlanner"));
+    } finally {
+      assertTrue(threwException);
+    }
+
+    threwException = false;
+    try {
+      RecordServicePlannerClient.planRequest("Bad", 1234, null);
     } catch (IOException e) {
       threwException = true;
       assertTrue(e.getMessage().contains("Could not connect to RecordServicePlanner"));
@@ -217,6 +228,11 @@ public class TestBasicClient {
         Records.Record record = records.next();
         ++numRows;
         if (numRows == 1) {
+          assertFalse(record.isNull(0));
+          assertFalse(record.isNull(1));
+          assertFalse(record.isNull(2));
+          assertFalse(record.isNull(3));
+
           assertEquals(record.getShort(0), 0);
           assertEquals(record.getByteArray(1).toString(), "ALGERIA");
           assertEquals(record.getShort(2), 0);
@@ -224,6 +240,16 @@ public class TestBasicClient {
               " haggle. carefully final deposits detect slyly agai");
         }
       }
+
+      // Reading off the end should fail gracefully.
+      boolean exceptionThrown = false;
+      try {
+        records.next();
+      } catch (IOException e) {
+        exceptionThrown = true;
+        assertTrue(e.getMessage(), e.getMessage().contains("End of stream"));
+      }
+      assertTrue(exceptionThrown);
 
       // Verify status
       TTaskStatus status = records.getStatus();
@@ -269,6 +295,19 @@ public class TestBasicClient {
       }
       records.close();
       assertEquals(numRows, 25);
+
+      // Closing records again is idempotent
+      records.close();
+
+      // Try using records object after close.
+      boolean exceptionThrown = false;
+      try {
+        records.getStatus();
+      } catch (RuntimeException e) {
+        exceptionThrown = true;
+        assertTrue(e.getMessage(), e.getMessage().contains("Task already closed."));
+      }
+      assertTrue(exceptionThrown);
     }
   }
 
@@ -470,5 +509,55 @@ public class TestBasicClient {
       records.close();
       assertEquals(numRows, 5);
     }
+  }
+
+  @Test
+  public void testNonLocalWorker() throws IOException, TException {
+    TPlanRequestResult plan = RecordServicePlannerClient.planRequest(
+        "localhost", PLANNER_PORT,
+        Request.createTableRequest("tpch.nation"));
+    assertEquals(plan.tasks.size(), 1);
+
+    // Clear the local hosts.
+    TTask task = plan.tasks.get(0);
+    task.local_hosts.clear();
+    Records records = WorkerClientUtil.execTask(plan, 0);
+    int numRows = 0;
+    while (records.hasNext()) {
+      records.next();
+      ++numRows;
+    }
+    records.close();
+    assertEquals(numRows, 25);
+
+    // Clear all hosts.
+    boolean exceptionThrown = false;
+    plan.hosts.clear();
+    try {
+      records = WorkerClientUtil.execTask(plan, 0);
+    } catch (RuntimeException e) {
+      exceptionThrown = true;
+      assertTrue(e.getMessage(), e.getMessage().contains("No hosts are provided"));
+    }
+    assertTrue(exceptionThrown);
+
+    // Try invalid task id
+    exceptionThrown = false;
+    try {
+      WorkerClientUtil.execTask(plan, 1);
+    } catch (RuntimeException e) {
+      exceptionThrown = true;
+      assertTrue(e.getMessage(), e.getMessage().contains("Invalid task id."));
+    }
+    assertTrue(exceptionThrown);
+
+    exceptionThrown = false;
+    try {
+      WorkerClientUtil.execTask(plan, -1);
+    } catch (RuntimeException e) {
+      exceptionThrown = true;
+      assertTrue(e.getMessage(), e.getMessage().contains("Invalid task id."));
+    }
+    assertTrue(exceptionThrown);
   }
 }
