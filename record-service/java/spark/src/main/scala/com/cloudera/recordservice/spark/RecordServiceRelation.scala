@@ -122,53 +122,75 @@ case class RecordServiceRelation(table:String)(@transient val sqlContext:SQLCont
 
   override def buildScan(requiredColumns: Array[String],
       filters: Array[Filter]): RDD[Row] = {
-    if (requiredColumns.length == 0) {
-      // TODO: handle no projected columns.
-      throw new SparkException("Not implemented: empty projection.")
-    }
+    val baseRDD = new RecordServiceRecordRDD(sqlContext.sparkContext)
 
-    val sb:StringBuilder = new StringBuilder
-    sb.append("SELECT ")
-    for (i <- 0 until requiredColumns.length) {
-      if (i != 0) sb.append(", ")
-      sb.append(requiredColumns(i))
+    var emptyProjection = false
+    if (requiredColumns.isEmpty && filters.isEmpty) {
+      // Empty projection
+      emptyProjection = true
+      baseRDD.setRequest(Request.createProjectionRequest(table, null))
+    } else {
+      val sb: StringBuilder = new StringBuilder
+      sb.append("SELECT ")
+      for (i <- 0 until requiredColumns.length) {
+        if (i != 0) sb.append(", ")
+        sb.append(requiredColumns(i))
+      }
+      sb.append(" FROM " + table)
+      sb.append(" " + filterWhereClause(filters))
+      baseRDD.setStatement(sb.toString())
     }
-    sb.append(" FROM " + table)
-    sb.append(" " + filterWhereClause(filters))
-    System.out.println(sb.toString())
-
-    val baseRDD =
-        new RecordServiceRecordRDD(sqlContext.sparkContext).setStatement(sb.toString())
     baseRDD.setPlannerHostPort(plannerHost, plannerPort)
 
-    val fieldMap = Map(schema.fields map { x => x.metadata.getString("name") -> x }: _*)
-    val projectedSchema = new StructType(requiredColumns map { name => fieldMap(name) })
-
-    val mutableRow = new SpecificMutableRow(projectedSchema.fields.map(x => x.dataType))
-    val numCols = requiredColumns.size
-
-    // Map the result from the record service RDD to a MutableRow
-    baseRDD.map(x => {
-      val rsSchema = baseRDD.getSchema()
-      for (i <- 0 until numCols) {
-        if (x.isNull(i)) {
-          mutableRow.setNullAt(i)
-        } else {
-          rsSchema.cols.get(i).getType.type_id match {
-            case TTypeId.BOOLEAN => mutableRow.setBoolean(i, x.getBoolean(i))
-            case TTypeId.TINYINT => mutableRow.setInt(i, x.getByte(i))
-            case TTypeId.SMALLINT => mutableRow.setInt(i, x.getShort(i).toInt)
-            case TTypeId.INT => mutableRow.setInt(i, x.getInt(i))
-            case TTypeId.BIGINT => mutableRow.setLong(i, x.getLong(i))
-            case TTypeId.FLOAT => mutableRow.setFloat(i, x.getFloat(i))
-            case TTypeId.DOUBLE => mutableRow.setDouble(i, x.getDouble(i))
-            case TTypeId.STRING => mutableRow.setString(i, x.getByteArray(i).toString)
-            case _ => assert(false)
+    if (emptyProjection) {
+      // We have an empty projection so we've mapped this to a count(*) in the
+      // RecordService. (Full NULLs, we need to do this for correctness). Here we
+      // are going to expand it to return a NULL for each row.
+      baseRDD.mapPartitions(input => {
+        val record = input.next()
+        assert(record.getSchema().cols.size() == 1)
+        assert(record.getSchema().cols.get(0).getType.type_id == TTypeId.BIGINT)
+        var numRows = record.getLong(0)
+        new Iterator[Row] {
+          override def next(): Row = {
+            numRows -= 1
+            null
+          }
+          override def hasNext: Boolean = {
+            numRows > 0
           }
         }
-      }
-      mutableRow
-    })
+      })
+    } else {
+      val fieldMap = Map(schema.fields map { x => x.metadata.getString("name") -> x }: _*)
+      val projectedSchema = new StructType(requiredColumns map { name => fieldMap(name) })
+
+      val mutableRow = new SpecificMutableRow(projectedSchema.fields.map(x => x.dataType))
+      val numCols = requiredColumns.size
+
+      // Map the result from the record service RDD to a MutableRow
+      baseRDD.map(x => {
+        val rsSchema = baseRDD.getSchema()
+        for (i <- 0 until numCols) {
+          if (x.isNull(i)) {
+            mutableRow.setNullAt(i)
+          } else {
+            rsSchema.cols.get(i).getType.type_id match {
+              case TTypeId.BOOLEAN => mutableRow.setBoolean(i, x.getBoolean(i))
+              case TTypeId.TINYINT => mutableRow.setInt(i, x.getByte(i))
+              case TTypeId.SMALLINT => mutableRow.setInt(i, x.getShort(i).toInt)
+              case TTypeId.INT => mutableRow.setInt(i, x.getInt(i))
+              case TTypeId.BIGINT => mutableRow.setLong(i, x.getLong(i))
+              case TTypeId.FLOAT => mutableRow.setFloat(i, x.getFloat(i))
+              case TTypeId.DOUBLE => mutableRow.setDouble(i, x.getDouble(i))
+              case TTypeId.STRING => mutableRow.setString(i, x.getByteArray(i).toString)
+              case _ => assert(false)
+            }
+          }
+        }
+        mutableRow
+      })
+    }
   }
 }
 

@@ -152,7 +152,7 @@ class BasicClient extends FunSuite with SharedSparkContext {
     } catch {
       case e:SparkException =>
         threwException = true
-        assert(e.getMessage.contains("Statement already set"))
+        assert(e.getMessage.contains("Request is already set"))
     }
     assert(threwException)
 
@@ -162,7 +162,7 @@ class BasicClient extends FunSuite with SharedSparkContext {
     } catch {
       case e:SparkException =>
         threwException = true
-        assert(e.getMessage.contains("Statement already set"))
+        assert(e.getMessage.contains("Request is already set"))
     }
     assert(threwException)
   }

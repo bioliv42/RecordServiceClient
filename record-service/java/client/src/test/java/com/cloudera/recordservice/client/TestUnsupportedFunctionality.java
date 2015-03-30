@@ -54,7 +54,10 @@ public class TestUnsupportedFunctionality {
   @Test
   public void testUnsupported() {
     testUnsupported("SELECT 1");
-    testUnsupported("SELECT count(*) FROM tpch.nation");
+    testUnsupported("SELECT min(n_nationkey) FROM tpch.nation");
+    testUnsupported("SELECT count(*), min(n_nationkey) FROM tpch.nation");
+    testUnsupported("SELECT count(n_nationkey) FROM tpch.nation");
+    testUnsupported("SELECT count(*) FROM tpch.nation group by n_nationkey");
     testUnsupported("SELECT t1.* FROM tpch.nation as t1 JOIN tpch.nation as t2 "+
         "ON t1.n_nationkey = t2.n_nationkey");
     testUnsupported("use default");

@@ -21,6 +21,7 @@ import static org.junit.Assert.assertTrue;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.TimeZone;
 
@@ -570,6 +571,54 @@ public class TestBasicClient {
 
     assertEquals(worker.numActiveTasks(), 0);
     worker.close();
+  }
+
+  @Test
+  public void testEmptyProjection() throws IOException, TRecordServiceException {
+    TPlanRequestResult plan = RecordServicePlannerClient.planRequest(
+        "localhost", PLANNER_PORT,
+        Request.createProjectionRequest("tpch.nation", null));
+    assertEquals(plan.tasks.size(), 1);
+
+    // Verify schema
+    assertEquals(plan.schema.cols.size(), 1);
+    assertEquals(plan.schema.cols.get(0).name, "count(*)");
+    assertEquals(plan.schema.cols.get(0).type.type_id, TTypeId.BIGINT);
+
+    // Verify count(*) result.
+    Records records = WorkerClientUtil.execTask(plan, 0);
+    assertTrue(records.hasNext());
+    Records.Record result = records.next();
+    assertEquals(result.getLong(0), 25);
+    assertFalse(records.hasNext());
+    records.close();
+
+    // Empty column list should do the same
+    plan = RecordServicePlannerClient.planRequest(
+        "localhost", PLANNER_PORT,
+        Request.createProjectionRequest("tpch.nation", new ArrayList<String>()));
+    assertEquals(plan.tasks.size(), 1);
+
+    plan = RecordServicePlannerClient.planRequest(
+        "localhost", PLANNER_PORT,
+        Request.createSqlRequest("select count(*), count(*) from tpch.nation"));
+    assertEquals(plan.tasks.size(), 1);
+    assertEquals(plan.schema.cols.size(), 2);
+    assertEquals(plan.schema.cols.get(0).name, "count(*)");
+    assertEquals(plan.schema.cols.get(1).name, "count(*)");
+    assertEquals(plan.schema.cols.get(0).type.type_id, TTypeId.BIGINT);
+    assertEquals(plan.schema.cols.get(1).type.type_id, TTypeId.BIGINT);
+  }
+
+  @Test
+  public void testProjection() throws IOException, TRecordServiceException {
+    TPlanRequestResult plan = RecordServicePlannerClient.planRequest(
+        "localhost", PLANNER_PORT,
+        Request.createProjectionRequest("tpch.nation", Lists.newArrayList("n_comment")));
+    assertEquals(plan.tasks.size(), 1);
+    assertEquals(plan.schema.cols.size(), 1);
+    assertEquals(plan.schema.cols.get(0).name, "n_comment");
+    assertEquals(plan.schema.cols.get(0).type.type_id, TTypeId.STRING);
   }
 
   @Test

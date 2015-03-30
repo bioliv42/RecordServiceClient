@@ -20,8 +20,10 @@ package com.cloudera.recordservice.spark
 import java.lang.reflect.Method
 import java.math.BigDecimal
 import java.text.SimpleDateFormat
+import java.util
 import java.util.TimeZone
 
+import com.cloudera.recordservice.client.Request
 import com.cloudera.recordservice.thrift._
 import org.apache.spark._
 
@@ -61,15 +63,13 @@ class SchemaRecordServiceRDD[T:ClassTag](sc: SparkContext,
     verifySetRequest()
     if (byOrdinal) {
       // TODO: add API to RecordService to get the table schema so we can do projection
-      this.stmt = "SELECT * from " + table
+      this.request = Request.createTableRequest(table)
     } else {
-      val sb = new StringBuilder("SELECT ")
+      val projection = new util.ArrayList[String]()
       for (i <- 0 until fields.length) {
-        if (i != 0) sb.append(",")
-        sb.append(" " + fields(i))
+        projection.add(fields(i))
       }
-      sb.append(" FROM " + table)
-      this.stmt = sb.toString()
+      this.request = Request.createProjectionRequest(table, projection)
     }
     this
   }

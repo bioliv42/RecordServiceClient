@@ -14,6 +14,8 @@
 
 package com.cloudera.recordservice.client;
 
+import java.util.List;
+
 import com.cloudera.recordservice.thrift.TPathRequest;
 import com.cloudera.recordservice.thrift.TPlanRequestParams;
 import com.cloudera.recordservice.thrift.TRequestType;
@@ -34,6 +36,25 @@ public class Request {
     TPlanRequestParams request = new TPlanRequestParams();
     request.request_type = TRequestType.Sql;
     request.sql_stmt = "SELECT * FROM " + table;
+    return new Request(request);
+  }
+
+  // Creates a request to read a projection of a table. An empty or null
+  // projection returns the number of rows in the table (as a BIGINT).
+  public static Request createProjectionRequest(String table, List<String> cols) {
+    TPlanRequestParams request = new TPlanRequestParams();
+    request.request_type = TRequestType.Sql;
+    if (cols == null || cols.size() == 0) {
+      request.sql_stmt = "SELECT count(*) FROM " + table;
+    } else {
+      StringBuilder sb = new StringBuilder("SELECT ");
+      for (int i = 0; i < cols.size(); ++i) {
+        if (i != 0) sb.append(", ");
+        sb.append(cols.get(i));
+      }
+      sb.append(" FROM " + table);
+      request.sql_stmt = sb.toString();
+    }
     return new Request(request);
   }
 

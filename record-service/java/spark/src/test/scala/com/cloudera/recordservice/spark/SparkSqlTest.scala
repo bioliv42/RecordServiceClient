@@ -14,7 +14,6 @@
 
 package com.cloudera.recordservice.spark
 
-import org.apache.spark.SparkException
 import org.scalatest.{FunSuite}
 
 // TODO: more tests
@@ -28,6 +27,11 @@ class SparkSqlTest extends FunSuite with SharedSparkSQLContext {
         |  record_service_table 'tpch.nation'
         |)
       """.stripMargin)
+
+    // Try a count(*)
+    assert (sc.sql("SELECT count(*) from nationTbl").collect()(0).getLong(0) == 25)
+    assert (sc.sql("SELECT count(*) from nationTbl where n_nationkey = 1").
+        collect()(0).getLong(0) == 1)
 
     // Scan the whole table
     var row = sc.sql("SELECT * from nationTbl").first()
@@ -44,18 +48,6 @@ class SparkSqlTest extends FunSuite with SharedSparkSQLContext {
     // Predicate push down
     row = sc.sql("SELECT count(*) from nationTbl where n_nationkey > 10").collect()(0)
     assert(row.get(0) == 14)
-
-    // TODO: support this.
-    var exceptionThrown = false
-    try {
-      sc.sql("SELECT count(*) from nationTbl").collect
-    } catch {
-      case e: SparkException =>
-        assert(e.getMessage.contains("Not implemented"))
-        exceptionThrown = true
-    }
-    assert(exceptionThrown)
-
   }
 
   test("DataFrame Test") {

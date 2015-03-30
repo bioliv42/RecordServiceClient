@@ -43,9 +43,8 @@ private class RecordServicePartition(rddId: Int, idx: Int,
 abstract class RecordServiceRDDBase[T:ClassTag](@transient sc: SparkContext)
     extends RDD[T](sc, Nil) with Logging {
 
-  // Request type, only one can be set.
-  var stmt:String = null
-  var path:String = null
+  // Request to make
+  @transient var request:Request = null
 
   var (plannerHost, plannerPort) = RecordServiceConf.getPlannerHostPort(sc)
 
@@ -54,19 +53,25 @@ abstract class RecordServiceRDDBase[T:ClassTag](@transient sc: SparkContext)
 
   def setStatement(stmt:String) = {
     verifySetRequest()
-    this.stmt = stmt
+    request = Request.createSqlRequest(stmt)
     this
   }
 
   def setTable(table:String) = {
     verifySetRequest()
-    this.stmt = "SELECT * from " + table
+    request = Request.createTableRequest(table)
     this
   }
 
   def setPath(path:String) = {
     verifySetRequest()
-    this.path = path
+    request = Request.createPathRequest(path)
+    this
+  }
+
+  def setRequest(req:Request) = {
+    verifySetRequest()
+    request = req
     this
   }
 
@@ -87,11 +92,8 @@ abstract class RecordServiceRDDBase[T:ClassTag](@transient sc: SparkContext)
   }
 
   protected def verifySetRequest() = {
-    if (path != null) {
-      throw new SparkException("Request already set via setPath().")
-    }
-    if (stmt != null) {
-      throw new SparkException("Statement already set.")
+    if (request != null) {
+      throw new SparkException("Request is already set.")
     }
   }
 
@@ -147,26 +149,10 @@ abstract class RecordServiceRDDBase[T:ClassTag](@transient sc: SparkContext)
    * partitions.
    */
   protected def planRequest = {
-    if (stmt == null && path == null) {
+    if (request == null) {
       throw new SparkException(
           "Request not set. Must call setStatement(), setTable() or setPath()")
     }
-    if (stmt != null && path != null) {
-      throw new SparkException(
-          "Cannot call setStatement()/setTable() and setPath()")
-    }
-
-    val request:Request =
-      if (stmt != null) {
-        logInfo("Running sql request: " + stmt)
-        Request.createSqlRequest(stmt)
-      } else if (path != null) {
-        logInfo("Running path request: " + path)
-        Request.createPathRequest(path)
-      } else {
-        assert(false)
-        null
-      }
 
     val planResult = try {
       RecordServicePlannerClient.planRequest(plannerHost, plannerPort, request)
