@@ -52,6 +52,12 @@ public class Request {
     return request;
   }
 
+  @Override
+  // TODO: better string?
+  public String toString() {
+    return request_.toString();
+  }
+
   protected TPlanRequestParams request_;
 
   private Request(TPlanRequestParams request) {

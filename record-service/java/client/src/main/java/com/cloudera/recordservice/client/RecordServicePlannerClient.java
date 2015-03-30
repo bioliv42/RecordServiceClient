@@ -22,6 +22,8 @@ import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.TSocket;
 import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.cloudera.recordservice.thrift.RecordServicePlanner;
 import com.cloudera.recordservice.thrift.TGetSchemaResult;
@@ -35,6 +37,9 @@ import com.cloudera.recordservice.thrift.TRecordServiceException;
  * TODO: This class should not expose the raw Thrift objects, should use proper logger.
  */
 public class RecordServicePlannerClient {
+  private final static Logger LOG =
+      LoggerFactory.getLogger(RecordServicePlannerClient.class);
+
   private RecordServicePlanner.Client plannerClient_;
   private TProtocol protocol_;
   private boolean isClosed_ = false;
@@ -76,6 +81,7 @@ public class RecordServicePlannerClient {
    * Opens a connection to the RecordServicePlanner.
    */
   public RecordServicePlannerClient(String hostname, int port) throws IOException {
+    LOG.info("Connecting to RecordServicePlanner at " + hostname + ":" + port);
     TTransport transport = new TSocket(hostname, port);
     try {
       transport.open();
@@ -87,6 +93,7 @@ public class RecordServicePlannerClient {
     plannerClient_ = new RecordServicePlanner.Client(protocol_);
     try {
       protocolVersion_ = ThriftUtils.fromThrift(plannerClient_.GetProtocolVersion());
+      LOG.debug("Connected to planner service with version: " + protocolVersion_);
     } catch (TException e) {
       // TODO: this probably means they connected to a thrift service that is not the
       // planner service (i.e. wrong port). Improve this message.
@@ -99,6 +106,7 @@ public class RecordServicePlannerClient {
    */
   public void close() {
     if (protocol_ != null && !isClosed_) {
+      LOG.debug("Closing RecordServicePlanner connection.");
       protocol_.getTransport().close();
       isClosed_ = true;
     }
@@ -122,6 +130,7 @@ public class RecordServicePlannerClient {
 
     TPlanRequestResult planResult;
     try {
+      LOG.info("Planning request: " + request);
       TPlanRequestParams planParams = request.request_;
       planParams.client_version = TProtocolVersion.V1;
       planResult = plannerClient_.PlanRequest(planParams);
@@ -131,7 +140,7 @@ public class RecordServicePlannerClient {
       // TODO: this should mark the connection as bad on some error codes.
       throw new IOException("Could not plan request.", e);
     }
-    System.out.println("Generated " + planResult.tasks.size() + " tasks.");
+    LOG.debug("PlanRequest generated " + planResult.tasks.size() + " tasks.");
     return planResult;
   }
 
@@ -143,6 +152,7 @@ public class RecordServicePlannerClient {
     validateIsConnected();
     TGetSchemaResult result;
     try {
+      LOG.info("Getting schema for request: " + request);
       TPlanRequestParams planParams = request.request_;
       planParams.client_version = TProtocolVersion.V1;
       result = plannerClient_.GetSchema(planParams);

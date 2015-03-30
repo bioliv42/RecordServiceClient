@@ -24,12 +24,15 @@ import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.TSocket;
 import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.cloudera.recordservice.thrift.RecordServiceWorker;
 import com.cloudera.recordservice.thrift.TExecTaskParams;
 import com.cloudera.recordservice.thrift.TExecTaskResult;
 import com.cloudera.recordservice.thrift.TFetchParams;
 import com.cloudera.recordservice.thrift.TFetchResult;
+import com.cloudera.recordservice.thrift.TRecordServiceException;
 import com.cloudera.recordservice.thrift.TTaskStatus;
 import com.cloudera.recordservice.thrift.TUniqueId;
 import com.google.common.base.Preconditions;
@@ -40,6 +43,9 @@ import com.google.common.collect.Sets;
  * TODO: Don't expose raw Thrift objects, use proper logger, add Kerberos support.
  */
 public class RecordServiceWorkerClient {
+  private final static Logger LOG =
+    LoggerFactory.getLogger(RecordServiceWorkerClient.class);
+
   private RecordServiceWorker.Client workerClient_;
   private TProtocol protocol_;
   private boolean isClosed_ = false;
@@ -53,23 +59,31 @@ public class RecordServiceWorkerClient {
 
   /**
    * Connects to the RecordServiceWorker.
+   * @throws TException
    */
-  public void connect(String hostname, int port) throws TException {
+  public void connect(String hostname, int port) throws IOException {
     if (workerClient_ != null) {
       throw new RuntimeException("Already connected. Must call close() first.");
     }
 
     TTransport transport = new TSocket(hostname, port);
     try {
+      LOG.info("Connecting to worker at " + hostname + ":" + port);
       transport.open();
     } catch (TTransportException e) {
-      System.err.println(String.format("Could not connect to RecordServiceWorker: %s:%d",
-          hostname, port));
-      throw e;
+      throw new IOException(String.format("Could not connect to RecordServiceWorker: %s:%d",
+          hostname, port), e);
     }
     protocol_ = new TBinaryProtocol(transport);
     workerClient_ = new RecordServiceWorker.Client(protocol_);
-    protocolVersion_ = ThriftUtils.fromThrift(workerClient_.GetProtocolVersion());
+    try {
+      protocolVersion_ = ThriftUtils.fromThrift(workerClient_.GetProtocolVersion());
+      LOG.debug("Connected to worker service with version: " + protocolVersion_);
+    } catch (TException e) {
+      // TODO: this probably means they connected to a thrift service that is not the
+      // worker service (i.e. wrong port). Improve this message.
+      throw new IOException("Could not get service protocol version.", e);
+    }
     isClosed_ = false;
   }
 
@@ -79,11 +93,13 @@ public class RecordServiceWorkerClient {
    */
   public void close() {
     if (protocol_ != null && !isClosed_) {
+      LOG.debug("Closing RecordServiceWorker connection.");
       for (TUniqueId handle: activeTasks_) {
         try {
           workerClient_.CloseTask(handle);
         } catch (TException e) {
-          // Ignore. TODO: log
+          LOG.warn(
+              "Failed to close task handle=" + handle + " reason=" + e.getMessage());
         }
       }
       activeTasks_.clear();
@@ -107,6 +123,7 @@ public class RecordServiceWorkerClient {
   public void closeTask(TUniqueId handle) {
     validateIsConnected();
     if (activeTasks_.contains(handle)) {
+      LOG.debug("Closing RecordServiceWorker task: " + handle);
       try {
         workerClient_.CloseTask(handle);
       } catch (TException e) {
@@ -120,7 +137,8 @@ public class RecordServiceWorkerClient {
   /**
    * Executes the task asynchronously, returning the handle the client.
    */
-  public TUniqueId execTask(ByteBuffer task) throws TException {
+  public TUniqueId execTask(ByteBuffer task)
+      throws TRecordServiceException, IOException {
     validateIsConnected();
     return execTaskInternal(task).getHandle();
   }
@@ -129,39 +147,47 @@ public class RecordServiceWorkerClient {
    * Executes the task asynchronously, returning a Rows object that can be
    * used to fetch results.
    */
-  public Records execAndFetch(ByteBuffer task) throws IOException {
+  public Records execAndFetch(ByteBuffer task)
+      throws TRecordServiceException, IOException {
     validateIsConnected();
-    try {
-      TExecTaskResult result = execTaskInternal(task);
-      return new Records(this, result.getHandle(), result.schema);
-    } catch (TException e) {
-      throw new IOException(e);
-    }
-  }
+    TExecTaskResult result = execTaskInternal(task);
+    return new Records(this, result.getHandle(), result.schema);
 
+  }
 
   /**
    * Fetches a batch of records and returns the result.
    */
-  public TFetchResult fetch(TUniqueId handle) throws TException {
+  public TFetchResult fetch(TUniqueId handle)
+      throws TRecordServiceException, IOException {
     validateIsConnected();
     validateHandleIsActive(handle);
     TFetchParams fetchParams = new TFetchParams(handle);
     try {
+      LOG.trace("Calling fetch(): " + handle);
       return workerClient_.Fetch(fetchParams);
-    } catch (TException e) {
-      System.err.println("Could not fetch from task: " + e.getMessage());
+    } catch (TRecordServiceException e) {
       throw e;
+    } catch (TException e) {
+      throw new IOException("Could not fetch from task: " + e.getMessage(), e);
     }
   }
 
   /**
    * Gets status on the current task executing.
    */
-  public TTaskStatus getTaskStatus(TUniqueId handle) throws TException {
+  public TTaskStatus getTaskStatus(TUniqueId handle)
+      throws TRecordServiceException, IOException {
     validateIsConnected();
     validateHandleIsActive(handle);
-    return workerClient_.GetTaskStatus(handle);
+    LOG.debug("Calling getTaskStatus(): " + handle);
+    try {
+      return workerClient_.GetTaskStatus(handle);
+    } catch (TRecordServiceException e) {
+      throw e;
+    } catch (TException e) {
+      throw new IOException("Could not call getTaskStatus: ", e);
+    }
   }
 
   /**
@@ -179,18 +205,21 @@ public class RecordServiceWorkerClient {
    * Executes the task asynchronously, returning the handle the client.
    */
   private TExecTaskResult execTaskInternal(ByteBuffer task)
-          throws TException {
+          throws TRecordServiceException, IOException {
     Preconditions.checkNotNull(task);
     TExecTaskParams taskParams = new TExecTaskParams(task);
     try {
       if (fetchSize_ != null) taskParams.setFetch_size(fetchSize_);
+      LOG.debug("Executing task");
       TExecTaskResult result = workerClient_.ExecTask(taskParams);
       Preconditions.checkState(!activeTasks_.contains(result.handle));
       activeTasks_.add(result.handle);
+      LOG.info("Got task handle: " + result.handle);
       return result;
-    } catch (TException e) {
-      System.err.println("Could not exec task: " + e.getMessage());
+    } catch (TRecordServiceException e) {
       throw e;
+    } catch (TException e) {
+      throw new IOException("Could not exec task.", e);
     }
   }
 

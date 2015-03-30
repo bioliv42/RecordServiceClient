@@ -16,10 +16,9 @@ package com.cloudera.recordservice.client;
 
 import java.io.IOException;
 
-import org.apache.thrift.TException;
-
 import com.cloudera.recordservice.thrift.TNetworkAddress;
 import com.cloudera.recordservice.thrift.TPlanRequestResult;
+import com.cloudera.recordservice.thrift.TRecordServiceException;
 import com.cloudera.recordservice.thrift.TTask;
 
 public class WorkerClientUtil {
@@ -32,7 +31,7 @@ public class WorkerClientUtil {
    * to deal with much more stuff.
    */
   public static Records execTask(TPlanRequestResult plan, int taskId)
-      throws TException, IOException {
+      throws TRecordServiceException, IOException {
     if (taskId >= plan.tasks.size() || taskId < 0) {
       throw new RuntimeException("Invalid task id.");
     }

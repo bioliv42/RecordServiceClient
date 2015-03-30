@@ -24,7 +24,6 @@ import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.TimeZone;
 
-import org.apache.thrift.TException;
 import org.junit.Test;
 
 import com.cloudera.recordservice.thrift.TGetSchemaResult;
@@ -41,9 +40,13 @@ import com.google.common.collect.Lists;
 // TODO: add more API misuse tests.
 // TODO: add more stats tests.
 public class TestBasicClient {
-
   static final int PLANNER_PORT = 40000;
   static final int WORKER_PORT = 40100;
+
+  public TestBasicClient() {
+    // Setup log4j for testing.
+    org.apache.log4j.BasicConfigurator.configure();
+  }
 
   @Test
   public void testPlannerConnection()
@@ -104,7 +107,7 @@ public class TestBasicClient {
   }
 
   @Test
-  public void testWorkerConnection() throws RuntimeException, TException {
+  public void testWorkerConnection() throws RuntimeException, IOException {
     RecordServiceWorkerClient worker = new RecordServiceWorkerClient();
 
     boolean threwException = false;
@@ -141,7 +144,7 @@ public class TestBasicClient {
   }
 
   @Test
-  public void testTaskClose() throws TException, IOException {
+  public void testTaskClose() throws TRecordServiceException, IOException {
     // Plan the request
     TPlanRequestResult plan = RecordServicePlannerClient.planRequest(
         "localhost", PLANNER_PORT,
@@ -169,7 +172,7 @@ public class TestBasicClient {
   }
 
   @Test
-  public void testBadHandle() throws TException, IOException {
+  public void testBadHandle() throws TRecordServiceException, IOException {
     RecordServiceWorkerClient worker = new RecordServiceWorkerClient();
     worker.connect("localhost", WORKER_PORT);
 
@@ -197,7 +200,7 @@ public class TestBasicClient {
   }
 
   @Test
-  public void testNation() throws TException, IOException {
+  public void testNation() throws TRecordServiceException, IOException {
     // Plan the request
     TPlanRequestResult plan = RecordServicePlannerClient.planRequest(
         "localhost", PLANNER_PORT,
@@ -273,7 +276,7 @@ public class TestBasicClient {
   }
 
   @Test
-  public void testNationWithUtility() throws TException, IOException {
+  public void testNationWithUtility() throws TRecordServiceException, IOException {
     // Plan the request
     TPlanRequestResult plan = RecordServicePlannerClient.planRequest(
         "localhost", PLANNER_PORT,
@@ -347,7 +350,7 @@ public class TestBasicClient {
   }
 
   @Test
-  public void testAllTypes() throws TException, IOException {
+  public void testAllTypes() throws TRecordServiceException, IOException {
     RecordServiceWorkerClient worker = new RecordServiceWorkerClient();
     worker.connect("localhost", WORKER_PORT);
 
@@ -425,7 +428,8 @@ public class TestBasicClient {
 
   // Returns all the strings from running plan as a list. The plan must
   // have a schema that returns a single string column.
-  List<String> getAllStrings(TPlanRequestResult plan) throws TException, IOException {
+  List<String> getAllStrings(TPlanRequestResult plan)
+      throws TRecordServiceException, IOException {
     List<String> results = Lists.newArrayList();
     assertEquals(plan.schema.cols.size(), 1);
     assertEquals(plan.schema.cols.get(0).type.type_id, TTypeId.STRING);
@@ -445,7 +449,7 @@ public class TestBasicClient {
   }
 
   @Test
-  public void testNationPath() throws IOException, TException {
+  public void testNationPath() throws IOException, TRecordServiceException {
     TPlanRequestResult plan = RecordServicePlannerClient.planRequest(
         "localhost", PLANNER_PORT,
         Request.createPathRequest("/test-warehouse/tpch.nation/"));
@@ -456,7 +460,7 @@ public class TestBasicClient {
   }
 
   @Test
-  public void testNationPathFiltering() throws IOException, TException {
+  public void testNationPathFiltering() throws IOException, TRecordServiceException {
     TPlanRequestResult plan = RecordServicePlannerClient.planRequest(
         "localhost", PLANNER_PORT,
         Request.createPathRequest("/test-warehouse/tpch.nation/",
@@ -468,7 +472,7 @@ public class TestBasicClient {
   }
 
   @Test
-  public void testNationView() throws IOException, TException {
+  public void testNationView() throws IOException, TRecordServiceException {
     TPlanRequestResult plan = RecordServicePlannerClient.planRequest(
         "localhost", PLANNER_PORT,
         Request.createTableRequest("rs.nation_projection"));
@@ -512,7 +516,7 @@ public class TestBasicClient {
   }
 
   @Test
-  public void testNonLocalWorker() throws IOException, TException {
+  public void testNonLocalWorker() throws IOException, TRecordServiceException {
     TPlanRequestResult plan = RecordServicePlannerClient.planRequest(
         "localhost", PLANNER_PORT,
         Request.createTableRequest("tpch.nation"));

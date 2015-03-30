@@ -23,6 +23,7 @@ import org.apache.thrift.TException;
 import sun.misc.Unsafe;
 
 import com.cloudera.recordservice.thrift.TFetchResult;
+import com.cloudera.recordservice.thrift.TRecordServiceException;
 import com.cloudera.recordservice.thrift.TRowBatchFormat;
 import com.cloudera.recordservice.thrift.TSchema;
 import com.cloudera.recordservice.thrift.TTaskStatus;
@@ -281,7 +282,7 @@ public class Records {
    * Returns the status of the underlying task. This issues an RPC to the server
    * and cannot be used in the hot path.
    */
-  public TTaskStatus getStatus() throws TException {
+  public TTaskStatus getStatus() throws IOException, TRecordServiceException {
     if (handle_ == null) throw new RuntimeException("Task already closed.");
     return worker_.getTaskStatus(handle_);
   }

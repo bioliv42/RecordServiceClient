@@ -30,6 +30,11 @@ public class TestUnsupportedFunctionality {
   static final String PLANNER_HOST = "localhost";
   static final int PLANNER_PORT = 40000;
 
+  public TestUnsupportedFunctionality() {
+    // Setup log4j for testing.
+    org.apache.log4j.BasicConfigurator.configure();
+  }
+
   private void testUnsupported(String sql) {
     boolean exceptionThrown = false;
     try {
@@ -40,7 +45,6 @@ public class TestUnsupportedFunctionality {
     } catch (TRecordServiceException e) {
       exceptionThrown = true;
       assertTrue(e.getMessage(), e.getMessage().contains("Could not plan request."));
-      System.out.println(e);
       assertTrue(e.detail,
           e.detail.contains("RecordService only supports scan queries."));
     }
