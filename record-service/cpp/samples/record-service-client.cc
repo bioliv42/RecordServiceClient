@@ -20,6 +20,8 @@
 #include <thrift/transport/TSocket.h>
 #include <thrift/transport/TTransportUtils.h>
 
+#include "rs-common.h"
+
 #include "gen-cpp/RecordServicePlanner.h"
 #include "gen-cpp/RecordServiceWorker.h"
 #include "gen-cpp/Types_types.h"
@@ -43,17 +45,6 @@ const int RECORD_SERVICE_PLANNER_PORT = 40000;
 
 // "select min(l_comment")
 #define QUERY_2 0
-
-// Comparator for THostPorts. Thrift declares this (in gen-cpp/Types_types.h) but
-// never defines it.
-bool impala::TNetworkAddress::operator<(const impala::TNetworkAddress& that) const {
-  if (this->hostname < that.hostname) {
-    return true;
-  } else if ((this->hostname == that.hostname) && (this->port < that.port)) {
-    return true;
-  }
-  return false;
-}
 
 string PrintResultSchema(const TSchema& schema) {
   stringstream ss;
