@@ -28,10 +28,9 @@ import org.apache.spark._
  * RDD that is backed by the RecordService. This returns an RDD of arrays of
  * Writable objects.
  * Each record is an array.
- * TODO: remove default localhost param. This should pull it from the configs.
  */
-class RecordServiceRDD(sc: SparkContext, plannerHost: String = "localhost")
-  extends RecordServiceRDDBase[Array[Writable]](sc, plannerHost) with Logging {
+class RecordServiceRDD(@transient sc: SparkContext)
+  extends RecordServiceRDDBase[Array[Writable]](sc) with Logging {
 
   override def setTable(table:String) = {
     super.setTable(table)

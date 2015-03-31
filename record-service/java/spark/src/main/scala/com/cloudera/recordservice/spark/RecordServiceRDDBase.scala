@@ -40,15 +40,14 @@ private class RecordServicePartition(rddId: Int, idx: Int,
  * RDD that is backed by the RecordService. This is the base class that handles some of
  * common Spark and RecordService interactions.
  */
-abstract class RecordServiceRDDBase[T:ClassTag](sc: SparkContext, plannerHost: String)
-  extends RDD[T](sc, Nil) with Logging {
-
-  val PLANNER_PORT: Int = 40000
-  val WORKER_PORT: Int = 40100
+abstract class RecordServiceRDDBase[T:ClassTag](@transient sc: SparkContext)
+    extends RDD[T](sc, Nil) with Logging {
 
   // Request type, only one can be set.
   var stmt:String = null
   var path:String = null
+
+  var (plannerHost, plannerPort) = RecordServiceConf.getPlannerHostPort(sc)
 
   // Result schema (after projection)
   var schema:TSchema = null
@@ -73,10 +72,18 @@ abstract class RecordServiceRDDBase[T:ClassTag](sc: SparkContext, plannerHost: S
 
   def getSchema(): TSchema = {
     if (schema == null) {
-      // TODO: this is kind of awkard. Introduce a new plan() API?
+      // TODO: this is kind of awkward. Introduce a new plan() API?
       throw new SparkException("getSchema() can only be called after getPartitions")
     }
     schema
+  }
+
+  /**
+   * Sets the planner host/port to connect to. Default pulls from configs.
+   */
+  def setPlannerHostPort(host:String, port:Int): Unit = {
+    plannerHost = host
+    plannerPort = port
   }
 
   protected def verifySetRequest() = {
@@ -99,8 +106,9 @@ abstract class RecordServiceRDDBase[T:ClassTag](sc: SparkContext, plannerHost: S
       // TODO: we need to support the case where there is not a worker running on
       // each host, in which case this needs to talk to get the list of all workers
       // and pick one randomly.
+      // TODO: this port should come from the task description.
       val worker = new RecordServiceWorkerClient()
-      worker.connect("localhost", WORKER_PORT)
+      worker.connect("localhost", RecordServiceConf.WORKER_PORT)
       val records = worker.execAndFetch(partition.task.task)
       (worker, records)
     } catch {
@@ -161,7 +169,7 @@ abstract class RecordServiceRDDBase[T:ClassTag](sc: SparkContext, plannerHost: S
       }
 
     val planResult = try {
-      RecordServicePlannerClient.planRequest(plannerHost, PLANNER_PORT, request)
+      RecordServicePlannerClient.planRequest(plannerHost, plannerPort, request)
     } catch {
       case e:TRecordServiceException => logError("Could not plan request: " + e.message)
         throw new SparkException("RecordServiceRDD failed", e)

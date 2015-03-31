@@ -23,17 +23,14 @@ package object spark {
   /**
    * Adds a method 'recordServiceRecords' to SparkContext to allow reading data
    * from the RecordService
-   * TODO: remove plannerHost argument. Pull from config.
    */
   implicit class RecordServiceContext(ctx: SparkContext) {
-    def recordServiceRecords(sql: String, plannerHost:String = "localhost")
-        : RDD[Array[Writable]] = {
-      new RecordServiceRDD(ctx, plannerHost).setStatement(sql)
+    def recordServiceRecords(sql: String) : RDD[Array[Writable]] = {
+      new RecordServiceRDD(ctx).setStatement(sql)
     }
 
-    def recordServiceTextFile(path: String, plannerHost:String = "localhost")
-        : RDD[String] = {
-      new RecordServiceRDD(ctx, plannerHost).setPath(path)
+    def recordServiceTextFile(path: String) : RDD[String] = {
+      new RecordServiceRDD(ctx).setPath(path)
           .map(v => v(0).asInstanceOf[Text].toString)
     }
   }

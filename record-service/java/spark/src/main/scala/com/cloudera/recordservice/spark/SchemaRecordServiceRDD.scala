@@ -54,9 +54,8 @@ import scala.util.control.Breaks
  */
 class SchemaRecordServiceRDD[T:ClassTag](sc: SparkContext,
                                          recordClass:Class[T],
-                                         byOrdinal:Boolean = false,
-                                         plannerHost: String = "localhost")
-    extends RecordServiceRDDBase[T](sc, plannerHost) with Logging {
+                                         byOrdinal:Boolean = false)
+    extends RecordServiceRDDBase[T](sc) with Logging {
 
   override def setTable(table:String) = {
     verifySetRequest()

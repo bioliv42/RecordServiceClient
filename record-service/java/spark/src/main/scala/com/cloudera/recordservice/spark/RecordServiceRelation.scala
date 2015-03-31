@@ -42,15 +42,12 @@ import org.apache.spark.{Logging, SparkException}
       """.stripMargin)
  * sc.sql("select * from nationTbl")
  *
- * TODO: this should not go through the RecordServiceRDD but instead go to the client
- * API directly. We save an extra copy/row format conversion.
  * TODO: support other types
  */
 case class RecordServiceRelation(table:String)(@transient val sqlContext:SQLContext)
     extends BaseRelation with PrunedFilteredScan with Logging {
-  // TODO: pull from configs
-  val PLANNER_HOST = "localhost"
-  val PLANNER_PORT = 40000
+
+  val (plannerHost, plannerPort) = RecordServiceConf.getPlannerHostPort(sqlContext)
 
   def remapType(rsType:TType) : DataType = {
     val result = rsType.type_id match {
@@ -62,6 +59,7 @@ case class RecordServiceRelation(table:String)(@transient val sqlContext:SQLCont
       case TTypeId.FLOAT => FloatType
       case TTypeId.DOUBLE => DoubleType
       case TTypeId.STRING => StringType
+      case TTypeId.DECIMAL => DataTypes.createDecimalType(rsType.precision, rsType.scale)
       case _ => null
     }
     if (result == null) throw new SparkException("Unsupported type " + rsType)
@@ -81,7 +79,7 @@ case class RecordServiceRelation(table:String)(@transient val sqlContext:SQLCont
 
   override def schema: StructType = {
     val rsSchema = RecordServicePlannerClient.getSchema(
-      PLANNER_HOST, PLANNER_PORT, Request.createTableRequest(table)).schema
+      plannerHost, plannerPort, Request.createTableRequest(table)).schema
     convertSchema(rsSchema)
   }
 
@@ -140,7 +138,8 @@ case class RecordServiceRelation(table:String)(@transient val sqlContext:SQLCont
     System.out.println(sb.toString())
 
     val baseRDD =
-      new RecordServiceRDD(sqlContext.sparkContext).setStatement(sb.toString())
+        new RecordServiceRecordRDD(sqlContext.sparkContext).setStatement(sb.toString())
+    baseRDD.setPlannerHostPort(plannerHost, plannerPort)
 
     val fieldMap = Map(schema.fields map { x => x.metadata.getString("name") -> x }: _*)
     val projectedSchema = new StructType(requiredColumns map { name => fieldMap(name) })
@@ -152,28 +151,18 @@ case class RecordServiceRelation(table:String)(@transient val sqlContext:SQLCont
     baseRDD.map(x => {
       val rsSchema = baseRDD.getSchema()
       for (i <- 0 until numCols) {
-        val t:TType = rsSchema.cols.get(i).getType
-        val v = x(i)
-        if (v == null) {
+        if (x.isNull(i)) {
           mutableRow.setNullAt(i)
         } else {
-          t.type_id match {
-            case TTypeId.BOOLEAN =>
-              mutableRow.setBoolean(i, v.asInstanceOf[BooleanWritable].get())
-            case TTypeId.TINYINT =>
-              mutableRow.setInt(i, v.asInstanceOf[ByteWritable].get().toInt)
-            case TTypeId.SMALLINT =>
-              mutableRow.setInt(i, v.asInstanceOf[ShortWritable].get().toInt)
-            case TTypeId.INT =>
-              mutableRow.setInt(i, v.asInstanceOf[IntWritable].get())
-            case TTypeId.BIGINT =>
-              mutableRow.setLong(i, v.asInstanceOf[LongWritable].get())
-            case TTypeId.FLOAT =>
-              mutableRow.setFloat(i, v.asInstanceOf[FloatWritable].get())
-            case TTypeId.DOUBLE =>
-              mutableRow.setDouble(i, v.asInstanceOf[DoubleWritable].get())
-            case TTypeId.STRING =>
-              mutableRow.setString(i, v.asInstanceOf[Text].toString)
+          rsSchema.cols.get(i).getType.type_id match {
+            case TTypeId.BOOLEAN => mutableRow.setBoolean(i, x.getBoolean(i))
+            case TTypeId.TINYINT => mutableRow.setInt(i, x.getByte(i))
+            case TTypeId.SMALLINT => mutableRow.setInt(i, x.getShort(i).toInt)
+            case TTypeId.INT => mutableRow.setInt(i, x.getInt(i))
+            case TTypeId.BIGINT => mutableRow.setLong(i, x.getLong(i))
+            case TTypeId.FLOAT => mutableRow.setFloat(i, x.getFloat(i))
+            case TTypeId.DOUBLE => mutableRow.setDouble(i, x.getDouble(i))
+            case TTypeId.STRING => mutableRow.setString(i, x.getByteArray(i).toString)
             case _ => assert(false)
           }
         }
