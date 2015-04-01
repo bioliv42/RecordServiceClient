@@ -14,6 +14,7 @@
 
 package com.cloudera.recordservice.spark
 
+import org.apache.spark.sql.Row
 import org.scalatest.{FunSuite}
 
 // TODO: more tests
@@ -44,10 +45,31 @@ class SparkSqlTest extends FunSuite with SharedSparkSQLContext {
     row = sc.sql("SELECT n_comment, n_name from nationTbl").collect()(5)
     assert(row.get(0) == "ven packages wake quickly. regu")
     assert(row.get(1) == "ETHIOPIA")
+  }
 
-    // Predicate push down
+  test("Predicate pushdown") {
+    sc.sql( s"""
+      |CREATE TEMPORARY TABLE nationTbl
+      |USING com.cloudera.recordservice.spark.DefaultSource
+      |OPTIONS (
+      |  record_service_table 'tpch.nation'
+      |)
+    """.stripMargin)
+
+    var row:Row = null
+
     row = sc.sql("SELECT count(*) from nationTbl where n_nationkey > 10").collect()(0)
     assert(row.get(0) == 14)
+
+    row = sc.sql(
+      "SELECT count(*) from nationTbl where n_nationkey = 10 OR n_nationkey = 1")
+      .collect()(0)
+    assert(row.get(0) == 2)
+
+    row = sc.sql(
+      "SELECT count(*) from nationTbl where n_nationkey = 10 AND n_nationkey = 1")
+      .collect()(0)
+    assert(row.get(0) == 0)
   }
 
   test("DataFrame Test") {

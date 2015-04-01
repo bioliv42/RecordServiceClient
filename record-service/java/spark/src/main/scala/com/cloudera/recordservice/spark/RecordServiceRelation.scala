@@ -43,11 +43,27 @@ import org.apache.spark.{Logging, SparkException}
  * sc.sql("select * from nationTbl")
  *
  * TODO: support other types
+ * TODO: table "stats" are passed in the ctor. Add RecordService API to get stats.
+ * SparkSQL currently only supports table size (in bytes).
  */
-case class RecordServiceRelation(table:String)(@transient val sqlContext:SQLContext)
+case class RecordServiceRelation(table:String, size:Option[Long])(
+        @transient val sqlContext:SQLContext)
     extends BaseRelation with PrunedFilteredScan with Logging {
 
   val (plannerHost, plannerPort) = RecordServiceConf.getPlannerHostPort(sqlContext)
+
+  override def schema: StructType = {
+    val rsSchema = RecordServicePlannerClient.getSchema(
+      plannerHost, plannerPort, Request.createTableScanRequest(table)).schema
+    convertSchema(rsSchema)
+  }
+
+  override val sizeInBytes =
+    if (size.isDefined) {
+      size.get
+    } else {
+      super.sizeInBytes
+    }
 
   def remapType(rsType:TType) : DataType = {
     val result = rsType.type_id match {
@@ -60,6 +76,7 @@ case class RecordServiceRelation(table:String)(@transient val sqlContext:SQLCont
       case TTypeId.DOUBLE => DoubleType
       case TTypeId.STRING => StringType
       case TTypeId.DECIMAL => DataTypes.createDecimalType(rsType.precision, rsType.scale)
+      case TTypeId.TIMESTAMP_NANOS => DataTypes.TimestampType
       case _ => null
     }
     if (result == null) throw new SparkException("Unsupported type " + rsType)
@@ -77,12 +94,6 @@ case class RecordServiceRelation(table:String)(@transient val sqlContext:SQLCont
     new StructType(fields)
   }
 
-  override def schema: StructType = {
-    val rsSchema = RecordServicePlannerClient.getSchema(
-      plannerHost, plannerPort, Request.createTableScanRequest(table)).schema
-    convertSchema(rsSchema)
-  }
-
   /**
    * Converts value to SQL expression.
    * Taken from JdbcRDD
@@ -98,14 +109,33 @@ case class RecordServiceRelation(table:String)(@transient val sqlContext:SQLCont
    * Taken from JdbcRDD
    * TODO: can we support even more filters?
    */
-  private def compileFilter(f: Filter): String = f match {
-    case EqualTo(attr, value) => s"$attr = ${compileValue(value)}"
-    case LessThan(attr, value) => s"$attr < ${compileValue(value)}"
-    case GreaterThan(attr, value) => s"$attr > ${compileValue(value)}"
-    case LessThanOrEqual(attr, value) => s"$attr <= ${compileValue(value)}"
-    case GreaterThanOrEqual(attr, value) => s"$attr >= ${compileValue(value)}"
-    case _ => null
-  }
+  private def compileFilter(f: Filter): String =
+    f match {
+      case EqualTo(attr, value) => s"$attr = ${compileValue(value)}"
+      case LessThan(attr, value) => s"$attr < ${compileValue(value)}"
+      case GreaterThan(attr, value) => s"$attr > ${compileValue(value)}"
+      case LessThanOrEqual(attr, value) => s"$attr <= ${compileValue(value)}"
+      case GreaterThanOrEqual(attr, value) => s"$attr >= ${compileValue(value)}"
+      case Or(left, right) =>
+        val leftString = compileFilter(left)
+        val rightString = compileFilter(right)
+        if (leftString == null || rightString == null) {
+          null
+        } else {
+          "(" + leftString + " OR " + rightString + ")"
+        }
+      case And(left, right) =>
+        val leftString = compileFilter(left)
+        val rightString = compileFilter(right)
+        if (leftString == null || rightString == null) {
+          null
+        } else {
+          "(" + leftString + " AND " + rightString + ")"
+        }
+      case _ =>
+        logWarning("Skipping filter: " + f)
+        null
+    }
 
   /**
    * `filters`, but as a WHERE clause suitable for injection into a SQL query.
@@ -144,7 +174,7 @@ case class RecordServiceRelation(table:String)(@transient val sqlContext:SQLCont
 
     if (emptyProjection) {
       // We have an empty projection so we've mapped this to a count(*) in the
-      // RecordService. (Full NULLs, we need to do this for correctness). Here we
+      // RecordService. (For NULLs, we need to do this for correctness). Here we
       // are going to expand it to return a NULL for each row.
       baseRDD.mapPartitions(input => {
         val record = input.next()
@@ -184,6 +214,12 @@ case class RecordServiceRelation(table:String)(@transient val sqlContext:SQLCont
               case TTypeId.FLOAT => mutableRow.setFloat(i, x.getFloat(i))
               case TTypeId.DOUBLE => mutableRow.setDouble(i, x.getDouble(i))
               case TTypeId.STRING => mutableRow.setString(i, x.getByteArray(i).toString)
+              case TTypeId.DECIMAL =>
+                val d = x.getDecimal(i)
+                mutableRow.update(i,
+                  Decimal(d.toBigDecimal, d.getPrecision, d.getScale))
+              case TTypeId.TIMESTAMP_NANOS =>
+                  mutableRow.update(i, x.getTimestampNanos(i).toTimeStamp)
               case _ => assert(false)
             }
           }
@@ -196,6 +232,7 @@ case class RecordServiceRelation(table:String)(@transient val sqlContext:SQLCont
 
 class DefaultSource extends RelationProvider {
   val TABLE_KEY:String = "record_service_table"
+  val TABLE_SIZE_KEY:String = "record_service_table_size"
 
   override def createRelation(
       sqlContext: SQLContext, parameters: Map[String, String]): BaseRelation = {
@@ -211,8 +248,11 @@ class DefaultSource extends RelationProvider {
       throw new SparkException("Cannot specify both 'record_service_table' and 'path'")
     }
 
+    val sizeVal = parameters.get(TABLE_SIZE_KEY)
+    val size = if (sizeVal.isDefined) Some(sizeVal.get.toLong) else None
+
     if (path.isDefined) table = path
-    RecordServiceRelation(table.get)(sqlContext)
+    RecordServiceRelation(table.get, size)(sqlContext)
   }
 }
 
