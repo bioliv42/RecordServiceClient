@@ -19,6 +19,7 @@ import java.io.IOException;
 import org.apache.avro.generic.GenericData.Record;
 
 import com.cloudera.recordservice.client.Records;
+import com.cloudera.recordservice.thrift.TRecordServiceException;
 import com.google.common.base.Preconditions;
 
 /**
@@ -48,7 +49,7 @@ public class GenericRecords {
   /**
    * Returns true if there are more records, false otherwise.
    */
-  public boolean hasNext() throws IOException {
+  public boolean hasNext() throws IOException, TRecordServiceException {
     return records_.hasNext();
   }
 
@@ -56,7 +57,7 @@ public class GenericRecords {
    * Returns and advances to the next record. Throws exception if
    * there are no more records.
    */
-  public Record next() throws IOException {
+  public Record next() throws IOException, TRecordServiceException {
     Records.Record rsRecord = records_.next();
     Record record = new Record(avroSchema_);
     for (int i = 0; i < schema_.getColsSize(); ++i) {

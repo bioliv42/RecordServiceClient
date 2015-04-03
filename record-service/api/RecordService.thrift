@@ -162,6 +162,8 @@ struct TPlanRequestResult {
   // The list of all hosts running workers.
   3: required list<TNetworkAddress> hosts
 
+  // List of warnings generated during planning the request. These do not have
+  // any impact on correctness.
   4: required list<TLogMessage> warnings
 }
 
@@ -181,6 +183,10 @@ struct TExecTaskParams {
   // The format of the row batch to return. Only the corresponding field is set
   // in TFetchResult. If unset, the service picks the default.
   3: optional TRowBatchFormat row_batch_format
+
+  // The memory limit for this task in bytes. If unset, the service manages it
+  // on its own.
+  4: optional i64 mem_limit
 }
 
 struct TExecTaskResult {
@@ -195,11 +201,17 @@ struct TFetchParams {
 }
 
 struct TFetchResult {
+  // If true, all records for this task have been returned. It is still valid to
+  // continue to fetch, but they will return 0 records.
   1: required bool done
+
+  // The approximate completion percentage [0, 100]
   2: required double task_completion_percentage
 
+  // The number of rows in this batch.
   3: required i32 num_rows
 
+  // The encoding format.
   4: required TRowBatchFormat row_batch_format
 
   // RowBatchFormat.Columnar
@@ -251,6 +263,7 @@ struct TTaskStatus {
   3: required list<TLogMessage> warnings
 }
 
+// FIXME: we need a lot more testing for these.
 enum TErrorCode {
   // The request is invalid or unsupported by the Planner service.
   INVALID_REQUEST,

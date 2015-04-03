@@ -18,7 +18,6 @@ import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
 
-import org.apache.thrift.TException;
 import org.junit.Test;
 
 import com.cloudera.recordservice.avro.SpecificRecords.ResolveBy;
@@ -28,12 +27,13 @@ import com.cloudera.recordservice.client.RecordServicePlannerClient;
 import com.cloudera.recordservice.client.Request;
 import com.cloudera.recordservice.client.WorkerClientUtil;
 import com.cloudera.recordservice.thrift.TPlanRequestResult;
+import com.cloudera.recordservice.thrift.TRecordServiceException;
 
 public class TestSpecificRecord {
   static final int PLANNER_PORT = 40000;
 
   @Test
-  public void testNationAll() throws TException, IOException {
+  public void testNationAll() throws TRecordServiceException, IOException {
     TPlanRequestResult plan = RecordServicePlannerClient.planRequest(
         "localhost", PLANNER_PORT,
         Request.createSqlRequest("select * from tpch.nation"));
@@ -61,7 +61,7 @@ public class TestSpecificRecord {
   }
 
   @Test
-  public void testNationProjection() throws TException, IOException {
+  public void testNationProjection() throws TRecordServiceException, IOException {
     TPlanRequestResult plan = RecordServicePlannerClient.planRequest(
         "localhost", PLANNER_PORT,
         Request.createSqlRequest("select n_nationkey, n_name from tpch.nation"));

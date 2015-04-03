@@ -32,6 +32,7 @@ import com.cloudera.recordservice.thrift.TExecTaskParams;
 import com.cloudera.recordservice.thrift.TExecTaskResult;
 import com.cloudera.recordservice.thrift.TFetchParams;
 import com.cloudera.recordservice.thrift.TFetchResult;
+import com.cloudera.recordservice.thrift.TNetworkAddress;
 import com.cloudera.recordservice.thrift.TRecordServiceException;
 import com.cloudera.recordservice.thrift.TTaskStatus;
 import com.cloudera.recordservice.thrift.TUniqueId;
@@ -57,10 +58,17 @@ public class RecordServiceWorkerClient {
   // Fetch size to pass to execTask(). If null, server will determine fetch size.
   private Integer fetchSize_;
 
+  // Memory limit to pass to execTask(). If null, server will manage this.
+  private Long memLimit_;
+
   /**
    * Connects to the RecordServiceWorker.
    * @throws TException
    */
+  public void connect(TNetworkAddress address) throws IOException {
+    connect(address.hostname, address.port);
+  }
+
   public void connect(String hostname, int port) throws IOException {
     if (workerClient_ != null) {
       throw new RuntimeException("Already connected. Must call close() first.");
@@ -151,8 +159,13 @@ public class RecordServiceWorkerClient {
       throws TRecordServiceException, IOException {
     validateIsConnected();
     TExecTaskResult result = execTaskInternal(task);
-    return new Records(this, result.getHandle(), result.schema);
-
+    Records records = null;
+    try {
+      records = new Records(this, result.getHandle(), result.schema);
+      return records;
+    } finally {
+      if (records == null) closeTask(result.getHandle());
+    }
   }
 
   /**
@@ -197,6 +210,11 @@ public class RecordServiceWorkerClient {
   public Integer getFetchSize() { return fetchSize_; }
 
   /**
+   * Sets the memory limit, in bytes.
+   */
+  public void setMemLimit(Long memLimit) { memLimit_ = memLimit; }
+
+  /**
    * Returns the number of active tasks for this worker.
    */
   public int numActiveTasks() { return activeTasks_.size(); }
@@ -209,8 +227,9 @@ public class RecordServiceWorkerClient {
     Preconditions.checkNotNull(task);
     TExecTaskParams taskParams = new TExecTaskParams(task);
     try {
-      if (fetchSize_ != null) taskParams.setFetch_size(fetchSize_);
       LOG.debug("Executing task");
+      if (fetchSize_ != null) taskParams.setFetch_size(fetchSize_);
+      if (memLimit_ != null) taskParams.setMem_limit(memLimit_);
       TExecTaskResult result = workerClient_.ExecTask(taskParams);
       Preconditions.checkState(!activeTasks_.contains(result.handle));
       activeTasks_.add(result.handle);

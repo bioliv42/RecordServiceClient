@@ -18,7 +18,6 @@ import java.io.IOException;
 
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
-import org.apache.thrift.TException;
 
 import com.cloudera.recordservice.avro.GenericRecords;
 import com.cloudera.recordservice.avro.SchemaUtils;
@@ -26,6 +25,7 @@ import com.cloudera.recordservice.client.RecordServicePlannerClient;
 import com.cloudera.recordservice.client.Request;
 import com.cloudera.recordservice.client.WorkerClientUtil;
 import com.cloudera.recordservice.thrift.TPlanRequestResult;
+import com.cloudera.recordservice.thrift.TRecordServiceException;
 
 /**
  * Example utility that converts results returned from the RecordService
@@ -34,7 +34,7 @@ import com.cloudera.recordservice.thrift.TPlanRequestResult;
 public class RecordServiceToAvro {
   static final int PLANNER_PORT = 40000;
 
-  public static void main(String[] args) throws TException, IOException {
+  public static void main(String[] args) throws TRecordServiceException, IOException {
     String query = "select * from tpch.nation";
     if (args.length == 2) query = args[1];
 

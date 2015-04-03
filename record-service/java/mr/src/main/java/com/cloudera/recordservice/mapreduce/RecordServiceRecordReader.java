@@ -26,6 +26,7 @@ import com.cloudera.recordservice.client.RecordServiceWorkerClient;
 import com.cloudera.recordservice.client.Records;
 import com.cloudera.recordservice.client.Records.Record;
 import com.cloudera.recordservice.thrift.TNetworkAddress;
+import com.cloudera.recordservice.thrift.TRecordServiceException;
 import com.google.common.annotations.VisibleForTesting;
 
 /**
@@ -122,7 +123,12 @@ public class RecordServiceRecordReader extends
     if (!isInitialized_) {
       throw new RuntimeException("Record Reader not initialized !!");
     }
-    if (!records_.hasNext()) return false;
+    try {
+      if (!records_.hasNext()) return false;
+    } catch (TRecordServiceException e) {
+      // TODO: is this the most proper way to deal with this in MR?
+      throw new IOException("Could not fetch record.", e);
+    }
     currentRSRecord_ = records_.next();
     return true;
   }

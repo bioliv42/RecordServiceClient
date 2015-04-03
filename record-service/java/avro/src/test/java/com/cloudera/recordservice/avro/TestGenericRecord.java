@@ -22,20 +22,20 @@ import java.util.List;
 
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
-import org.apache.thrift.TException;
 import org.junit.Test;
 
 import com.cloudera.recordservice.client.RecordServicePlannerClient;
 import com.cloudera.recordservice.client.Request;
 import com.cloudera.recordservice.client.WorkerClientUtil;
 import com.cloudera.recordservice.thrift.TPlanRequestResult;
+import com.cloudera.recordservice.thrift.TRecordServiceException;
 
 public class TestGenericRecord {
 
   static final int PLANNER_PORT = 40000;
 
   @Test
-  public void testNation() throws TException, IOException {
+  public void testNation() throws TRecordServiceException, IOException {
     TPlanRequestResult plan = RecordServicePlannerClient.planRequest(
         "localhost", PLANNER_PORT,
         Request.createSqlRequest("select * from tpch.nation"));

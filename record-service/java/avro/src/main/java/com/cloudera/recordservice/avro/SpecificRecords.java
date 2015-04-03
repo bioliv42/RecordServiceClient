@@ -22,6 +22,7 @@ import org.apache.avro.Schema;
 import org.apache.avro.specific.SpecificRecordBase;
 
 import com.cloudera.recordservice.client.Records;
+import com.cloudera.recordservice.thrift.TRecordServiceException;
 import com.cloudera.recordservice.thrift.TTypeId;
 import com.google.common.base.Preconditions;
 
@@ -72,7 +73,7 @@ public class SpecificRecords<T extends SpecificRecordBase> {
   /**
    * Returns true if there are more records, false otherwise.
    */
-  public boolean hasNext() throws IOException {
+  public boolean hasNext() throws IOException, TRecordServiceException {
     return records_.hasNext();
   }
 
@@ -80,7 +81,7 @@ public class SpecificRecords<T extends SpecificRecordBase> {
    * Returns and advances to the next record. Throws exception if
    * there are no more records.
    */
-  public T next() throws IOException {
+  public T next() throws IOException, TRecordServiceException {
     T record = null;
     try {
       record = class_.newInstance();

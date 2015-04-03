@@ -26,6 +26,7 @@ import java.util.TimeZone;
 
 import org.junit.Test;
 
+import com.cloudera.recordservice.thrift.TErrorCode;
 import com.cloudera.recordservice.thrift.TGetSchemaResult;
 import com.cloudera.recordservice.thrift.TPlanRequestResult;
 import com.cloudera.recordservice.thrift.TRecordServiceException;
@@ -46,6 +47,16 @@ public class TestBasicClient {
   public TestBasicClient() {
     // Setup log4j for testing.
     org.apache.log4j.BasicConfigurator.configure();
+  }
+
+  void fetchAndVerifyCount(Records records, int expectedCount)
+      throws TRecordServiceException, IOException {
+    int count = 0;
+    while (records.hasNext()) {
+      ++count;
+      records.next();
+    }
+    assertEquals(expectedCount, count);
   }
 
   @Test
@@ -136,10 +147,12 @@ public class TestBasicClient {
     // Call it again and make sure it's fine.
     assertEquals(worker.getProtocolVersion(), ProtocolVersion.V1);
 
+    assertEquals(worker.numActiveTasks(), 0);
     worker.close();
 
     // Should be able to connect now.
     worker.connect("localhost", PLANNER_PORT);
+    assertEquals(worker.numActiveTasks(), 0);
     worker.close();
   }
 
@@ -196,7 +209,8 @@ public class TestBasicClient {
       assertTrue(e.getMessage().contains("Invalid task handle."));
     }
     assertTrue(threwException);
-
+    assertEquals(worker.numActiveTasks(), 0);
+    worker.close();
   }
 
   @Test
@@ -226,11 +240,11 @@ public class TestBasicClient {
     assertEquals(plan.tasks.get(0).local_hosts.size(), 3);
     for (int i = 0; i < 2; ++i) {
       Records records = worker.execAndFetch(plan.tasks.get(0).task);
-      int numRows = 0;
+      int numRecords = 0;
       while (records.hasNext()) {
         Records.Record record = records.next();
-        ++numRows;
-        if (numRows == 1) {
+        ++numRecords;
+        if (numRecords == 1) {
           assertFalse(record.isNull(0));
           assertFalse(record.isNull(1));
           assertFalse(record.isNull(2));
@@ -266,12 +280,14 @@ public class TestBasicClient {
 
       records.close();
 
-      assertEquals(numRows, 25);
+      assertEquals(numRecords, 25);
 
       // Close and run this again. The worker object should still work.
+      assertEquals(worker.numActiveTasks(), 0);
       worker.close();
       worker.connect("localhost", WORKER_PORT);
     }
+    assertEquals(worker.numActiveTasks(), 0);
     worker.close();
   }
 
@@ -284,11 +300,11 @@ public class TestBasicClient {
 
     for (int i = 0; i < plan.tasks.size(); ++i) {
       Records records = WorkerClientUtil.execTask(plan, i);
-      int numRows = 0;
+      int numRecords = 0;
       while (records.hasNext()) {
         Records.Record record = records.next();
-        ++numRows;
-        if (numRows == 1) {
+        ++numRecords;
+        if (numRecords == 1) {
           assertEquals(record.getShort(0), 0);
           assertEquals(record.getByteArray(1).toString(), "ALGERIA");
           assertEquals(record.getShort(2), 0);
@@ -297,7 +313,7 @@ public class TestBasicClient {
         }
       }
       records.close();
-      assertEquals(numRows, 25);
+      assertEquals(numRecords, 25);
 
       // Closing records again is idempotent
       records.close();
@@ -414,6 +430,7 @@ public class TestBasicClient {
       records.close();
     }
 
+    assertEquals(worker.numActiveTasks(), 0);
     worker.close();
   }
 
@@ -483,11 +500,11 @@ public class TestBasicClient {
 
     for (int i = 0; i < plan.tasks.size(); ++i) {
       Records records = WorkerClientUtil.execTask(plan, i);
-      int numRows = 0;
+      int numRecords = 0;
       while (records.hasNext()) {
         Records.Record record = records.next();
-        ++numRows;
-        switch (numRows) {
+        ++numRecords;
+        switch (numRecords) {
         case 1:
           assertEquals(record.getShort(0), 0);
           assertEquals(record.getByteArray(1).toString(), "ALGERIA");
@@ -511,8 +528,48 @@ public class TestBasicClient {
         }
       }
       records.close();
-      assertEquals(numRows, 5);
+      assertEquals(numRecords, 5);
     }
+  }
+
+  @Test
+  public void testMemLimitExceeded() throws IOException, TRecordServiceException {
+    TPlanRequestResult plan = RecordServicePlannerClient.planRequest(
+        "localhost", PLANNER_PORT,
+        Request.createTableRequest("tpch.nation"));
+    RecordServiceWorkerClient worker = new RecordServiceWorkerClient();
+    worker.connect(plan.tasks.get(0).local_hosts.get(0));
+    worker.setMemLimit(new Long(200));
+
+    TUniqueId handle = worker.execTask(plan.tasks.get(0).task);
+    boolean exceptionThrown = false;
+    try {
+      worker.fetch(handle);
+    } catch (TRecordServiceException e) {
+      exceptionThrown = true;
+      assertEquals(e.code, TErrorCode.OUT_OF_MEMORY);
+    }
+    assertTrue(exceptionThrown);
+    worker.closeTask(handle);
+
+    // Try again going through the utility.
+    exceptionThrown = false;
+    try {
+      worker.execAndFetch(plan.tasks.get(0).task);
+    } catch (TRecordServiceException e) {
+      exceptionThrown = true;
+      assertEquals(e.code, TErrorCode.OUT_OF_MEMORY);
+    }
+    assertTrue(exceptionThrown);
+
+    // Clearing the limit should work.
+    worker.setMemLimit(null);
+    Records records = worker.execAndFetch(plan.tasks.get(0).task);
+    fetchAndVerifyCount(records, 25);
+    records.close();
+
+    assertEquals(worker.numActiveTasks(), 0);
+    worker.close();
   }
 
   @Test
@@ -526,13 +583,8 @@ public class TestBasicClient {
     TTask task = plan.tasks.get(0);
     task.local_hosts.clear();
     Records records = WorkerClientUtil.execTask(plan, 0);
-    int numRows = 0;
-    while (records.hasNext()) {
-      records.next();
-      ++numRows;
-    }
+    fetchAndVerifyCount(records, 25);
     records.close();
-    assertEquals(numRows, 25);
 
     // Clear all hosts.
     boolean exceptionThrown = false;

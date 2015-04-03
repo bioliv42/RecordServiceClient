@@ -18,8 +18,6 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 
-import org.apache.thrift.TException;
-
 import sun.misc.Unsafe;
 
 import com.cloudera.recordservice.thrift.TFetchResult;
@@ -248,7 +246,7 @@ public class Records {
   /**
    * Returns true if there are more records.
    */
-  public boolean hasNext() throws IOException {
+  public boolean hasNext() throws IOException, TRecordServiceException {
     Preconditions.checkNotNull(fetchResult_);
     while (record_.recordIdx_ == fetchResult_.num_rows - 1) {
       if (fetchResult_.done) {
@@ -291,7 +289,7 @@ public class Records {
   public float progress() { return progress_; }
 
   protected Records(RecordServiceWorkerClient worker, TUniqueId handle,
-      TSchema schema) throws IOException {
+      TSchema schema) throws IOException, TRecordServiceException {
     worker_ = worker;
     handle_ = handle;
 
@@ -300,15 +298,11 @@ public class Records {
     hasNext_ = hasNext();
   }
 
-  private void nextBatch() throws IOException {
+  private void nextBatch() throws IOException, TRecordServiceException {
     if (handle_ == null) {
       throw new RuntimeException("Task has been closed already.");
     }
-    try {
-      fetchResult_ = worker_.fetch(handle_);
-    } catch (TException e) {
-      throw new IOException(e);
-    }
+    fetchResult_ = worker_.fetch(handle_);
     if (fetchResult_.row_batch_format != TRowBatchFormat.Columnar) {
       throw new RuntimeException("Unsupported row batch format");
     }
