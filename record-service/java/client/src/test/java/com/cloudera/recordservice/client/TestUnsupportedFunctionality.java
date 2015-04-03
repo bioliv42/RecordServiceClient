@@ -65,5 +65,20 @@ public class TestUnsupportedFunctionality {
     testUnsupported("insert into tpch.nation select * from tpch.nation");
     testUnsupported("explain select * from tpch.nation");
     testUnsupported("create table rs.not_exists(i int)");
+
+    // Test getSchema
+    boolean exceptionThrown = false;
+    try {
+      RecordServicePlannerClient.getSchema(
+          PLANNER_HOST, PLANNER_PORT, Request.createSqlRequest("select 1"));
+    } catch (IOException e) {
+      assertFalse(e.getMessage(), true);
+    } catch (TRecordServiceException e) {
+      exceptionThrown = true;
+      assertTrue(e.getMessage(), e.getMessage().contains("Could not plan request."));
+      assertTrue(e.detail,
+          e.detail.contains("RecordService only supports scan queries."));
+    }
+    assertTrue(exceptionThrown);
   }
 }

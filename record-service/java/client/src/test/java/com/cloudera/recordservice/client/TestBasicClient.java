@@ -20,6 +20,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,6 +29,7 @@ import java.util.TimeZone;
 import org.junit.Test;
 
 import com.cloudera.recordservice.thrift.TErrorCode;
+import com.cloudera.recordservice.thrift.TFetchResult;
 import com.cloudera.recordservice.thrift.TGetSchemaResult;
 import com.cloudera.recordservice.thrift.TPlanRequestResult;
 import com.cloudera.recordservice.thrift.TRecordServiceException;
@@ -39,7 +41,6 @@ import com.cloudera.recordservice.thrift.TTypeId;
 import com.cloudera.recordservice.thrift.TUniqueId;
 import com.google.common.collect.Lists;
 
-// TODO: add more API misuse tests.
 // TODO: add more stats tests.
 public class TestBasicClient {
   static final int PLANNER_PORT = 40000;
@@ -96,6 +97,10 @@ public class TestBasicClient {
     // Plan a request.
     planner.planRequest(Request.createSqlRequest("select * from tpch.nation"));
 
+    // Closing repeatedly is fine.
+    planner.close();
+    planner.close();
+
     // Try connecting to a bad planner.
     threwException = false;
     try {
@@ -113,6 +118,18 @@ public class TestBasicClient {
     } catch (IOException e) {
       threwException = true;
       assertTrue(e.getMessage().contains("Could not connect to RecordServicePlanner"));
+    } finally {
+      assertTrue(threwException);
+    }
+
+    // Try a bad port that is another thrift service.
+    threwException = false;
+    try {
+      new RecordServicePlannerClient("localhost", 21000);
+    } catch (IOException e) {
+      threwException = true;
+      assertTrue(e.getMessage(), e.getMessage().contains(
+          "is not running the RecordServicePlanner"));
     } finally {
       assertTrue(threwException);
     }
@@ -135,7 +152,7 @@ public class TestBasicClient {
     worker.connect("localhost", WORKER_PORT);
     threwException = false;
     try {
-      worker.connect("localhost", PLANNER_PORT);
+      worker.connect("localhost", WORKER_PORT);
     } catch (RuntimeException e) {
       threwException = true;
       assertTrue(e.getMessage().contains(
@@ -152,9 +169,157 @@ public class TestBasicClient {
     worker.close();
 
     // Should be able to connect now.
-    worker.connect("localhost", PLANNER_PORT);
+    worker.connect("localhost", WORKER_PORT);
     assertEquals(worker.numActiveTasks(), 0);
     worker.close();
+
+    // Close again.
+    worker.close();
+  }
+
+  @Test
+  public void connectionDropTest() throws IOException, TRecordServiceException {
+    RecordServicePlannerClient planner =
+        new RecordServicePlannerClient("localhost", PLANNER_PORT);
+    TPlanRequestResult plan =
+        planner.planRequest(Request.createTableScanRequest("tpch.nation"));
+    ByteBuffer task = plan.getTasks().get(0).task;
+
+    // Simulate dropping the connection.
+    planner.closeConnection();
+
+    // Try using the planner connection.
+    boolean exceptionThrown = false;
+    try {
+      planner.planRequest(Request.createTableScanRequest("tpch.nation"));
+    } catch (IOException e) {
+      exceptionThrown = true;
+      assertTrue(e.getMessage().contains("Could not reach service."));
+    }
+    assertTrue(exceptionThrown);
+
+    exceptionThrown = false;
+    try {
+      planner.getSchema(Request.createTableScanRequest("tpch.nation"));
+    } catch (IOException e) {
+      exceptionThrown = true;
+      assertTrue(e.getMessage().contains("Could not reach service."));
+    }
+    assertTrue(exceptionThrown);
+
+    // Close should still do something reasonable.
+    planner.close();
+
+    RecordServiceWorkerClient worker = new RecordServiceWorkerClient();
+    worker.connect("localhost", WORKER_PORT);
+    fetchAndVerifyCount(worker.execAndFetch(task), 25);
+
+    // Try this again.
+    fetchAndVerifyCount(worker.execAndFetch(task), 25);
+
+    // Simulate dropping the worker connection
+    worker.closeConnection();
+
+    // Try executing a task.
+    exceptionThrown = false;
+    try {
+      worker.execAndFetch(task);
+    } catch (IOException e) {
+      exceptionThrown = true;
+      assertTrue(e.getMessage().contains("Could not reach service."));
+    }
+    assertTrue(exceptionThrown);
+
+    exceptionThrown = false;
+    try {
+      worker.execTask(task);
+    } catch (IOException e) {
+      exceptionThrown = true;
+      assertTrue(e.getMessage().contains("Could not reach service."));
+    }
+    assertTrue(exceptionThrown);
+
+    // Reestablish connection.
+    worker.close();
+    worker.connect("localhost", WORKER_PORT);
+    worker.setFetchSize(1);
+
+    // Execute a fetch once.
+    TUniqueId handle = worker.execTask(task);
+    worker.fetch(handle);
+    worker.getTaskStatus(handle);
+
+    // Drop the connection.
+    worker.closeConnection();
+
+    // Try to fetch more.
+    // TODO: what does retry, fault tolerance here look like?
+    exceptionThrown = false;
+    try {
+      worker.fetch(handle);
+    } catch (IOException e) {
+      exceptionThrown = true;
+      assertTrue(e.getMessage().contains("Could not reach service."));
+    }
+    assertTrue(exceptionThrown);
+
+    // Try to get stats
+    exceptionThrown = false;
+    try {
+      worker.getTaskStatus(handle);
+    } catch (IOException e) {
+      exceptionThrown = true;
+      assertTrue(e.getMessage().contains("Could not reach service."));
+    }
+    assertTrue(exceptionThrown);
+
+    // Try to close the task. The connection is bad so this won't close the
+    // task on the server side.
+    worker.closeTask(handle);
+
+    // Closing the worker should behave reasonably.
+    worker.close();
+  }
+
+  @Test
+  public void workerMisuseTest() throws IOException {
+    RecordServiceWorkerClient worker = new RecordServiceWorkerClient();
+
+    // Connect to a non-existent service
+    boolean threwException = false;
+    try {
+      worker.connect("bad", PLANNER_PORT);
+    } catch (IOException e) {
+      threwException = true;
+      assertTrue(e.getMessage().contains("Could not connect to RecordServiceWorker"));
+    } finally {
+      assertTrue(threwException);
+    }
+
+    // Connect to non-worker thrift service.
+    threwException = false;
+    try {
+      worker.connect("localhost", 21000);
+    } catch (IOException e) {
+      threwException = true;
+      assertTrue(e.getMessage().contains("is not running the RecordServiceWorker"));
+    } finally {
+      assertTrue(threwException);
+    }
+    worker.close();
+
+    // Connect to the worker and send it bad tasks.
+    worker.connect("localhost", WORKER_PORT);
+    threwException = false;
+    try {
+      worker.execTask(ByteBuffer.allocate(100));
+    } catch (TRecordServiceException e) {
+      threwException = true;
+      assertEquals(e.code, TErrorCode.INVALID_TASK);
+      assertTrue(e.getMessage().contains("Task is corrupt."));
+    } finally {
+      assertTrue(threwException);
+    }
   }
 
   @Test
@@ -175,6 +340,16 @@ public class TestBasicClient {
     assertEquals(worker.numActiveTasks(), 3);
     worker.closeTask(handle);
     assertEquals(worker.numActiveTasks(), 2);
+
+    // Try to get task status with a closed handle.
+    boolean exceptionThrown = false;
+    try {
+      worker.getTaskStatus(handle);
+    } catch (IllegalArgumentException e) {
+      exceptionThrown = true;
+      assertTrue(e.getMessage().contains("Invalid task handle."));
+    }
+    assertTrue(exceptionThrown);
 
     // Close again. Should be fine.
     worker.closeTask(handle);
@@ -278,6 +453,7 @@ public class TestBasicClient {
       assertEquals(stats.completion_percentage, 100, 0.1);
       assertEquals(stats.num_rows_read, 25);
       assertEquals(stats.num_rows_returned, 25);
+      assertEquals(records.progress(), 100, 0.1);
 
       records.close();
 
@@ -374,7 +550,7 @@ public class TestBasicClient {
     // Just ask for the schema.
     TGetSchemaResult schemaResult = RecordServicePlannerClient.getSchema(
         "localhost", PLANNER_PORT,
-        Request.createTableRequest("rs.alltypes"));
+        Request.createTableScanRequest("rs.alltypes"));
     verifyAllTypesSchema(schemaResult.schema);
 
     // Plan the request
@@ -392,6 +568,7 @@ public class TestBasicClient {
     for (int t = 0; t < 2; ++t) {
       assertEquals(plan.tasks.get(t).local_hosts.size(), 3);
       Records records = worker.execAndFetch(plan.tasks.get(t).task);
+      verifyAllTypesSchema(records.getSchema());
       assertTrue(records.hasNext());
       Records.Record record = records.next();
 
@@ -493,7 +670,7 @@ public class TestBasicClient {
   public void testNationView() throws IOException, TRecordServiceException {
     TPlanRequestResult plan = RecordServicePlannerClient.planRequest(
         "localhost", PLANNER_PORT,
-        Request.createTableRequest("rs.nation_projection"));
+        Request.createTableScanRequest("rs.nation_projection"));
     assertEquals(plan.tasks.size(), 1);
     assertEquals(plan.schema.cols.size(), 2);
     assertEquals(plan.schema.cols.get(0).name, "n_nationkey");
@@ -534,10 +711,37 @@ public class TestBasicClient {
   }
 
   @Test
+  public void testFetchSize() throws IOException, TRecordServiceException {
+    TPlanRequestResult plan = RecordServicePlannerClient.planRequest(
+        "localhost", PLANNER_PORT,
+        Request.createTableScanRequest("tpch.nation"));
+    RecordServiceWorkerClient worker = new RecordServiceWorkerClient();
+    worker.connect(plan.tasks.get(0).local_hosts.get(0));
+    worker.setFetchSize(1);
+
+    TUniqueId handle = worker.execTask(plan.tasks.get(0).task);
+    int numRecords = 0;
+    while (true) {
+      TFetchResult result = worker.fetch(handle);
+      numRecords += result.num_rows;
+
+      // This is not currently required by the spec, the fetch size can be
+      // ignored. It might make sense to spec this behavior though. The fetch
+      // size is the maximum number of rows that can be returned (the service
+      // can still return fewer).
+      // FIXME
+      assertTrue(result.num_rows == 0 || result.num_rows == 1);
+      if (result.done) break;
+    }
+    assertEquals(numRecords, 25);
+    worker.close();
+  }
+
+  @Test
   public void testMemLimitExceeded() throws IOException, TRecordServiceException {
     TPlanRequestResult plan = RecordServicePlannerClient.planRequest(
         "localhost", PLANNER_PORT,
-        Request.createTableRequest("tpch.nation"));
+        Request.createTableScanRequest("tpch.nation"));
     RecordServiceWorkerClient worker = new RecordServiceWorkerClient();
     worker.connect(plan.tasks.get(0).local_hosts.get(0));
     worker.setMemLimit(new Long(200));
@@ -625,7 +829,7 @@ public class TestBasicClient {
   public void testNonLocalWorker() throws IOException, TRecordServiceException {
     TPlanRequestResult plan = RecordServicePlannerClient.planRequest(
         "localhost", PLANNER_PORT,
-        Request.createTableRequest("tpch.nation"));
+        Request.createTableScanRequest("tpch.nation"));
     assertEquals(plan.tasks.size(), 1);
 
     // Clear the local hosts.

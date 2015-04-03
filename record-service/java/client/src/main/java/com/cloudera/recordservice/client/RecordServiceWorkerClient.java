@@ -36,6 +36,7 @@ import com.cloudera.recordservice.thrift.TNetworkAddress;
 import com.cloudera.recordservice.thrift.TRecordServiceException;
 import com.cloudera.recordservice.thrift.TTaskStatus;
 import com.cloudera.recordservice.thrift.TUniqueId;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 
@@ -47,9 +48,9 @@ public class RecordServiceWorkerClient {
   private final static Logger LOG =
     LoggerFactory.getLogger(RecordServiceWorkerClient.class);
 
+  // Worker client connection. null if not connected/closed
   private RecordServiceWorker.Client workerClient_;
   private TProtocol protocol_;
-  private boolean isClosed_ = false;
   private ProtocolVersion protocolVersion_ = null;
 
   // The set of all active tasks.
@@ -88,11 +89,10 @@ public class RecordServiceWorkerClient {
       protocolVersion_ = ThriftUtils.fromThrift(workerClient_.GetProtocolVersion());
       LOG.debug("Connected to worker service with version: " + protocolVersion_);
     } catch (TException e) {
-      // TODO: this probably means they connected to a thrift service that is not the
-      // worker service (i.e. wrong port). Improve this message.
-      throw new IOException("Could not get service protocol version.", e);
+      throw new IOException("Could not get service protocol version. It's likely " +
+          "the service at " + hostname + ":" + port + " is not running the " +
+          "RecordServiceWorker.", e);
     }
-    isClosed_ = false;
   }
 
   /**
@@ -100,7 +100,7 @@ public class RecordServiceWorkerClient {
    * closed.
    */
   public void close() {
-    if (protocol_ != null && !isClosed_) {
+    if (workerClient_ != null) {
       LOG.debug("Closing RecordServiceWorker connection.");
       for (TUniqueId handle: activeTasks_) {
         try {
@@ -112,7 +112,6 @@ public class RecordServiceWorkerClient {
       }
       activeTasks_.clear();
       protocol_.getTransport().close();
-      isClosed_ = true;
       workerClient_ = null;
     }
   }
@@ -126,7 +125,8 @@ public class RecordServiceWorkerClient {
   }
 
   /**
-   * Closes the specified task. Handle will be invalidated after making this call.
+   * Closes the underlying transport, used to simulate an error with the service
+   * connection.
    */
   public void closeTask(TUniqueId handle) {
     validateIsConnected();
@@ -135,11 +135,11 @@ public class RecordServiceWorkerClient {
       try {
         workerClient_.CloseTask(handle);
       } catch (TException e) {
-        // Ignore. TODO log.
+        LOG.warn(
+            "Failed to close task handle=" + handle + " reason=" + e.getMessage());
       }
       activeTasks_.remove(handle);
     }
-    // TODO: what if it doesn't exist?
   }
 
   /**
@@ -179,10 +179,9 @@ public class RecordServiceWorkerClient {
     try {
       LOG.trace("Calling fetch(): " + handle);
       return workerClient_.Fetch(fetchParams);
-    } catch (TRecordServiceException e) {
-      throw e;
     } catch (TException e) {
-      throw new IOException("Could not fetch from task: " + e.getMessage(), e);
+      handleThriftException(e, "Could not call fetch.");
+      throw new RuntimeException(e);
     }
   }
 
@@ -196,10 +195,9 @@ public class RecordServiceWorkerClient {
     LOG.debug("Calling getTaskStatus(): " + handle);
     try {
       return workerClient_.GetTaskStatus(handle);
-    } catch (TRecordServiceException e) {
-      throw e;
     } catch (TException e) {
-      throw new IOException("Could not call getTaskStatus: ", e);
+      handleThriftException(e, "Could not call getTaskStatus.");
+      throw new RuntimeException(e);
     }
   }
 
@@ -207,7 +205,6 @@ public class RecordServiceWorkerClient {
    * Sets the fetch size. Set to null to use server default.
    */
   public void setFetchSize(Integer fetchSize) { fetchSize_ = fetchSize; }
-  public Integer getFetchSize() { return fetchSize_; }
 
   /**
    * Sets the memory limit, in bytes.
@@ -218,6 +215,16 @@ public class RecordServiceWorkerClient {
    * Returns the number of active tasks for this worker.
    */
   public int numActiveTasks() { return activeTasks_.size(); }
+
+  /**
+   * Closes the underlying transport, simulating if the service connection is
+   * dropped.
+   */
+  @VisibleForTesting
+  void closeConnection() {
+    protocol_.getTransport().close();
+    Preconditions.checkState(!protocol_.getTransport().isOpen());
+  }
 
   /**
    * Executes the task asynchronously, returning the handle the client.
@@ -235,22 +242,36 @@ public class RecordServiceWorkerClient {
       activeTasks_.add(result.handle);
       LOG.info("Got task handle: " + result.handle);
       return result;
-    } catch (TRecordServiceException e) {
-      throw e;
     } catch (TException e) {
-      throw new IOException("Could not exec task.", e);
+      handleThriftException(e, "Could not exec task.");
+      throw new RuntimeException(e);
+    }
+  }
+
+  /**
+   * Handles TException, throwing a more canonical exception.
+   * generalMsg is thrown if we can't infer more information from e.
+   */
+  private void handleThriftException(TException e, String generalMsg)
+      throws TRecordServiceException, IOException {
+    // TODO: this should mark the connection as bad on some error codes.
+    if (e instanceof TRecordServiceException) {
+      throw (TRecordServiceException)e;
+    } else if (e instanceof TTransportException) {
+      LOG.warn("Could not reach worker serivce.");
+      throw new IOException("Could not reach service.", e);
+    } else {
+      throw new IOException(generalMsg, e);
     }
   }
 
   private void validateIsConnected() throws RuntimeException {
-    if (workerClient_ == null || isClosed_) {
-      throw new RuntimeException("Client not connected.");
-    }
+    if (workerClient_ == null) throw new RuntimeException("Client not connected.");
   }
 
   private void validateHandleIsActive(TUniqueId handle) {
     if (!activeTasks_.contains(handle)) {
-      throw new RuntimeException("Invalid task handle.");
+      throw new IllegalArgumentException("Invalid task handle.");
     }
   }
 }

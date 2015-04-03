@@ -31,6 +31,8 @@ import com.cloudera.recordservice.thrift.TPlanRequestParams;
 import com.cloudera.recordservice.thrift.TPlanRequestResult;
 import com.cloudera.recordservice.thrift.TProtocolVersion;
 import com.cloudera.recordservice.thrift.TRecordServiceException;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
 
 /**
  * Java client for the RecordServicePlanner. This class is not thread safe.
@@ -40,9 +42,9 @@ public class RecordServicePlannerClient {
   private final static Logger LOG =
       LoggerFactory.getLogger(RecordServicePlannerClient.class);
 
+  // Planner client connection. null if closed.
   private RecordServicePlanner.Client plannerClient_;
   private TProtocol protocol_;
-  private boolean isClosed_ = false;
   private ProtocolVersion protocolVersion_ = null;
 
   /**
@@ -95,9 +97,9 @@ public class RecordServicePlannerClient {
       protocolVersion_ = ThriftUtils.fromThrift(plannerClient_.GetProtocolVersion());
       LOG.debug("Connected to planner service with version: " + protocolVersion_);
     } catch (TException e) {
-      // TODO: this probably means they connected to a thrift service that is not the
-      // planner service (i.e. wrong port). Improve this message.
-      throw new IOException("Could not get service protocol version.", e);
+      throw new IOException("Could not get service protocol version. It's likely " +
+          "the service at " + hostname + ":" + port + " is not running the " +
+          "RecordServicePlanner.", e);
     }
   }
 
@@ -105,10 +107,10 @@ public class RecordServicePlannerClient {
    * Closes a connection to the RecordServicePlanner.
    */
   public void close() {
-    if (protocol_ != null && !isClosed_) {
+    if (plannerClient_ != null) {
       LOG.debug("Closing RecordServicePlanner connection.");
       protocol_.getTransport().close();
-      isClosed_ = true;
+      plannerClient_ = null;
     }
   }
 
@@ -134,11 +136,9 @@ public class RecordServicePlannerClient {
       TPlanRequestParams planParams = request.request_;
       planParams.client_version = TProtocolVersion.V1;
       planResult = plannerClient_.PlanRequest(planParams);
-    } catch (TRecordServiceException e) {
-      throw e;
     } catch (TException e) {
-      // TODO: this should mark the connection as bad on some error codes.
-      throw new IOException("Could not plan request.", e);
+      handleThriftException(e, "Could not plan request.");
+      throw new RuntimeException(e);
     }
     LOG.debug("PlanRequest generated " + planResult.tasks.size() + " tasks.");
     return planResult;
@@ -156,17 +156,42 @@ public class RecordServicePlannerClient {
       TPlanRequestParams planParams = request.request_;
       planParams.client_version = TProtocolVersion.V1;
       result = plannerClient_.GetSchema(planParams);
-    } catch (TRecordServiceException e) {
-      throw e;
     } catch (TException e) {
-      // TODO: this should mark the connection as bad on some error codes.
-      throw new IOException("Could not plan request.", e);
+      handleThriftException(e, "Could not get schema.");
+      throw new RuntimeException(e);
     }
     return result;
   }
 
+  /**
+   * Closes the underlying transport, used to simulate an error with the service
+   * connection.
+   */
+  @VisibleForTesting
+  void closeConnection() {
+    protocol_.getTransport().close();
+    Preconditions.checkState(!protocol_.getTransport().isOpen());
+  }
+
+  /**
+   * Handles TException, throwing a more canonical exception.
+   * generalMsg is thrown if we can't infer more information from e.
+   */
+  private void handleThriftException(TException e, String generalMsg)
+      throws TRecordServiceException, IOException {
+    // TODO: this should mark the connection as bad on some error codes.
+    if (e instanceof TRecordServiceException) {
+      throw (TRecordServiceException)e;
+    } else if (e instanceof TTransportException) {
+      LOG.warn("Could not reach planner serivce.");
+      throw new IOException("Could not reach service.", e);
+    } else {
+      throw new IOException(generalMsg, e);
+    }
+  }
+
   private void validateIsConnected() throws RuntimeException {
-    if (plannerClient_ == null || isClosed_) {
+    if (plannerClient_ == null) {
       throw new RuntimeException("Client not connected.");
     }
   }

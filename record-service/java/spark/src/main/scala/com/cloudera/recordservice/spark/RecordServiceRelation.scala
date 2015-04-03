@@ -79,7 +79,7 @@ case class RecordServiceRelation(table:String)(@transient val sqlContext:SQLCont
 
   override def schema: StructType = {
     val rsSchema = RecordServicePlannerClient.getSchema(
-      plannerHost, plannerPort, Request.createTableRequest(table)).schema
+      plannerHost, plannerPort, Request.createTableScanRequest(table)).schema
     convertSchema(rsSchema)
   }
 

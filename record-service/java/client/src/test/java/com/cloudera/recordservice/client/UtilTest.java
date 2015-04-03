@@ -89,8 +89,19 @@ public class UtilTest {
   }
 
   @Test
+  public void timestampNanosTest() {
+    TimestampNanos t = new TimestampNanos();
+    t.set(1420070400000L, 100);
+    assertEquals(t.getMillisSinceEpoch(), 1420070400000L);
+    assertEquals(t.getNanos(), 100);
+  }
+
+  @Test
   public void codeCoverageTest() {
     // Trivial "tests" to make code coverage happy.
     new WorkerClientUtil();
+
+    assertTrue(ProtocolVersion.values().length >= 1);
+    assertEquals(ProtocolVersion.valueOf("V1"), ProtocolVersion.V1);
   }
 }

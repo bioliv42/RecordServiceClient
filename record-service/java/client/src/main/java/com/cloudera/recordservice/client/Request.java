@@ -32,7 +32,7 @@ public class Request {
   }
 
   // Creates a request to read an entire table.
-  public static Request createTableRequest(String table) {
+  public static Request createTableScanRequest(String table) {
     TPlanRequestParams request = new TPlanRequestParams();
     request.request_type = TRequestType.Sql;
     request.sql_stmt = "SELECT * FROM " + table;

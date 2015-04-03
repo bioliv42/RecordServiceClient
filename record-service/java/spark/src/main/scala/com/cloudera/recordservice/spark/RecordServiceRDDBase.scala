@@ -59,7 +59,7 @@ abstract class RecordServiceRDDBase[T:ClassTag](@transient sc: SparkContext)
 
   def setTable(table:String) = {
     verifySetRequest()
-    request = Request.createTableRequest(table)
+    request = Request.createTableScanRequest(table)
     this
   }
 

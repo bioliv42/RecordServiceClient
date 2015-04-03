@@ -62,8 +62,8 @@ class SchemaRecordServiceRDD[T:ClassTag](sc: SparkContext,
   override def setTable(table:String) = {
     verifySetRequest()
     if (byOrdinal) {
-      // TODO: add API to RecordService to get the table schema so we can do projection
-      this.request = Request.createTableRequest(table)
+      // TODO: use API to RecordService to get the table schema so we can do projection
+      this.request = Request.createTableScanRequest(table)
     } else {
       val projection = new util.ArrayList[String]()
       for (i <- 0 until fields.length) {
