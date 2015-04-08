@@ -37,8 +37,8 @@ fi
 
 echo "Build Args: $BUILD_ARGS"
 
-./buildall.sh $BUILD_ARGS \
-      > $WORKSPACE/buildall.log 2>&1 || { echo "buildall.sh failed"; exit 1; }
+./buildall.sh $BUILD_ARGS > $WORKSPACE/buildall.log 2>&1 ||\
+    { tail -n 100 $WORKSPACE/buildall.log; echo "buildall.sh failed"; exit 1; }
 
 pushd $RECORD_SERVICE_HOME
 make
