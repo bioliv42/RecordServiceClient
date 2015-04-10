@@ -12,8 +12,44 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+cmake_minimum_required(VERSION 2.8)
 
-cmake_minimum_required(VERSION 2.6)
+# generate CTest input files
+enable_testing()
+
+# where to find cmake modules
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake_modules")
+
+# find thrift headers and libs
+find_package(Thrift REQUIRED)
+include_directories(${THRIFT_INCLUDE_DIR})
+set(LIBS ${LIBS} ${THRIFT_LIBS})
+message(STATUS "Thrift include dir: ${THRIFT_INCLUDE_DIR}")
+message(STATUS "Thrift contrib dir: ${THRIFT_CONTRIB_DIR}")
+message(STATUS "Thrift library path: ${THRIFT_LIBS}")
+message(STATUS "Thrift static library: ${THRIFT_STATIC_LIB}")
+message(STATUS "Thrift compiler: ${THRIFT_COMPILER}")
+# for static linking with Thrift, THRIFT_STATIC_LIB is set in FindThrift.cmake
+add_library(thriftstatic STATIC IMPORTED)
+set_target_properties(thriftstatic PROPERTIES IMPORTED_LOCATION ${THRIFT_STATIC_LIB})
+
+# find GFlags headers and libs (needed for GLog)
+find_package(GFlags REQUIRED)
+include_directories(${GFLAGS_INCLUDE_DIR})
+set(LIBS ${LIBS} ${GFLAGS_LIBS})
+# for static linking with GFLAGS, GFLAGS_STATIC_LIB is set in GFLAGS' find module
+add_library(gflagsstatic STATIC IMPORTED)
+set_target_properties(gflagsstatic PROPERTIES IMPORTED_LOCATION ${GFLAGS_STATIC_LIB})
+message(STATUS "GFlags include dir: " ${GFLAGS_INCLUDE_DIR})
+
+# find GTest headers and libs
+find_package(GTest REQUIRED)
+include_directories(${GTEST_INCLUDE_DIR})
+set(LIBS ${LIBS} ${GTEST_LIBRARIES})
+add_library(gtest STATIC IMPORTED)
+set_target_properties(gtest PROPERTIES IMPORTED_LOCATION "${GTEST_LIBRARY}")
+message(STATUS "GTest include dir: " ${GTEST_INCLUDE_DIR})
+message(STATUS "GTest library: " ${GTEST_LIBRARY})
 
 # compiler flags that are common across debug/release builds
 #  - msse4.2: Enable sse4.2 compiler intrinsics.
@@ -78,14 +114,15 @@ else()
   set(BUILD_OUTPUT_ROOT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/cpp/build/release/")
 endif()
 
-# resolve includes of generated code
-include_directories($ENV{IMPALA_HOME}/be/generated-sources)
-include_directories($ENV{IMPALA_HOME}/be/src)
+include_directories($ENV{RECORD_SERVICE_HOME}/cpp/generated-sources)
 
 # compile these subdirs using their own CMakeLists.txt
 add_subdirectory(api)
 add_subdirectory(cpp/samples)
 add_subdirectory(cpp/tests)
+
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-variable")
+add_subdirectory(cpp/generated-sources/gen-cpp)
 
 # where to put generated libraries
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${BUILD_OUTPUT_ROOT_DIRECTORY}")

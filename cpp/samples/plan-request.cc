@@ -21,13 +21,8 @@
 
 #include <gflags/gflags.h>
 
-#include "rs-common.h"
-
 #include "gen-cpp/RecordServicePlanner.h"
 #include "gen-cpp/RecordServiceWorker.h"
-
-#include "util/stopwatch.h"
-#include "util/time.h"
 
 using namespace boost;
 using namespace std;

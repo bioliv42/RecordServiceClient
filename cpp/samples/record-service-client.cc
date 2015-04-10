@@ -15,19 +15,14 @@
 #include <stdio.h>
 #include <exception>
 #include <sstream>
+#include <time.h>
 
 #include <thrift/protocol/TBinaryProtocol.h>
 #include <thrift/transport/TSocket.h>
 #include <thrift/transport/TTransportUtils.h>
 
-#include "rs-common.h"
-
 #include "gen-cpp/RecordServicePlanner.h"
 #include "gen-cpp/RecordServiceWorker.h"
-#include "gen-cpp/Types_types.h"
-
-#include "util/stopwatch.h"
-#include "util/time.h"
 
 using namespace boost;
 using namespace std;
@@ -45,6 +40,57 @@ const int RECORD_SERVICE_PLANNER_PORT = 40000;
 
 // "select min(l_comment")
 #define QUERY_2 0
+
+inline int64_t UnixMillis() {
+  struct timespec now;
+  clock_gettime(CLOCK_REALTIME, &now);
+  return now.tv_sec * 1000 + now.tv_nsec / 1000000;
+}
+
+class MonotonicStopWatch {
+ public:
+  MonotonicStopWatch() {
+    total_time_ = 0;
+    running_ = false;
+  }
+
+  void Start() {
+    if (!running_) {
+      clock_gettime(CLOCK_MONOTONIC, &start_);
+      running_ = true;
+    }
+  }
+
+  void Stop() {
+    if (running_) {
+      total_time_ += ElapsedTime();
+      running_ = false;
+    }
+  }
+
+  // Restarts the timer. Returns the elapsed time until this point.
+  uint64_t Reset() {
+    uint64_t ret = ElapsedTime();
+    if (running_) {
+      clock_gettime(CLOCK_MONOTONIC, &start_);
+    }
+    return ret;
+  }
+
+  // Returns time in nanosecond.
+  uint64_t ElapsedTime() const {
+    if (!running_) return total_time_;
+    timespec end;
+    clock_gettime(CLOCK_MONOTONIC, &end);
+    return (end.tv_sec - start_.tv_sec) * 1000L * 1000L * 1000L +
+        (end.tv_nsec - start_.tv_nsec);
+  }
+
+ private:
+  timespec start_;
+  uint64_t total_time_; // in nanosec
+  bool running_;
+};
 
 string PrintResultSchema(const TSchema& schema) {
   stringstream ss;
@@ -144,9 +190,9 @@ void ExecRequestDistributed(const char* request, TRowBatchFormat::type format) {
 
   printf("\nExecuting tasks...\n");
   int64_t total_rows = 0;
-  int64_t start_time = impala::UnixMillis();
+  int64_t start_time = UnixMillis();
   TStats total_stats;
-  impala::MonotonicStopWatch task_time;
+  MonotonicStopWatch task_time;
 
 #if QUERY_1
   int64_t q1_result = 0;
@@ -251,7 +297,7 @@ void ExecRequestDistributed(const char* request, TRowBatchFormat::type format) {
   }
 
   int64_t task_time_ms = task_time.ElapsedTime() / 1000000;
-  int64_t end_time = impala::UnixMillis();
+  int64_t end_time = UnixMillis();
   double duration_ms = end_time - start_time;
   printf("Fetched %ld rows in %fms.\n", total_rows, duration_ms);
   if (duration_ms != 0) {

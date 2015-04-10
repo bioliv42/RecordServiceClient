@@ -19,7 +19,7 @@ set(LIBRARY_OUTPUT_PATH "${BUILD_OUTPUT_ROOT_DIRECTORY}/recordservice")
 set(EXECUTABLE_OUTPUT_PATH "${BUILD_OUTPUT_ROOT_DIRECTORY}/recordservice")
 
 SET(LINK_LIBS 
-  ImpalaThrift
+  RecordServiceThrift
   thriftstatic
   gtest)
 

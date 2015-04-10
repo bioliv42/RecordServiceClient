@@ -20,11 +20,8 @@
 #include <thrift/transport/TSocket.h>
 #include <thrift/transport/TTransportUtils.h>
 
-#include "../samples/rs-common.h"
-
 #include "gen-cpp/RecordServicePlanner.h"
 #include "gen-cpp/RecordServiceWorker.h"
-#include "gen-cpp/Types_types.h"
 
 using namespace boost;
 using namespace std;
@@ -127,7 +124,7 @@ TEST(ClientTest, Nation) {
     EXPECT_EQ(worker_rows, 25);
     worker->CloseTask(exec_result.handle);
   } catch (const TRecordServiceException& e) {
-    EXPECT_TRUE(false) << "Error: " << e.message;
+    EXPECT_TRUE(false) << "Error: " << e.message << " " << e.detail;
   } catch (const TException& e) {
     EXPECT_TRUE(false) << "Error: " << e.what();
   }

@@ -18,16 +18,14 @@ set(LIBRARY_OUTPUT_PATH "${BUILD_OUTPUT_ROOT_DIRECTORY}/recordservice")
 # where to put generated binaries.
 set(EXECUTABLE_OUTPUT_PATH "${BUILD_OUTPUT_ROOT_DIRECTORY}/recordservice")
 
+set (LINK_LIBS RecordServiceThrift thriftstatic gflagsstatic)
+
 add_executable(record-service-client record-service-client.cc)
-target_link_libraries(record-service-client
-  ImpalaThrift
-  thriftstatic
-  -lboost_date_time
-  -lrt)
+target_link_libraries(record-service-client ${LINK_LIBS} -lboost_date_time -lrt)
 
 add_executable(rs-grep rs-grep.cc)
-target_link_libraries(rs-grep ImpalaThrift thriftstatic gflagsstatic)
+target_link_libraries(rs-grep ${LINK_LIBS})
 
 add_executable(plan-request plan-request.cc)
-target_link_libraries(plan-request ImpalaThrift thriftstatic gflagsstatic)
+target_link_libraries(plan-request ${LINK_LIBS})
 

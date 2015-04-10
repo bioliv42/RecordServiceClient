@@ -71,8 +71,8 @@ function(THRIFT_GEN VAR)
 endfunction(THRIFT_GEN)
 
 message("Using Thrift compiler: ${THRIFT_COMPILER}")
-set(CPP_OUTPUT_DIR $ENV{IMPALA_HOME}/be/generated-sources)
-set(JAVA_OUTPUT_DIR $ENV{IMPALA_HOME}/record-service/java/client/generated-sources)
+set(CPP_OUTPUT_DIR $ENV{RECORD_SERVICE_HOME}/cpp/generated-sources)
+set(JAVA_OUTPUT_DIR $ENV{RECORD_SERVICE_HOME}/java/client/generated-sources)
 
 file(MAKE_DIRECTORY ${CPP_OUTPUT_DIR})
 file(MAKE_DIRECTORY ${JAVA_OUTPUT_DIR})

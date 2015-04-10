@@ -1,3 +1,9 @@
 generated-sources/
 target/
 build/
+
+*.cmake
+Makefile
+CMakeFiles/
+CMakeCache.txt
+Testing/
