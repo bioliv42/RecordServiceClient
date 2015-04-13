@@ -18,11 +18,9 @@ echo ">>> Setting up Jenkins environment..."
 echo ">>> Mounting toolchain"
 . /mnt/toolchain/toolchain.sh
 export IMPALA_HOME=$WORKSPACE/repos/Impala
+export RECORD_SERVICE_HOME=$WORKSPACE/repos/RecordServiceClient
 #export IMPALA_LZO=$WORKSPACE/repos/Impala-lzo
 export HADOOP_LZO=$WORKSPACE/repos/hadoop-lzo
-
-unset THRIFT_HOME
-unset THRIFT_CONTRIB_DIR
 
 export LLVM_HOME=/opt/toolchain/llvm-3.3
 export PATH=$LLVM_HOME/bin:$PATH

@@ -45,6 +45,3 @@ if [ -z $RECORD_SERVICE_HOME ]; then
     fi
 fi
 
-export THRIFT_SRC_DIR=${IMPALA_HOME}/thirdparty/thrift-${IMPALA_THRIFT_VERSION}/
-export THRIFT_HOME=${THRIFT_SRC_DIR}build/
-

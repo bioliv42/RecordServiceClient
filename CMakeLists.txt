@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.6)
 
 # generate CTest input files
 enable_testing()
@@ -115,6 +115,9 @@ else()
 endif()
 
 include_directories($ENV{RECORD_SERVICE_HOME}/cpp/generated-sources)
+
+# allow linking of static libs into dynamic lib
+add_definitions(-fPIC)
 
 # compile these subdirs using their own CMakeLists.txt
 add_subdirectory(api)

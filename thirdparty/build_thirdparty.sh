@@ -49,8 +49,8 @@ export PATH=$PREFIX/bin:$PATH
 if [ -n "$F_ALL" -o -n "$F_GFLAGS" ]; then
   cd $GFLAGS_DIR
   echo "Building gflags"
-  CXXFLAGS=-fPIC cmake .
-  make -j$PARALLEL
+  ./configure --with-pic --prefix=$PREFIX
+  make -j$PARALLEL install
 fi
 
 # build gtest

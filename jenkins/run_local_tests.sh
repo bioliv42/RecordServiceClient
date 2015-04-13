@@ -2,9 +2,9 @@
 # Loads data and starts the cluster to run local benchmarks.
 
 # Builds and runs the local tests.
-source $WORKSPACE/repos/Impala/record-service/jenkins/preamble.sh
+source $WORKSPACE/repos/RecordServiceClient/jenkins/preamble.sh
 
-cd $IMPALA_HOME/record-service
+cd $RECORD_SERVICE_HOME
 make clean
 
 # Build

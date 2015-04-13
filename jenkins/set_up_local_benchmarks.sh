@@ -3,9 +3,9 @@
 
 # Setup the environment
 export TARGET_BUILD_TYPE=Release
-source $WORKSPACE/repos/Impala/record-service/jenkins/preamble.sh
+source $WORKSPACE/repos/RecordServiceClient/jenkins/preamble.sh
 
-cd $IMPALA_HOME/record-service
+cd $RECORD_SERVICE_HOME
 make clean
 
 # Build
@@ -41,7 +41,7 @@ if $LOAD_DATA; then
   tar -xf tpch6gb_avro_snap.tar.gz
   popd
 
-  cd $IMPALA_HOME/record-service/tests
+  cd $RECORD_SERVICE_HOME/tests
   ./load-benchmark-data.sh
 else
   echo ">>> Starting impala"
@@ -49,7 +49,7 @@ else
   bin/start-impala-cluster.py -s 1 --build_type=release --catalogd_args="-load_catalog_in_background=false"
 fi
 
-cd $IMPALA_HOME/record-service/java
+cd $RECORD_SERVICE_HOME/java
 mvn install -DskipTests
 
 echo ">>> Impala version"

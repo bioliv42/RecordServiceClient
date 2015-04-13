@@ -2,7 +2,7 @@ This builds to a jar which contains the RecordServiceRDD. To use,
 start spark shell and pass the record service spark jar.
 
 example:
-bin/spark-shell --jars $IMPALA_HOME/record-service/java/spark/target/recordservice-spark-0.1.jar
+bin/spark-shell --jars $RECORD_SERVICE_HOME/java/spark/target/recordservice-spark-0.1.jar
 
 scala> import com.cloudera.recordservice.spark._
 scala> val data = sc.recordServiceRecords("select * from tpch.nation")

@@ -10,8 +10,7 @@ source versions.sh
 
 if [ ! -d gflags-${GFLAGS_VERSION} ]; then
   echo "Fetching gflags"
-  wget https://github.com/gflags/gflags/archive/v${GFLAGS_VERSION}.zip
-  mv v${GFLAGS_VERSION}.zip gflags-${GFLAGS_VERSION}.zip
+  wget -O gflags-${GFLAGS_VERSION}.zip https://github.com/gflags/gflags/archive/v${GFLAGS_VERSION}.zip
   unzip gflags-${GFLAGS_VERSION}.zip
   rm gflags-${GFLAGS_VERSION}.zip
 fi
