@@ -2,6 +2,8 @@ generated-sources/
 target/
 build/
 
+thirdparty
+
 *.cmake
 Makefile
 CMakeFiles/

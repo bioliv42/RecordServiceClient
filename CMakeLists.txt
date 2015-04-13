@@ -83,9 +83,9 @@ SET(CXX_FLAGS_RELEASE "-O3 -g -DNDEBUG")
 SET(CXX_FLAGS_ADDRESS_SANITIZER
     "-O1 -g -fsanitize=address -fno-omit-frame-pointer -DADDRESS_SANITIZER")
 
-# if no build build type is specified, default to debug builds
+# if no build build type is specified, default to release builds
 if (NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE Debug)
+  set(CMAKE_BUILD_TYPE Release)
 endif(NOT CMAKE_BUILD_TYPE)
 
 STRING (TOUPPER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE)
