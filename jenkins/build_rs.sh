@@ -9,7 +9,7 @@ popd
 
 echo
 echo "********************************************************************************"
-echo " Building clients and servers."
+echo " Building clients."
 echo "********************************************************************************"
 echo
 
@@ -55,17 +55,3 @@ pushd $RECORD_SERVICE_HOME/java
 mvn package -DskipTests
 popd
 
-echo "********************************************************************************"
-echo " building RecordService daemons."
-echo "********************************************************************************"
-pushd $IMPALA_HOME
-echo "Build Args: $BUILD_ARGS"
-./buildall.sh $BUILD_ARGS > $WORKSPACE/buildall.log 2>&1 ||\
-    { tail -n 100 $WORKSPACE/buildall.log; echo "buildall.sh failed"; exit 1; }
-popd
-
-echo
-echo "********************************************************************************"
-echo " buildall.sh succeeded"
-echo "********************************************************************************"
-echo

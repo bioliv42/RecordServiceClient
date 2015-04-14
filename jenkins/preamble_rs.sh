@@ -1,5 +1,7 @@
 #!/bin/bash
 # Sets up a common environment for Jenkins builds.
+# We split this up from preamble_impala.sh because Impala uses a custom version of
+# thrift that it builds.
 
 echo "********************************************************************************"
 echo " Building ${JOB_NAME} #${BUILD_NUMBER} "
@@ -17,26 +19,15 @@ echo ">>> Killing left over processes"
 echo ">>> Setting up Jenkins environment..."
 echo ">>> Mounting toolchain"
 . /mnt/toolchain/toolchain.sh
-export IMPALA_HOME=$WORKSPACE/repos/Impala
 export RECORD_SERVICE_HOME=$WORKSPACE/repos/RecordServiceClient
-#export IMPALA_LZO=$WORKSPACE/repos/Impala-lzo
-export HADOOP_LZO=$WORKSPACE/repos/hadoop-lzo
-
-export LLVM_HOME=/opt/toolchain/llvm-3.3
-export PATH=$LLVM_HOME/bin:$PATH
 
 export MAVEN_OPTS="-Xmx2g -XX:MaxPermSize=512M -XX:ReservedCodeCacheSize=512m"
 
 export JAVA_HOME=$JAVA7_HOME
 export JAVA64_HOME=$JAVA7_HOME
 export PATH=$JAVA_HOME/bin:$PATH
-export LD_LIBRARY_PATH=""
-export LD_PRELOAD=""
-# Re-source impala-config since JAVA_HOME has changed.
-cd $IMPALA_HOME
-. bin/impala-config.sh &> /dev/null
 export PATH=/usr/lib/ccache:$PATH
-export BOOST_ROOT=/opt/toolchain/boost-pic-1.55.0/
+export THRIFT_HOME=/opt/toolchain/thrift-0.9.0
 
 # Enable core dumps
 ulimit -c unlimited
@@ -47,5 +38,5 @@ java -version
 ulimit -a
 
 echo "********************************************************************************"
-echo " Environment setup complete, build proper follows"
+echo " Environment setup for RecordService complete, build proper follows"
 echo "********************************************************************************"

@@ -1,15 +1,18 @@
 #!/bin/bash
 # Loads data and starts the cluster to run local benchmarks.
 
-# Setup the environment
+# Builds record service client.
 export TARGET_BUILD_TYPE=Release
-source $WORKSPACE/repos/RecordServiceClient/jenkins/preamble.sh
-
+source $WORKSPACE/repos/RecordServiceClient/jenkins/preamble_rs.sh
 cd $RECORD_SERVICE_HOME
 make clean
-
 # Build
-. $RECORD_SERVICE_HOME/jenkins/build.sh
+. $RECORD_SERVICE_HOME/jenkins/build_rs.sh
+
+# Builds record service server
+source $WORKSPACE/repos/RecordServiceClient/jenkins/preamble_impala.sh
+# Build
+. $RECORD_SERVICE_HOME/jenkins/build_impala.sh
 
 echo ">>> Starting all services "
 cd $IMPALA_HOME

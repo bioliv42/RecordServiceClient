@@ -1,14 +1,17 @@
 #!/bin/bash
-# Loads data and starts the cluster to run local benchmarks.
+# Loads data and starts the cluster to run local tests
 
-# Builds and runs the local tests.
-source $WORKSPACE/repos/RecordServiceClient/jenkins/preamble.sh
-
+# Builds record service client.
+source $WORKSPACE/repos/RecordServiceClient/jenkins/preamble_rs.sh
 cd $RECORD_SERVICE_HOME
 make clean
-
 # Build
-. $RECORD_SERVICE_HOME/jenkins/build.sh
+. $RECORD_SERVICE_HOME/jenkins/build_rs.sh
+
+# Builds record service server
+source $WORKSPACE/repos/RecordServiceClient/jenkins/preamble_impala.sh
+# Build
+. $RECORD_SERVICE_HOME/jenkins/build_impala.sh
 
 # Copy the TPC-H dataset
 DATASRC="http://util-1.ent.cloudera.com/impala-test-data/"
