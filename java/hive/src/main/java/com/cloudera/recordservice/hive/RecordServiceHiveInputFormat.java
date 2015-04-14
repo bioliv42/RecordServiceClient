@@ -22,7 +22,6 @@ import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.ql.exec.Operator;
 import org.apache.hadoop.hive.ql.exec.TableScanOperator;
@@ -328,15 +327,16 @@ public class RecordServiceHiveInputFormat<K extends WritableComparable,
     // Pass the RecordService as the target InputFormat (this will override
     // the actual input format).
     String inputFormatClassName = null;
+    Class cl = null;
     try {
       inputFormatClassName = RecordServiceInputFormat.class.getName();
-      job.getClassByName(inputFormatClassName);
+      cl = job.getClassByName(inputFormatClassName);
     } catch (Exception e) {
       throw new IOException("cannot find class " + inputFormatClassName, e);
     }
     HiveRecordReaderShim<K,V> rr = new HiveRecordReaderShim<K, V>(rsRr, job);
     // Initialize the Hive RecordReader IO Context so that it will do the proper thing.
-    rr.initIOContext(1, false, hsplit.getPath());
+    rr.initIOContext(hsplit, job, cl);
     return rr;
   }
 }
