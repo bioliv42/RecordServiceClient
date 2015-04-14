@@ -128,14 +128,19 @@ int main(int argc, char** argv) {
     plan_params.path.__set_query(query.str());
     planner->PlanRequest(plan_result, plan_params);
 
+    if (plan_result.tasks.size() == 0) {
+      cerr << "rs-grep: " << argv[2] << ": No such file or directory" << endl;
+    }
+
     for (int i = 0; i < plan_result.tasks.size(); ++i) {
       ProcessTask(plan_result.tasks[i]);
       if (records_returned == FLAGS_max_count) break;
     }
   } catch (const TRecordServiceException& e) {
-    cerr << "Error: "<< e.message << endl;
+    cerr << "rs-grep: " << e.message << endl;
+    cerr << "detail: " << e.detail;
   } catch (const TException& e) {
-    cerr << "Error: "<< e.what() << endl;
+    cerr << "rs-grep: " << e.what() << endl;
   }
 
   return 0;

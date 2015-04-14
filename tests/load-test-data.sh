@@ -44,6 +44,8 @@ impala-shell.sh -f tests/create-tbls.sql
 # Move any existing data files to where they need to go in HDFS
 hadoop fs -put -f $IMPALA_HOME/testdata/impala-data/tpch/nation/*\
     /test-warehouse/tpch.nation/
+hadoop fs -mkdir -p /test-warehouse/tpch_nation_parquet/
+hadoop fs -put -f $IMPALA_HOME/testdata/nation.parq /test-warehouse/tpch_nation_parquet/
 
 # Invalidate metadata after all data is moved.
 impala-shell.sh -q "invalidate metadata"

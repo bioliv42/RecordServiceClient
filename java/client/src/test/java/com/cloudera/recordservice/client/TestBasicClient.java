@@ -399,15 +399,7 @@ public class TestBasicClient {
     assertTrue(plan.warnings.isEmpty());
 
     // Verify schema
-    assertEquals(plan.schema.cols.size(), 4);
-    assertEquals(plan.schema.cols.get(0).name, "n_nationkey");
-    assertEquals(plan.schema.cols.get(0).type.type_id, TTypeId.SMALLINT);
-    assertEquals(plan.schema.cols.get(1).name, "n_name");
-    assertEquals(plan.schema.cols.get(1).type.type_id, TTypeId.STRING);
-    assertEquals(plan.schema.cols.get(2).name, "n_regionkey");
-    assertEquals(plan.schema.cols.get(2).type.type_id, TTypeId.SMALLINT);
-    assertEquals(plan.schema.cols.get(3).name, "n_comment");
-    assertEquals(plan.schema.cols.get(3).type.type_id, TTypeId.STRING);
+    verifyNationSchema(plan.schema, false);
 
     // Execute the task
     RecordServiceWorkerClient worker = new RecordServiceWorkerClient();
@@ -543,6 +535,23 @@ public class TestBasicClient {
     assertEquals(schema.cols.get(11).type.scale, 10);
   }
 
+  /*
+   * Verifies that the schema matches the nation table schema.
+   */
+  private void verifyNationSchema(TSchema schema, boolean parquet) {
+    assertEquals(schema.cols.size(), 4);
+    assertEquals(schema.cols.get(0).name, "n_nationkey");
+    assertEquals(schema.cols.get(0).type.type_id,
+        parquet ? TTypeId.INT : TTypeId.SMALLINT);
+    assertEquals(schema.cols.get(1).name, "n_name");
+    assertEquals(schema.cols.get(1).type.type_id, TTypeId.STRING);
+    assertEquals(schema.cols.get(2).name, "n_regionkey");
+    assertEquals(schema.cols.get(2).type.type_id,
+        parquet ? TTypeId.INT : TTypeId.SMALLINT);
+    assertEquals(schema.cols.get(3).name, "n_comment");
+    assertEquals(schema.cols.get(3).type.type_id, TTypeId.STRING);
+  }
+
   @Test
   public void testAllTypes() throws TRecordServiceException, IOException {
     RecordServiceWorkerClient worker = new RecordServiceWorkerClient();
@@ -653,6 +662,50 @@ public class TestBasicClient {
     List<String> lines = getAllStrings(plan);
     assertEquals(lines.size(), 25);
     assertEquals(lines.get(6), "6|FRANCE|3|refully final requests. regular, ironi");
+  }
+
+  @Test
+  public void testNationPathParquet() throws IOException, TRecordServiceException {
+    TPlanRequestResult plan = RecordServicePlannerClient.planRequest(
+        "localhost", PLANNER_PORT,
+        Request.createPathRequest("/test-warehouse/tpch_nation_parquet/nation.parq"));
+    assertEquals(plan.tasks.size(), 1);
+    verifyNationSchema(plan.schema, true);
+    fetchAndVerifyCount(WorkerClientUtil.execTask(plan, 0), 25);
+  }
+
+  void testNationPathGlobbing(String path, boolean expectMatch)
+      throws IOException, TRecordServiceException {
+    try {
+      TPlanRequestResult plan = RecordServicePlannerClient.planRequest(
+          "localhost", PLANNER_PORT, Request.createPathRequest(path));
+      assertEquals(plan.tasks.size(), expectMatch ? 1 : 0);
+    } catch (TRecordServiceException e) {
+      assertFalse(expectMatch);
+      assertTrue(e.code == TErrorCode.INVALID_REQUEST);
+    }
+  }
+
+  @Test
+  public void testNationPathGlobbing() throws IOException, TRecordServiceException {
+    // Non-matches
+    testNationPathGlobbing("/test-warehouse/tpch.nation/*t", false);
+    testNationPathGlobbing("/test-warehouse/tpch.nation/tbl", false);
+    testNationPathGlobbing("/test-warehouse/tpch.nation*", false);
+    // TODO: this should work.
+    testNationPathGlobbing("/test-warehouse/tpch.*/*", false);
+
+    // No trailing slash is okay
+    testNationPathGlobbing("/test-warehouse/tpch.nation", true);
+    // Trailing slashes is okay
+    testNationPathGlobbing("/test-warehouse/tpch.nation/", true);
+    // Multiple trailing slashes is okay
+    testNationPathGlobbing("/test-warehouse/tpch.nation///", true);
+
+    // Match for *
+    testNationPathGlobbing("/test-warehouse/tpch.nation/*", true);
+    testNationPathGlobbing("/test-warehouse/tpch.nation/*.tbl", true);
+    testNationPathGlobbing("/test-warehouse/tpch.nation/*.tb*", true);
   }
 
   @Test
