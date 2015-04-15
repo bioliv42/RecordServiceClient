@@ -85,7 +85,7 @@ TEST(ClientTest, Nation) {
 
     EXPECT_EQ(plan_result.tasks.size(), 1);
     EXPECT_EQ(plan_result.tasks[0].local_hosts.size(), 3) << "Expecting 3x replication";
-    int worker_rows = 0;
+    int worker_records = 0;
 
     TExecTaskResult exec_result;
     TExecTaskParams exec_params;
@@ -98,30 +98,30 @@ TEST(ClientTest, Nation) {
 
     do {
       worker->Fetch(fetch_result, fetch_params);
-      if (worker_rows == 0) {
+      if (worker_records == 0) {
         // Verify the first row. TODO: verify them all.
         EXPECT_EQ(NATION_TBL[0].c0, *reinterpret_cast<const int16_t*>(
-            fetch_result.columnar_row_batch.cols[0].data.data()));
+            fetch_result.columnar_records.cols[0].data.data()));
 
         EXPECT_EQ(NATION_TBL[0].c1.size(), *reinterpret_cast<const int32_t*>(
-            fetch_result.columnar_row_batch.cols[1].data.data()));
+            fetch_result.columnar_records.cols[1].data.data()));
         EXPECT_EQ(NATION_TBL[0].c1, string(
-            fetch_result.columnar_row_batch.cols[1].data.data() + sizeof(int32_t),
+            fetch_result.columnar_records.cols[1].data.data() + sizeof(int32_t),
             NATION_TBL[0].c1.size()));
 
         EXPECT_EQ(NATION_TBL[0].c2, *reinterpret_cast<const int16_t*>(
-            fetch_result.columnar_row_batch.cols[2].data.data()));
+            fetch_result.columnar_records.cols[2].data.data()));
 
         EXPECT_EQ(NATION_TBL[0].c3.size(), *reinterpret_cast<const int32_t*>(
-            fetch_result.columnar_row_batch.cols[3].data.data()));
+            fetch_result.columnar_records.cols[3].data.data()));
         EXPECT_EQ(NATION_TBL[0].c3, string(
-            fetch_result.columnar_row_batch.cols[3].data.data() + sizeof(int32_t),
+            fetch_result.columnar_records.cols[3].data.data() + sizeof(int32_t),
             NATION_TBL[0].c3.size()));
       }
-      worker_rows += fetch_result.num_rows;
+      worker_records += fetch_result.num_records;
     } while (!fetch_result.done);
 
-    EXPECT_EQ(worker_rows, 25);
+    EXPECT_EQ(worker_records, 25);
     worker->CloseTask(exec_result.handle);
   } catch (const TRecordServiceException& e) {
     EXPECT_TRUE(false) << "Error: " << e.message << " " << e.detail;
@@ -143,9 +143,9 @@ vector<string> FetchAllStrings(RecordServiceWorkerClient* worker, const string& 
   vector<string> results;
   do {
     worker->Fetch(fetch_result, fetch_params);
-    EXPECT_EQ(fetch_result.columnar_row_batch.cols.size(), 1);
-    const char* data = fetch_result.columnar_row_batch.cols[0].data.data();
-    for (int i = 0; i < fetch_result.num_rows; ++i) {
+    EXPECT_EQ(fetch_result.columnar_records.cols.size(), 1);
+    const char* data = fetch_result.columnar_records.cols[0].data.data();
+    for (int i = 0; i < fetch_result.num_records; ++i) {
       int len = *reinterpret_cast<const int*>(data);
       data += sizeof(int);
       results.push_back(string(data, len));
@@ -175,7 +175,7 @@ TEST(ClientTest, NationFile) {
     EXPECT_EQ(plan_result.tasks.size(), 1);
     vector<string> data = FetchAllStrings(worker.get(), plan_result.tasks[0].task);
 
-    // Verify a few rows
+    // Verify a few records
     EXPECT_EQ(data[5], "5|ETHIOPIA|0|ven packages wake quickly. regu");
     EXPECT_EQ(data[21], "21|VIETNAM|2|hely enticingly express accounts. even, final ");
   } catch (const TRecordServiceException& e) {

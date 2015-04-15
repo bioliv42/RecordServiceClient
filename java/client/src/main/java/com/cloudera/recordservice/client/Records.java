@@ -21,8 +21,8 @@ import java.nio.ByteBuffer;
 import sun.misc.Unsafe;
 
 import com.cloudera.recordservice.thrift.TFetchResult;
+import com.cloudera.recordservice.thrift.TRecordFormat;
 import com.cloudera.recordservice.thrift.TRecordServiceException;
-import com.cloudera.recordservice.thrift.TRowBatchFormat;
 import com.cloudera.recordservice.thrift.TSchema;
 import com.cloudera.recordservice.thrift.TTaskStatus;
 import com.cloudera.recordservice.thrift.TType;
@@ -198,7 +198,7 @@ public class Records {
     protected void reset(TFetchResult result) throws RuntimeException {
       recordIdx_ = -1;
       for (int i = 0; i < colOffsets_.length; ++i) {
-        nulls_[i] = result.columnar_row_batch.cols.get(i).is_null;
+        nulls_[i] = result.columnar_records.cols.get(i).is_null;
         colOffsets_[i] = byteArrayOffset;
         TType type = schema_.cols.get(i).type;
         switch (type.type_id) {
@@ -214,7 +214,7 @@ public class Records {
         case CHAR:
         case TIMESTAMP_NANOS:
         case DECIMAL:
-          colData_[i] = result.columnar_row_batch.cols.get(i).data;
+          colData_[i] = result.columnar_records.cols.get(i).data;
           break;
         default:
           throw new RuntimeException(
@@ -248,7 +248,7 @@ public class Records {
    */
   public boolean hasNext() throws IOException, TRecordServiceException {
     Preconditions.checkNotNull(fetchResult_);
-    while (record_.recordIdx_ == fetchResult_.num_rows - 1) {
+    while (record_.recordIdx_ == fetchResult_.num_records - 1) {
       if (fetchResult_.done) {
         hasNext_ = false;
         return false;
@@ -303,8 +303,8 @@ public class Records {
       throw new RuntimeException("Task has been closed already.");
     }
     fetchResult_ = worker_.fetch(handle_);
-    if (fetchResult_.row_batch_format != TRowBatchFormat.Columnar) {
-      throw new RuntimeException("Unsupported row batch format");
+    if (fetchResult_.record_format != TRecordFormat.Columnar) {
+      throw new RuntimeException("Unsupported record format");
     }
     record_.reset(fetchResult_);
     progress_ = (float)fetchResult_.task_completion_percentage;

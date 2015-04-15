@@ -114,10 +114,10 @@ public class SampleClient {
         do {
           TFetchParams fetchParams = new TFetchParams(taskResult.handle);
           fetchResult = worker.Fetch(fetchParams);
-          totalRows += fetchResult.num_rows;
-          ByteBuffer data = fetchResult.columnar_row_batch.cols.get(0).
+          totalRows += fetchResult.num_records;
+          ByteBuffer data = fetchResult.columnar_records.cols.get(0).
               data.order(ByteOrder.LITTLE_ENDIAN);
-          for (int i = 0; i < fetchResult.num_rows; ++i) {
+          for (int i = 0; i < fetchResult.num_records; ++i) {
             sum += data.getLong(i * 8);
           }
         } while (!fetchResult.done);

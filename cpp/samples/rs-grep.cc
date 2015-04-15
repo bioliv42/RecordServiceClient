@@ -81,8 +81,8 @@ void ProcessTask(const TTask& task) {
 
   do {
     worker->Fetch(fetch_result, fetch_params);
-    const char* data = fetch_result.columnar_row_batch.cols[0].data.data();
-    for (int i = 0; i < fetch_result.num_rows; ++i) {
+    const char* data = fetch_result.columnar_records.cols[0].data.data();
+    for (int i = 0; i < fetch_result.num_records; ++i) {
       int len = *reinterpret_cast<const int*>(data);
       data += sizeof(int);
       size_t r = write(0, data, len);

@@ -15,61 +15,97 @@
 namespace cpp recordservice
 namespace java com.cloudera.recordservice.thrift
 
+//
+// This file contains the service definition for the RecordService which consists
+// of two thrift services: RecordServicePlanner and RecordServiceWorker.
+//
+
+// Version used to negotiate feature support between the server and client. Both
+// clients and servers need to maintain backwards compatibility.
 enum TProtocolVersion {
   V1,
 }
 
+// 128-bit GUID.
 struct TUniqueId {
   1: required i64 hi
   2: required i64 lo
 }
 
+// Network address which specifies the machine, typically used to schedule where
+// tasks run.
 struct TNetworkAddress {
   1: required string hostname
   2: required i32 port
 }
 
+// Types support by the RecordService.
 enum TTypeId {
+  // Boolean, true or false
   BOOLEAN,
+
+  // 1-byte (signed) integer.
   TINYINT,
+
+  // 2-byte (signed) integer.
   SMALLINT,
+
+  // 4-byte (signed) integer.
   INT,
+
+  // 8-byte (signed) integer.
   BIGINT,
+
+  // ieee floating point number
   FLOAT,
+
+  // ieee double precision floating point number
   DOUBLE,
+
+  // Variable length byte array.
   STRING,
+
+  // Variable length byte array with a restricted maximum length.
   VARCHAR,
+
+  // Fixed length byte array.
   CHAR,
+
+  // Fixed point decimal value.
   DECIMAL,
+
+  // Timestamp with nanosecond precision.
   TIMESTAMP_NANOS,
 }
 
+// Type specification, containing the enum and any additional parameters the type
+// may need.
 // TODO: how to extend this for complex types.
 struct TType {
   1: required TTypeId type_id
-
-  // TODO:
-  // bool nullable?
 
   // Only set if id == DECIMAL
   2: optional i32 precision
   3: optional i32 scale
 
-  // Only set if id == VARCHAR
+  // Only set if id == VARCHAR or CHAR
   4: optional i32 len
 }
 
+// A description for a column in the schema.
 struct TColumnDesc {
   1: required TType type
   2: required string name
 }
 
+// Representation of a RecordServiceSchema.
+// TODO: extend for nested types.
 struct TSchema {
   1: required list<TColumnDesc> cols
 }
 
-// Row batch serialization formats.
-enum TRowBatchFormat {
+// Record serialization formats.
+enum TRecordFormat {
   Columnar,
 }
 
@@ -91,9 +127,14 @@ struct TColumnData {
 
   // Is this useful?
   //3: required i32 num_non_null
+
+  // TODO: this is useful if reading remotely.
+  // 4: optional CompressionCodec
 }
 
-struct TColumnarRowBatch {
+// List of column data for the Columnar record format. This is 1:1 with the
+// schema. i.e. cols[0] is the data for schema.cols[0].
+struct TColumnarRecords {
   1: required list<TColumnData> cols
 }
 
@@ -124,6 +165,9 @@ struct TPathRequest {
   //4: optional TSchema schema
 }
 
+// Log messages return by the RPCs. Non-continuable errors are returned via
+// exceptions in the RPCs, these messages contain either warnings or additional
+// diagnostics.
 struct TLogMessage {
   1: required string message
 
@@ -177,12 +221,13 @@ struct TExecTaskParams {
   // unmodified.
   1: required binary task
 
-  // Number of rows that should be returned per fetch. If unset, service picks default.
+  // Maximum number of records that can be returned per fetch. The server can return
+  // fewer. If unset, service picks default.
   2: optional i32 fetch_size
 
-  // The format of the row batch to return. Only the corresponding field is set
+  // The format of the records to return. Only the corresponding field is set
   // in TFetchResult. If unset, the service picks the default.
-  3: optional TRowBatchFormat row_batch_format
+  3: optional TRecordFormat record_format
 
   // The memory limit for this task in bytes. If unset, the service manages it
   // on its own.
@@ -192,7 +237,7 @@ struct TExecTaskParams {
 struct TExecTaskResult {
   1: required TUniqueId handle
 
-  // Schema of the rows returned from Fetch().
+  // Schema of the records returned from Fetch().
   2: required TSchema schema
 }
 
@@ -208,25 +253,25 @@ struct TFetchResult {
   // The approximate completion percentage [0, 100]
   2: required double task_completion_percentage
 
-  // The number of rows in this batch.
-  3: required i32 num_rows
+  // The number of records in this batch.
+  3: required i32 num_records
 
   // The encoding format.
-  4: required TRowBatchFormat row_batch_format
+  4: required TRecordFormat record_format
 
-  // RowBatchFormat.Columnar
-  5: optional TColumnarRowBatch columnar_row_batch
+  // TRecordFormat.Columnar
+  5: optional TColumnarRecords columnar_records
 }
 
 struct TStats {
   // [0 - 100]
   1: required double completion_percentage
 
-  // The number of rows read before filtering.
-  2: required i64 num_rows_read
+  // The number of records read before filtering.
+  2: required i64 num_records_read
 
-  // The number of rows returned to the client.
-  3: required i64 num_rows_returned
+  // The number of records returned to the client.
+  3: required i64 num_records_returned
 
   // Time spent in the record service serializing returned results.
   4: required i64 serialize_time_ms
@@ -325,7 +370,7 @@ service RecordServiceWorker {
   TExecTaskResult ExecTask(1:TExecTaskParams params)
       throws(1:TRecordServiceException ex);
 
-  // Returns the next batch of rows
+  // Returns the next batch of records
   TFetchResult Fetch(1:TFetchParams params)
       throws(1:TRecordServiceException ex);
 

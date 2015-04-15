@@ -452,8 +452,8 @@ public class TestBasicClient {
 
       TStats stats = status.stats;
       assertEquals(stats.completion_percentage, 100, 0.1);
-      assertEquals(stats.num_rows_read, 25);
-      assertEquals(stats.num_rows_returned, 25);
+      assertEquals(stats.num_records_read, 25);
+      assertEquals(stats.num_records_returned, 25);
       assertEquals(records.progress(), 100, 0.1);
 
       records.close();
@@ -724,14 +724,8 @@ public class TestBasicClient {
     int numRecords = 0;
     while (true) {
       TFetchResult result = worker.fetch(handle);
-      numRecords += result.num_rows;
-
-      // This is not currently required by the spec, the fetch size can be
-      // ignored. It might make sense to spec this behavior though. The fetch
-      // size is the maximum number of rows that can be returned (the service
-      // can still return fewer).
-      // FIXME
-      assertTrue(result.num_rows == 0 || result.num_rows == 1);
+      numRecords += result.num_records;
+      assertTrue(result.num_records == 0 || result.num_records == 1);
       if (result.done) break;
     }
     assertEquals(numRecords, 25);

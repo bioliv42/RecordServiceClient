@@ -153,7 +153,7 @@ const TNetworkAddress& GetHost(const TPlanRequestResult& plan, int task_id) {
   return plan.tasks[task_id].local_hosts[0];
 }
 
-void ExecRequestDistributed(const char* request, TRowBatchFormat::type format) {
+void ExecRequestDistributed(const char* request, TRecordFormat::type format) {
   printf("Planning request: %s\n", request);
 
   shared_ptr<TTransport> planner_socket(
@@ -189,7 +189,7 @@ void ExecRequestDistributed(const char* request, TRowBatchFormat::type format) {
   printf("Result Types: %s\n", PrintResultSchema(plan_result.schema).c_str());
 
   printf("\nExecuting tasks...\n");
-  int64_t total_rows = 0;
+  int64_t total_records = 0;
   int64_t start_time = UnixMillis();
   TStats total_stats;
   MonotonicStopWatch task_time;
@@ -210,14 +210,14 @@ void ExecRequestDistributed(const char* request, TRowBatchFormat::type format) {
     shared_ptr<TProtocol> protocol(new TBinaryProtocol(transport));
 
     RecordServiceWorkerClient worker(protocol);
-    int worker_rows = 0;
+    int worker_records = 0;
     try {
       transport->open();
 
       TExecTaskResult exec_result;
       TExecTaskParams exec_params;
       exec_params.task = task.task;
-      exec_params.__set_row_batch_format(format);
+      exec_params.__set_record_format(format);
       worker.ExecTask(exec_result, exec_params);
 
       TFetchResult fetch_result;
@@ -227,21 +227,21 @@ void ExecRequestDistributed(const char* request, TRowBatchFormat::type format) {
       do {
         worker.Fetch(fetch_result, fetch_params);
         task_time.Start();
-        worker_rows += fetch_result.num_rows;
+        worker_records += fetch_result.num_records;
 
 #if QUERY_1
         const int64_t* values = NULL;
         const uint8_t* nulls = NULL;
-        if (fetch_result.row_batch_format == TRowBatchFormat::Columnar) {
-          values = (const int64_t*)fetch_result.columnar_row_batch.cols[0].data.data();
-          nulls = (const uint8_t*)fetch_result.columnar_row_batch.cols[0].is_null.data();
+        if (fetch_result.record_format == TRecordFormat::Columnar) {
+          values = (const int64_t*)fetch_result.columnar_records.cols[0].data.data();
+          nulls = (const uint8_t*)fetch_result.columnar_records.cols[0].is_null.data();
         } else {
           printf("Unknown row batch format.\n");
           return;
         }
 
         int idx = 0;
-        for (int n = 0; n < fetch_result.num_rows; ++n) {
+        for (int n = 0; n < fetch_result.num_records; ++n) {
           if (nulls[n]) continue;
           q1_result += values[idx++];
         }
@@ -255,7 +255,7 @@ void ExecRequestDistributed(const char* request, TRowBatchFormat::type format) {
           printf("Unknown row batch format.\n");
           return;
         }
-        for (int n = 0; n < fetch_result.num_rows; ++n) {
+        for (int n = 0; n < fetch_result.num_records; ++n) {
           if (nulls[n]) continue;
           int32_t str_len = *(const int32_t*)data;
           data += sizeof(int32_t);
@@ -280,13 +280,13 @@ void ExecRequestDistributed(const char* request, TRowBatchFormat::type format) {
       total_stats.bytes_read += status.stats.bytes_read;
       total_stats.bytes_read_local += status.stats.bytes_read_local;
       total_stats.hdfs_throughput += status.stats.hdfs_throughput;
-      total_stats.num_rows_read += status.stats.num_rows_read;
-      total_stats.num_rows_returned += status.stats.num_rows_returned;
+      total_stats.num_records_read += status.stats.num_records_read;
+      total_stats.num_records_returned += status.stats.num_records_returned;
 
       worker.CloseTask(exec_result.handle);
 
-      printf("Worker %d returned %d rows\n", i + 1, worker_rows);
-      total_rows += worker_rows;
+      printf("Worker %d returned %d records\n", i + 1, worker_records);
+      total_records += worker_records;
     } catch (const TRecordServiceException& e) {
       printf("Failed with exception:\n%s\n", e.message.c_str());
       return;
@@ -299,9 +299,9 @@ void ExecRequestDistributed(const char* request, TRowBatchFormat::type format) {
   int64_t task_time_ms = task_time.ElapsedTime() / 1000000;
   int64_t end_time = UnixMillis();
   double duration_ms = end_time - start_time;
-  printf("Fetched %ld rows in %fms.\n", total_rows, duration_ms);
+  printf("Fetched %ld records in %fms.\n", total_records, duration_ms);
   if (duration_ms != 0) {
-    printf("Millions of Rows / second: %f\n", total_rows / 1000 / duration_ms);
+    printf("Millions of records / second: %f\n", total_records / 1000 / duration_ms);
     printf("  SerializeTime: %ld ms (%0.2f%%)\n",
         total_stats.serialize_time_ms, total_stats.serialize_time_ms / duration_ms * 100);
     printf("  TotalTaskTime: %ld ms (%0.2f%%)\n",
@@ -316,8 +316,8 @@ void ExecRequestDistributed(const char* request, TRowBatchFormat::type format) {
   printf("  BytesReadLocal: %0.2f mb\n", total_stats.bytes_read_local / (1024. * 1024.));
   printf("  Avg Hdfs Throughput: %0.2f mb/s\n",
       total_stats.hdfs_throughput / (1024 * 1024) / plan_result.tasks.size());
-  printf("  Rows filtered: %ld\n",
-      total_stats.num_rows_read - total_stats.num_rows_returned);
+  printf("  Records filtered: %ld\n",
+      total_stats.num_records_read - total_stats.num_records_returned);
 
 #if QUERY_1
   printf("Query 1 Result: %ld\n", q1_result);
@@ -331,6 +331,6 @@ int main(int argc, char** argv) {
     printf("usage: record-service-client <sql stmt>\n");
     return 1;
   }
-  ExecRequestDistributed(argv[1], TRowBatchFormat::Columnar);
+  ExecRequestDistributed(argv[1], TRecordFormat::Columnar);
   return 0;
 }
