@@ -33,4 +33,4 @@ print(ggplot(d, aes(x = build_number, y = runtime, color = client)) +
              stat_summary(aes(group = client), fun.y=median, geom = "line") +
              geom_boxplot(aes(group = interaction(client, build_number)), 
              position = "identity", outlier.size = 1.7, outlier.colour = "gray32") +
-             ggtitle(testname))
+             coord_cartesian(ylim = c(0, max(d$runtime) * 1.1)) + ggtitle(testname))
