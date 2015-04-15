@@ -26,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.cloudera.recordservice.thrift.RecordServicePlanner;
+import com.cloudera.recordservice.thrift.TErrorCode;
 import com.cloudera.recordservice.thrift.TGetSchemaResult;
 import com.cloudera.recordservice.thrift.TPlanRequestParams;
 import com.cloudera.recordservice.thrift.TPlanRequestResult;
@@ -37,6 +38,7 @@ import com.google.common.base.Preconditions;
 /**
  * Java client for the RecordServicePlanner. This class is not thread safe.
  * TODO: This class should not expose the raw Thrift objects, should use proper logger.
+ * TODO: Add retry in the clients.
  */
 public class RecordServicePlannerClient {
   private final static Logger LOG =
@@ -82,7 +84,8 @@ public class RecordServicePlannerClient {
   /**
    * Opens a connection to the RecordServicePlanner.
    */
-  public RecordServicePlannerClient(String hostname, int port) throws IOException {
+  public RecordServicePlannerClient(String hostname, int port)
+      throws IOException, TRecordServiceException {
     LOG.info("Connecting to RecordServicePlanner at " + hostname + ":" + port);
     TTransport transport = new TSocket(hostname, port);
     try {
@@ -93,10 +96,23 @@ public class RecordServicePlannerClient {
     }
     protocol_ = new TBinaryProtocol(transport);
     plannerClient_ = new RecordServicePlanner.Client(protocol_);
+
     try {
       protocolVersion_ = ThriftUtils.fromThrift(plannerClient_.GetProtocolVersion());
       LOG.debug("Connected to planner service with version: " + protocolVersion_);
+    } catch (TTransportException e) {
+      LOG.warn("Could not connect to planner service. " + e);
+      if (e.getType() == TTransportException.END_OF_FILE) {
+        // TODO: this is basically a total hack. It looks like there is an issue in
+        // thrift where the exception thrown by the server is swallowed.
+        TRecordServiceException ex = new TRecordServiceException();
+        ex.code = TErrorCode.SERVICE_BUSY;
+        ex.message = "Server is likely busy. Try the request again.";
+        throw ex;
+      }
+      throw new IOException("Could not get serivce protocol version.", e);
     } catch (TException e) {
+      LOG.warn("Could not connection to planner service. " + e);
       throw new IOException("Could not get service protocol version. It's likely " +
           "the service at " + hostname + ":" + port + " is not running the " +
           "RecordServicePlanner.", e);

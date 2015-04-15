@@ -136,7 +136,8 @@ public class TestBasicClient {
   }
 
   @Test
-  public void testWorkerConnection() throws RuntimeException, IOException {
+  public void testWorkerConnection()
+      throws RuntimeException, IOException, TRecordServiceException {
     RecordServiceWorkerClient worker = new RecordServiceWorkerClient();
 
     boolean threwException = false;
@@ -282,7 +283,7 @@ public class TestBasicClient {
   }
 
   @Test
-  public void workerMisuseTest() throws IOException {
+  public void workerMisuseTest() throws IOException, TRecordServiceException {
     RecordServiceWorkerClient worker = new RecordServiceWorkerClient();
 
     // Connect to a non-existent service

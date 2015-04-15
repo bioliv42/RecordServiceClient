@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.cloudera.recordservice.thrift.RecordServiceWorker;
+import com.cloudera.recordservice.thrift.TErrorCode;
 import com.cloudera.recordservice.thrift.TExecTaskParams;
 import com.cloudera.recordservice.thrift.TExecTaskResult;
 import com.cloudera.recordservice.thrift.TFetchParams;
@@ -66,11 +67,13 @@ public class RecordServiceWorkerClient {
    * Connects to the RecordServiceWorker.
    * @throws TException
    */
-  public void connect(TNetworkAddress address) throws IOException {
+  public void connect(TNetworkAddress address)
+      throws IOException, TRecordServiceException {
     connect(address.hostname, address.port);
   }
 
-  public void connect(String hostname, int port) throws IOException {
+  public void connect(String hostname, int port)
+      throws IOException, TRecordServiceException {
     if (workerClient_ != null) {
       throw new RuntimeException("Already connected. Must call close() first.");
     }
@@ -88,6 +91,17 @@ public class RecordServiceWorkerClient {
     try {
       protocolVersion_ = ThriftUtils.fromThrift(workerClient_.GetProtocolVersion());
       LOG.debug("Connected to worker service with version: " + protocolVersion_);
+    } catch (TTransportException e) {
+      LOG.warn("Could not connect to worker service. " + e);
+      if (e.getType() == TTransportException.END_OF_FILE) {
+        // TODO: this is basically a total hack. It looks like there is an issue in
+        // thrift where the exception thrown by the server is swallowed.
+        TRecordServiceException ex = new TRecordServiceException();
+        ex.code = TErrorCode.SERVICE_BUSY;
+        ex.message = "Server is likely busy. Try the request again.";
+        throw ex;
+      }
+      throw new IOException("Could not get serivce protocol version.", e);
     } catch (TException e) {
       throw new IOException("Could not get service protocol version. It's likely " +
           "the service at " + hostname + ":" + port + " is not running the " +
