@@ -77,7 +77,7 @@ enum TRowBatchFormat {
 // serialization. Thrift sees this as a byte buffer so we have minimal serialization
 // cost.
 // The serialization is identical to parquet's plain encoding with these exceptions:
-//   - TimestampNanos: Parquet encodes as 8 byte nanos in day and 4 byte julian day.
+//   - TimestampNanos: Parquet encodes as 8 byte nanos in day and 4 byte Julian day.
 //     RecordService encoding is 8 byte millis since epoch and 4 byte nanos.
 struct TColumnData {
   // One byte for each value.
@@ -285,6 +285,10 @@ enum TErrorCode {
 
   // Internal error in the service.
   INTERNAL_ERROR,
+
+  // The server closed this connection and any active requests due to a timeout.
+  // Clients will need to reconnect.
+  CONNECTION_TIMED_OUT,
 }
 
 exception TRecordServiceException {
