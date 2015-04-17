@@ -2,7 +2,8 @@ This repro contains the service API and the client integration.
 
 ## Building
 Prereqs:
-- Thrift.
+- Thrift. Note if you are using the version of thrift shipped with the record service server set THRIFT_HOME=/home/{$USER}/RecordService/thirdparty/thrift-0.9.0/build/
+- scala
 - TODO: what are the others?
 
 To build this repo the first time:
