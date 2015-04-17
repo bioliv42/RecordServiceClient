@@ -19,6 +19,18 @@
 set -u
 set -e
 
+# Copy the TPC-H dataset
+DATASRC="http://util-1.ent.cloudera.com/impala-test-data/"
+DATADST=${IMPALA_HOME}/testdata/impala-data
+
+if [ ! -d ${DATADST}/tpch ]; then
+  mkdir -p ${DATADST}
+  pushd ${DATADST}
+  wget -q --no-clobber http://util-1.ent.cloudera.com/impala-test-data/tpch.tar.gz
+  tar -xzf tpch.tar.gz
+  popd
+fi
+
 # Start up Impala
 cd $IMPALA_HOME
 . ${IMPALA_HOME}/bin/set-pythonpath.sh
