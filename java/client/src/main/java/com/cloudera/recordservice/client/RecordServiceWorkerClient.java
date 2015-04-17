@@ -16,6 +16,7 @@ package com.cloudera.recordservice.client;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.thrift.TException;
@@ -37,9 +38,6 @@ import com.cloudera.recordservice.thrift.TNetworkAddress;
 import com.cloudera.recordservice.thrift.TRecordServiceException;
 import com.cloudera.recordservice.thrift.TTaskStatus;
 import com.cloudera.recordservice.thrift.TUniqueId;
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Sets;
 
 /**
  * Java client for the RecordServiceWorker. This class is not thread safe.
@@ -55,7 +53,7 @@ public class RecordServiceWorkerClient {
   private ProtocolVersion protocolVersion_ = null;
 
   // The set of all active tasks.
-  private Set<TUniqueId> activeTasks_ = Sets.newHashSet();
+  private Set<TUniqueId> activeTasks_ = new HashSet<TUniqueId>();
 
   // Fetch size to pass to execTask(). If null, server will determine fetch size.
   private Integer fetchSize_;
@@ -233,11 +231,11 @@ public class RecordServiceWorkerClient {
   /**
    * Closes the underlying transport, simulating if the service connection is
    * dropped.
+   * @VisibleForTesting
    */
-  @VisibleForTesting
   void closeConnection() {
     protocol_.getTransport().close();
-    Preconditions.checkState(!protocol_.getTransport().isOpen());
+    assert(!protocol_.getTransport().isOpen());
   }
 
   /**
@@ -245,14 +243,14 @@ public class RecordServiceWorkerClient {
    */
   private TExecTaskResult execTaskInternal(ByteBuffer task)
           throws TRecordServiceException, IOException {
-    Preconditions.checkNotNull(task);
+    assert(task != null);
     TExecTaskParams taskParams = new TExecTaskParams(task);
     try {
       LOG.debug("Executing task");
       if (fetchSize_ != null) taskParams.setFetch_size(fetchSize_);
       if (memLimit_ != null) taskParams.setMem_limit(memLimit_);
       TExecTaskResult result = workerClient_.ExecTask(taskParams);
-      Preconditions.checkState(!activeTasks_.contains(result.handle));
+      assert(!activeTasks_.contains(result.handle));
       activeTasks_.add(result.handle);
       LOG.info("Got task handle: " + result.handle);
       return result;

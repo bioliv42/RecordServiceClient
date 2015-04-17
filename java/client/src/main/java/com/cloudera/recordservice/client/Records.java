@@ -28,7 +28,6 @@ import com.cloudera.recordservice.thrift.TTaskStatus;
 import com.cloudera.recordservice.thrift.TType;
 import com.cloudera.recordservice.thrift.TTypeId;
 import com.cloudera.recordservice.thrift.TUniqueId;
-import com.google.common.base.Preconditions;
 
 /**
  * Abstraction over records returned from the RecordService. This class is
@@ -247,7 +246,7 @@ public class Records {
    * Returns true if there are more records.
    */
   public boolean hasNext() throws IOException, TRecordServiceException {
-    Preconditions.checkNotNull(fetchResult_);
+    assert(fetchResult_ != null);
     while (record_.recordIdx_ == fetchResult_.num_records - 1) {
       if (fetchResult_.done) {
         hasNext_ = false;

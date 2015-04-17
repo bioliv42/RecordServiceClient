@@ -14,20 +14,20 @@
 
 package com.cloudera.recordservice.avro;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.avro.Schema;
 import org.apache.avro.Schema.Type;
 
 import com.cloudera.recordservice.thrift.TSchema;
-import com.google.common.collect.Lists;
 
 public class SchemaUtils {
   /**
    * Converts a TSchema to a avro schema.
    */
   public static org.apache.avro.Schema convertSchema(TSchema schema) {
-    List<Schema.Field> fields = Lists.newArrayList();
+    List<Schema.Field> fields = new ArrayList<Schema.Field>();
     for (int i = 0; i < schema.getColsSize(); ++i) {
       Schema fieldSchema = null;
       switch (schema.getCols().get(i).type.type_id) {

@@ -24,7 +24,6 @@ import org.apache.avro.specific.SpecificRecordBase;
 import com.cloudera.recordservice.client.Records;
 import com.cloudera.recordservice.thrift.TRecordServiceException;
 import com.cloudera.recordservice.thrift.TTypeId;
-import com.google.common.base.Preconditions;
 
 /**
  * This class takes a Rows object and provides an iterator interface to
@@ -105,7 +104,7 @@ public class SpecificRecords<T extends SpecificRecordBase> {
         case CHAR:
           record.put(rsIndex, rsRecord.getByteArray(i).toString()); break;
         default:
-          Preconditions.checkState(false,
+          throw new RuntimeException(
               "Unsupported type: " + schema_.getCols().get(i).type);
         }
     }

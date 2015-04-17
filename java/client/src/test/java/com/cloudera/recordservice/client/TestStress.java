@@ -18,6 +18,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.Test;
@@ -43,7 +44,8 @@ public class TestStress {
     // TODO: fix the thrift connections to not service the request on the
     // connection thread? This might be hard to do.
     int numConnections = 75;
-    List<RecordServicePlannerClient> clients = Lists.newArrayList();
+    List<RecordServicePlannerClient> clients =
+        new ArrayList<RecordServicePlannerClient>();
 
     boolean gotServerBusy = false;
     for (int i = 0; i < numConnections;) {

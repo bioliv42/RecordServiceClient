@@ -20,7 +20,6 @@ import org.apache.avro.generic.GenericData.Record;
 
 import com.cloudera.recordservice.client.Records;
 import com.cloudera.recordservice.thrift.TRecordServiceException;
-import com.google.common.base.Preconditions;
 
 /**
  * This class takes a Records object and provides an iterator interface to
@@ -74,7 +73,7 @@ public class GenericRecords {
       case CHAR:
         record.put(i, rsRecord.getByteArray(i).toString()); break;
       default:
-        Preconditions.checkState(false,
+        throw new RuntimeException(
             "Unsupported type: " + schema_.getCols().get(i).type);
       }
     }
