@@ -24,10 +24,10 @@ RECORD_SERVICE_HOME and IMPALA_HOME to be set.
 
 ## Running tests.
 Loading the test tables:
-- $RECORD_SERVICE_HOME/load-test-data.sh
+- $RECORD_SERVICE_HOME/tests/load-test-data.sh
 
 Running the tests:
-- $RECORD_SERVICE_HOME/run-all-tests.sh
+- $RECORD_SERVICE_HOME/tests/run-all-tests.sh
 
 ## Repo structure:
 - api/: Thrift file(s) containing the RecordService API definition
