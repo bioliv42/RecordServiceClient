@@ -168,6 +168,7 @@ benchmarks = [
       ["impala", impala_shell_cmd(
           "select count(ss_item_sk) from tpcds500gb_parquet.store_sales")],
       ["impala-rs", impala_on_rs_cmd(
+          "set num_scanner_threads=32;" +
           "select count(ss_item_sk) from tpcds500gb_parquet.store_sales")],
     ]
   ],
