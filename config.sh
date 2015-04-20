@@ -17,31 +17,5 @@
 # this script will set it to the current working directory.
 
 if [ -z $RECORD_SERVICE_HOME ]; then
-    this=${0/-/} # login-shells often have leading '-' chars
-    shell_exec=`basename $SHELL`
-    if [ "$this" = "$shell_exec" ]; then
-        # Assume we're already in RECORD_SERVICE_HOME
-        interactive=1
-        export RECORD_SERVICE_HOME=`pwd`
-    else
-        interactive=0
-        while [ -h "$this" ]; do
-            ls=`ls -ld "$this"`
-            link=`expr "$ls" : '.*-> \(.*\)$'`
-            if expr "$link" : '.*/.*' > /dev/null; then
-                this="$link"
-            else
-                this=`dirname "$this"`/"$link"
-            fi
-        done
-
-        # convert relative path to absolute path
-        bin=`dirname "$this"`
-        script=`basename "$this"`
-        bin=`cd "$bin"; pwd`
-        this="$bin/$script"
-
-        export RECORD_SERVICE_HOME=`dirname "$bin"`
-    fi
+  export RECORD_SERVICE_HOME=$(cd $(dirname "${BASH_SOURCE[0]}") && pwd)
 fi
-
