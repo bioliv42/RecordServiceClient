@@ -7,14 +7,15 @@ Prereqs:
 - TODO: what are the others?
 
 To build this repo the first time:
-- source RECORD_SERVICE_HOME/config.sh
-- thirdparty/download_thirdparty.sh
-- thirdparty/build_thirdparty.sh
-- cd $RECORD_SERVICE_HOME
-- cmake .
-- make
-- cd $RECORD_SERVICE_HOME/java
-- mvn package -DskipTests
+
+    source RECORD_SERVICE_HOME/config.sh
+    thirdparty/download_thirdparty.sh
+    thirdparty/build_thirdparty.sh
+    cd $RECORD_SERVICE_HOME
+    cmake .
+    make
+    cd $RECORD_SERVICE_HOME/java
+    mvn package -DskipTests
 
 The thirdparty steps only need to be done once initially.
 
@@ -23,11 +24,29 @@ Follow the Impala instructions there. The scripts below generally require
 RECORD_SERVICE_HOME and IMPALA_HOME to be set.
 
 ## Running tests.
+First start up the local CDH cluster. This is done with
+
+    $IMPALA_HOME/testdata/bin/run-all.sh
+
+If you've never started HDFS before, you will need to pass -format to run-all.sh.
+
+Then,
 Loading the test tables:
-- $RECORD_SERVICE_HOME/tests/load-test-data.sh
+
+    $RECORD_SERVICE_HOME/tests/load-test-data.sh
 
 Running the tests:
-- $RECORD_SERVICE_HOME/tests/run-all-tests.sh
+
+    $RECORD_SERVICE_HOME/tests/run-all-tests.sh
+
+## Running the cluster
+The above scripts run the services that the record service needs. To start without
+the script, run
+
+    $IMPALA_HOME/bin/start-impala-cluster.py -s 1
+
+which will start catalogd, statestored and impalad (which implements the
+RecordService APIs).
 
 ## Repo structure:
 - api/: Thrift file(s) containing the RecordService API definition
