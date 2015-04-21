@@ -26,9 +26,9 @@
     <version>0.1</version>
   </parent>
 
-  <artifactId>recordservice-avro</artifactId>
-  <name>Record Service Avro Libraries</name>
-  <description>Record Service Avro Libraries</description>
+  <artifactId>recordservice-avro-example</artifactId>
+  <name>Record Service Avro Examples</name>
+  <description>Record Service Avro Examples</description>
   <packaging>jar</packaging>
   <url>.</url>
 
@@ -44,42 +44,34 @@
       <version>${avro.version}</version>
     </dependency>
     <dependency>
+      <groupId>org.apache.avro</groupId>
+      <artifactId>avro-mapred</artifactId>
+      <version>${avro.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-common</artifactId>
+      <version>${hadoop.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-mapreduce-client-core</artifactId>
+      <version>${hadoop.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-yarn-api</artifactId>
+      <version>${hadoop.version}</version>
+    </dependency>
+    <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
       <version>${guava.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>${junit.version}</version>
-      <scope>test</scope>
     </dependency>
   </dependencies>
 
   <build>
     <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-shade-plugin</artifactId>
-        <version>2.3</version>
-        <executions>
-          <execution>
-           <phase>package</phase>
-            <goals>
-              <goal>shade</goal>
-            </goals>
-            <configuration>
-              <artifactSet>
-                <includes>
-                  <include>com.cloudera.recordservice:*</include>
-                  <include>org.apache.thrift:*</include>
-                </includes>
-              </artifactSet>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-source-plugin</artifactId>
@@ -119,13 +111,13 @@
         <version>${avro.version}</version>
         <executions>
           <execution>
-            <phase>generate-test-sources</phase>
+            <phase>generate-sources</phase>
             <goals>
-              <goal>idl-protocol</goal>
+              <goal>schema</goal>
             </goals>
             <configuration>
-              <sourceDirectory>${project.basedir}/src/test/resources/</sourceDirectory>
-              <outputDirectory>${project.basedir}/generated-sources/test</outputDirectory>
+              <sourceDirectory>${project.basedir}/src/resources/</sourceDirectory>
+              <outputDirectory>${project.basedir}/generated-sources/java</outputDirectory>
             </configuration>
           </execution>
         </executions>
@@ -136,14 +128,14 @@
         <version>1.5</version>
         <executions>
           <execution>
-            <id>add-test-sources</id>
-            <phase>generate-test-sources</phase>
+            <id>add-source</id>
+            <phase>generate-sources</phase>
             <goals>
-              <goal>add-test-source</goal>
+              <goal>add-source</goal>
             </goals>
             <configuration>
               <sources>
-                <source>${project.basedir}/generated-sources/test</source>
+                <source>${project.basedir}/generated-sources/java</source>
               </sources>
             </configuration>
           </execution>
