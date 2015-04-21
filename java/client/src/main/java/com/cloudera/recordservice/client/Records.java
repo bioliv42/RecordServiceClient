@@ -27,13 +27,11 @@ import com.cloudera.recordservice.thrift.TSchema;
 import com.cloudera.recordservice.thrift.TTaskStatus;
 import com.cloudera.recordservice.thrift.TType;
 import com.cloudera.recordservice.thrift.TTypeId;
-import com.cloudera.recordservice.thrift.TUniqueId;
 
 /**
  * Abstraction over records returned from the RecordService. This class is
  * extremely performance sensitive. Not thread-safe.
  */
-@SuppressWarnings("restriction")
 public class Records {
   private static final Unsafe unsafe;
   static {
@@ -227,7 +225,7 @@ public class Records {
 
   // Client and task handle
   private final RecordServiceWorkerClient worker_;
-  private TUniqueId handle_;
+  private RecordServiceWorkerClient.TaskState handle_;
 
   // The current fetchResult from the RecordServiceWorker. Never null.
   private TFetchResult fetchResult_;
@@ -291,12 +289,13 @@ public class Records {
    */
   public float progress() { return progress_; }
 
-  protected Records(RecordServiceWorkerClient worker, TUniqueId handle,
-      TSchema schema) throws IOException, TRecordServiceException {
+  protected Records(RecordServiceWorkerClient worker,
+      RecordServiceWorkerClient.TaskState handle)
+      throws IOException, TRecordServiceException {
     worker_ = worker;
     handle_ = handle;
 
-    record_ = new Record(schema);
+    record_ = new Record(handle.getSchema());
     nextBatch();
     hasNext_ = hasNext();
   }

@@ -17,7 +17,6 @@ package com.cloudera.recordservice.mr;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 
 import org.apache.hadoop.io.Writable;
 import org.apache.thrift.TDeserializer;
@@ -51,13 +50,7 @@ public class TaskInfo implements Writable {
     return hosts;
   }
 
-  public byte[] getTask() {
-    return task_.getTask();
-  }
-
-  public ByteBuffer getTaskAsByteBuffer() {
-    return task_.bufferForTask();
-  }
+  public TTask getTask() { return task_; }
 
   @Override
   public void write(DataOutput out) throws IOException {

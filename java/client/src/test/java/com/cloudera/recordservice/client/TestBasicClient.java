@@ -31,6 +31,7 @@ import org.junit.Test;
 import com.cloudera.recordservice.thrift.TErrorCode;
 import com.cloudera.recordservice.thrift.TFetchResult;
 import com.cloudera.recordservice.thrift.TGetSchemaResult;
+import com.cloudera.recordservice.thrift.TNetworkAddress;
 import com.cloudera.recordservice.thrift.TPlanRequestResult;
 import com.cloudera.recordservice.thrift.TRecordServiceException;
 import com.cloudera.recordservice.thrift.TSchema;
@@ -38,7 +39,6 @@ import com.cloudera.recordservice.thrift.TStats;
 import com.cloudera.recordservice.thrift.TTask;
 import com.cloudera.recordservice.thrift.TTaskStatus;
 import com.cloudera.recordservice.thrift.TTypeId;
-import com.cloudera.recordservice.thrift.TUniqueId;
 import com.google.common.collect.Lists;
 
 // TODO: add more stats tests.
@@ -138,39 +138,13 @@ public class TestBasicClient {
   @Test
   public void testWorkerConnection()
       throws RuntimeException, IOException, TRecordServiceException {
-    RecordServiceWorkerClient worker = new RecordServiceWorkerClient();
-
-    boolean threwException = false;
-    try {
-      worker.getProtocolVersion();
-    } catch (RuntimeException e) {
-      threwException = true;
-      assertTrue(e.getMessage().contains("Client not connected."));
-    } finally {
-      assertTrue(threwException);
-    }
-
-    worker.connect("localhost", WORKER_PORT);
-    threwException = false;
-    try {
-      worker.connect("localhost", WORKER_PORT);
-    } catch (RuntimeException e) {
-      threwException = true;
-      assertTrue(e.getMessage().contains(
-          "Already connected. Must call close() first."));
-    } finally {
-      assertTrue(threwException);
-    }
+    RecordServiceWorkerClient worker =
+        new RecordServiceWorkerClient.Builder().connect("localhost", WORKER_PORT);
 
     assertEquals(worker.getProtocolVersion(), ProtocolVersion.V1);
     // Call it again and make sure it's fine.
     assertEquals(worker.getProtocolVersion(), ProtocolVersion.V1);
 
-    assertEquals(worker.numActiveTasks(), 0);
-    worker.close();
-
-    // Should be able to connect now.
-    worker.connect("localhost", WORKER_PORT);
     assertEquals(worker.numActiveTasks(), 0);
     worker.close();
 
@@ -184,10 +158,10 @@ public class TestBasicClient {
         new RecordServicePlannerClient("localhost", PLANNER_PORT);
     TPlanRequestResult plan =
         planner.planRequest(Request.createTableScanRequest("tpch.nation"));
-    ByteBuffer task = plan.getTasks().get(0).task;
+    TTask task = plan.getTasks().get(0);
 
     // Simulate dropping the connection.
-    planner.closeConnection();
+    planner.closeConnectionForTesting();
 
     // Try using the planner connection.
     boolean exceptionThrown = false;
@@ -211,15 +185,18 @@ public class TestBasicClient {
     // Close should still do something reasonable.
     planner.close();
 
-    RecordServiceWorkerClient worker = new RecordServiceWorkerClient();
-    worker.connect("localhost", WORKER_PORT);
+    // Testing failures, don't retry.
+    RecordServiceWorkerClient worker = new RecordServiceWorkerClient.Builder()
+        .setMaxAttempts(1).setSleepDuration(0)
+        .connect("localhost", WORKER_PORT);
+
     fetchAndVerifyCount(worker.execAndFetch(task), 25);
 
     // Try this again.
     fetchAndVerifyCount(worker.execAndFetch(task), 25);
 
     // Simulate dropping the worker connection
-    worker.closeConnection();
+    worker.closeConnectionForTesting();
 
     // Try executing a task.
     exceptionThrown = false;
@@ -242,16 +219,18 @@ public class TestBasicClient {
 
     // Reestablish connection.
     worker.close();
-    worker.connect("localhost", WORKER_PORT);
-    worker.setFetchSize(1);
+    worker = new RecordServiceWorkerClient.Builder()
+        .setMaxAttempts(1).setSleepDuration(0)
+        .setFetchSize(1)
+        .connect("localhost", WORKER_PORT);
 
     // Execute a fetch once.
-    TUniqueId handle = worker.execTask(task);
+    RecordServiceWorkerClient.TaskState handle = worker.execTask(task);
     worker.fetch(handle);
     worker.getTaskStatus(handle);
 
     // Drop the connection.
-    worker.closeConnection();
+    worker.closeConnectionForTesting();
 
     // Try to fetch more.
     // TODO: what does retry, fault tolerance here look like?
@@ -284,12 +263,10 @@ public class TestBasicClient {
 
   @Test
   public void workerMisuseTest() throws IOException, TRecordServiceException {
-    RecordServiceWorkerClient worker = new RecordServiceWorkerClient();
-
     // Connect to a non-existent service
     boolean threwException = false;
     try {
-      worker.connect("bad", PLANNER_PORT);
+      new RecordServiceWorkerClient.Builder().connect("bad", PLANNER_PORT);
     } catch (IOException e) {
       threwException = true;
       assertTrue(e.getMessage().contains("Could not connect to RecordServiceWorker"));
@@ -300,20 +277,22 @@ public class TestBasicClient {
     // Connect to non-worker thrift service.
     threwException = false;
     try {
-      worker.connect("localhost", 21000);
+      new RecordServiceWorkerClient.Builder().connect("localhost", 21000);
     } catch (IOException e) {
       threwException = true;
       assertTrue(e.getMessage().contains("is not running the RecordServiceWorker"));
     } finally {
       assertTrue(threwException);
     }
-    worker.close();
 
     // Connect to the worker and send it bad tasks.
-    worker.connect("localhost", WORKER_PORT);
+    RecordServiceWorkerClient worker =
+        new RecordServiceWorkerClient.Builder().connect("localhost", WORKER_PORT);
     threwException = false;
     try {
-      worker.execTask(ByteBuffer.allocate(100));
+      TTask task = new TTask();
+      task.task = ByteBuffer.allocate(100);
+      worker.execTask(task);
     } catch (TRecordServiceException e) {
       threwException = true;
       assertEquals(e.code, TErrorCode.INVALID_TASK);
@@ -330,14 +309,14 @@ public class TestBasicClient {
         "localhost", PLANNER_PORT,
         Request.createSqlRequest("select * from tpch.nation"));
 
-    RecordServiceWorkerClient worker = new RecordServiceWorkerClient();
-    worker.connect("localhost", WORKER_PORT);
+    RecordServiceWorkerClient worker =
+        new RecordServiceWorkerClient.Builder().connect("localhost", WORKER_PORT);
     assertEquals(worker.numActiveTasks(), 0);
 
-    worker.execTask(plan.tasks.get(0).task);
+    worker.execTask(plan.tasks.get(0));
     assertEquals(worker.numActiveTasks(), 1);
-    worker.execTask(plan.tasks.get(0).task);
-    TUniqueId handle = worker.execTask(plan.tasks.get(0).task);
+    worker.execTask(plan.tasks.get(0));
+    RecordServiceWorkerClient.TaskState handle = worker.execTask(plan.tasks.get(0));
     assertEquals(worker.numActiveTasks(), 3);
     worker.closeTask(handle);
     assertEquals(worker.numActiveTasks(), 2);
@@ -362,35 +341,6 @@ public class TestBasicClient {
   }
 
   @Test
-  public void testBadHandle() throws TRecordServiceException, IOException {
-    RecordServiceWorkerClient worker = new RecordServiceWorkerClient();
-    worker.connect("localhost", WORKER_PORT);
-
-    TUniqueId badHandle = new TUniqueId();
-    worker.closeTask(badHandle);
-
-    boolean threwException = false;
-    try {
-      worker.fetch(badHandle);
-    } catch (RuntimeException e) {
-      threwException = true;
-      assertTrue(e.getMessage().contains("Invalid task handle."));
-    }
-    assertTrue(threwException);
-
-    threwException = false;
-    try {
-      worker.getTaskStatus(badHandle);
-    } catch (RuntimeException e) {
-      threwException = true;
-      assertTrue(e.getMessage().contains("Invalid task handle."));
-    }
-    assertTrue(threwException);
-    assertEquals(worker.numActiveTasks(), 0);
-    worker.close();
-  }
-
-  @Test
   public void testNation() throws TRecordServiceException, IOException {
     // Plan the request
     TPlanRequestResult plan = RecordServicePlannerClient.planRequest(
@@ -402,61 +352,60 @@ public class TestBasicClient {
     verifyNationSchema(plan.schema, false);
 
     // Execute the task
-    RecordServiceWorkerClient worker = new RecordServiceWorkerClient();
-    worker.connect("localhost", WORKER_PORT);
+    RecordServiceWorkerClient worker =
+        new RecordServiceWorkerClient.Builder().connect("localhost", WORKER_PORT);
 
     assertEquals(plan.tasks.size(), 1);
     assertEquals(plan.tasks.get(0).local_hosts.size(), 3);
-    for (int i = 0; i < 2; ++i) {
-      Records records = worker.execAndFetch(plan.tasks.get(0).task);
-      int numRecords = 0;
-      while (records.hasNext()) {
-        Records.Record record = records.next();
-        ++numRecords;
-        if (numRecords == 1) {
-          assertFalse(record.isNull(0));
-          assertFalse(record.isNull(1));
-          assertFalse(record.isNull(2));
-          assertFalse(record.isNull(3));
 
-          assertEquals(record.getShort(0), 0);
-          assertEquals(record.getByteArray(1).toString(), "ALGERIA");
-          assertEquals(record.getShort(2), 0);
-          assertEquals(record.getByteArray(3).toString(),
-              " haggle. carefully final deposits detect slyly agai");
-        }
+    Records records = worker.execAndFetch(plan.tasks.get(0));
+    int numRecords = 0;
+    while (records.hasNext()) {
+      Records.Record record = records.next();
+      ++numRecords;
+      if (numRecords == 1) {
+        assertFalse(record.isNull(0));
+        assertFalse(record.isNull(1));
+        assertFalse(record.isNull(2));
+        assertFalse(record.isNull(3));
+
+        assertEquals(record.getShort(0), 0);
+        assertEquals(record.getByteArray(1).toString(), "ALGERIA");
+        assertEquals(record.getShort(2), 0);
+        assertEquals(record.getByteArray(3).toString(),
+            " haggle. carefully final deposits detect slyly agai");
       }
-
-      // Reading off the end should fail gracefully.
-      boolean exceptionThrown = false;
-      try {
-        records.next();
-      } catch (IOException e) {
-        exceptionThrown = true;
-        assertTrue(e.getMessage(), e.getMessage().contains("End of stream"));
-      }
-      assertTrue(exceptionThrown);
-
-      // Verify status
-      TTaskStatus status = records.getStatus();
-      assertTrue(status.data_errors.isEmpty());
-      assertTrue(status.warnings.isEmpty());
-
-      TStats stats = status.stats;
-      assertEquals(stats.task_progress, 1, 0.01);
-      assertEquals(stats.num_records_read, 25);
-      assertEquals(stats.num_records_returned, 25);
-      assertEquals(records.progress(), 1, 0.01);
-
-      records.close();
-
-      assertEquals(numRecords, 25);
-
-      // Close and run this again. The worker object should still work.
-      assertEquals(worker.numActiveTasks(), 0);
-      worker.close();
-      worker.connect("localhost", WORKER_PORT);
     }
+
+    // Reading off the end should fail gracefully.
+    boolean exceptionThrown = false;
+    try {
+      records.next();
+    } catch (IOException e) {
+      exceptionThrown = true;
+      assertTrue(e.getMessage(), e.getMessage().contains("End of stream"));
+    }
+    assertTrue(exceptionThrown);
+
+    // Verify status
+    TTaskStatus status = records.getStatus();
+    assertTrue(status.data_errors.isEmpty());
+    assertTrue(status.warnings.isEmpty());
+
+    TStats stats = status.stats;
+    assertEquals(stats.task_progress, 1, 0.01);
+    assertEquals(stats.num_records_read, 25);
+    assertEquals(stats.num_records_returned, 25);
+    assertEquals(records.progress(), 1, 0.01);
+
+    records.close();
+
+    assertEquals(numRecords, 25);
+
+    // Close and run this again. The worker object should still work.
+    assertEquals(worker.numActiveTasks(), 0);
+    worker.close();
+
     assertEquals(worker.numActiveTasks(), 0);
     worker.close();
   }
@@ -554,8 +503,8 @@ public class TestBasicClient {
 
   @Test
   public void testAllTypes() throws TRecordServiceException, IOException {
-    RecordServiceWorkerClient worker = new RecordServiceWorkerClient();
-    worker.connect("localhost", WORKER_PORT);
+    RecordServiceWorkerClient worker =
+        new RecordServiceWorkerClient.Builder().connect("localhost", WORKER_PORT);
 
     // Just ask for the schema.
     TGetSchemaResult schemaResult = RecordServicePlannerClient.getSchema(
@@ -577,7 +526,7 @@ public class TestBasicClient {
     assertEquals(plan.tasks.size(), 2);
     for (int t = 0; t < 2; ++t) {
       assertEquals(plan.tasks.get(t).local_hosts.size(), 3);
-      Records records = worker.execAndFetch(plan.tasks.get(t).task);
+      Records records = worker.execAndFetch(plan.tasks.get(t));
       verifyAllTypesSchema(records.getSchema());
       assertTrue(records.hasNext());
       Records.Record record = records.next();
@@ -769,11 +718,13 @@ public class TestBasicClient {
     TPlanRequestResult plan = RecordServicePlannerClient.planRequest(
         "localhost", PLANNER_PORT,
         Request.createTableScanRequest("tpch.nation"));
-    RecordServiceWorkerClient worker = new RecordServiceWorkerClient();
-    worker.connect(plan.tasks.get(0).local_hosts.get(0));
-    worker.setFetchSize(1);
 
-    TUniqueId handle = worker.execTask(plan.tasks.get(0).task);
+    TNetworkAddress addr = plan.tasks.get(0).local_hosts.get(0);
+    RecordServiceWorkerClient worker = new RecordServiceWorkerClient.Builder()
+        .setFetchSize(1)
+        .connect(addr.hostname, addr.port);
+
+    RecordServiceWorkerClient.TaskState handle = worker.execTask(plan.tasks.get(0));
     int numRecords = 0;
     while (true) {
       TFetchResult result = worker.fetch(handle);
@@ -790,11 +741,12 @@ public class TestBasicClient {
     TPlanRequestResult plan = RecordServicePlannerClient.planRequest(
         "localhost", PLANNER_PORT,
         Request.createTableScanRequest("tpch.nation"));
-    RecordServiceWorkerClient worker = new RecordServiceWorkerClient();
-    worker.connect(plan.tasks.get(0).local_hosts.get(0));
-    worker.setMemLimit(new Long(200));
+    TNetworkAddress addr = plan.tasks.get(0).local_hosts.get(0);
+    RecordServiceWorkerClient worker = new RecordServiceWorkerClient.Builder()
+        .setMemLimit(new Long(200))
+        .connect(addr.hostname, addr.port);
 
-    TUniqueId handle = worker.execTask(plan.tasks.get(0).task);
+    RecordServiceWorkerClient.TaskState handle = worker.execTask(plan.tasks.get(0));
     boolean exceptionThrown = false;
     try {
       worker.fetch(handle);
@@ -808,18 +760,12 @@ public class TestBasicClient {
     // Try again going through the utility.
     exceptionThrown = false;
     try {
-      worker.execAndFetch(plan.tasks.get(0).task);
+      worker.execAndFetch(plan.tasks.get(0));
     } catch (TRecordServiceException e) {
       exceptionThrown = true;
       assertEquals(e.code, TErrorCode.OUT_OF_MEMORY);
     }
     assertTrue(exceptionThrown);
-
-    // Clearing the limit should work.
-    worker.setMemLimit(null);
-    Records records = worker.execAndFetch(plan.tasks.get(0).task);
-    fetchAndVerifyCount(records, 25);
-    records.close();
 
     assertEquals(worker.numActiveTasks(), 0);
     worker.close();

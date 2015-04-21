@@ -45,16 +45,14 @@ public class RecordReaderCore {
 
   public RecordReaderCore(Configuration config, TaskInfo taskInfo)
       throws TRecordServiceException, IOException {
-    worker_ = new RecordServiceWorkerClient();
-
     try {
       // TODO: handle multiple locations.
       TNetworkAddress task = taskInfo.getLocations()[0];
-      worker_.connect(task.hostname, task.port);
-
       int fetchSize = config.getInt(FETCH_SIZE_CONF, -1);
-      worker_.setFetchSize(fetchSize != -1 ? fetchSize : null);
-      records_ = worker_.execAndFetch(taskInfo.getTaskAsByteBuffer());
+      worker_ = new RecordServiceWorkerClient.Builder()
+          .setFetchSize(fetchSize != -1 ? fetchSize : null)
+          .connect(task.hostname, task.port);
+      records_ = worker_.execAndFetch(taskInfo.getTask());
     } finally {
       if (records_ == null) close();
     }

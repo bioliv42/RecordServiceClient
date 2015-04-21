@@ -22,7 +22,6 @@ import com.cloudera.recordservice.thrift.TRecordServiceException;
 import com.cloudera.recordservice.thrift.TTask;
 
 public class WorkerClientUtil {
-
   /**
    * Utility function to launch task 'taskId' in plan at the first host.
    * Local hosts are preferred over remote hosts.
@@ -47,8 +46,7 @@ public class WorkerClientUtil {
       host = task.local_hosts.get(0);
     }
 
-    RecordServiceWorkerClient client = new RecordServiceWorkerClient();
-    client.connect(host.hostname, host.port);
-    return client.execAndFetch(task.task);
+    return new RecordServiceWorkerClient.Builder()
+        .connect(host.hostname, host.port).execAndFetch(task);
   }
 }

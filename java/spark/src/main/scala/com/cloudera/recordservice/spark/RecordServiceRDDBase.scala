@@ -118,9 +118,9 @@ abstract class RecordServiceRDDBase[T:ClassTag](@transient sc: SparkContext)
       // each host, in which case this needs to talk to get the list of all workers
       // and pick one randomly.
       // TODO: this port should come from the task description.
-      val worker = new RecordServiceWorkerClient()
-      worker.connect("localhost", RecordServiceConf.WORKER_PORT)
-      val records = worker.execAndFetch(partition.task.task)
+      val worker = new RecordServiceWorkerClient.Builder()
+          .connect("localhost", RecordServiceConf.WORKER_PORT)
+      val records = worker.execAndFetch(partition.task)
       (worker, records)
     } catch {
       case e:TRecordServiceException => logError("Could not exec request: " + e.message)

@@ -176,14 +176,24 @@ struct TLogMessage {
   2: required i32 count = 1
 }
 
+struct TRequestOptions {
+  // If true, fail tasks if an corrupt record is encountered, otherwise, those records
+  // are skipped (and warning returned).
+  1: optional bool abort_on_corrupt_record = false
+
+  // FIXME: this is useful to try things for now and we may expose this as a
+  // general key/value pair for the server.
+  2: optional map<string, string> debug_options
+}
+
 struct TPlanRequestParams {
   // The version of the client
   1: required TProtocolVersion client_version = TProtocolVersion.V1
 
   2: required TRequestType request_type
 
-  // TODO: things like abort on error, sampling, etc.
-  //3: required TRequestOptions request_options
+  // Optional arguments to the plan request.
+  3: optional TRequestOptions options
 
   // Only one of the below is set depending on request type
   4: optional string sql_stmt
@@ -197,6 +207,11 @@ struct TTask {
   // An opaque blob that is produced by the RecordServicePlanner and passed to
   // the RecordServiceWorker.
   2: required binary task
+
+  // If true, the records returned by this task are ordered, meaning in the case
+  // of failures, the client can continue from the current record. If false, the
+  // client needs to recompute from the beginning.
+  3: required bool results_ordered
 }
 
 struct TPlanRequestResult {
@@ -232,6 +247,14 @@ struct TExecTaskParams {
   // The memory limit for this task in bytes. If unset, the service manages it
   // on its own.
   4: optional i64 mem_limit
+
+  // The offset to start returning records. This is only valid for tasks where
+  // results_ordered is true. This can be used to improve performance when there
+  // are failures. The client can run the task against another daemon with the
+  // offset set to the number of records already seen.
+  // The offset is the record ordinal, that is, the first offset records are not
+  // returned to the client.
+  5: optional i64 offset
 }
 
 struct TExecTaskResult {

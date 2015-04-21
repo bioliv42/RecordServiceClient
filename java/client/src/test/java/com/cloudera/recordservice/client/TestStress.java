@@ -91,11 +91,10 @@ public class TestStress {
     List<RecordServiceWorkerClient> clients = Lists.newArrayList();
 
     boolean gotServerBusy = false;
-    for (int i = 0; i < numConnections;) {
-      ++i;
+    for (int i = 0; i < numConnections; ++i) {
       try {
-        RecordServiceWorkerClient worker = new RecordServiceWorkerClient();
-        worker.connect("localhost", WORKER_PORT);
+        RecordServiceWorkerClient worker = new RecordServiceWorkerClient.Builder()
+            .connect("localhost", WORKER_PORT);
         clients.add(worker);
       } catch(TRecordServiceException ex) {
         assertEquals(ex.code, TErrorCode.SERVICE_BUSY);
@@ -107,8 +106,8 @@ public class TestStress {
         c.close();
         Thread.sleep(200);
 
-        c = new RecordServiceWorkerClient();
-        c.connect("localhost", WORKER_PORT);
+        c = new RecordServiceWorkerClient.Builder()
+            .connect("localhost", WORKER_PORT);
         clients.add(c);
       }
     }

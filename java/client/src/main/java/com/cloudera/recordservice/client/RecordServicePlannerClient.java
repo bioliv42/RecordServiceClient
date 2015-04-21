@@ -182,7 +182,7 @@ public class RecordServicePlannerClient {
    * connection.
    * @VisibleForTesting
    */
-  void closeConnection() {
+  void closeConnectionForTesting() {
     protocol_.getTransport().close();
     assert(!protocol_.getTransport().isOpen());
   }
