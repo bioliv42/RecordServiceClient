@@ -45,6 +45,8 @@ generate_report "Query1_Avro_6GB" $DAYS $RESULTS_DIR
 generate_report "Query2_Parquet_6GB" $DAYS $RESULTS_DIR
 generate_report "Query2_Avro_6GB" $DAYS $RESULTS_DIR
 generate_report "Query1_Parquet_500GB" $DAYS $RESULTS_DIR
+generate_report "TPCDS_Q7_Parquet_500GB" $DAYS $RESULTS_DIR
+generate_report "TPCDS_Q73_Parquet_500GB" $DAYS $RESULTS_DIR
 
 mkdir -p $RECORD_SERVICE_HOME/benchmark_results
 rm -f $RECORD_SERVICE_HOME/benchmark_results/*

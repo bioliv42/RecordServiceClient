@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # Copyright 2012 Cloudera Inc.
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the Apache License, Version 2.0 (the "License")
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
@@ -18,9 +18,16 @@
 
 import os
 
+IMPALA_SHELL_CMD = os.environ['IMPALA_HOME'] + "/bin/impala-shell.sh -i LOCALHOST -B "
+
+def read_file(path):
+  data = ""
+  with open(path, "r") as f:
+    data += "\n" + f.read()
+  return data
+
 def impala_shell_cmd(query):
-  return os.environ['IMPALA_HOME'] +\
-      "/bin/impala-shell.sh -i LOCALHOST -B -q \"" + query + "\""
+  return IMPALA_SHELL_CMD + "-q \"" + query + "\""
 
 def impala_single_thread_cmd(query):
   query = "set num_scanner_threads=1;" + query
@@ -64,6 +71,15 @@ def spark_q1(query):
 
 def spark_q2(query):
   return spark_cmd("com.cloudera.recordservice.benchmark.Query2", query)
+
+def impala_tpcds(query_name, record_service):
+  path = os.environ['RECORD_SERVICE_HOME'] +\
+      "/perf-queries/tpcds/tpcds-" + query_name + ".sql"
+  query = read_file(path)
+  query = "use tpcds500gb_parquet;\n" + query
+  if record_service:
+    query = "set use_record_service=true;\nset num_scanner_threads=32;" + query
+  return impala_shell_cmd(query)
 
 benchmarks = [
   [
@@ -170,6 +186,22 @@ benchmarks = [
       ["impala-rs", impala_on_rs_cmd(
           "set num_scanner_threads=32;" +
           "select count(ss_item_sk) from tpcds500gb_parquet.store_sales")],
+    ]
+  ],
+
+  [
+    "TPCDS_Q7_Parquet_500GB", "cluster",
+    [
+      ["impala", impala_tpcds("q7", False)],
+      ["impala-rs", impala_tpcds("q7", True)],
+    ]
+  ],
+
+  [
+    "TPCDS_Q73_Parquet_500GB", "cluster",
+    [
+      ["impala", impala_tpcds("q73", False)],
+      ["impala-rs", impala_tpcds("q73", True)],
     ]
   ],
 ]
