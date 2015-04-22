@@ -41,7 +41,7 @@ public class TestSpecificRecord {
     assertEquals(plan.tasks.size(), 1);
     SpecificRecords<NationAll> records = null;
     try {
-      records = new SpecificRecords<NationAll>(NationAll.class,
+      records = new SpecificRecords<NationAll>(NationAll.SCHEMA$,
           WorkerClientUtil.execTask(plan, 0), ResolveBy.ORDINAL);
       int numRecords = 0;
       while (records.hasNext()) {
@@ -69,7 +69,7 @@ public class TestSpecificRecord {
     assertEquals(plan.tasks.size(), 1);
     SpecificRecords<NationKeyName> records = null;
     try {
-      records = new SpecificRecords<NationKeyName>(NationKeyName.class,
+      records = new SpecificRecords<NationKeyName>(NationKeyName.SCHEMA$,
           WorkerClientUtil.execTask(plan, 0), ResolveBy.NAME);
       int numRecords = 0;
       while (records.hasNext()) {

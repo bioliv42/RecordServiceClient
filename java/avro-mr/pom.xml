@@ -26,16 +26,21 @@
     <version>0.1</version>
   </parent>
 
-  <artifactId>recordservice-avro-example</artifactId>
-  <name>Record Service Avro Examples</name>
-  <description>Record Service Avro Examples</description>
+  <artifactId>recordservice-avro-mr</artifactId>
+  <name>Record Service Avro MR Libraries</name>
+  <description>Record Service Avro MR Libraries</description>
   <packaging>jar</packaging>
   <url>.</url>
 
   <dependencies>
     <dependency>
       <groupId>com.cloudera.recordservice</groupId>
-      <artifactId>recordservice-avro-mr</artifactId>
+      <artifactId>recordservice-mr</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.cloudera.recordservice</groupId>
+      <artifactId>recordservice-avro</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -46,8 +51,8 @@
     <dependency>
       <groupId>org.apache.avro</groupId>
       <artifactId>avro-mapred</artifactId>
-      <classifier>hadoop2</classifier>
       <version>${avro.version}</version>
+      <classifier>hadoop2</classifier>
     </dependency>
     <dependency>
       <groupId>org.apache.hadoop</groupId>
@@ -57,11 +62,6 @@
     <dependency>
       <groupId>org.apache.hadoop</groupId>
       <artifactId>hadoop-mapreduce-client-core</artifactId>
-      <version>${hadoop.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.hadoop</groupId>
-      <artifactId>hadoop-mapreduce-client-common</artifactId>
       <version>${hadoop.version}</version>
     </dependency>
     <dependency>
@@ -110,42 +110,6 @@
             <version>2.18.1</version>
           </dependency>
         </dependencies>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.avro</groupId>
-        <artifactId>avro-maven-plugin</artifactId>
-        <version>1.7.6</version>
-        <executions>
-          <execution>
-            <phase>generate-sources</phase>
-            <goals>
-              <goal>schema</goal>
-            </goals>
-            <configuration>
-              <sourceDirectory>${project.basedir}/src/resources/</sourceDirectory>
-              <outputDirectory>${project.basedir}/generated-sources/java</outputDirectory>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>build-helper-maven-plugin</artifactId>
-        <version>1.5</version>
-        <executions>
-          <execution>
-            <id>add-source</id>
-            <phase>generate-sources</phase>
-            <goals>
-              <goal>add-source</goal>
-            </goals>
-            <configuration>
-              <sources>
-                <source>${project.basedir}/generated-sources/java</source>
-              </sources>
-            </configuration>
-          </execution>
-        </executions>
       </plugin>
     </plugins>
   </build>

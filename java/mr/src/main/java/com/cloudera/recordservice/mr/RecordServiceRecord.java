@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.cloudera.recordservice.mapreduce;
+package com.cloudera.recordservice.mr;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -32,7 +32,7 @@ import org.apache.hadoop.io.Writable;
 
 import com.cloudera.recordservice.client.ByteArray;
 import com.cloudera.recordservice.client.Records.Record;
-import com.cloudera.recordservice.mapreduce.Schema.ColumnInfo;
+import com.cloudera.recordservice.mr.Schema.ColumnInfo;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.cloudera.recordservice.mapreduce;
+package com.cloudera.recordservice.mr;
 
 
 public class RecordServiceUtils {
@@ -20,7 +20,7 @@ public class RecordServiceUtils {
   // Returns ["host", "port"]
   public static String[] getClosestHostPort(String[] locations) {
     // Assume there will be a RSS on the same host
-    // But will have to find the closest host:port if there isnt
+    // But will have to find the closest host:port if there isn't
     // for the time being return the first entry
     return locations[0].split(":");
   }

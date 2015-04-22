@@ -18,8 +18,12 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
+
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.InputSplit;
+
+import com.cloudera.recordservice.mr.Schema;
+import com.cloudera.recordservice.mr.TaskInfo;
 
 /**
  * The InputSplit implementation that is used in conjunction with the

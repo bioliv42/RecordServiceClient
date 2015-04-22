@@ -30,13 +30,14 @@ import org.apache.avro.mapred.Pair;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+
+import com.cloudera.recordservice.mapreduce.RecordServiceInputFormat;
 
 public class MapredColorCount extends Configured implements Tool {
 
@@ -69,6 +70,8 @@ public class MapredColorCount extends Configured implements Tool {
   }
 
   public int run(String[] args) throws Exception {
+    org.apache.log4j.BasicConfigurator.configure();
+
     if (args.length != 2) {
       System.err.println("Usage: MapredColorCount <input path> <output path>");
       return -1;
@@ -77,7 +80,15 @@ public class MapredColorCount extends Configured implements Tool {
     JobConf conf = new JobConf(getConf(), MapredColorCount.class);
     conf.setJobName("colorcount");
 
-    FileInputFormat.setInputPaths(conf, new Path(args[0]));
+    // RECORDSERVICE:
+    // This is the only change required to run with the RecordService input format.
+    conf.setInputFormat(com.cloudera.recordservice.avro.mapred.AvroInputFormat.class);
+
+    // RECORDSERVICE:
+    // To read from a table instead of a path, comment out setInputPaths and instead use:
+    RecordServiceInputFormat.setInputTable(conf, "rs", "users");
+    //FileInputFormat.setInputPaths(conf, new Path(args[0]));
+
     FileOutputFormat.setOutputPath(conf, new Path(args[1]));
 
     AvroJob.setMapperClass(conf, ColorCountMapper.class);

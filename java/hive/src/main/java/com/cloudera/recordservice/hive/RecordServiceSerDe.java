@@ -32,7 +32,7 @@ import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoFactory;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoUtils;
 import org.apache.hadoop.io.Writable;
 
-import com.cloudera.recordservice.mapreduce.RecordServiceRecord;
+import com.cloudera.recordservice.mr.RecordServiceRecord;
 
 /**
  * A SerDe that allows Hive to interpret data returned by the RecordService.

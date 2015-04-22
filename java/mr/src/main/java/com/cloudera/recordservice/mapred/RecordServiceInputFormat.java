@@ -17,6 +17,7 @@ package com.cloudera.recordservice.mapred;
 import java.io.IOException;
 import java.util.List;
 
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.mapred.InputFormat;
 import org.apache.hadoop.mapred.InputSplit;
@@ -26,15 +27,20 @@ import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TaskAttemptContextImpl;
 import org.apache.hadoop.mapred.TaskAttemptID;
 
-import com.cloudera.recordservice.mapreduce.RecordServiceRecord;
+import com.cloudera.recordservice.mapreduce.RecordServiceInputFormatBase;
+import com.cloudera.recordservice.mr.RecordServiceRecord;
+import com.google.common.base.Preconditions;
 
+/**
+ * Implemention of RecordServiceInputFormat.
+ */
 public class RecordServiceInputFormat implements
     InputFormat<WritableComparable<?>, RecordServiceRecord>{
 
   @Override
   public InputSplit[] getSplits(JobConf job, int numSplits) throws IOException {
     List<org.apache.hadoop.mapreduce.InputSplit> splits =
-        new com.cloudera.recordservice.mapreduce.RecordServiceInputFormat().getSplits(job);
+        RecordServiceInputFormatBase.getSplits(job);
     InputSplit[] retSplits = new InputSplit[splits.size()];
     int i = 0;
     for (org.apache.hadoop.mapreduce.InputSplit split: splits) {
@@ -49,16 +55,70 @@ public class RecordServiceInputFormat implements
   public RecordReader<WritableComparable<?>, RecordServiceRecord>
       getRecordReader(InputSplit split, JobConf job, Reporter reporter)
           throws IOException {
-    com.cloudera.recordservice.mapreduce.RecordServiceRecordReader reader =
-        new com.cloudera.recordservice.mapreduce.RecordServiceRecordReader();
+    com.cloudera.recordservice.mapreduce.RecordServiceInputFormat.RecordServiceRecordReader reader =
+        new com.cloudera.recordservice.mapreduce.RecordServiceInputFormat.RecordServiceRecordReader();
+    RecordReader<WritableComparable<?>, RecordServiceRecord> ret = null;
     try {
       reader.initialize(((RecordServiceInputSplit)split).getBackingSplit(),
           new TaskAttemptContextImpl(job, new TaskAttemptID()));
-      return new RecordServiceRecordReader(reader);
+      ret = new RecordServiceRecordReader(reader);
+      return ret;
     } catch (InterruptedException e) {
       throw new IOException(e);
     } finally {
-      reader.close();
+      if (ret == null) reader.close();
+    }
+  }
+
+  public static class RecordServiceRecordReader implements
+      RecordReader<WritableComparable<?>, RecordServiceRecord> {
+
+    private final com.cloudera.recordservice.mapreduce.RecordServiceInputFormat.RecordServiceRecordReader reader_;
+
+    public RecordServiceRecordReader(
+        com.cloudera.recordservice.mapreduce.RecordServiceInputFormat.RecordServiceRecordReader reader) {
+      Preconditions.checkNotNull(reader);
+      Preconditions.checkState(reader.isInitialized());
+      this.reader_ = reader;
+    }
+
+    /**
+     * Advances to the next record, populating key,value with the results.
+     * This is the hot path.
+     */
+    @Override
+    public boolean next(WritableComparable<?> key, RecordServiceRecord value)
+        throws IOException {
+      if (!reader_.nextRecord()) return false;
+      value.reset(reader_.currentRecord());
+      return true;
+    }
+
+    @Override
+    public WritableComparable<?> createKey() {
+      // TODO: is this legit?
+      return NullWritable.get();
+    }
+
+    @Override
+    public RecordServiceRecord createValue() {
+      return new RecordServiceRecord(reader_.schema());
+    }
+
+    @Override
+    public long getPos() throws IOException {
+      // TODO: what does this mean for us?
+      return 0;
+    }
+
+    @Override
+    public void close() throws IOException {
+      reader_.close();
+    }
+
+    @Override
+    public float getProgress() {
+      return reader_.getProgress();
     }
   }
 }

@@ -1,7 +1,6 @@
 This project contains examples of existing avro applications. We should
 make sure that these applications can run. When modifying the examples
-to use RecordService, leave the original code in with block comments
-(which are generally frowned upon) and note the changes that were made.
+to use RecordService, leave the original code in with clear comments.
 
 This should serve to both help us and our users the migration path. Our
 goal should be to add as many examples as is reasonable.

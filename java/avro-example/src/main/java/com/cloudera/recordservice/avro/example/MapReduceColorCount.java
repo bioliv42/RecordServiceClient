@@ -24,7 +24,6 @@ import org.apache.avro.Schema;
 import org.apache.avro.mapred.AvroKey;
 import org.apache.avro.mapred.AvroValue;
 import org.apache.avro.mapreduce.AvroJob;
-import org.apache.avro.mapreduce.AvroKeyInputFormat;
 import org.apache.avro.mapreduce.AvroKeyValueOutputFormat;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
@@ -34,10 +33,11 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
-import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+
+import com.cloudera.recordservice.mapreduce.RecordServiceInputFormat;
 
 public class MapReduceColorCount extends Configured implements Tool {
 
@@ -47,7 +47,6 @@ public class MapReduceColorCount extends Configured implements Tool {
     @Override
     public void map(AvroKey<User> key, NullWritable value, Context context)
         throws IOException, InterruptedException {
-
       CharSequence color = key.datum().getFavoriteColor();
       if (color == null) {
         color = "none";
@@ -72,6 +71,8 @@ public class MapReduceColorCount extends Configured implements Tool {
   }
 
   public int run(String[] args) throws Exception {
+    org.apache.log4j.BasicConfigurator.configure();
+
     if (args.length != 2) {
       System.err.println("Usage: MapReduceColorCount <input path> <output path>");
       return -1;
@@ -81,10 +82,20 @@ public class MapReduceColorCount extends Configured implements Tool {
     job.setJarByClass(MapReduceColorCount.class);
     job.setJobName("Color Count");
 
-    FileInputFormat.setInputPaths(job, new Path(args[0]));
+    // RECORDSERVICE:
+    // To read from a table instead of a path, comment out
+    // FileInputFormat.setInputPaths() and instead use:
+    //FileInputFormat.setInputPaths(job, new Path(args[0]));
+    RecordServiceInputFormat.setInputTable(job.getConfiguration(), "rs", "users");
+
+    // RECORDSERVICE:
+    // Use the RecordService version of the AvroKeyInputFormat
+    job.setInputFormatClass(
+        com.cloudera.recordservice.avro.mapreduce.AvroKeyInputFormat.class);
+    //job.setInputFormatClass(AvroKeyInputFormat.class);
+
     FileOutputFormat.setOutputPath(job, new Path(args[1]));
 
-    job.setInputFormatClass(AvroKeyInputFormat.class);
     job.setMapperClass(ColorCountMapper.class);
     AvroJob.setInputKeySchema(job, User.getClassSchema());
     job.setMapOutputKeyClass(Text.class);

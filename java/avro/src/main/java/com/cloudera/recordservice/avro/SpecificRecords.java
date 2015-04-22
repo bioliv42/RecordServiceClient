@@ -19,6 +19,8 @@ import java.util.HashMap;
 import java.util.List;
 
 import org.apache.avro.Schema;
+import org.apache.avro.Schema.Type;
+import org.apache.avro.specific.SpecificData;
 import org.apache.avro.specific.SpecificRecordBase;
 
 import com.cloudera.recordservice.client.Records;
@@ -33,7 +35,7 @@ import com.cloudera.recordservice.thrift.TTypeId;
  * TODO: NULLs
  * TODO: map STRING to BYTES?
  */
-public class SpecificRecords<T extends SpecificRecordBase> {
+public class SpecificRecords<T> {
   private Records records_;
   private org.apache.avro.Schema avroSchema_;
   private com.cloudera.recordservice.thrift.TSchema schema_;
@@ -49,18 +51,12 @@ public class SpecificRecords<T extends SpecificRecordBase> {
     NAME,
   }
 
-  public SpecificRecords(Class<T> cl, Records records, ResolveBy resolveBy) {
-    class_ = cl;
+  @SuppressWarnings("unchecked")
+  public SpecificRecords(Schema readerSchema, Records records, ResolveBy resolveBy) {
+    avroSchema_ = readerSchema;
+    class_ = new SpecificData().getClass(avroSchema_);
     records_ = records;
     schema_ = records_.getSchema();
-    try {
-      // The first field is the static schema field.
-      // TODO: should we try harder to verify? This is auto-generated and
-      // unlikely to change.
-      avroSchema_ = (Schema)cl.getFields()[0].get(null);
-    } catch (Exception e) {
-      throw new RuntimeException("Invalid Record class.", e);
-    }
     resolveSchema(resolveBy);
   }
 
@@ -80,10 +76,13 @@ public class SpecificRecords<T extends SpecificRecordBase> {
    * Returns and advances to the next record. Throws exception if
    * there are no more records.
    */
+  @SuppressWarnings("unchecked")
   public T next() throws IOException, TRecordServiceException {
-    T record = null;
+    SpecificRecordBase record = null;
     try {
-      record = class_.newInstance();
+      record = (SpecificRecordBase)class_.newInstance();
+    } catch (ClassCastException e) {
+      throw new RuntimeException("Template paramter 'T' must be a SpecificRecord");
     } catch (Exception e) {
       throw new RuntimeException("Could not create new record instance.", e);
     }
@@ -91,6 +90,10 @@ public class SpecificRecords<T extends SpecificRecordBase> {
     Records.Record rsRecord = records_.next();
     for (int i = 0; i < schema_.getColsSize(); ++i) {
       int rsIndex = rsIndexToRecordIndex_[i];
+      if (rsRecord.isNull(i)) {
+        record.put(rsIndex, null);
+        continue;
+      }
       switch(schema_.getCols().get(i).type.type_id) {
         case BOOLEAN: record.put(rsIndex, rsRecord.getBoolean(i)); break;
         case TINYINT: record.put(rsIndex, (int)rsRecord.getByte(i)); break;
@@ -99,16 +102,18 @@ public class SpecificRecords<T extends SpecificRecordBase> {
         case BIGINT: record.put(rsIndex, rsRecord.getLong(i)); break;
         case FLOAT: record.put(rsIndex, rsRecord.getFloat(i)); break;
         case DOUBLE: record.put(rsIndex, rsRecord.getDouble(i)); break;
+
         case STRING:
         case VARCHAR:
         case CHAR:
           record.put(rsIndex, rsRecord.getByteArray(i).toString()); break;
+
         default:
           throw new RuntimeException(
               "Unsupported type: " + schema_.getCols().get(i).type);
         }
     }
-    return record;
+    return (T)record;
   }
 
   /**
@@ -127,12 +132,29 @@ public class SpecificRecords<T extends SpecificRecordBase> {
     TTypeId rsType = schema_.cols.get(recordIndex).type.type_id;
     Schema.Type t = fields.get(recordIndex).schema().getType();
 
+    if (t == Type.UNION) {
+      // Unions are special because they are used to support NULLable types. In this
+      // case the union has two types, one of which is NULL.
+      List<Schema> children = fields.get(recordIndex).schema().getTypes();
+      if (children.size() != 2) {
+        throw new RuntimeException("Only union schemas with NULL are supported.");
+      }
+      Schema.Type t1 = children.get(0).getType();
+      Schema.Type t2 = children.get(1).getType();
+      if (t1 != Type.NULL && t2 != Type.NULL) {
+        throw new RuntimeException("Only union schemas with NULL are supported.");
+      }
+
+      if (t1 == Type.NULL) t = t2;
+      if (t2 == Type.NULL) t = t1;
+    }
+
     switch (t) {
       case ARRAY:
       case MAP:
       case RECORD:
       case UNION:
-        throw new RuntimeException("Nullable and nested schemas are not supported");
+        throw new RuntimeException("Nested schemas are not supported");
 
       case ENUM:
       case NULL:

@@ -18,8 +18,8 @@ import java.math.BigDecimal
 import java.text.SimpleDateFormat
 import java.util.TimeZone
 
-import com.cloudera.recordservice.mapreduce.DecimalWritable
-import com.cloudera.recordservice.mapreduce.TimestampNanosWritable
+import com.cloudera.recordservice.mr.DecimalWritable
+import com.cloudera.recordservice.mr.TimestampNanosWritable
 import org.apache.hadoop.io._
 import org.apache.spark.SparkException
 import org.scalatest.FunSuite

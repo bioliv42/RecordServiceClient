@@ -18,8 +18,8 @@
 package com.cloudera.recordservice.spark
 
 import com.cloudera.recordservice.client.TimestampNanos
-import com.cloudera.recordservice.mapreduce.DecimalWritable
-import com.cloudera.recordservice.mapreduce.TimestampNanosWritable
+import com.cloudera.recordservice.mr.DecimalWritable
+import com.cloudera.recordservice.mr.TimestampNanosWritable
 import com.cloudera.recordservice.thrift._
 import org.apache.hadoop.io._
 import org.apache.spark._

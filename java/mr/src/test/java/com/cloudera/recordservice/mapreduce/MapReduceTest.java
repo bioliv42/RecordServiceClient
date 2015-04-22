@@ -37,7 +37,9 @@ import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.junit.Test;
 
-import com.cloudera.recordservice.client.Decimal;
+import com.cloudera.recordservice.mr.DecimalWritable;
+import com.cloudera.recordservice.mr.RecordServiceRecord;
+import com.cloudera.recordservice.mr.TimestampNanosWritable;
 import com.cloudera.recordservice.thrift.TErrorCode;
 import com.cloudera.recordservice.thrift.TRecordServiceException;
 
@@ -45,8 +47,7 @@ public class MapReduceTest {
 
   private void verifyInputSplits(int numSplits, int numCols, Configuration config)
       throws IOException {
-    RecordServiceInputFormat inputFormat = new RecordServiceInputFormat();
-    List<InputSplit> splits = inputFormat.getSplits(config);
+    List<InputSplit> splits = RecordServiceInputFormat.getSplits(config);
     assertEquals(splits.size(), numSplits);
     RecordServiceInputSplit split = (RecordServiceInputSplit)splits.get(0);
     assertEquals(split.getSchema().getNumColumns(), numCols);
@@ -72,11 +73,10 @@ public class MapReduceTest {
   @Test
   public void testGetSplits() throws IOException {
     Configuration config = new Configuration();
-    RecordServiceInputFormat inputFormat = new RecordServiceInputFormat();
 
     boolean exceptionThrown = false;
     try {
-      inputFormat.getSplits(config);
+      RecordServiceInputFormat.getSplits(config);
     } catch (IllegalArgumentException e) {
       exceptionThrown = true;
       assertTrue(e.getMessage().contains("No input specified"));
@@ -85,13 +85,13 @@ public class MapReduceTest {
 
     // Set db/table and make sure it works.
     config.set(RecordServiceInputFormat.TBL_NAME_CONF, "tpch.nation");
-    inputFormat.getSplits(config);
+    RecordServiceInputFormat.getSplits(config);
 
     // Also set input. This should fail.
     config.set(FileInputFormat.INPUT_DIR, "/test");
     exceptionThrown = false;
     try {
-      inputFormat.getSplits(config);
+      RecordServiceInputFormat.getSplits(config);
     } catch (IllegalArgumentException e) {
       exceptionThrown = true;
       assertTrue(e.getMessage().contains("Cannot specify both"));
@@ -103,7 +103,7 @@ public class MapReduceTest {
     config.setStrings(RecordServiceInputFormat.COL_NAMES_CONF, "a");
     exceptionThrown = false;
     try {
-      inputFormat.getSplits(config);
+      RecordServiceInputFormat.getSplits(config);
     } catch (IllegalArgumentException e) {
       exceptionThrown = true;
       assertTrue(e.getMessage().contains(
@@ -152,12 +152,12 @@ public class MapReduceTest {
   // formats we support. How do we do this?
   public void testReadNation() throws IOException, InterruptedException {
     Configuration config = new Configuration();
-    RecordServiceInputFormat inputFormat = new RecordServiceInputFormat();
-    RecordServiceRecordReader reader = new RecordServiceRecordReader();
+    RecordServiceInputFormat.RecordServiceRecordReader reader =
+        new RecordServiceInputFormat.RecordServiceRecordReader();
 
     try {
       RecordServiceInputFormat.setInputTable(config, null, "tpch.nation");
-      List<InputSplit> splits = inputFormat.getSplits(config);
+      List<InputSplit> splits = RecordServiceInputFormat.getSplits(config);
       reader.initialize((RecordServiceInputSplit)splits.get(0), config);
 
       int numRows = 0;
@@ -177,7 +177,7 @@ public class MapReduceTest {
 
       config.clear();
       RecordServiceInputFormat.setInputTable(config, "tpch", "nation", "n_comment");
-      splits = inputFormat.getSplits(config);
+      splits = RecordServiceInputFormat.getSplits(config);
       reader.initialize((RecordServiceInputSplit)splits.get(0), config);
       numRows = 0;
       while (reader.nextKeyValue()) {
@@ -197,15 +197,15 @@ public class MapReduceTest {
   @Test
   public void testReadAllTypes() throws IOException, InterruptedException {
     Configuration config = new Configuration();
-    RecordServiceInputFormat inputFormat = new RecordServiceInputFormat();
-    RecordServiceRecordReader reader = new RecordServiceRecordReader();
+    RecordServiceInputFormat.RecordServiceRecordReader reader =
+        new RecordServiceInputFormat.RecordServiceRecordReader();
 
     SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
     format.setTimeZone(TimeZone.getTimeZone("GMT"));
 
     try {
       RecordServiceInputFormat.setInputTable(config, null, "rs.alltypes");
-      List<InputSplit> splits = inputFormat.getSplits(config);
+      List<InputSplit> splits = RecordServiceInputFormat.getSplits(config);
 
       int numRows = 0;
       for (InputSplit split: splits) {
@@ -257,12 +257,12 @@ public class MapReduceTest {
   @Test
   public void testReadAllTypesNull() throws IOException, InterruptedException {
     Configuration config = new Configuration();
-    RecordServiceInputFormat inputFormat = new RecordServiceInputFormat();
-    RecordServiceRecordReader reader = new RecordServiceRecordReader();
+    RecordServiceInputFormat.RecordServiceRecordReader reader =
+        new RecordServiceInputFormat.RecordServiceRecordReader();
 
     try {
       RecordServiceInputFormat.setInputTable(config, null, "rs.alltypes_null");
-      List<InputSplit> splits = inputFormat.getSplits(config);
+      List<InputSplit> splits = RecordServiceInputFormat.getSplits(config);
 
       int numRows = 0;
       for (InputSplit split: splits) {
