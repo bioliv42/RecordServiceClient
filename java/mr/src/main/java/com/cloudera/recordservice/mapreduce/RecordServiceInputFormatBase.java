@@ -31,8 +31,8 @@ import com.cloudera.recordservice.mr.TaskInfo;
 import com.cloudera.recordservice.thrift.TPlanRequestResult;
 import com.cloudera.recordservice.thrift.TSchema;
 import com.cloudera.recordservice.thrift.TTask;
-import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
 
 /**
  * The base RecordService input format that handles funcationality common to
@@ -81,7 +81,6 @@ public abstract class RecordServiceInputFormatBase<K, V> extends InputFormat<K, 
           TBL_NAME_CONF + "' and '" + FileInputFormat.INPUT_DIR + "'");
     }
 
-    // If length of colNames = 0, return all possible columns
     String[] colNames = jobConf.getStrings(COL_NAMES_CONF, new String[0]);
     if (inputDir != null && colNames.length > 0) {
       // TODO: support this.
@@ -91,13 +90,12 @@ public abstract class RecordServiceInputFormatBase<K, V> extends InputFormat<K, 
 
     Request request = null;
     if (tblName != null) {
-      String query =
-          new StringBuilder("SELECT ")
-              .append(colNames.length == 0 ? "*" : Joiner.on(',').join(colNames))
-              .append(" FROM ")
-              .append(tblName)
-              .toString();
-      request = Request.createSqlRequest(query);
+      if (colNames.length == 0) {
+        // If length of colNames = 0, return all possible columns
+        request = Request.createTableScanRequest(tblName);
+      } else {
+        request = Request.createProjectionRequest(tblName, Lists.newArrayList(colNames));
+      }
     } else if (inputDir != null) {
       // TODO: inputDir is a comma separate list of paths. The service needs to
       // handle that.

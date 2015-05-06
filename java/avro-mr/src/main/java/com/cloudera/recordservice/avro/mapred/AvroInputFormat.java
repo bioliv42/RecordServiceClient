@@ -40,8 +40,6 @@ import com.cloudera.recordservice.thrift.TRecordServiceException;
  */
 public class AvroInputFormat<T> extends
     RecordServiceInputFormatBase<AvroWrapper<T>, NullWritable> {
-  public static String INPUT_FORMAT_CLASS_CONF_KEY = "mapred.input.format.class";
-
   @Override
   public RecordReader<AvroWrapper<T>, NullWritable> getRecordReader(
       InputSplit split, JobConf job, Reporter reporter)

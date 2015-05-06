@@ -81,8 +81,14 @@ public class MapredColorCount extends Configured implements Tool {
     conf.setJobName("colorcount");
 
     // RECORDSERVICE:
-    // This is the only change required to run with the RecordService input format.
-    conf.setInputFormat(com.cloudera.recordservice.avro.mapred.AvroInputFormat.class);
+    // By using the recordservice AvroJob utility, we can configure at run time to
+    // switch between using the recordservice or not.
+    // In this example, we'll set the conf to true to enable the RecordService..
+    conf.setBoolean(
+        com.cloudera.recordservice.avro.AvroJob.USE_RECORD_SERVICE_INPUT_FORMAT_CONF_KEY,
+        true);
+    com.cloudera.recordservice.avro.AvroJob.setInputFormat(conf,
+        org.apache.avro.mapred.AvroInputFormat.class);
 
     // RECORDSERVICE:
     // To read from a table instead of a path, comment out setInputPaths and instead use:
