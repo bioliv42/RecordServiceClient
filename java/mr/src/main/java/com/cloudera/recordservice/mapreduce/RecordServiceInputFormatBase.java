@@ -19,9 +19,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapreduce.InputFormat;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.JobContext;
+import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 
 import com.cloudera.recordservice.client.RecordServicePlannerClient;
@@ -30,21 +32,22 @@ import com.cloudera.recordservice.mr.Schema;
 import com.cloudera.recordservice.mr.TaskInfo;
 import com.cloudera.recordservice.thrift.TPlanRequestResult;
 import com.cloudera.recordservice.thrift.TSchema;
+import com.cloudera.recordservice.thrift.TStats;
 import com.cloudera.recordservice.thrift.TTask;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 
 /**
- * The base RecordService input format that handles funcationality common to
+ * The base RecordService input format that handles functionality common to
  * all RecordService InputFormats.
  *
  * TODO: this input format should subsume the functionality of all the
  * input formats we want to work with. This means respecting the configs
  * from all of them (or the ones from them we care about). These include:
  *   - FileInputFormat
- *   - Avro
  *   - HCat
  *   - ?
+ * TODO: clean this up. Come up with a nicer way to deal with mapred and mapreduce.
  */
 public abstract class RecordServiceInputFormatBase<K, V> extends InputFormat<K, V> {
   // The fully qualified table name to read.
@@ -53,15 +56,17 @@ public abstract class RecordServiceInputFormatBase<K, V> extends InputFormat<K, 
   // The subset of columns to read.
   public final static String COL_NAMES_CONF = "recordservice.col.names";
 
-
+  // Host/Port of the planner service.
   public final static String PLANNER_HOST = "recordservice.planner.host";
   public final static String PLANNER_PORT = "recordservice.planner.port";
+
+  // Name of record service counters group.
+  public final static String COUNTERS_GROUP_NAME = "Record Service Counters";
 
   @Override
   public List<InputSplit> getSplits(JobContext context) throws IOException,
       InterruptedException {
-    Configuration jobConf = context.getConfiguration();
-    return getSplits(jobConf);
+    return getSplits(context.getConfiguration());
   }
 
   /**
@@ -136,5 +141,69 @@ public abstract class RecordServiceInputFormatBase<K, V> extends InputFormat<K, 
     if (db != null) tbl = db + "." + tbl;
     config.set(TBL_NAME_CONF, tbl);
     if (cols != null && cols.length > 0) config.setStrings(COL_NAMES_CONF, cols);
+  }
+
+  /**
+   * Populates RecordService counters in ctx from counters.
+   */
+  public static void setCounters(TaskAttemptContext ctx, TStats counters) {
+    if (ctx == null) return;
+    ctx.getCounter(COUNTERS_GROUP_NAME, "Records Read").setValue(
+        counters.num_records_read);
+    ctx.getCounter(COUNTERS_GROUP_NAME, "Records Returned").setValue(
+        counters.num_records_returned);
+    ctx.getCounter(COUNTERS_GROUP_NAME, "Record Serialization Time(ms)").setValue(
+        counters.serialize_time_ms);
+    ctx.getCounter(COUNTERS_GROUP_NAME, "Client Time(ms)").setValue(
+        counters.client_time_ms);
+
+    if (counters.isSetBytes_read()) {
+      ctx.getCounter(COUNTERS_GROUP_NAME, "Bytes Read").setValue(
+          counters.bytes_read);
+    }
+    if (counters.isSetDecompress_time_ms()) {
+      ctx.getCounter(COUNTERS_GROUP_NAME, "Decompression Time(ms)").setValue(
+          counters.decompress_time_ms);
+    }
+    if (counters.isSetBytes_read_local()) {
+      ctx.getCounter(COUNTERS_GROUP_NAME, "Bytes Read Local").setValue(
+          counters.bytes_read_local);
+    }
+    if (counters.isSetHdfs_throughput()) {
+      ctx.getCounter(COUNTERS_GROUP_NAME, "HDFS Throughput(MB/s)").setValue(
+          (long)(counters.hdfs_throughput / (1024 * 1024)));
+    }
+  }
+
+  /**
+   * Populates RecordService counters in ctx from counters.
+   */
+  public static void setCounters(Reporter ctx, TStats counters) {
+    if (ctx == null) return;
+    ctx.getCounter(COUNTERS_GROUP_NAME, "Records Read").setValue(
+        counters.num_records_read);
+    ctx.getCounter(COUNTERS_GROUP_NAME, "Records Returned").setValue(
+        counters.num_records_returned);
+    ctx.getCounter(COUNTERS_GROUP_NAME, "Record Serialization Time(ms)").setValue(
+        counters.serialize_time_ms);
+    ctx.getCounter(COUNTERS_GROUP_NAME, "Client Time(ms)").setValue(
+        counters.client_time_ms);
+
+    if (counters.isSetBytes_read()) {
+      ctx.getCounter(COUNTERS_GROUP_NAME, "Bytes Read").setValue(
+          counters.bytes_read);
+    }
+    if (counters.isSetDecompress_time_ms()) {
+      ctx.getCounter(COUNTERS_GROUP_NAME, "Decompression Time(ms)").setValue(
+          counters.decompress_time_ms);
+    }
+    if (counters.isSetBytes_read_local()) {
+      ctx.getCounter(COUNTERS_GROUP_NAME, "Bytes Read Local").setValue(
+          counters.bytes_read_local);
+    }
+    if (counters.isSetHdfs_throughput()) {
+      ctx.getCounter(COUNTERS_GROUP_NAME, "HDFS Throughput(MB/s)").setValue(
+          (long)(counters.hdfs_throughput / (1024 * 1024)));
+    }
   }
 }

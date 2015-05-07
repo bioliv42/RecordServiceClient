@@ -21,6 +21,8 @@ import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.cloudera.recordservice.client.Records;
 import com.cloudera.recordservice.client.Records.Record;
@@ -37,6 +39,10 @@ import com.google.common.annotations.VisibleForTesting;
  */
 public class RecordServiceInputFormat extends
     RecordServiceInputFormatBase<LongWritable, RecordServiceRecord> {
+
+  private static final Logger LOG =
+      LoggerFactory.getLogger(RecordServiceInputFormat.class);
+
   @Override
   public RecordReader<LongWritable, RecordServiceRecord>
       createRecordReader(InputSplit split, TaskAttemptContext context)
@@ -57,6 +63,7 @@ public class RecordServiceInputFormat extends
    */
   public static class RecordServiceRecordReader extends
       RecordReader<LongWritable, RecordServiceRecord> {
+    private TaskAttemptContext context_;
     private RecordReaderCore reader_;
 
     // Current record being processed
@@ -83,6 +90,7 @@ public class RecordServiceInputFormat extends
         throws IOException, InterruptedException {
       RecordServiceInputSplit rsSplit = (RecordServiceInputSplit)split;
       initialize(rsSplit, context.getConfiguration());
+      context_ = context;
     }
 
     /**
@@ -123,7 +131,16 @@ public class RecordServiceInputFormat extends
 
     @Override
     public void close() throws IOException {
-      if (reader_ != null) reader_.close();
+      if (reader_ != null) {
+        try {
+          RecordServiceInputFormatBase.setCounters(
+              context_, reader_.records().getStatus().stats);
+        } catch (TRecordServiceException e) {
+          LOG.debug("Could not populate counters: " + e);
+        }
+        reader_.close();
+        reader_ = null;
+      }
     }
 
     /**

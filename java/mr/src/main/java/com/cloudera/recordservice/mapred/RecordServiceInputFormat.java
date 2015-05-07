@@ -24,18 +24,22 @@ import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
-import org.apache.hadoop.mapred.TaskAttemptContextImpl;
-import org.apache.hadoop.mapred.TaskAttemptID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.cloudera.recordservice.mapreduce.RecordServiceInputFormatBase;
+import com.cloudera.recordservice.mr.RecordReaderCore;
 import com.cloudera.recordservice.mr.RecordServiceRecord;
-import com.google.common.base.Preconditions;
+import com.cloudera.recordservice.thrift.TRecordServiceException;
 
 /**
- * Implemention of RecordServiceInputFormat.
+ * Implementation of RecordServiceInputFormat.
  */
 public class RecordServiceInputFormat implements
     InputFormat<WritableComparable<?>, RecordServiceRecord>{
+
+  private static final Logger LOG =
+      LoggerFactory.getLogger(RecordServiceInputFormat.class);
 
   @Override
   public InputSplit[] getSplits(JobConf job, int numSplits) throws IOException {
@@ -55,31 +59,23 @@ public class RecordServiceInputFormat implements
   public RecordReader<WritableComparable<?>, RecordServiceRecord>
       getRecordReader(InputSplit split, JobConf job, Reporter reporter)
           throws IOException {
-    com.cloudera.recordservice.mapreduce.RecordServiceInputFormat.RecordServiceRecordReader reader =
-        new com.cloudera.recordservice.mapreduce.RecordServiceInputFormat.RecordServiceRecordReader();
-    RecordReader<WritableComparable<?>, RecordServiceRecord> ret = null;
-    try {
-      reader.initialize(((RecordServiceInputSplit)split).getBackingSplit(),
-          new TaskAttemptContextImpl(job, new TaskAttemptID()));
-      ret = new RecordServiceRecordReader(reader);
-      return ret;
-    } catch (InterruptedException e) {
-      throw new IOException(e);
-    } finally {
-      if (ret == null) reader.close();
-    }
+    return new RecordServiceRecordReader(split, job, reporter);
   }
 
   public static class RecordServiceRecordReader implements
       RecordReader<WritableComparable<?>, RecordServiceRecord> {
+    private Reporter reporter_;
+    private RecordReaderCore reader_;
 
-    private final com.cloudera.recordservice.mapreduce.RecordServiceInputFormat.RecordServiceRecordReader reader_;
-
-    public RecordServiceRecordReader(
-        com.cloudera.recordservice.mapreduce.RecordServiceInputFormat.RecordServiceRecordReader reader) {
-      Preconditions.checkNotNull(reader);
-      Preconditions.checkState(reader.isInitialized());
-      this.reader_ = reader;
+    public RecordServiceRecordReader(InputSplit split,
+        JobConf job, Reporter reporter) throws IOException {
+      try {
+        reader_ = new RecordReaderCore(job,
+            ((RecordServiceInputSplit)split).getBackingSplit().getTaskInfo());
+      } catch (Exception e) {
+        throw new IOException("Failed to execute task.", e);
+      }
+      reporter_ = reporter;
     }
 
     /**
@@ -89,8 +85,13 @@ public class RecordServiceInputFormat implements
     @Override
     public boolean next(WritableComparable<?> key, RecordServiceRecord value)
         throws IOException {
-      if (!reader_.nextRecord()) return false;
-      value.reset(reader_.currentRecord());
+      try {
+        if (!reader_.records().hasNext()) return false;
+      } catch (TRecordServiceException e) {
+        // TODO: is this the most proper way to deal with this in MR?
+        throw new IOException("Could not fetch record.", e);
+      }
+      value.reset(reader_.records().next());
       return true;
     }
 
@@ -113,12 +114,21 @@ public class RecordServiceInputFormat implements
 
     @Override
     public void close() throws IOException {
-      reader_.close();
+      if (reader_ != null) {
+        try {
+          RecordServiceInputFormatBase.setCounters(
+              reporter_, reader_.records().getStatus().stats);
+        } catch (TRecordServiceException e) {
+          LOG.debug("Could not populate counters: " + e);
+        }
+        reader_.close();
+        reader_ = null;
+      }
     }
 
     @Override
     public float getProgress() {
-      return reader_.getProgress();
+      return reader_.records().progress();
     }
   }
 }

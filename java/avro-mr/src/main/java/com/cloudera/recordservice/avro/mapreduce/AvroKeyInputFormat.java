@@ -69,6 +69,8 @@ public class AvroKeyInputFormat<T> extends
     // Records to return.
     private SpecificRecords<T> records_;
 
+    private TaskAttemptContext context_;
+
     /**
      * Constructor.
      */
@@ -113,6 +115,7 @@ public class AvroKeyInputFormat<T> extends
       }
       records_ = new SpecificRecords<T>(
           avroSchema_, reader_.records(), ResolveBy.NAME);
+      context_ = context;
     }
 
     @Override
@@ -123,7 +126,17 @@ public class AvroKeyInputFormat<T> extends
 
     @Override
     public void close() throws IOException {
-      if (reader_ != null) reader_.close();
+      if (reader_ != null) {
+        assert(context_ != null);
+        try {
+          RecordServiceInputFormatBase.setCounters(
+              context_, reader_.records().getStatus().stats);
+        } catch (TRecordServiceException e) {
+          LOG.debug("Could not populate counters: " + e);
+        }
+        reader_.close();
+        reader_ = null;
+      }
     }
   }
 }

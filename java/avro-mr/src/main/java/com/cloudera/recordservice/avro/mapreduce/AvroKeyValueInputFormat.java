@@ -91,6 +91,8 @@ public class AvroKeyValueInputFormat<K, V> extends
     /** The current value the reader is on. */
     private final AvroValue<V> currentValue_;
 
+    private TaskAttemptContext context_;
+
     /**
      * Constructor.
      */
@@ -142,6 +144,7 @@ public class AvroKeyValueInputFormat<K, V> extends
         throw new IOException("Failed to execute task.", e);
       }
       //records_ = new SpecificRecords<T>(avroSchema_, records, ResolveBy.NAME);
+      context_ = context;
     }
 
     @Override
@@ -152,7 +155,17 @@ public class AvroKeyValueInputFormat<K, V> extends
 
     @Override
     public void close() throws IOException {
-      if (reader_ != null) reader_.close();
+      if (reader_ != null) {
+        assert(context_ != null);
+        try {
+          RecordServiceInputFormatBase.setCounters(
+              context_, reader_.records().getStatus().stats);
+        } catch (TRecordServiceException e) {
+          LOG.debug("Could not populate counters: " + e);
+        }
+        reader_.close();
+        reader_ = null;
+      }
     }
   }
 }

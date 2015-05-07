@@ -43,8 +43,6 @@ import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
-import org.apache.hadoop.mapred.TaskAttemptContextImpl;
-import org.apache.hadoop.mapred.TaskAttemptID;
 
 import com.cloudera.recordservice.mapred.RecordServiceInputFormat;
 import com.cloudera.recordservice.mapred.RecordServiceInputFormat.RecordServiceRecordReader;
@@ -312,17 +310,8 @@ public class RecordServiceHiveInputFormat<K extends WritableComparable,
 
     // Create a RecordServiceRecordReader and wrap it with a HiveRecordReader
     // to read the data.
-    com.cloudera.recordservice.mapreduce.RecordServiceInputFormat.RecordServiceRecordReader reader =
-        new com.cloudera.recordservice.mapreduce.RecordServiceInputFormat.RecordServiceRecordReader();
-    try {
-      reader.initialize(((RecordServiceInputSplit)
-          hsplit.getInputSplit()).getBackingSplit(),
-          new TaskAttemptContextImpl(job, new TaskAttemptID()));
-    } catch (InterruptedException e1) {
-      throw new IllegalStateException(e1);
-    }
-
-    RecordServiceRecordReader rsRr = new RecordServiceRecordReader(reader);
+    RecordServiceRecordReader rsRr = new RecordServiceRecordReader(
+        hsplit.getInputSplit(), job, reporter);
 
     // Pass the RecordService as the target InputFormat (this will override
     // the actual input format).

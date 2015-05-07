@@ -24,6 +24,8 @@ import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.cloudera.recordservice.avro.SpecificRecords;
 import com.cloudera.recordservice.avro.SpecificRecords.ResolveBy;
@@ -40,11 +42,13 @@ import com.cloudera.recordservice.thrift.TRecordServiceException;
  */
 public class AvroInputFormat<T> extends
     RecordServiceInputFormatBase<AvroWrapper<T>, NullWritable> {
+  private static final Logger LOG = LoggerFactory.getLogger(AvroInputFormat.class);
+
   @Override
   public RecordReader<AvroWrapper<T>, NullWritable> getRecordReader(
       InputSplit split, JobConf job, Reporter reporter)
       throws IOException {
-    return new AvroRecordReader<T>(job, (RecordServiceInputSplit)split);
+    return new AvroRecordReader<T>(job, reporter, (RecordServiceInputSplit)split);
   }
 
   /**
@@ -55,9 +59,10 @@ public class AvroInputFormat<T> extends
       implements RecordReader<AvroWrapper<T>, NullWritable> {
     private RecordReaderCore reader_;
     private SpecificRecords<T> records_;
+    private Reporter reporter_;
 
-    public AvroRecordReader(JobConf config, RecordServiceInputSplit split)
-        throws IOException {
+    public AvroRecordReader(JobConf config, Reporter reporter,
+        RecordServiceInputSplit split) throws IOException {
       try {
         reader_ = new RecordReaderCore(config, split.getBackingSplit().getTaskInfo());
       } catch (Exception e) {
@@ -69,6 +74,7 @@ public class AvroInputFormat<T> extends
       // FIXME: this is only right if T is a specific record. Re-think our avro package
       // object hierarchy to look more like avros?
       records_ = new SpecificRecords<T>(schema, reader_.records(), ResolveBy.NAME);
+      reporter_ = reporter;
     }
 
     public AvroWrapper<T> createKey() {
@@ -98,7 +104,17 @@ public class AvroInputFormat<T> extends
     }
 
     public void close() throws IOException {
-      if (reader_ != null) reader_.close();
+      if (reader_ != null) {
+        assert(reporter_ != null);
+        try {
+          com.cloudera.recordservice.mapreduce.RecordServiceInputFormatBase.setCounters(
+              reporter_, reader_.records().getStatus().stats);
+        } catch (TRecordServiceException e) {
+          LOG.debug("Could not populate counters: " + e);
+        }
+        reader_.close();
+        reader_ = null;
+      }
     }
   }
 }
