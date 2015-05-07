@@ -285,6 +285,10 @@ public class Records {
   }
 
   public TSchema getSchema() { return record_.getSchema(); }
+
+  /**
+   * Returns the progress. [0, 1]
+   */
   public float progress() { return progress_; }
 
   protected Records(RecordServiceWorkerClient worker, TUniqueId handle,
@@ -306,7 +310,7 @@ public class Records {
       throw new RuntimeException("Unsupported record format");
     }
     record_.reset(fetchResult_);
-    progress_ = (float)fetchResult_.task_completion_percentage;
+    progress_ = (float)fetchResult_.task_progress;
   }
 
 }

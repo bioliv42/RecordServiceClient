@@ -451,10 +451,10 @@ public class TestBasicClient {
       assertTrue(status.warnings.isEmpty());
 
       TStats stats = status.stats;
-      assertEquals(stats.completion_percentage, 100, 0.1);
+      assertEquals(stats.task_progress, 1, 0.01);
       assertEquals(stats.num_records_read, 25);
       assertEquals(stats.num_records_returned, 25);
-      assertEquals(records.progress(), 100, 0.1);
+      assertEquals(records.progress(), 1, 0.01);
 
       records.close();
 

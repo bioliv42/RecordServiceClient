@@ -250,8 +250,8 @@ struct TFetchResult {
   // continue to fetch, but they will return 0 records.
   1: required bool done
 
-  // The approximate completion percentage [0, 100]
-  2: required double task_completion_percentage
+  // The approximate completion progress [0, 1]
+  2: required double task_progress
 
   // The number of records in this batch.
   3: required i32 num_records
@@ -264,8 +264,8 @@ struct TFetchResult {
 }
 
 struct TStats {
-  // [0 - 100]
-  1: required double completion_percentage
+  // [0 - 1]
+  1: required double task_progress
 
   // The number of records read before filtering.
   2: required i64 num_records_read
