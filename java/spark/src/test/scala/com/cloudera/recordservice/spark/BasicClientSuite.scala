@@ -166,4 +166,14 @@ class BasicClient extends FunSuite with SharedSparkContext {
     }
     assert(threwException)
   }
+
+  test("Counters") {
+    val rdd = new RecordServiceRecordRDD(sc).setTable("tpch.nation")
+    rdd.count()
+    assert(rdd.bytesReadAccum.value == 2199)
+    assert(rdd.bytesReadLocalAccum.value == 2199)
+    assert(rdd.recordsReadAccum.value == 25)
+    assert(rdd.recordsReturnedAccum.value == 25)
+
+  }
 }

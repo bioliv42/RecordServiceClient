@@ -67,6 +67,7 @@ class RecordServiceRecordRDD(@transient sc: SparkContext)
 
       override def close() = {
         if (records != null) {
+          updateCounters(records)
           records.close()
           records = null
         }

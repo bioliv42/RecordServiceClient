@@ -43,6 +43,15 @@ private class RecordServicePartition(rddId: Int, idx: Int,
 abstract class RecordServiceRDDBase[T:ClassTag](@transient sc: SparkContext)
     extends RDD[T](sc, Nil) with Logging {
 
+  // Metrics from the RecordServiceServer
+  val recordsReadAccum = sc.accumulator(0L, "RecordsRead")
+  val recordsReturnedAccum = sc.accumulator(0L, "RecordsReturned")
+  val serializeTimeAccum = sc.accumulator(0L, "SerializeTimeMs")
+  val clientTimeAccum = sc.accumulator(0L, "ClientTimeMs")
+  val decompressTimeAccum = sc.accumulator(0L, "DecompressTimeMs")
+  val bytesReadAccum = sc.accumulator(0L, "BytesRead")
+  val bytesReadLocalAccum = sc.accumulator(0L, "BytesReadLocal")
+
   // Request to make
   @transient var request:Request = null
 
@@ -134,6 +143,21 @@ abstract class RecordServiceRDDBase[T:ClassTag](@transient sc: SparkContext)
       }
     }
     result
+  }
+
+  /**
+   * Updates the counters (accumulators) from records. This is *not* idempotent
+   * and can only be called once per task, at the end of the task.
+   */
+  protected def updateCounters(records:Records) = {
+    val stats = records.getStatus.stats
+    recordsReadAccum += stats.num_records_read
+    recordsReturnedAccum += stats.num_records_returned
+    serializeTimeAccum += stats.serialize_time_ms
+    clientTimeAccum += stats.client_time_ms
+    decompressTimeAccum += stats.decompress_time_ms
+    bytesReadAccum += stats.bytes_read
+    bytesReadLocalAccum += stats.bytes_read_local
   }
 
   /**
