@@ -7,6 +7,12 @@ echo " building RecordService daemons."
 echo "********************************************************************************"
 pushd $IMPALA_HOME
 echo "Build Args: $BUILD_ARGS"
+
+if [ ! -d "$IMPALA_CYRUS_SASL_INSTALL_DIR" ]; then
+  echo "Building sasl"
+  bin/build_thirdparty.sh -sasl
+fi
+
 ./buildall.sh $BUILD_ARGS > $WORKSPACE/buildall.log 2>&1 ||\
     { tail -n 100 $WORKSPACE/buildall.log; echo "buildall.sh failed"; exit 1; }
 popd
