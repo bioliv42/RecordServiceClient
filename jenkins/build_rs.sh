@@ -25,11 +25,11 @@ then
   git clean -dfx && git reset --hard HEAD
   BUILD_ARGS="$BUILD_ARGS -format_metastore"
   popd
-  
-  pushd $RECORD_SERVICE_HOME
-  git clean -dfx && git reset --hard HEAD
-  popd
 fi
+
+pushd $RECORD_SERVICE_HOME
+git clean -dfx && git reset --hard HEAD
+popd
 
 # Version for CDH5.4 is -60
 if [ $HDFS_VERSION -ne -60 ]
