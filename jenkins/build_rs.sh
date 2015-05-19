@@ -2,11 +2,6 @@
 # Builds impala, with output redirected to $WORKSPACE/buildall.log
 # TARGET_BUILD_TYPE can be set to Release/Debug
 
-pushd $IMPALA_HOME
-rm -f ./bin/version.info
-rm -f ./CMakeCache.txt
-popd
-
 echo
 echo "********************************************************************************"
 echo " Building clients."

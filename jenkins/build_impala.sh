@@ -5,7 +5,10 @@
 echo "********************************************************************************"
 echo " building RecordService daemons."
 echo "********************************************************************************"
+
 pushd $IMPALA_HOME
+rm -f ./bin/version.info
+rm -f ./CMakeCache.txt
 echo "Build Args: $BUILD_ARGS"
 
 if [ ! -d "$IMPALA_CYRUS_SASL_INSTALL_DIR" ]; then
