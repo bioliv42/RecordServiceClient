@@ -20,7 +20,24 @@
 set -u
 set -e
 
+# Kill the cluster to run the external cluster tests.
+cd $IMPALA_HOME
+bin/start-impala-cluster.py --kill
+source bin/set-classpath.sh
+
 cd $RECORD_SERVICE_HOME
+echo "Running mini cluster tests."
+export RUN_MINI_CLUSTER_TESTS=true
+make test
+
+# Start up the cluster for the tests that need a cluster already running.
+cd $IMPALA_HOME
+bin/start-impala-cluster.py -s 1 --catalogd_args="-load_catalog_in_background=false"
+echo "Running non-mini cluster tests."
+
+pushd $RECORD_SERVICE_HOME
+unset RUN_MINI_CLUSTER_TESTS
 make test
 
 mvn test -f $RECORD_SERVICE_HOME/java/pom.xml
+

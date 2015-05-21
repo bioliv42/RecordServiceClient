@@ -18,7 +18,13 @@ set(LIBRARY_OUTPUT_PATH "${BUILD_OUTPUT_ROOT_DIRECTORY}/recordservice")
 # where to put generated binaries.
 set(EXECUTABLE_OUTPUT_PATH "${BUILD_OUTPUT_ROOT_DIRECTORY}/recordservice")
 
+add_library(TestUtil
+  external-mini-cluster.cc
+  subprocess.cc
+)
+
 SET(LINK_LIBS 
+  TestUtil
   RecordServiceThrift
   thriftstatic
   gtest)
@@ -26,4 +32,9 @@ SET(LINK_LIBS
 add_executable(client-test client-test.cc)
 target_link_libraries(client-test ${LINK_LIBS})
 add_test(client-test ${EXECUTABLE_OUTPUT_PATH}/client-test)
+
+add_executable(external-mini-cluster-test external-mini-cluster-test.cc)
+target_link_libraries(external-mini-cluster-test ${LINK_LIBS})
+add_test(external-mini-cluster-test ${EXECUTABLE_OUTPUT_PATH}/external-mini-cluster-test)
+
 

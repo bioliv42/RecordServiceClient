@@ -16,12 +16,7 @@
 #include <stdio.h>
 #include <exception>
 
-#include <thrift/protocol/TBinaryProtocol.h>
-#include <thrift/transport/TSocket.h>
-#include <thrift/transport/TTransportUtils.h>
-
-#include "gen-cpp/RecordServicePlanner.h"
-#include "gen-cpp/RecordServiceWorker.h"
+#include "test-common.h"
 
 using namespace boost;
 using namespace std;
@@ -44,32 +39,12 @@ static struct {
   {0, "ALGERIA", 0, " haggle. carefully final deposits detect slyly agai" },
 };
 
-shared_ptr<RecordServicePlannerClient> CreatePlannerConnection() {
-  shared_ptr<TTransport> planner_socket(
-      new TSocket(PLANNER_HOST, RECORD_SERVICE_PLANNER_PORT));
-  shared_ptr<TTransport> planner_transport(new TBufferedTransport(planner_socket));
-  shared_ptr<TProtocol> planner_protocol(new TBinaryProtocol(planner_transport));
-  shared_ptr<RecordServicePlannerClient> client(
-      new RecordServicePlannerClient(planner_protocol));
-  planner_transport->open();
-  return client;
-}
-
-shared_ptr<RecordServiceWorkerClient> CreateWorkerConnection() {
-  shared_ptr<TTransport> worker_socket(
-      new TSocket("localhost", RECORD_SERVICE_WORKER_PORT));
-  shared_ptr<TTransport> worker_transport(new TBufferedTransport(worker_socket));
-  shared_ptr<TProtocol> worker_protocol(new TBinaryProtocol(worker_transport));
-  worker_transport->open();
-  shared_ptr<RecordServiceWorkerClient> worker(
-      new RecordServiceWorkerClient(worker_protocol));
-  return worker;
-}
-
 TEST(ClientTest, Nation) {
   try {
-    shared_ptr<RecordServicePlannerClient> planner = CreatePlannerConnection();
-    shared_ptr<RecordServiceWorkerClient> worker = CreateWorkerConnection();
+    shared_ptr<RecordServicePlannerClient> planner =
+        CreatePlannerConnection(PLANNER_HOST, RECORD_SERVICE_PLANNER_PORT);
+    shared_ptr<RecordServiceWorkerClient> worker =
+        CreateWorkerConnection(PLANNER_HOST, RECORD_SERVICE_WORKER_PORT);
 
     TPlanRequestResult plan_result;
     TPlanRequestParams plan_params;
@@ -130,36 +105,12 @@ TEST(ClientTest, Nation) {
   }
 }
 
-vector<string> FetchAllStrings(RecordServiceWorkerClient* worker, const string& task) {
-  TExecTaskResult exec_result;
-  TExecTaskParams exec_params;
-  exec_params.task = task;
-  worker->ExecTask(exec_result, exec_params);
-
-  TFetchResult fetch_result;
-  TFetchParams fetch_params;
-  fetch_params.handle = exec_result.handle;
-
-  vector<string> results;
-  do {
-    worker->Fetch(fetch_result, fetch_params);
-    EXPECT_EQ(fetch_result.columnar_records.cols.size(), 1);
-    const char* data = fetch_result.columnar_records.cols[0].data.data();
-    for (int i = 0; i < fetch_result.num_records; ++i) {
-      int len = *reinterpret_cast<const int*>(data);
-      data += sizeof(int);
-      results.push_back(string(data, len));
-      data += len;
-    }
-  } while (!fetch_result.done);
-  worker->CloseTask(exec_result.handle);
-  return results;
-}
-
 TEST(ClientTest, NationFile) {
   try {
-    shared_ptr<RecordServicePlannerClient> planner = CreatePlannerConnection();
-    shared_ptr<RecordServiceWorkerClient> worker = CreateWorkerConnection();
+    shared_ptr<RecordServicePlannerClient> planner =
+        CreatePlannerConnection(PLANNER_HOST, RECORD_SERVICE_PLANNER_PORT);
+    shared_ptr<RecordServiceWorkerClient> worker =
+        CreateWorkerConnection(PLANNER_HOST, RECORD_SERVICE_WORKER_PORT);
 
     TPlanRequestResult plan_result;
     TPlanRequestParams plan_params;
@@ -186,6 +137,11 @@ TEST(ClientTest, NationFile) {
 }
 
 int main(int argc, char **argv) {
+  const char* env = getenv("RUN_MINI_CLUSTER_TESTS");
+  if (env != NULL && strcmp(env, "true") == 0) {
+    cout << "Skipping non-mini cluster test." << endl;
+    return 0;
+  }
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }
