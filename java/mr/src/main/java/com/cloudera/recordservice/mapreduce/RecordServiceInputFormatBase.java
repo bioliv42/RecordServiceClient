@@ -86,7 +86,9 @@ public abstract class RecordServiceInputFormatBase<K, V> extends InputFormat<K, 
           TBL_NAME_CONF + "' and '" + FileInputFormat.INPUT_DIR + "'");
     }
 
-    String[] colNames = jobConf.getStrings(COL_NAMES_CONF, new String[0]);
+    String[] colNames = jobConf.getStrings(COL_NAMES_CONF);
+    if (colNames == null) colNames = new String[0];
+
     if (inputDir != null && colNames.length > 0) {
       // TODO: support this.
       throw new IllegalArgumentException(

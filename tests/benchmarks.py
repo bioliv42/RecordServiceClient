@@ -98,9 +98,9 @@ benchmarks = [
       ["native-client", native_client_cmd("select l_partkey from tpch6gb.lineitem")],
       ["java-client", java_client_cmd("select l_partkey from tpch6gb.lineitem")],
       ["spark-rs", spark_q1("select l_partkey from tpch6gb.lineitem")],
-      #["hive-rs", hive_rs_cmd(query='select sum(l_partkey) from rs.lineitem_hive_serde',
-      #    tbl_name='tpch6gb.lineitem', fetch_size=50000)
-      #],
+      ["hive-rs", hive_rs_cmd(query='select sum(l_partkey) from rs.lineitem_hive_serde',
+          tbl_name='tpch6gb.lineitem', fetch_size=50000)
+      ],
     ]
   ],
 
@@ -116,9 +116,9 @@ benchmarks = [
           "select l_partkey from tpch6gb_parquet.lineitem")],
       ["java-client", java_client_cmd("select l_partkey from tpch6gb_parquet.lineitem")],
       ["spark-rs", spark_q1("select l_partkey from tpch6gb_parquet.lineitem")],
-      #["hive-rs", hive_rs_cmd(query='select sum(l_partkey) from rs.lineitem_hive_serde',
-      #    tbl_name='tpch6gb_parquet.lineitem', fetch_size=50000)
-      #],
+      ["hive-rs", hive_rs_cmd(query='select sum(l_partkey) from rs.lineitem_hive_serde',
+          tbl_name='tpch6gb_parquet.lineitem', fetch_size=50000)
+      ],
     ]
   ],
 
@@ -136,9 +136,9 @@ benchmarks = [
       ["java-client", java_client_cmd(
           "select l_partkey from tpch6gb_avro_snap.lineitem")],
       ["spark-rs", spark_q1("select l_partkey from tpch6gb_avro_snap.lineitem")],
-      #["hive-rs", hive_rs_cmd(query='select sum(l_partkey) from rs.lineitem_hive_serde',
-      #    tbl_name='tpch6gb_avro_snap.lineitem', fetch_size=50000)
-      #],
+      ["hive-rs", hive_rs_cmd(query='select sum(l_partkey) from rs.lineitem_hive_serde',
+          tbl_name='tpch6gb_avro_snap.lineitem', fetch_size=50000)
+      ],
     ]
   ],
 
