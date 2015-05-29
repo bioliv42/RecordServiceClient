@@ -12,22 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.cloudera.recordservice.client;
+package com.cloudera.recordservice.core;
 
-import com.cloudera.recordservice.thrift.TProtocolVersion;
+//
+// This is part of the client interface.
+//
 
-/**
- * Utility class to convert from thrift classes to client classes. We should
- * never be returning thrift classes as part of the client API.
- */
-public class ThriftUtils {
-  protected static ProtocolVersion fromThrift(TProtocolVersion v) {
-    switch (v) {
-    case V1: return ProtocolVersion.V1;
-    default:
-      // TODO: is this right for mismatched versions? Default to a lower
-      // version?
-      throw new RuntimeException("Unrecognized version: " + v);
-    }
-  }
+public enum ProtocolVersion {
+  V1,
 }

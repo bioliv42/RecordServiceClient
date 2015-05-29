@@ -20,7 +20,7 @@ import java.io.IOException;
 
 import org.apache.hadoop.io.WritableComparable;
 
-import com.cloudera.recordservice.client.TimestampNanos;
+import com.cloudera.recordservice.core.TimestampNanos;
 
 /**
  * Writable for timestamp data with nanosecond precision.

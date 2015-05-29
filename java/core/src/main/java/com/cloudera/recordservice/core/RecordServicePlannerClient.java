@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.cloudera.recordservice.client;
+package com.cloudera.recordservice.core;
 
 import java.io.IOException;
 

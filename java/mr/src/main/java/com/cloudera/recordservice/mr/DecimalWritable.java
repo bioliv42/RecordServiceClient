@@ -20,7 +20,7 @@ import java.io.IOException;
 
 import org.apache.hadoop.io.WritableComparable;
 
-import com.cloudera.recordservice.client.Decimal;
+import com.cloudera.recordservice.core.Decimal;
 import com.google.common.base.Preconditions;
 
 /**

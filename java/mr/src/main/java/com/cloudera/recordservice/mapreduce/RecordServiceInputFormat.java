@@ -24,8 +24,8 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.cloudera.recordservice.client.Records;
-import com.cloudera.recordservice.client.Records.Record;
+import com.cloudera.recordservice.core.Records;
+import com.cloudera.recordservice.core.Records.Record;
 import com.cloudera.recordservice.mr.RecordReaderCore;
 import com.cloudera.recordservice.mr.RecordServiceRecord;
 import com.cloudera.recordservice.mr.Schema;

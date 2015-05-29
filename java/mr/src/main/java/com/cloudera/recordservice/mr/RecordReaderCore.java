@@ -18,8 +18,8 @@ import java.io.IOException;
 
 import org.apache.hadoop.conf.Configuration;
 
-import com.cloudera.recordservice.client.RecordServiceWorkerClient;
-import com.cloudera.recordservice.client.Records;
+import com.cloudera.recordservice.core.RecordServiceWorkerClient;
+import com.cloudera.recordservice.core.Records;
 import com.cloudera.recordservice.thrift.TNetworkAddress;
 import com.cloudera.recordservice.thrift.TRecordServiceException;
 

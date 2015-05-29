@@ -26,9 +26,9 @@
     <version>0.1</version>
   </parent>
 
-  <artifactId>recordservice-client</artifactId>
-  <name>Record Service Client</name>
-  <description>Record Service Client</description>
+  <artifactId>recordservice-core</artifactId>
+  <name>Record Service Core</name>
+  <description>Record Service Core</description>
   <packaging>jar</packaging>
   <url>.</url>
 

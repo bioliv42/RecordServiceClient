@@ -24,9 +24,9 @@ import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
 import org.junit.Test;
 
-import com.cloudera.recordservice.client.RecordServicePlannerClient;
-import com.cloudera.recordservice.client.Request;
-import com.cloudera.recordservice.client.WorkerClientUtil;
+import com.cloudera.recordservice.core.RecordServicePlannerClient;
+import com.cloudera.recordservice.core.Request;
+import com.cloudera.recordservice.core.WorkerClientUtil;
 import com.cloudera.recordservice.thrift.TPlanRequestResult;
 import com.cloudera.recordservice.thrift.TRecordServiceException;
 

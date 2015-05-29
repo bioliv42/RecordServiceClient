@@ -17,7 +17,7 @@
 
 package com.cloudera.recordservice.spark
 
-import com.cloudera.recordservice.client.TimestampNanos
+import com.cloudera.recordservice.core.TimestampNanos
 import com.cloudera.recordservice.mr.DecimalWritable
 import com.cloudera.recordservice.mr.TimestampNanosWritable
 import com.cloudera.recordservice.thrift._

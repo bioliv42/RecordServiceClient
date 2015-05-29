@@ -30,8 +30,8 @@ import org.apache.hadoop.io.ShortWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 
-import com.cloudera.recordservice.client.ByteArray;
-import com.cloudera.recordservice.client.Records.Record;
+import com.cloudera.recordservice.core.ByteArray;
+import com.cloudera.recordservice.core.Records.Record;
 import com.cloudera.recordservice.mr.Schema.ColumnInfo;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;

@@ -19,7 +19,7 @@ package com.cloudera.recordservice.spark
 
 import org.apache.commons.lang.StringEscapeUtils.escapeSql
 
-import com.cloudera.recordservice.client.{Request, RecordServicePlannerClient}
+import com.cloudera.recordservice.core.{Request, RecordServicePlannerClient}
 import com.cloudera.recordservice.thrift.{TSchema, TTypeId, TType}
 import org.apache.hadoop.io._
 import org.apache.spark.rdd.RDD

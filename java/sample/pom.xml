@@ -36,7 +36,7 @@
   <dependencies>
     <dependency>
       <groupId>com.cloudera.recordservice</groupId>
-      <artifactId>recordservice-client</artifactId>
+      <artifactId>recordservice-core</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>

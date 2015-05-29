@@ -26,8 +26,8 @@ import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 
-import com.cloudera.recordservice.client.RecordServicePlannerClient;
-import com.cloudera.recordservice.client.Request;
+import com.cloudera.recordservice.core.RecordServicePlannerClient;
+import com.cloudera.recordservice.core.Request;
 import com.cloudera.recordservice.mr.Schema;
 import com.cloudera.recordservice.mr.TaskInfo;
 import com.cloudera.recordservice.thrift.TPlanRequestResult;

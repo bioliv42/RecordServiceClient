@@ -17,7 +17,7 @@
 
 package com.cloudera.recordservice.spark
 
-import com.cloudera.recordservice.client._
+import com.cloudera.recordservice.core._
 import com.cloudera.recordservice.thrift._
 import org.apache.spark._
 import org.apache.spark.rdd.RDD

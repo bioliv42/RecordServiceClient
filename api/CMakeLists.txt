@@ -72,7 +72,7 @@ endfunction(THRIFT_GEN)
 
 message("Using Thrift compiler: ${THRIFT_COMPILER}")
 set(CPP_OUTPUT_DIR $ENV{RECORD_SERVICE_HOME}/cpp/generated-sources)
-set(JAVA_OUTPUT_DIR $ENV{RECORD_SERVICE_HOME}/java/client/generated-sources)
+set(JAVA_OUTPUT_DIR $ENV{RECORD_SERVICE_HOME}/java/core/generated-sources)
 
 file(MAKE_DIRECTORY ${CPP_OUTPUT_DIR})
 file(MAKE_DIRECTORY ${JAVA_OUTPUT_DIR})

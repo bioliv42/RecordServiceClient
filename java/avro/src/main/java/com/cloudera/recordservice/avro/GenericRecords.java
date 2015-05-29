@@ -18,7 +18,7 @@ import java.io.IOException;
 
 import org.apache.avro.generic.GenericData.Record;
 
-import com.cloudera.recordservice.client.Records;
+import com.cloudera.recordservice.core.Records;
 import com.cloudera.recordservice.thrift.TRecordServiceException;
 
 /**

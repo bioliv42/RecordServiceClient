@@ -27,7 +27,7 @@
   <packaging>pom</packaging>
 
   <modules>
-    <module>client</module>
+    <module>core</module>
     <module>hive</module>
     <module>sample</module>
     <module>mr</module>

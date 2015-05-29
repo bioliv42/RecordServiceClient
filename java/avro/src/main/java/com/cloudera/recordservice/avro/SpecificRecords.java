@@ -23,7 +23,7 @@ import org.apache.avro.Schema.Type;
 import org.apache.avro.specific.SpecificData;
 import org.apache.avro.specific.SpecificRecordBase;
 
-import com.cloudera.recordservice.client.Records;
+import com.cloudera.recordservice.core.Records;
 import com.cloudera.recordservice.thrift.TRecordServiceException;
 import com.cloudera.recordservice.thrift.TTypeId;
 

@@ -23,7 +23,7 @@ import java.text.SimpleDateFormat
 import java.util
 import java.util.TimeZone
 
-import com.cloudera.recordservice.client.Request
+import com.cloudera.recordservice.core.Request
 import com.cloudera.recordservice.thrift._
 import org.apache.spark._
 

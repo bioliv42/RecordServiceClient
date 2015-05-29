@@ -18,11 +18,11 @@ import java.io.IOException;
 
 import org.apache.thrift.TException;
 
-import com.cloudera.recordservice.client.RecordServicePlannerClient;
-import com.cloudera.recordservice.client.Records;
-import com.cloudera.recordservice.client.Records.Record;
-import com.cloudera.recordservice.client.Request;
-import com.cloudera.recordservice.client.WorkerClientUtil;
+import com.cloudera.recordservice.core.RecordServicePlannerClient;
+import com.cloudera.recordservice.core.Records;
+import com.cloudera.recordservice.core.Records.Record;
+import com.cloudera.recordservice.core.Request;
+import com.cloudera.recordservice.core.WorkerClientUtil;
 import com.cloudera.recordservice.thrift.TPlanRequestResult;
 
 /**
