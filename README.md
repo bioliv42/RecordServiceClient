@@ -8,7 +8,7 @@ Prereqs:
 
 To build this repo the first time:
 
-    source RECORD_SERVICE_HOME/config.sh
+    source $RECORD_SERVICE_HOME/config.sh
     thirdparty/download_thirdparty.sh
     thirdparty/build_thirdparty.sh
     cd $RECORD_SERVICE_HOME
