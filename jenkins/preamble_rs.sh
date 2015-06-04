@@ -21,8 +21,6 @@ echo ">>> Mounting toolchain"
 . /mnt/toolchain/toolchain.sh
 export RECORD_SERVICE_HOME=$WORKSPACE/repos/RecordServiceClient
 
-export MAVEN_OPTS="-Xmx2g -XX:MaxPermSize=512M -XX:ReservedCodeCacheSize=512m"
-
 export JAVA_HOME=$JAVA7_HOME
 export JAVA64_HOME=$JAVA7_HOME
 export PATH=$JAVA_HOME/bin:$PATH
