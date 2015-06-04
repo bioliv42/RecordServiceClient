@@ -53,7 +53,6 @@
     <!-- Note: avoid guava in the client libraries -->
     <guava.version>14.0.1</guava.version>
     <junit.version>4.11</junit.version>
-    <argLine>-Xmx2g -XX:MaxPermSize=512M -XX:ReservedCodeCacheSize=512m</argLine>
   </properties>
 
   <repositories>
