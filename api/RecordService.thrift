@@ -155,15 +155,16 @@ struct TPathRequest {
   // TODO: revisit.
   2: optional string query
 
+  // The schema for the files at 'path'. The client can set this if it wants the
+  // server to interpret the data with this schema, otherwise the server will infer
+  // the schema
+  3: optional TSchema schema
+
   // The file format of the file at this path.
   // TODO: is this a good idea? How hard should we have the service try to figure
   // it out? What do you do if the path is a directory with different file formats or
   // different schemas?
   //3: optional TFileFormat file_format
-
-  // If the application knows the schema from somewhere else, they can specify it
-  // here.
-  //4: optional TSchema schema
 }
 
 enum LoggingLevel {
@@ -454,6 +455,11 @@ service RecordServicePlanner {
 
   // Plans the request. This generates the tasks and the list of machines
   // that each task can run on.
+  // FIXME: the number of tasks generated could be very large which can make
+  // TPlanRequestResult very large. Scanning 1M blocks will result in 100+MB
+  // of tasks in the response which seems bad for one RPC. Instead make this
+  // return tasks in batches? Another option is for the service to not generate
+  // so many tasks which solves this and other problems.
   TPlanRequestResult PlanRequest(1:TPlanRequestParams params)
       throws(1:TRecordServiceException ex);
 
