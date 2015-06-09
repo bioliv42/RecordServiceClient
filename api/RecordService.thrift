@@ -165,15 +165,52 @@ struct TPathRequest {
   //4: optional TSchema schema
 }
 
+enum LoggingLevel {
+  // The OFF turns off all logging.
+  OFF,
+
+  // The ALL has the lowest possible rank and is intended to turn on all logging.
+  ALL,
+
+  // The FATAL level designates very severe error events that will presumably lead the
+  // application to abort.
+  FATAL,
+
+  // The ERROR level designates error events that might still allow the application
+  // to continue running.
+  ERROR,
+
+  // The WARN level designates potentially harm
+  WARN,
+
+  // The INFO level designates informational messages that highlight the progress of the
+  // application at coarse-grained level.
+  INFO,
+
+  // The DEBUG Level designates fine-grained informational events that are most useful
+  // to debug an application.
+  DEBUG,
+
+  // The TRACE Level designates finer-grained informational events than the DEBUG
+  TRACE,
+}
+
 // Log messages return by the RPCs. Non-continuable errors are returned via
-// exceptions in the RPCs, these messages contain either warnings or additional
+// exceptions in the RPCs. These messages contain either warnings or additional
 // diagnostics.
 struct TLogMessage {
+  // User facing message.
   1: required string message
+
+  // Additional detail (e.g. stack trace, object state)
+  2: optional string detail
+
+  // Level corresponding to this message.
+  3: required LoggingLevel level
 
   // The number of times similar messages have occurred. It is up to the service to
   // decide what counts as a duplicate.
-  2: required i32 count = 1
+  4: required i32 count = 1
 }
 
 struct TRequestOptions {
@@ -244,17 +281,20 @@ struct TExecTaskParams {
   // unmodified.
   1: required binary task
 
+  // Logging level done by the service the service Service level logging for this task.
+  2: optional LoggingLevel logging_level
+
   // Maximum number of records that can be returned per fetch. The server can return
   // fewer. If unset, service picks default.
-  2: optional i32 fetch_size
+  3: optional i32 fetch_size
 
   // The format of the records to return. Only the corresponding field is set
   // in TFetchResult. If unset, the service picks the default.
-  3: optional TRecordFormat record_format
+  4: optional TRecordFormat record_format
 
   // The memory limit for this task in bytes. If unset, the service manages it
   // on its own.
-  4: optional i64 mem_limit
+  5: optional i64 mem_limit
 
   // The offset to start returning records. This is only valid for tasks where
   // results_ordered is true. This can be used to improve performance when there
@@ -262,7 +302,7 @@ struct TExecTaskParams {
   // offset set to the number of records already seen.
   // The offset is the record ordinal, that is, the first offset records are not
   // returned to the client.
-  5: optional i64 offset
+  6: optional i64 offset
 }
 
 struct TExecTaskResult {
