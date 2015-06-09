@@ -20,10 +20,14 @@ import com.cloudera.recordservice.thrift.TPathRequest;
 import com.cloudera.recordservice.thrift.TPlanRequestParams;
 import com.cloudera.recordservice.thrift.TRequestType;
 
-// Abstraction over request types.
+/**
+ * Abstraction over different requests and utilities to build common request
+ * types.
+ */
 public class Request {
-
-  // Creates a request that is a SQL query.
+  /**
+   * Creates a request that is a SQL query.
+   */
   public static Request createSqlRequest(String query) {
     TPlanRequestParams request = new TPlanRequestParams();
     request.request_type = TRequestType.Sql;
@@ -31,7 +35,9 @@ public class Request {
     return new Request(request);
   }
 
-  // Creates a request to read an entire table.
+  /**
+   * Creates a request to read an entire table.
+   */
   public static Request createTableScanRequest(String table) {
     TPlanRequestParams request = new TPlanRequestParams();
     request.request_type = TRequestType.Sql;
@@ -39,8 +45,10 @@ public class Request {
     return new Request(request);
   }
 
-  // Creates a request to read a projection of a table. An empty or null
-  // projection returns the number of rows in the table (as a BIGINT).
+  /**
+   * Creates a request to read a projection of a table. An empty or null
+   * projection returns the number of rows in the table (as a BIGINT).
+   */
   public static Request createProjectionRequest(String table, List<String> cols) {
     TPlanRequestParams request = new TPlanRequestParams();
     request.request_type = TRequestType.Sql;
@@ -58,7 +66,10 @@ public class Request {
     return new Request(request);
   }
 
-  // Creates a request that is a PATH query.
+  /**
+   * Creates a request that is a PATH query. This does a full scan of the
+   * data files in 'uri'.
+   */
   public static Request createPathRequest(String uri) {
     TPlanRequestParams request = new TPlanRequestParams();
     request.request_type = TRequestType.Path;
@@ -66,7 +77,9 @@ public class Request {
     return new Request(request);
   }
 
-  // Creates a request that is a PATH query with filtering
+  /**
+   * Creates a request that is a PATH query with filtering
+   */
   public static Request createPathRequest(String uri, String query) {
     Request request = createPathRequest(uri);
     request.request_.path.setQuery(query);
@@ -79,7 +92,7 @@ public class Request {
     return request_.toString();
   }
 
-  protected TPlanRequestParams request_;
+  TPlanRequestParams request_;
 
   private Request(TPlanRequestParams request) {
     request_ = request;

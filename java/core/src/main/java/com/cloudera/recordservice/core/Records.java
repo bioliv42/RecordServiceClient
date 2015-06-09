@@ -44,6 +44,10 @@ public class Records {
     }
   }
 
+  /**
+   * Representation of a single record, providing accessors to get each
+   * column by index.
+   */
   public static final class Record {
     // For each column, the current offset to return (column data is sparse)
     private final long[] colOffsets_;
@@ -256,7 +260,9 @@ public class Records {
   }
 
   /**
-   * Returns and advances to the next record.
+   * Returns and advances to the next record. The same Record object is
+   * returned. Callers need to copy out any values they need to store before
+   * calling next() again.
    */
   public Record next() throws IOException {
     if (!hasNext_) throw new IOException("End of stream");
@@ -264,7 +270,7 @@ public class Records {
     return record_;
   }
 
-  /*
+  /**
    * Closes the task. Idempotent.
    */
   public void close() {
@@ -273,7 +279,7 @@ public class Records {
     handle_ = null;
   }
 
-  /*
+  /**
    * Returns the status of the underlying task. This issues an RPC to the server
    * and cannot be used in the hot path.
    */
@@ -282,6 +288,9 @@ public class Records {
     return worker_.getTaskStatus(handle_);
   }
 
+  /**
+   * Returns the schema for the returned records.
+   */
   public TSchema getSchema() { return record_.getSchema(); }
 
   /**

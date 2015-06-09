@@ -35,9 +35,9 @@ import com.cloudera.recordservice.thrift.TRecordServiceException;
 
 /**
  * Java client for the RecordServicePlanner. This class is not thread safe.
- * TODO: This class should not expose the raw Thrift objects, should use proper logger.
- * TODO: Add retry in the clients.
  */
+// TODO: This class should not expose the raw Thrift objects, should use proper logger.
+// TODO: Add retry in the clients.
 public class RecordServicePlannerClient {
   private final static Logger LOG =
       LoggerFactory.getLogger(RecordServicePlannerClient.class);

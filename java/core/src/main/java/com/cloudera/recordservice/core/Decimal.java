@@ -18,8 +18,10 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 
-// Representation of fixed precision and scale decimal values. This object
-// is intended to be reused.
+/**
+ * Representation of fixed precision and scale decimal values. An object of
+ * this class is intended to be reused.
+ */
 public class Decimal {
   public static final int MAX_PRECISION = 38;
 
@@ -28,7 +30,10 @@ public class Decimal {
   private int precision_;
   private int scale_;
 
-  // Returns the byte size for 'precision' and 'scale'.
+  /**
+   * Computes the minimum byte size needed to store a decimal of 'precision' and 'scale'.
+   * Also verifies that precision and scale make sense.
+   */
   // FIXME: we shouldn't round this up to a power of 2.
   public static int computeByteSize(int precision, int scale) {
     if (scale < 0 || precision < 0) {
@@ -51,14 +56,29 @@ public class Decimal {
     }
   }
 
+  /**
+   * Creates a decimal value of zero, with precision and scale.
+   * The underlying value can be changed but the precision and scale cannot.
+   */
   public Decimal(int precision, int scale) {
     bytes_ = new byte[computeByteSize(precision, scale)];
     precision_ = precision;
     scale_ = scale;
   }
 
+  /**
+   * @return The precision of this decimal.
+   */
   public int getPrecision() { return precision_; }
+
+  /**
+   * @return The scale of this decimal.
+   */
   public int getScale() { return scale_; }
+
+  /**
+   * @return The underlying bytes. This is stored as unsigned 2's complement.
+   */
   public byte[] getBytes() { return bytes_; }
 
   /**

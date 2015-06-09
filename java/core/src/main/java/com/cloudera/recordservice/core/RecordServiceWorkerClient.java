@@ -41,10 +41,10 @@ import com.cloudera.recordservice.thrift.TUniqueId;
 
 /**
  * Java client for the RecordServiceWorker. This class is not thread safe.
- * TODO: Don't expose raw Thrift objects, add Kerberos support.
- * TODO: should we even expose this? What about just exposing the Records
- * object.
  */
+// TODO: Don't expose raw Thrift objects, add Kerberos support.
+// TODO: should we even expose this? What about just exposing the Records
+// object.
 public class RecordServiceWorkerClient {
   private final static Logger LOG =
     LoggerFactory.getLogger(RecordServiceWorkerClient.class);
@@ -89,6 +89,9 @@ public class RecordServiceWorkerClient {
     public TSchema getSchema() { return schema_; }
   }
 
+  /**
+   * Builder to create worker client with various configs.
+   */
   public static class Builder {
     RecordServiceWorkerClient client_ = new RecordServiceWorkerClient();
 
@@ -119,6 +122,10 @@ public class RecordServiceWorkerClient {
       return this;
     }
 
+    /**
+     * Creates a worker client connecting to 'hostname'/'port' with previously
+     * set options.
+     */
     public RecordServiceWorkerClient connect(String hostname, int port)
         throws TRecordServiceException, IOException {
       client_.connect(hostname, port);

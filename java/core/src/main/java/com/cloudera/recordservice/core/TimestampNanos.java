@@ -16,13 +16,16 @@ package com.cloudera.recordservice.core;
 
 import java.sql.Timestamp;
 
-// Conversion from encoded timestamp from the serialized format to other
-// formats. This class does lazy conversion and is intended to be reused
-// across values.
-// Values are stored as time since EPOCH 1970-01-01 GMT.
+/**
+ * Conversion from encoded timestamp from the serialized format to other
+ * formats. This class does lazy conversion and is intended to be reused
+ * across values.
+ * Values are stored as time since EPOCH 1970-01-01 GMT.
+ */
 public class TimestampNanos {
-
+  // Milliseconds since epoch.
   private long millis_;
+  // Nano second offset.
   private int nanos_;
 
   // Timestamp object to return. Reused.
@@ -48,5 +51,4 @@ public class TimestampNanos {
 
   public int getNanos() { return nanos_; }
   public long getMillisSinceEpoch() { return millis_; }
-
 }
