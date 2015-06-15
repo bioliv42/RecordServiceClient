@@ -14,6 +14,15 @@
 
 cmake_minimum_required(VERSION 2.6)
 
+IF (DEFINED ENV{IMPALA_TOOLCHAIN})
+message(STATUS "Toolchain enabled. Building with toolchain compiler.")
+message(STATUS "Toolchain home: $ENV{IMPALA_TOOLCHAIN}")
+set(GCC_ROOT $ENV{IMPALA_TOOLCHAIN}/gcc-4.9.2)
+set(CMAKE_C_COMPILER ${GCC_ROOT}/bin/gcc)
+set(CMAKE_CXX_COMPILER ${GCC_ROOT}/bin/g++)
+message(STATUS "CMAKE_CXX_COMPILER: ${CMAKE_CXX_COMPILER}")
+ENDIF (DEFINED ENV{IMPALA_TOOLCHAIN})
+
 # generate CTest input files
 enable_testing()
 
