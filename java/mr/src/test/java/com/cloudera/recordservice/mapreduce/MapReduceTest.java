@@ -47,7 +47,7 @@ public class MapReduceTest {
 
   private void verifyInputSplits(int numSplits, int numCols, Configuration config)
       throws IOException {
-    List<InputSplit> splits = RecordServiceInputFormat.getSplits(config);
+    List<InputSplit> splits = RecordServiceInputFormat.getSplits(config).splits;
     assertEquals(splits.size(), numSplits);
     RecordServiceInputSplit split = (RecordServiceInputSplit)splits.get(0);
     assertEquals(split.getSchema().getNumColumns(), numCols);
@@ -157,7 +157,7 @@ public class MapReduceTest {
 
     try {
       RecordServiceInputFormat.setInputTable(config, null, "tpch.nation");
-      List<InputSplit> splits = RecordServiceInputFormat.getSplits(config);
+      List<InputSplit> splits = RecordServiceInputFormat.getSplits(config).splits;
       reader.initialize((RecordServiceInputSplit)splits.get(0), config);
 
       int numRows = 0;
@@ -177,7 +177,7 @@ public class MapReduceTest {
 
       config.clear();
       RecordServiceInputFormat.setInputTable(config, "tpch", "nation", "n_comment");
-      splits = RecordServiceInputFormat.getSplits(config);
+      splits = RecordServiceInputFormat.getSplits(config).splits;
       reader.initialize((RecordServiceInputSplit)splits.get(0), config);
       numRows = 0;
       while (reader.nextKeyValue()) {
@@ -205,7 +205,7 @@ public class MapReduceTest {
 
     try {
       RecordServiceInputFormat.setInputTable(config, null, "rs.alltypes");
-      List<InputSplit> splits = RecordServiceInputFormat.getSplits(config);
+      List<InputSplit> splits = RecordServiceInputFormat.getSplits(config).splits;
 
       int numRows = 0;
       for (InputSplit split: splits) {
@@ -262,7 +262,7 @@ public class MapReduceTest {
 
     try {
       RecordServiceInputFormat.setInputTable(config, null, "rs.alltypes_null");
-      List<InputSplit> splits = RecordServiceInputFormat.getSplits(config);
+      List<InputSplit> splits = RecordServiceInputFormat.getSplits(config).splits;
 
       int numRows = 0;
       for (InputSplit split: splits) {

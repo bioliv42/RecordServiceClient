@@ -311,7 +311,7 @@ public class RecordServiceHiveInputFormat<K extends WritableComparable,
     // Create a RecordServiceRecordReader and wrap it with a HiveRecordReader
     // to read the data.
     RecordServiceRecordReader rsRr = new RecordServiceRecordReader(
-        hsplit.getInputSplit(), job, reporter);
+        (RecordServiceInputSplit)hsplit.getInputSplit(), job, reporter);
 
     // Pass the RecordService as the target InputFormat (this will override
     // the actual input format).

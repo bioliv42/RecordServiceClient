@@ -23,15 +23,19 @@ import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapreduce.InputFormat;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.JobContext;
+import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.cloudera.recordservice.core.RecordServicePlannerClient;
 import com.cloudera.recordservice.core.Request;
+import com.cloudera.recordservice.mr.RecordReaderCore;
 import com.cloudera.recordservice.mr.Schema;
 import com.cloudera.recordservice.mr.TaskInfo;
 import com.cloudera.recordservice.thrift.TPlanRequestResult;
-import com.cloudera.recordservice.thrift.TSchema;
+import com.cloudera.recordservice.thrift.TRecordServiceException;
 import com.cloudera.recordservice.thrift.TStats;
 import com.cloudera.recordservice.thrift.TTask;
 import com.google.common.base.Preconditions;
@@ -63,17 +67,28 @@ public abstract class RecordServiceInputFormatBase<K, V> extends InputFormat<K, 
   // Name of record service counters group.
   public final static String COUNTERS_GROUP_NAME = "Record Service Counters";
 
+  // Encapsulates results of a plan request, returning the splits and the schema.
+  public static class SplitsInfo {
+    public List<InputSplit> splits;
+    public Schema schema;
+
+    public SplitsInfo(List<InputSplit> splits, Schema schema) {
+      this.splits = splits;
+      this.schema = schema;
+    }
+  }
+
   @Override
   public List<InputSplit> getSplits(JobContext context) throws IOException,
       InterruptedException {
-    return getSplits(context.getConfiguration());
+    return getSplits(context.getConfiguration()).splits;
   }
 
   /**
    * Looks inside the jobConf to construct the RecordService request. The
    * request can either be a sql statement, table or path.
    */
-  public static List<InputSplit> getSplits(Configuration jobConf) throws IOException {
+  public static SplitsInfo getSplits(Configuration jobConf) throws IOException {
     String tblName = jobConf.get(TBL_NAME_CONF);
     String inputDir = jobConf.get(FileInputFormat.INPUT_DIR);
 
@@ -124,13 +139,12 @@ public abstract class RecordServiceInputFormatBase<K, V> extends InputFormat<K, 
     } catch (Exception e) {
       throw new IOException(e);
     }
-    TSchema tSchema = result.getSchema();
+    Schema schema = new Schema(result.getSchema());
     List<InputSplit> splits = new ArrayList<InputSplit>();
     for (TTask tTask : result.getTasks()) {
-      splits.add(new RecordServiceInputSplit(
-          new Schema(tSchema), new TaskInfo(tTask)));
+      splits.add(new RecordServiceInputSplit(schema, new TaskInfo(tTask)));
     }
-    return splits;
+    return new SplitsInfo(splits, schema);
   }
 
   /**
@@ -206,6 +220,51 @@ public abstract class RecordServiceInputFormatBase<K, V> extends InputFormat<K, 
     if (counters.isSetHdfs_throughput()) {
       ctx.getCounter(COUNTERS_GROUP_NAME, "HDFS Throughput(MB/s)").setValue(
           (long)(counters.hdfs_throughput / (1024 * 1024)));
+    }
+  }
+
+  /**
+   * Base class of RecordService based record readers.
+   */
+  protected abstract static class RecordReaderBase<K,V> extends RecordReader<K, V> {
+    private static final Logger LOG =
+        LoggerFactory.getLogger(RecordReaderBase.class);
+    protected TaskAttemptContext context_;
+    protected RecordReaderCore reader_;
+
+    /**
+     * Initializes the RecordReader and starts execution of the task.
+     */
+    @Override
+    public void initialize(InputSplit split, TaskAttemptContext context)
+        throws IOException, InterruptedException {
+      RecordServiceInputSplit rsSplit = (RecordServiceInputSplit)split;
+      try {
+        reader_ = new RecordReaderCore(context.getConfiguration(), rsSplit.getTaskInfo());
+      } catch (Exception e) {
+        throw new IOException("Failed to execute task.", e);
+      }
+      context_ = context;
+    }
+
+    @Override
+    public void close() throws IOException {
+      if (reader_ != null) {
+        try {
+          RecordServiceInputFormatBase.setCounters(
+              context_, reader_.records().getStatus().stats);
+        } catch (TRecordServiceException e) {
+          LOG.debug("Could not populate counters: " + e);
+        }
+        reader_.close();
+        reader_ = null;
+      }
+    }
+
+    @Override
+    public float getProgress() throws IOException {
+      if (reader_ == null) return 1;
+      return reader_.records().progress();
     }
   }
 }

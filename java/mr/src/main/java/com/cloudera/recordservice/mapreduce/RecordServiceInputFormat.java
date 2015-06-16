@@ -62,10 +62,7 @@ public class RecordServiceInputFormat extends
    * TODO: Should keys just be NullWritables?
    */
   public static class RecordServiceRecordReader extends
-      RecordReader<LongWritable, RecordServiceRecord> {
-    private TaskAttemptContext context_;
-    private RecordReaderCore reader_;
-
+      RecordReaderBase<LongWritable, RecordServiceRecord> {
     // Current record being processed
     private Records.Record currentRSRecord_;
 
@@ -81,17 +78,6 @@ public class RecordServiceInputFormat extends
 
     // True after initialize() has fully completed.
     private volatile boolean isInitialized_ = false;
-
-    /**
-     * Initializes the RecordReader and starts execution of the task.
-     */
-    @Override
-    public void initialize(InputSplit split, TaskAttemptContext context)
-        throws IOException, InterruptedException {
-      RecordServiceInputSplit rsSplit = (RecordServiceInputSplit)split;
-      initialize(rsSplit, context.getConfiguration());
-      context_ = context;
-    }
 
     /**
      * The general contract of the RecordReader is that the client (Mapper) calls
@@ -122,25 +108,6 @@ public class RecordServiceInputFormat extends
     public RecordServiceRecord getCurrentValue() throws IOException,
         InterruptedException {
       return record_;
-    }
-
-    @Override
-    public float getProgress() {
-      return reader_.records().progress();
-    }
-
-    @Override
-    public void close() throws IOException {
-      if (reader_ != null) {
-        try {
-          RecordServiceInputFormatBase.setCounters(
-              context_, reader_.records().getStatus().stats);
-        } catch (TRecordServiceException e) {
-          LOG.debug("Could not populate counters: " + e);
-        }
-        reader_.close();
-        reader_ = null;
-      }
     }
 
     /**

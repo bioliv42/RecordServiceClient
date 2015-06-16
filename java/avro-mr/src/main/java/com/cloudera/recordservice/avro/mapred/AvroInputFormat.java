@@ -24,14 +24,11 @@ import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.cloudera.recordservice.avro.SpecificRecords;
 import com.cloudera.recordservice.avro.SpecificRecords.ResolveBy;
 import com.cloudera.recordservice.mapred.RecordServiceInputFormatBase;
 import com.cloudera.recordservice.mapred.RecordServiceInputSplit;
-import com.cloudera.recordservice.mr.RecordReaderCore;
 import com.cloudera.recordservice.thrift.TRecordServiceException;
 
 /**
@@ -42,7 +39,6 @@ import com.cloudera.recordservice.thrift.TRecordServiceException;
  */
 public class AvroInputFormat<T> extends
     RecordServiceInputFormatBase<AvroWrapper<T>, NullWritable> {
-  private static final Logger LOG = LoggerFactory.getLogger(AvroInputFormat.class);
 
   @Override
   public RecordReader<AvroWrapper<T>, NullWritable> getRecordReader(
@@ -56,25 +52,17 @@ public class AvroInputFormat<T> extends
    * and returns them as Avro objects of type T.
    */
   private static class AvroRecordReader<T>
-      implements RecordReader<AvroWrapper<T>, NullWritable> {
-    private RecordReaderCore reader_;
+      extends RecordReaderBase<AvroWrapper<T>, NullWritable> {
     private SpecificRecords<T> records_;
-    private Reporter reporter_;
 
     public AvroRecordReader(JobConf config, Reporter reporter,
         RecordServiceInputSplit split) throws IOException {
-      try {
-        reader_ = new RecordReaderCore(config, split.getBackingSplit().getTaskInfo());
-      } catch (Exception e) {
-        throw new IOException("Failed to execute task.", e);
-      }
+      super(split, config, reporter);
       Schema schema = AvroJob.getInputSchema(config);
       assert(schema != null);
-
       // FIXME: this is only right if T is a specific record. Re-think our avro package
       // object hierarchy to look more like avros?
       records_ = new SpecificRecords<T>(schema, reader_.records(), ResolveBy.NAME);
-      reporter_ = reporter;
     }
 
     public AvroWrapper<T> createKey() {
@@ -91,29 +79,6 @@ public class AvroInputFormat<T> extends
         return true;
       } catch (TRecordServiceException e) {
         throw new IOException("Could not get next record.", e);
-      }
-    }
-
-    public float getProgress() throws IOException {
-      if (reader_ == null) return 0;
-      return reader_.records().progress();
-    }
-
-    public long getPos() throws IOException {
-      return 0;
-    }
-
-    public void close() throws IOException {
-      if (reader_ != null) {
-        assert(reporter_ != null);
-        try {
-          com.cloudera.recordservice.mapreduce.RecordServiceInputFormatBase.setCounters(
-              reporter_, reader_.records().getStatus().stats);
-        } catch (TRecordServiceException e) {
-          LOG.debug("Could not populate counters: " + e);
-        }
-        reader_.close();
-        reader_ = null;
       }
     }
   }

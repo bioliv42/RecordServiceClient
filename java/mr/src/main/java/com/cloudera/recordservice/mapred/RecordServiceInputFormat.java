@@ -15,67 +15,35 @@
 package com.cloudera.recordservice.mapred;
 
 import java.io.IOException;
-import java.util.List;
 
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.WritableComparable;
-import org.apache.hadoop.mapred.InputFormat;
 import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import com.cloudera.recordservice.mapreduce.RecordServiceInputFormatBase;
-import com.cloudera.recordservice.mr.RecordReaderCore;
 import com.cloudera.recordservice.mr.RecordServiceRecord;
 import com.cloudera.recordservice.thrift.TRecordServiceException;
 
 /**
  * Implementation of RecordServiceInputFormat.
  */
-public class RecordServiceInputFormat implements
-    InputFormat<WritableComparable<?>, RecordServiceRecord>{
-
-  private static final Logger LOG =
-      LoggerFactory.getLogger(RecordServiceInputFormat.class);
-
-  @Override
-  public InputSplit[] getSplits(JobConf job, int numSplits) throws IOException {
-    List<org.apache.hadoop.mapreduce.InputSplit> splits =
-        RecordServiceInputFormatBase.getSplits(job);
-    InputSplit[] retSplits = new InputSplit[splits.size()];
-    int i = 0;
-    for (org.apache.hadoop.mapreduce.InputSplit split: splits) {
-      retSplits[i] = new RecordServiceInputSplit(
-          (com.cloudera.recordservice.mapreduce.RecordServiceInputSplit) split);
-      i++;
-    }
-    return retSplits;
-  }
+public class RecordServiceInputFormat extends
+    RecordServiceInputFormatBase<WritableComparable<?>, RecordServiceRecord> {
 
   @Override
   public RecordReader<WritableComparable<?>, RecordServiceRecord>
       getRecordReader(InputSplit split, JobConf job, Reporter reporter)
           throws IOException {
-    return new RecordServiceRecordReader(split, job, reporter);
+    return new RecordServiceRecordReader((RecordServiceInputSplit)split, job, reporter);
   }
 
-  public static class RecordServiceRecordReader implements
-      RecordReader<WritableComparable<?>, RecordServiceRecord> {
-    private Reporter reporter_;
-    private RecordReaderCore reader_;
-
-    public RecordServiceRecordReader(InputSplit split,
+  public static class RecordServiceRecordReader
+      extends RecordReaderBase<WritableComparable<?>, RecordServiceRecord> {
+    public RecordServiceRecordReader(RecordServiceInputSplit split,
         JobConf job, Reporter reporter) throws IOException {
-      try {
-        reader_ = new RecordReaderCore(job,
-            ((RecordServiceInputSplit)split).getBackingSplit().getTaskInfo());
-      } catch (Exception e) {
-        throw new IOException("Failed to execute task.", e);
-      }
-      reporter_ = reporter;
+      super(split, job, reporter);
     }
 
     /**
@@ -104,31 +72,6 @@ public class RecordServiceInputFormat implements
     @Override
     public RecordServiceRecord createValue() {
       return new RecordServiceRecord(reader_.schema());
-    }
-
-    @Override
-    public long getPos() throws IOException {
-      // TODO: what does this mean for us?
-      return 0;
-    }
-
-    @Override
-    public void close() throws IOException {
-      if (reader_ != null) {
-        try {
-          RecordServiceInputFormatBase.setCounters(
-              reporter_, reader_.records().getStatus().stats);
-        } catch (TRecordServiceException e) {
-          LOG.debug("Could not populate counters: " + e);
-        }
-        reader_.close();
-        reader_ = null;
-      }
-    }
-
-    @Override
-    public float getProgress() {
-      return reader_.records().progress();
     }
   }
 }
