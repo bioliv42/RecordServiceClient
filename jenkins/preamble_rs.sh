@@ -44,5 +44,3 @@ echo "**************************************************************************
 echo " Environment setup for RecordService complete, build proper follows"
 echo "********************************************************************************"
 
-. $RECORD_SERVICE_HOME/jenkins/set_up_toolchain.sh
-
