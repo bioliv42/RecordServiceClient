@@ -20,6 +20,7 @@ cd $IMPALA_HOME
 . bin/impala-config.sh &> /dev/null
 export PATH=/usr/lib/ccache:$PATH
 export BOOST_ROOT=/opt/toolchain/boost-pic-1.55.0/
+export ASAN_OPTIONS="handle_segv=0"
 
 echo ">>> Shell environment"
 env
