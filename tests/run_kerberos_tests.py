@@ -27,6 +27,7 @@ parser = OptionParser()
 parser.add_option("--host", dest="host", default="vd0224.halxg.cloudera.com",
     help="Host to connect to.")
 (options, args) = parser.parse_args()
+IMPALA_SHELL = os.environ['IMPALA_HOME'] + "/bin/impala-shell.sh"
 
 # Runs 'cmd' and waits for it to finish. Returns stdout.
 def run_shell_cmd(cmd):
@@ -43,7 +44,7 @@ def run_shell_cmd(cmd):
   return result
 
 def verify_impala_query(sql, expected):
-  cmd = "impala-shell -k -B -i " + options.host + " -q \"" + sql + "\""
+  cmd = IMPALA_SHELL + " -k -B -i " + options.host + " -q \"" + sql + "\""
   actual = run_shell_cmd(cmd)
   print actual
   if actual != expected:
