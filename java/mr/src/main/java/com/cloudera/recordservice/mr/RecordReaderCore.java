@@ -20,6 +20,7 @@ import org.apache.hadoop.conf.Configuration;
 
 import com.cloudera.recordservice.core.RecordServiceWorkerClient;
 import com.cloudera.recordservice.core.Records;
+import com.cloudera.recordservice.mapreduce.RecordServiceInputFormatBase;
 import com.cloudera.recordservice.thrift.TNetworkAddress;
 import com.cloudera.recordservice.thrift.TRecordServiceException;
 
@@ -51,6 +52,8 @@ public class RecordReaderCore {
       int fetchSize = config.getInt(FETCH_SIZE_CONF, -1);
       worker_ = new RecordServiceWorkerClient.Builder()
           .setFetchSize(fetchSize != -1 ? fetchSize : null)
+          .setKerberosPrincipal(
+              config.get(RecordServiceInputFormatBase.KERBEROS_PRINCIPAL))
           .connect(task.hostname, task.port);
       records_ = worker_.execAndFetch(taskInfo.getTask());
     } finally {

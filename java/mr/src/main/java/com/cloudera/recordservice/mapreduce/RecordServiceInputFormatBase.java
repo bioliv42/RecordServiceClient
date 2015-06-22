@@ -54,6 +54,9 @@ import com.google.common.collect.Lists;
  * TODO: clean this up. Come up with a nicer way to deal with mapred and mapreduce.
  */
 public abstract class RecordServiceInputFormatBase<K, V> extends InputFormat<K, V> {
+  /**
+   * Config keys specific to the record service.
+   */
   // The fully qualified table name to read.
   public final static String TBL_NAME_CONF = "recordservice.table.name";
 
@@ -63,6 +66,9 @@ public abstract class RecordServiceInputFormatBase<K, V> extends InputFormat<K, 
   // Host/Port of the planner service.
   public final static String PLANNER_HOST = "recordservice.planner.host";
   public final static String PLANNER_PORT = "recordservice.planner.port";
+
+  // Kerberos principal.
+  public final static String KERBEROS_PRINCIPAL = "recordservice.kerberos.principal";
 
   // Name of record service counters group.
   public final static String COUNTERS_GROUP_NAME = "Record Service Counters";
@@ -135,7 +141,8 @@ public abstract class RecordServiceInputFormatBase<K, V> extends InputFormat<K, 
       result = RecordServicePlannerClient.planRequest(
           jobConf.get(PLANNER_HOST, "localhost"),
           jobConf.getInt(PLANNER_PORT, 40000),
-          request);
+          request,
+          jobConf.get(KERBEROS_PRINCIPAL));
     } catch (Exception e) {
       throw new IOException(e);
     }

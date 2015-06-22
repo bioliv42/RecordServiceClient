@@ -19,7 +19,6 @@ import java.io.IOException;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TProtocol;
-import org.apache.thrift.transport.TSocket;
 import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
@@ -51,12 +50,17 @@ public class RecordServicePlannerClient {
    * Generates a plan for 'request', connecting to the planner service at
    * hostname/port.
    */
+  public static TPlanRequestResult planRequest(String hostname, int port, Request request)
+      throws IOException, TRecordServiceException {
+    return planRequest(hostname, port, request, null);
+  }
+
   public static TPlanRequestResult planRequest(
-      String hostname, int port, Request request)
+      String hostname, int port, Request request, String kerberosPrincipal)
       throws IOException, TRecordServiceException {
     RecordServicePlannerClient client = null;
     try {
-      client = new RecordServicePlannerClient(hostname, port);
+      client = new RecordServicePlannerClient(hostname, port, kerberosPrincipal);
       return client.planRequest(request);
     } finally {
       if (client != null) client.close();
@@ -70,9 +74,15 @@ public class RecordServicePlannerClient {
   public static TGetSchemaResult getSchema(
       String hostname, int port, Request request)
       throws IOException, TRecordServiceException {
+    return getSchema(hostname, port, request, null);
+  }
+
+  public static TGetSchemaResult getSchema(
+      String hostname, int port, Request request, String kerberosPrincipal)
+      throws IOException, TRecordServiceException {
     RecordServicePlannerClient client = null;
     try {
-      client = new RecordServicePlannerClient(hostname, port);
+      client = new RecordServicePlannerClient(hostname, port, kerberosPrincipal);
       return client.getSchema(request);
     } finally {
       if (client != null) client.close();
@@ -83,15 +93,14 @@ public class RecordServicePlannerClient {
    * Opens a connection to the RecordServicePlanner.
    */
   public RecordServicePlannerClient(String hostname, int port)
+     throws IOException, TRecordServiceException {
+    this(hostname, port, null);
+  }
+
+  public RecordServicePlannerClient(String hostname, int port, String kerberosPrincipal)
       throws IOException, TRecordServiceException {
-    LOG.info("Connecting to RecordServicePlanner at " + hostname + ":" + port);
-    TTransport transport = new TSocket(hostname, port);
-    try {
-      transport.open();
-    } catch (TTransportException e) {
-      throw new IOException(String.format(
-          "Could not connect to RecordServicePlanner: %s:%d", hostname, port), e);
-    }
+    TTransport transport = ThriftUtils.createTransport(
+        "RecordServicePlanner", hostname, port, kerberosPrincipal);
     protocol_ = new TBinaryProtocol(transport);
     plannerClient_ = new RecordServicePlanner.Client(protocol_);
 

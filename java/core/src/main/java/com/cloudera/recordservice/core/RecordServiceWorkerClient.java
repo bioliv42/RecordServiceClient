@@ -21,7 +21,6 @@ import java.util.Map;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TProtocol;
-import org.apache.thrift.transport.TSocket;
 import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
@@ -94,6 +93,7 @@ public class RecordServiceWorkerClient {
    */
   public static class Builder {
     RecordServiceWorkerClient client_ = new RecordServiceWorkerClient();
+    String kerberosPrincipal_ = null;
 
     public Builder setFetchSize(Integer fetchSize) {
       client_.fetchSize_ = fetchSize;
@@ -121,6 +121,10 @@ public class RecordServiceWorkerClient {
       client_.retrySleepMs_ = retrySleepMs;
       return this;
     }
+    public Builder setKerberosPrincipal(String principal) {
+      kerberosPrincipal_ = principal;
+      return this;
+    }
 
     /**
      * Creates a worker client connecting to 'hostname'/'port' with previously
@@ -128,7 +132,7 @@ public class RecordServiceWorkerClient {
      */
     public RecordServiceWorkerClient connect(String hostname, int port)
         throws TRecordServiceException, IOException {
-      client_.connect(hostname, port);
+      client_.connect(hostname, port, kerberosPrincipal_);
       return client_;
     }
   }
@@ -307,22 +311,15 @@ public class RecordServiceWorkerClient {
   /**
    * Connects to the RecordServiceWorker running on hostname/port.
    */
-  private void connect(String hostname, int port)
+  private void connect(String hostname, int port, String kerberosPrincipal)
       throws IOException, TRecordServiceException {
     if (workerClient_ != null) {
       throw new RuntimeException("Already connected. Must call close() first.");
     }
 
-    TTransport transport = new TSocket(hostname, port);
+    TTransport transport = ThriftUtils.createTransport(
+        "RecordServiceWorker", hostname, port, kerberosPrincipal);
     protocol_ = new TBinaryProtocol(transport);
-    LOG.info("Connecting to worker at " + hostname + ":" + port);
-    try {
-        transport.open();
-    } catch (TTransportException e) {
-       throw new IOException(String.format(
-          "Could not connect to RecordServiceWorker: %s:%d", hostname, port), e);
-    }
-
     workerClient_ = new RecordServiceWorker.Client(protocol_);
     try {
       protocolVersion_ = ThriftUtils.fromThrift(workerClient_.GetProtocolVersion());
