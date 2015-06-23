@@ -19,7 +19,7 @@ set(LIBRARY_OUTPUT_PATH "${BUILD_OUTPUT_ROOT_DIRECTORY}/recordservice")
 # where to put generated binaries.
 set(EXECUTABLE_OUTPUT_PATH "${BUILD_OUTPUT_ROOT_DIRECTORY}/recordservice")
 
-set (LINK_LIBS RecordServiceThrift thriftstatic gflagsstatic)
+set (LINK_LIBS RecordServiceThrift thriftstatic gflagsstatic TestUtil)
 
 add_executable(record-service-client record-service-client.cc)
 target_link_libraries(record-service-client ${LINK_LIBS} -lboost_date_time -lrt)
@@ -30,3 +30,8 @@ target_link_libraries(rs-grep ${LINK_LIBS})
 add_executable(plan-request plan-request.cc)
 target_link_libraries(plan-request ${LINK_LIBS})
 
+add_executable(start-external-mini-rs-cluster start-external-mini-rs-cluster.cc)
+target_link_libraries(start-external-mini-rs-cluster ${LINK_LIBS})
+
+add_library(ExternalMiniCluster SHARED start-external-mini-rs-cluster.cc)
+target_link_libraries(ExternalMiniCluster ${LINK_LIBS})

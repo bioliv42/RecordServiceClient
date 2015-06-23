@@ -116,6 +116,12 @@ class ExternalMiniCluster {
   // Waits until the process is killed before returning.
   bool Kill(Process* process);
 
+  Statestored* get_statestored() { return statestored_; }
+
+  Catalogd* get_catalogd() { return catalogd_; }
+
+  const boost::unordered_set<Impalad*>& get_impalads() { return impalads_; }
+
  private:
   const bool debug_;
   const char* impala_home_;

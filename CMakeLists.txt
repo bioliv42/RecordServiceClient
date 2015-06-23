@@ -61,6 +61,13 @@ set_target_properties(gtest PROPERTIES IMPORTED_LOCATION "${GTEST_LIBRARY}")
 message(STATUS "GTest include dir: " ${GTEST_INCLUDE_DIR})
 message(STATUS "GTest library: " ${GTEST_LIBRARY})
 
+# find jni headers and libs
+find_package(JNI REQUIRED)
+include_directories(${JNI_INCLUDE_DIRS})
+set(LIBS ${LIBS} ${JNI_LIBRARIES})
+message(STATUS "JNI_INCLUDE_DIRS: ${JNI_INCLUDE_DIRS}")
+message(STATUS "JNI_LIBRARIES: ${JNI_LIBRARIES}")
+
 # compiler flags that are common across debug/release builds
 #  - msse4.2: Enable sse4.2 compiler intrinsics.
 #  - Wall: Enable all warnings.

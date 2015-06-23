@@ -140,6 +140,7 @@ bool ExternalMiniCluster::StartImpalad(
   args["be_port"] = NextPort();
   args["webserver_port"] = NextPort();
   args["state_store_subscriber_port"] = NextPort();
+  args["v"] = "1";
 
   if (start_record_service_planner) {
     args["recordservice_planner_port"] = NextPort();
