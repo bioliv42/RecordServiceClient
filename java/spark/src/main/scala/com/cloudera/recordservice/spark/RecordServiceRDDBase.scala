@@ -23,17 +23,20 @@ import org.apache.spark._
 import org.apache.spark.rdd.RDD
 import org.apache.thrift.TException
 
+import java.net.InetAddress
+
 import scala.collection.mutable.ListBuffer
 import scala.reflect.ClassTag
 
 private class RecordServicePartition(rddId: Int, idx: Int,
-                                     h:Seq[String], t: TTask, s: TSchema)
-  extends Partition {
+                                     h:Seq[String], p:Seq[Int], t: TTask, s: TSchema)
+    extends Partition {
   override def hashCode(): Int = 41 * (41 + rddId) + idx
   override val index: Int = idx
   val task: TTask = t
   val schema: TSchema = s
   val hosts: Seq[String] = h
+  val ports: Seq[Int] = p
 }
 
 /**
@@ -107,19 +110,29 @@ abstract class RecordServiceRDDBase[T:ClassTag](@transient sc: SparkContext)
   }
 
   /**
+   * Returns the worker host to connect to, attempting to schedule for locality. If
+   * any of the hosts matches this hosts address, use that host. Otherwise connect
+   * to a host at random.
+   * TODO: double check this. This is critical for performance but not correctness.
+   */
+  def getWorkerToConnectTo(hosts: Seq[String]): Int = {
+    val hostAddress = InetAddress.getLocalHost.getHostAddress()
+    for (i <- 0 until hosts.size) {
+      if (hosts(i) == hostAddress) {
+        return i
+      }
+    }
+    scala.util.Random.nextInt(hosts.size)
+  }
+
+  /**
    * Executes 'stmt' and returns the worker and Records object associated with it.
    */
   protected def execTask(partition: RecordServicePartition) = {
     try {
-      // Always connect to localhost. This assumes that on each node, we have
-      // a RecordServiceWorker running and that Spark has scheduled for locality
-      // using getPreferredLocations.
-      // TODO: we need to support the case where there is not a worker running on
-      // each host, in which case this needs to talk to get the list of all workers
-      // and pick one randomly.
-      // TODO: this port should come from the task description.
+      val hostIdx = getWorkerToConnectTo(partition.hosts)
       val worker = new RecordServiceWorkerClient.Builder()
-          .connect("localhost", RecordServiceConf.WORKER_PORT)
+          .connect(partition.hosts(hostIdx), partition.ports(hostIdx))
       val records = worker.execAndFetch(partition.task)
       (worker, records)
     } catch {
@@ -179,7 +192,8 @@ abstract class RecordServiceRDDBase[T:ClassTag](@transient sc: SparkContext)
     }
 
     val planResult = try {
-      RecordServicePlannerClient.planRequest(plannerHost, plannerPort, request)
+      RecordServicePlannerClient.planRequest(plannerHost, plannerPort, request,
+          RecordServiceConf.getKerberosPrincipal(sc))
     } catch {
       case e:TRecordServiceException => logError("Could not plan request: " + e.message)
         throw new SparkException("RecordServiceRDD failed", e)
@@ -190,10 +204,12 @@ abstract class RecordServiceRDDBase[T:ClassTag](@transient sc: SparkContext)
     val partitions = new Array[Partition](planResult.tasks.size())
     for (i <- 0 until planResult.tasks.size()) {
       val hosts = ListBuffer[String]()
+      val ports = ListBuffer[Int]()
       for (j <- 0 until planResult.tasks.get(i).local_hosts.size()) {
         hosts += planResult.tasks.get(i).local_hosts.get(j).hostname
+        ports += planResult.tasks.get(i).local_hosts.get(j).port
       }
-      partitions(i) = new RecordServicePartition(id, i, hosts.seq,
+      partitions(i) = new RecordServicePartition(id, i, hosts.seq, ports.seq,
         planResult.tasks.get(i), planResult.schema)
     }
     schema = planResult.schema

@@ -18,17 +18,19 @@ import org.apache.spark.{SparkException, SparkContext}
 import org.apache.spark.sql.SQLContext
 
 object RecordServiceConf {
-  val RECORD_SERVICE_PLANNER_HOST_KEY: String = "record.service.planner.host"
-  val RECORD_SERVICE_PLANNER_PORT_KEY: String = "record.service.planner.port"
+  val RECORD_SERVICE_PLANNER_HOST_KEY: String = "recordservice.planner.host"
+  val RECORD_SERVICE_PLANNER_PORT_KEY: String = "recordservice.planner.port"
+  val RECORD_SERVICE_KERBEROS_PRINCIPAL_KEY: String = "recordservice.kerberos.principal"
+  val DEFAULT_PLANNER_HOST: String = "localhost"
   val DEFAULT_PLANNER_PORT: Int = 40000
-  val WORKER_PORT: Int = 40100
 
   /**
    * Returns the record service planner host/port.
    */
   def getPlannerHostPort(sc:SparkContext) : (String, Int) = {
     val host =
-        sc.getConf.getOption(RECORD_SERVICE_PLANNER_HOST_KEY).getOrElse("localhost")
+        sc.getConf.getOption(RECORD_SERVICE_PLANNER_HOST_KEY).
+          getOrElse(DEFAULT_PLANNER_HOST)
     val port =
         sc.getConf.getInt(RECORD_SERVICE_PLANNER_PORT_KEY, DEFAULT_PLANNER_PORT)
     (host, port)
@@ -47,5 +49,12 @@ object RecordServiceConf {
         throw new SparkException("Invalid port config", e)
     }
     (host, port)
+  }
+
+  /**
+   * Returns the kerberos principal to connect with.
+   */
+  def getKerberosPrincipal(sc:SparkContext) : String = {
+    sc.getConf.getOption(RECORD_SERVICE_KERBEROS_PRINCIPAL_KEY).getOrElse(null)
   }
 }
