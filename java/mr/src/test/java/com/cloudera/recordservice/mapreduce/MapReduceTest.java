@@ -94,7 +94,8 @@ public class MapReduceTest {
       RecordServiceInputFormat.getSplits(config);
     } catch (IllegalArgumentException e) {
       exceptionThrown = true;
-      assertTrue(e.getMessage().contains("Cannot specify both"));
+      assertTrue(e.getMessage(), e.getMessage().contains(
+          "More than one input specified"));
     }
     assertTrue(exceptionThrown);
 
@@ -107,7 +108,7 @@ public class MapReduceTest {
     } catch (IllegalArgumentException e) {
       exceptionThrown = true;
       assertTrue(e.getMessage().contains(
-          "Input specified by path and column projections cannot be used together."));
+          "Column projections can only be specified with table inputs."));
     }
     assertTrue(exceptionThrown);
 

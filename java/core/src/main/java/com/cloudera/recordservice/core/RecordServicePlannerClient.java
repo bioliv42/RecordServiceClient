@@ -131,7 +131,7 @@ public class RecordServicePlannerClient {
    */
   public void close() {
     if (plannerClient_ != null) {
-      LOG.debug("Closing RecordServicePlanner connection.");
+      LOG.info("Closing RecordServicePlanner connection.");
       protocol_.getTransport().close();
       plannerClient_ = null;
     }

@@ -57,6 +57,9 @@ public abstract class RecordServiceInputFormatBase<K, V> extends InputFormat<K, 
   /**
    * Config keys specific to the record service.
    */
+  // The query to record from.
+  public final static String QUERY_NAME_CONF = "recordservice.query";
+
   // The fully qualified table name to read.
   public final static String TBL_NAME_CONF = "recordservice.table.name";
 
@@ -72,6 +75,9 @@ public abstract class RecordServiceInputFormatBase<K, V> extends InputFormat<K, 
 
   // Name of record service counters group.
   public final static String COUNTERS_GROUP_NAME = "Record Service Counters";
+
+  private final static Logger LOG =
+      LoggerFactory.getLogger(RecordServiceInputFormatBase.class);
 
   // Encapsulates results of a plan request, returning the splits and the schema.
   public static class SplitsInfo {
@@ -95,25 +101,37 @@ public abstract class RecordServiceInputFormatBase<K, V> extends InputFormat<K, 
    * request can either be a sql statement, table or path.
    */
   public static SplitsInfo getSplits(Configuration jobConf) throws IOException {
+    LOG.debug("Generating input splits.");
+
     String tblName = jobConf.get(TBL_NAME_CONF);
     String inputDir = jobConf.get(FileInputFormat.INPUT_DIR);
+    String sqlQuery = jobConf.get(QUERY_NAME_CONF);
 
-    if (tblName == null && inputDir == null) {
+    int numSet = 0;
+    if (tblName != null) ++numSet;
+    if (inputDir != null) ++numSet;
+    if (sqlQuery != null) ++numSet;
+
+    if (numSet == 0) {
       throw new IllegalArgumentException("No input specified. Specify either '" +
-          TBL_NAME_CONF + "' or '" + FileInputFormat.INPUT_DIR + "'");
+          TBL_NAME_CONF + "', '" + QUERY_NAME_CONF + "' or '" +
+          FileInputFormat.INPUT_DIR + "'");
     }
-    if (tblName != null && inputDir != null) {
-      throw new IllegalArgumentException("Cannot specify both '" +
-          TBL_NAME_CONF + "' and '" + FileInputFormat.INPUT_DIR + "'");
+    if (numSet > 1) {
+      throw new IllegalArgumentException("More than one input specified. Can " +
+          "only specify one of '" +
+          TBL_NAME_CONF + "'=" + tblName + ", '" +
+          FileInputFormat.INPUT_DIR + "'=" + inputDir + ", '" +
+          QUERY_NAME_CONF + "'=" + sqlQuery);
     }
 
     String[] colNames = jobConf.getStrings(COL_NAMES_CONF);
     if (colNames == null) colNames = new String[0];
 
-    if (inputDir != null && colNames.length > 0) {
+    if (tblName == null && colNames.length > 0) {
       // TODO: support this.
       throw new IllegalArgumentException(
-          "Input specified by path and column projections cannot be used together.");
+          "Column projections can only be specified with table inputs.");
     }
 
     Request request = null;
@@ -132,6 +150,8 @@ public abstract class RecordServiceInputFormatBase<K, V> extends InputFormat<K, 
             "Only reading a single directory is currently supported.");
       }
       request = Request.createPathRequest(inputDir);
+    } else if (sqlQuery != null) {
+      request = Request.createSqlRequest(sqlQuery);
     } else {
       Preconditions.checkState(false);
     }
@@ -151,6 +171,7 @@ public abstract class RecordServiceInputFormatBase<K, V> extends InputFormat<K, 
     for (TTask tTask : result.getTasks()) {
       splits.add(new RecordServiceInputSplit(schema, new TaskInfo(tTask)));
     }
+    LOG.debug(String.format("Generated %d splits.", splits.size()));
     return new SplitsInfo(splits, schema);
   }
 
@@ -164,6 +185,13 @@ public abstract class RecordServiceInputFormatBase<K, V> extends InputFormat<K, 
     if (db != null) tbl = db + "." + tbl;
     config.set(TBL_NAME_CONF, tbl);
     if (cols != null && cols.length > 0) config.setStrings(COL_NAMES_CONF, cols);
+  }
+
+  /**
+   * Sets the input configuration to read results from 'query'.
+   */
+  public static void setInputQuery(Configuration config, String query) {
+    config.set(QUERY_NAME_CONF, query);
   }
 
   /**

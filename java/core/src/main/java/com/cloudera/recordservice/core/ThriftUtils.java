@@ -64,7 +64,7 @@ public class ThriftUtils {
    */
   public static TTransport createTransport(String service, String hostname, int port,
       String kerberosPrincipal) throws IOException {
-    if (kerberosPrincipal != null) {
+    if (kerberosPrincipal == null) {
       LOG.info(String.format("Connecting to %s at %s:%d", service, hostname, port));
     } else {
       LOG.info(String.format("Connecting to %s at %s:%d with kerberos principal:%s",

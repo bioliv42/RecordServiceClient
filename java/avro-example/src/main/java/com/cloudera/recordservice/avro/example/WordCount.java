@@ -52,13 +52,13 @@ public class WordCount {
   }
 
   public static void main(String[] args) throws Exception {
-    String inputPath = "";
+    String input = "";
     String outputPath = "";
     if (args.length != 2) {
       System.err.println("Usage: WordCount <input path> <output path>");
       System.exit(-1);
     }
-    inputPath = args[0];
+    input = args[0];
     outputPath = args[1];
 
     JobConf conf = new JobConf(WordCount.class);
@@ -74,7 +74,12 @@ public class WordCount {
     conf.setInputFormat(com.cloudera.recordservice.mapred.TextInputFormat.class);
     conf.setOutputFormat(TextOutputFormat.class);
 
-    FileInputFormat.setInputPaths(conf, new Path(inputPath));
+    if (input.toLowerCase().startsWith("select")) {
+      com.cloudera.recordservice.mapreduce.RecordServiceInputFormatBase.setInputQuery(
+          conf, input);
+    } else {
+      FileInputFormat.setInputPaths(conf, new Path(input));
+    }
     FileOutputFormat.setOutputPath(conf, new Path(outputPath));
 
     JobClient.runJob(conf);

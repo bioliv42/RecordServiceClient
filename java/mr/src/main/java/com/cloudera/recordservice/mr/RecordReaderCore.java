@@ -35,6 +35,7 @@ public class RecordReaderCore {
   // TODO: It would be nice for the server to adjust this automatically based
   // on how fast the client is able to process records.
   public final static String FETCH_SIZE_CONF = "recordservice.fetch.size";
+  public final int DEFAULT_FETCH_SIZE = 50000;
 
   private RecordServiceWorkerClient worker_;
 
@@ -49,11 +50,12 @@ public class RecordReaderCore {
     try {
       // TODO: handle multiple locations.
       TNetworkAddress task = taskInfo.getLocations()[0];
-      int fetchSize = config.getInt(FETCH_SIZE_CONF, -1);
+      int fetchSize = config.getInt(FETCH_SIZE_CONF, DEFAULT_FETCH_SIZE);
       worker_ = new RecordServiceWorkerClient.Builder()
           .setFetchSize(fetchSize != -1 ? fetchSize : null)
-          .setKerberosPrincipal(
-              config.get(RecordServiceInputFormatBase.KERBEROS_PRINCIPAL))
+          // TODO: enable when the worker service is kerberized.
+          //.setKerberosPrincipal(
+          //    config.get(RecordServiceInputFormatBase.KERBEROS_PRINCIPAL))
           .connect(task.hostname, task.port);
       records_ = worker_.execAndFetch(taskInfo.getTask());
     } finally {

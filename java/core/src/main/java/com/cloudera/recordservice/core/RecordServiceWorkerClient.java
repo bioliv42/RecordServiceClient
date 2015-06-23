@@ -95,6 +95,10 @@ public class RecordServiceWorkerClient {
     RecordServiceWorkerClient client_ = new RecordServiceWorkerClient();
     String kerberosPrincipal_ = null;
 
+    public Builder() {
+      LOG.debug("Creating new worker client connection.");
+    }
+
     public Builder setFetchSize(Integer fetchSize) {
       client_.fetchSize_ = fetchSize;
       LOG.debug("Setting fetch size to " + (fetchSize == null ? "default" : fetchSize));
@@ -143,7 +147,7 @@ public class RecordServiceWorkerClient {
    */
   public void close() {
     if (workerClient_ != null) {
-      LOG.debug("Closing RecordServiceWorker connection.");
+      LOG.info("Closing RecordServiceWorker connection.");
       for (TUniqueId handle: activeTasks_.keySet()) {
         try {
           workerClient_.CloseTask(handle);
@@ -173,7 +177,7 @@ public class RecordServiceWorkerClient {
   public void closeTask(TaskState handle) {
     validateIsConnected();
     if (activeTasks_.containsKey(handle.handle_)) {
-      LOG.debug("Closing RecordServiceWorker task: " + handle.handle_);
+      LOG.info("Closing RecordServiceWorker task: " + handle.handle_);
       try {
         workerClient_.CloseTask(handle.handle_);
       } catch (TException e) {
@@ -238,7 +242,7 @@ public class RecordServiceWorkerClient {
         return result;
       } catch (TRecordServiceException e) {
         if (state.task_.results_ordered && e.code == TErrorCode.INVALID_HANDLE) {
-          LOG.debug("Continuing fault tolerant scan. Offset=" + state.recordsFetched_);
+          LOG.debug("Continuing fault tolerant scan. Record offset=" + state.recordsFetched_);
           // This task returned ordered scans, meaning we can try again and continue
           // the scan. If it is not ordered, we have to fail this task entirely and
           // the client needs to retry it somewhere else.
