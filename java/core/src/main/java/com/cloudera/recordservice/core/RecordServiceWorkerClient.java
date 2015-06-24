@@ -62,6 +62,9 @@ public class RecordServiceWorkerClient {
   // Memory limit to pass to execTask(). If null, server will manage this.
   private Long memLimit_ = null;
 
+  // Maximum number of records to fetch per task.
+  private Long limit_ = null;
+
   // Number of consecutive attempts before failing any request.
   private int maxAttempts_ = 3;
 
@@ -104,11 +107,23 @@ public class RecordServiceWorkerClient {
       LOG.debug("Setting fetch size to " + (fetchSize == null ? "default" : fetchSize));
       return this;
     }
+
     public Builder setMemLimit(Long memLimit) {
       client_.memLimit_ = memLimit;
       LOG.debug("Setting mem limit to " + (memLimit == null ? "unlimited" : memLimit));
       return this;
     }
+
+    public Builder setLimit(Long limit) {
+      client_.limit_ = limit;
+      if (limit != null && limit <= 0) {
+        throw new IllegalArgumentException(
+            "Limit must be greater than 0. Limit=" + limit);
+      }
+      LOG.debug("Setting limit to " + (limit == null ? "unlimited" : limit));
+      return this;
+    }
+
     public Builder setMaxAttempts(int maxAttempts) {
       if (maxAttempts <= 0) {
         throw new IllegalArgumentException("Attempts must be greater than zero.");
@@ -117,6 +132,7 @@ public class RecordServiceWorkerClient {
       client_.maxAttempts_ = maxAttempts;
       return this;
     }
+
     public Builder setSleepDuration(int retrySleepMs) {
       if (retrySleepMs < 0) {
         throw new IllegalArgumentException("Sleep duration must be non-negative.");
@@ -125,6 +141,7 @@ public class RecordServiceWorkerClient {
       client_.retrySleepMs_ = retrySleepMs;
       return this;
     }
+
     public Builder setKerberosPrincipal(String principal) {
       kerberosPrincipal_ = principal;
       return this;
@@ -357,6 +374,7 @@ public class RecordServiceWorkerClient {
     taskParams.setOffset(offset);
     if (fetchSize_ != null) taskParams.setFetch_size(fetchSize_);
     if (memLimit_ != null) taskParams.setMem_limit(memLimit_);
+    if (limit_ != null) taskParams.setLimit(limit_);
 
     TException firstException = null;
     boolean connected = true;

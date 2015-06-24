@@ -820,6 +820,39 @@ public class TestBasicClient {
   }
 
   @Test
+  public void testLimit() throws IOException, TRecordServiceException {
+    TPlanRequestResult plan = RecordServicePlannerClient.planRequest(
+        "localhost", PLANNER_PORT,
+        Request.createTableScanRequest("tpch.nation"));
+    TNetworkAddress addr = plan.tasks.get(0).local_hosts.get(0);
+
+    // Set with a higher than count limit.
+    RecordServiceWorkerClient worker = new RecordServiceWorkerClient.Builder()
+        .setLimit(new Long(30))
+        .connect(addr.hostname, addr.port);
+    fetchAndVerifyCount(worker.execAndFetch(plan.tasks.get(0)), 25);
+    worker.close();
+
+    worker = new RecordServiceWorkerClient.Builder()
+        .setLimit(null)
+        .connect(addr.hostname, addr.port);
+    fetchAndVerifyCount(worker.execAndFetch(plan.tasks.get(0)), 25);
+    worker.close();
+
+    worker = new RecordServiceWorkerClient.Builder()
+        .setLimit(new Long(10))
+        .connect(addr.hostname, addr.port);
+    fetchAndVerifyCount(worker.execAndFetch(plan.tasks.get(0)), 10);
+    worker.close();
+
+    worker = new RecordServiceWorkerClient.Builder()
+        .setLimit(new Long(1))
+        .connect(addr.hostname, addr.port);
+    fetchAndVerifyCount(worker.execAndFetch(plan.tasks.get(0)), 1);
+    worker.close();
+  }
+
+  @Test
   public void testNonLocalWorker() throws IOException, TRecordServiceException {
     TPlanRequestResult plan = RecordServicePlannerClient.planRequest(
         "localhost", PLANNER_PORT,

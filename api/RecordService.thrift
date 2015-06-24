@@ -303,6 +303,9 @@ struct TExecTaskParams {
   // The offset is the record ordinal, that is, the first offset records are not
   // returned to the client.
   6: optional i64 offset
+
+  // The maximum number of records to return for this task.
+  7: optional i64 limit
 }
 
 struct TExecTaskResult {
