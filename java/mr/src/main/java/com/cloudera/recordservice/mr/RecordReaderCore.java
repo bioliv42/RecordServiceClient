@@ -37,14 +37,7 @@ import com.cloudera.recordservice.thrift.TRecordServiceException;
  * token) to avoid causing issues with the KDC.
  */
 public class RecordReaderCore {
-  // Optional configuration option for performance tuning that configures
-  // the number of max number of records returned when fetching results from
-  // the RecordService. If not set, server default will be used.
-  // TODO: It would be nice for the server to adjust this automatically based
-  // on how fast the client is able to process records.
-  public final static String FETCH_SIZE_CONF = "recordservice.fetch.size";
-  public final int DEFAULT_FETCH_SIZE = 50000;
-
+  // Underlying worker connection.
   private RecordServiceWorkerClient worker_;
 
   // Current row batch that is being processed.
@@ -58,7 +51,8 @@ public class RecordReaderCore {
     try {
       // TODO: handle multiple locations.
       TNetworkAddress task = taskInfo.getLocations()[0];
-      int fetchSize = config.getInt(FETCH_SIZE_CONF, DEFAULT_FETCH_SIZE);
+      int fetchSize = config.getInt(
+          RecordServiceConfig.FETCH_SIZE_CONF, RecordServiceConfig.DEFAULT_FETCH_SIZE);
 
       // Try to get the delegation token from the credentials. If it is there, use it.
       @SuppressWarnings("unchecked")

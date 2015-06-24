@@ -41,6 +41,7 @@ import org.junit.Test;
 
 import com.cloudera.recordservice.core.TestBase;
 import com.cloudera.recordservice.mr.DecimalWritable;
+import com.cloudera.recordservice.mr.RecordServiceConfig;
 import com.cloudera.recordservice.mr.RecordServiceRecord;
 import com.cloudera.recordservice.mr.TimestampNanosWritable;
 import com.cloudera.recordservice.thrift.TErrorCode;
@@ -57,12 +58,40 @@ public class MapReduceTest extends TestBase {
     assertEquals(split.getSchema().getNumColumns(), numCols);
   }
 
+  private void verifyException(String msg,
+      String db, String tbl, String... columns) {
+    Configuration config = new Configuration();
+    boolean exceptionThrown = false;
+    try {
+      RecordServiceConfig.setInputTable(config, db, tbl, columns);
+      RecordServiceInputFormat.getSplits(config, new Credentials());
+    } catch (IOException e) {
+      exceptionThrown = true;
+      assertTrue(e.getMessage(), e.getMessage().contains(msg));
+    } catch (IllegalArgumentException e) {
+      exceptionThrown = true;
+      assertTrue(e.getMessage(), e.getMessage().contains(msg));
+    }
+    assertTrue(exceptionThrown);
+  }
+
+  private void verifyException(Configuration config, String msg) {
+    boolean exceptionThrown = false;
+    try {
+      RecordServiceInputFormat.getSplits(config, new Credentials());
+    } catch (IOException e) {
+      exceptionThrown = true;
+      assertTrue(e.getMessage(), e.getMessage().contains(msg));
+    }
+    assertTrue(exceptionThrown);
+  }
+
   private void verifyInputSplitsTable(int numSplits, int numCols,
       String tbl, String... cols) throws IOException {
     Configuration config = new Configuration();
-    config.set(RecordServiceInputFormat.TBL_NAME_CONF, tbl);
+    config.set(RecordServiceConfig.TBL_NAME_CONF, tbl);
     if (cols.length > 0) {
-      config.setStrings(RecordServiceInputFormat.COL_NAMES_CONF, cols);
+      config.setStrings(RecordServiceConfig.COL_NAMES_CONF, cols);
     }
     verifyInputSplits(numSplits, numCols, config);
   }
@@ -88,7 +117,7 @@ public class MapReduceTest extends TestBase {
     assertTrue(exceptionThrown);
 
     // Set db/table and make sure it works.
-    config.set(RecordServiceInputFormat.TBL_NAME_CONF, "tpch.nation");
+    config.set(RecordServiceConfig.TBL_NAME_CONF, "tpch.nation");
     RecordServiceInputFormat.getSplits(config, new Credentials());
 
     // Also set input. This should fail.
@@ -104,8 +133,8 @@ public class MapReduceTest extends TestBase {
     assertTrue(exceptionThrown);
 
     // Unset the table and set columns. INPUT_DIR and columns don't work now.
-    config.unset(RecordServiceInputFormat.TBL_NAME_CONF);
-    config.setStrings(RecordServiceInputFormat.COL_NAMES_CONF, "a");
+    config.unset(RecordServiceConfig.TBL_NAME_CONF);
+    config.setStrings(RecordServiceConfig.COL_NAMES_CONF, "a");
     exceptionThrown = false;
     try {
       RecordServiceInputFormat.getSplits(config, new Credentials());
@@ -125,7 +154,7 @@ public class MapReduceTest extends TestBase {
 
     // Test some cases using the config utility.
     config.clear();
-    RecordServiceInputFormat.setInputTable(config, null,
+    RecordServiceConfig.setInputTable(config, null,
         "tpch.nation", "n_nationkey", "n_comment");
     verifyInputSplits(1, 2, config);
 
@@ -161,7 +190,7 @@ public class MapReduceTest extends TestBase {
         new RecordServiceInputFormat.RecordServiceRecordReader();
 
     try {
-      RecordServiceInputFormat.setInputTable(config, null, "tpch.nation");
+      RecordServiceConfig.setInputTable(config, null, "tpch.nation");
       List<InputSplit> splits = RecordServiceInputFormat.getSplits(
           config, new Credentials()).splits;
       reader.initialize((RecordServiceInputSplit)splits.get(0), config);
@@ -182,7 +211,7 @@ public class MapReduceTest extends TestBase {
       assertEquals(numRows, 25);
 
       config.clear();
-      RecordServiceInputFormat.setInputTable(config, "tpch", "nation", "n_comment");
+      RecordServiceConfig.setInputTable(config, "tpch", "nation", "n_comment");
       splits = RecordServiceInputFormat.getSplits(config, new Credentials()).splits;
       reader.initialize((RecordServiceInputSplit)splits.get(0), config);
       numRows = 0;
@@ -210,7 +239,7 @@ public class MapReduceTest extends TestBase {
     format.setTimeZone(TimeZone.getTimeZone("GMT"));
 
     try {
-      RecordServiceInputFormat.setInputTable(config, null, "rs.alltypes");
+      RecordServiceConfig.setInputTable(config, null, "rs.alltypes");
       List<InputSplit> splits =
           RecordServiceInputFormat.getSplits(config, new Credentials()).splits;
 
@@ -268,7 +297,7 @@ public class MapReduceTest extends TestBase {
         new RecordServiceInputFormat.RecordServiceRecordReader();
 
     try {
-      RecordServiceInputFormat.setInputTable(config, null, "rs.alltypes_null");
+      RecordServiceConfig.setInputTable(config, null, "rs.alltypes_null");
       List<InputSplit> splits =
           RecordServiceInputFormat.getSplits(config, new Credentials()).splits;
 
@@ -287,5 +316,21 @@ public class MapReduceTest extends TestBase {
     } finally {
       reader.close();
     }
+  }
+
+  @Test
+  public void testConfigs() throws IOException, InterruptedException {
+    Configuration config = new Configuration();
+    RecordServiceConfig.setInputTable(config, "tpch", "nation", null);
+    verifyInputSplits(1, 4, config);
+    verifyException("Table does not exist", "", "nation", "n_comment");
+    verifyException("'tbl' must be non-empty", "tpch", null, "n_comment");
+    verifyException("'tbl' must be non-empty", "tpch", "", "n_comment");
+    verifyException("Column list cannot contain empty names.",
+        "tpch", "nation", "n_comment", null);
+    verifyException("Column list cannot contain empty names.",
+        "tpch", "nation", "n_comment", "");
+    verifyException("Column list cannot contain empty names.",
+        "tpch", "nation", "");
   }
 }

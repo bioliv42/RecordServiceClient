@@ -38,7 +38,7 @@ import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
-import com.cloudera.recordservice.mapreduce.RecordServiceInputFormat;
+import com.cloudera.recordservice.mr.RecordServiceConfig;
 
 public class MapredColorCount extends Configured implements Tool {
 
@@ -93,7 +93,7 @@ public class MapredColorCount extends Configured implements Tool {
 
     // RECORDSERVICE:
     // To read from a table instead of a path, comment out setInputPaths and instead use:
-    RecordServiceInputFormat.setInputTable(conf, "rs", "users");
+    RecordServiceConfig.setInputTable(conf, "rs", "users");
     //FileInputFormat.setInputPaths(conf, new Path(args[0]));
 
     FileOutputFormat.setOutputPath(conf, new Path(args[1]));

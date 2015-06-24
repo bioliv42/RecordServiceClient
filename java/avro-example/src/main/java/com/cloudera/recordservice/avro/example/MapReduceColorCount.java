@@ -38,7 +38,7 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
-import com.cloudera.recordservice.mapreduce.RecordServiceInputFormat;
+import com.cloudera.recordservice.mr.RecordServiceConfig;
 
 public class MapReduceColorCount extends Configured implements Tool {
 
@@ -87,7 +87,7 @@ public class MapReduceColorCount extends Configured implements Tool {
     // To read from a table instead of a path, comment out
     // FileInputFormat.setInputPaths() and instead use:
     //FileInputFormat.setInputPaths(job, new Path(args[0]));
-    RecordServiceInputFormat.setInputTable(job.getConfiguration(), "rs", "users");
+    RecordServiceConfig.setInputTable(job.getConfiguration(), "rs", "users");
 
     // RECORDSERVICE:
     // Use the RecordService version of the AvroKeyInputFormat

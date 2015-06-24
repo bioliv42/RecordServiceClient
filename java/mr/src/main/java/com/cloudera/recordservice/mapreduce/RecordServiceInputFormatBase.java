@@ -35,6 +35,7 @@ import org.slf4j.LoggerFactory;
 import com.cloudera.recordservice.core.RecordServicePlannerClient;
 import com.cloudera.recordservice.core.Request;
 import com.cloudera.recordservice.mr.RecordReaderCore;
+import com.cloudera.recordservice.mr.RecordServiceConfig;
 import com.cloudera.recordservice.mr.Schema;
 import com.cloudera.recordservice.mr.TaskInfo;
 import com.cloudera.recordservice.mr.security.DelegationTokenIdentifier;
@@ -59,25 +60,6 @@ import com.google.common.collect.Lists;
  * TODO: clean this up. Come up with a nicer way to deal with mapred and mapreduce.
  */
 public abstract class RecordServiceInputFormatBase<K, V> extends InputFormat<K, V> {
-  /**
-   * Config keys specific to the record service.
-   */
-  // The query to record from.
-  public final static String QUERY_NAME_CONF = "recordservice.query";
-
-  // The fully qualified table name to read.
-  public final static String TBL_NAME_CONF = "recordservice.table.name";
-
-  // The subset of columns to read.
-  public final static String COL_NAMES_CONF = "recordservice.col.names";
-
-  // Host/Port of the planner service.
-  public final static String PLANNER_HOST = "recordservice.planner.host";
-  public final static String PLANNER_PORT = "recordservice.planner.port";
-
-  // Kerberos principal.
-  public final static String KERBEROS_PRINCIPAL = "recordservice.kerberos.principal";
-
   // Name of record service counters group.
   public final static String COUNTERS_GROUP_NAME = "Record Service Counters";
 
@@ -117,9 +99,9 @@ public abstract class RecordServiceInputFormatBase<K, V> extends InputFormat<K, 
       Credentials credentials) throws IOException {
     LOG.debug("Generating input splits.");
 
-    String tblName = jobConf.get(TBL_NAME_CONF);
+    String tblName = jobConf.get(RecordServiceConfig.TBL_NAME_CONF);
     String inputDir = jobConf.get(FileInputFormat.INPUT_DIR);
-    String sqlQuery = jobConf.get(QUERY_NAME_CONF);
+    String sqlQuery = jobConf.get(RecordServiceConfig.QUERY_NAME_CONF);
 
     int numSet = 0;
     if (tblName != null) ++numSet;
@@ -128,18 +110,19 @@ public abstract class RecordServiceInputFormatBase<K, V> extends InputFormat<K, 
 
     if (numSet == 0) {
       throw new IllegalArgumentException("No input specified. Specify either '" +
-          TBL_NAME_CONF + "', '" + QUERY_NAME_CONF + "' or '" +
+          RecordServiceConfig.TBL_NAME_CONF + "', '" +
+          RecordServiceConfig.QUERY_NAME_CONF + "' or '" +
           FileInputFormat.INPUT_DIR + "'");
     }
     if (numSet > 1) {
       throw new IllegalArgumentException("More than one input specified. Can " +
           "only specify one of '" +
-          TBL_NAME_CONF + "'=" + tblName + ", '" +
+          RecordServiceConfig.TBL_NAME_CONF + "'=" + tblName + ", '" +
           FileInputFormat.INPUT_DIR + "'=" + inputDir + ", '" +
-          QUERY_NAME_CONF + "'=" + sqlQuery);
+          RecordServiceConfig.QUERY_NAME_CONF + "'=" + sqlQuery);
     }
 
-    String[] colNames = jobConf.getStrings(COL_NAMES_CONF);
+    String[] colNames = jobConf.getStrings(RecordServiceConfig.COL_NAMES_CONF);
     if (colNames == null) colNames = new String[0];
 
     if (tblName == null && colNames.length > 0) {
@@ -152,6 +135,9 @@ public abstract class RecordServiceInputFormatBase<K, V> extends InputFormat<K, 
     if (tblName != null) {
       if (colNames.length == 0) {
         // If length of colNames = 0, return all possible columns
+        // TODO: this has slightly different meaning than createProjectionRequest()
+        // which treats empty columns as an empty projection. i.e. select * vs count(*)
+        // Reconcile this.
         request = Request.createTableScanRequest(tblName);
       } else {
         request = Request.createProjectionRequest(tblName, Lists.newArrayList(colNames));
@@ -185,14 +171,18 @@ public abstract class RecordServiceInputFormatBase<K, V> extends InputFormat<K, 
       if (delegationToken != null) {
         builder.setDelegationToken(TokenUtils.toTDelegationToken(delegationToken));
       } else {
-        String kerberosPrincipal = jobConf.get(KERBEROS_PRINCIPAL);
+        String kerberosPrincipal =
+            jobConf.get(RecordServiceConfig.KERBEROS_PRINCIPAL_CONF);
         if (kerberosPrincipal != null) {
           builder.setKerberosPrincipal(kerberosPrincipal);
           needToGetToken = true;
         }
       }
-      planner = builder.connect(jobConf.get(PLANNER_HOST, "localhost"),
-          jobConf.getInt(PLANNER_PORT, 40000));
+      planner = builder.connect(
+          jobConf.get(RecordServiceConfig.PLANNER_HOST_CONF,
+              RecordServiceConfig.DEFAULT_PLANNER_HOST),
+          jobConf.getInt(RecordServiceConfig.PLANNER_PORT_CONF,
+              RecordServiceConfig.DEFAULT_PLANNER_PORT));
       result = planner.planRequest(request);
 
       if (needToGetToken) {
@@ -215,25 +205,6 @@ public abstract class RecordServiceInputFormatBase<K, V> extends InputFormat<K, 
     }
     LOG.debug(String.format("Generated %d splits.", splits.size()));
     return new SplitsInfo(splits, schema);
-  }
-
-  /**
-   * Sets the input configuration to read 'cols' from 'db.tbl'. If the tbl is fully
-   * qualified, db should be null.
-   * If cols is empty, all cols in the table are read.
-   */
-  public static void setInputTable(Configuration config, String db, String tbl,
-      String... cols) {
-    if (db != null) tbl = db + "." + tbl;
-    config.set(TBL_NAME_CONF, tbl);
-    if (cols != null && cols.length > 0) config.setStrings(COL_NAMES_CONF, cols);
-  }
-
-  /**
-   * Sets the input configuration to read results from 'query'.
-   */
-  public static void setInputQuery(Configuration config, String query) {
-    config.set(QUERY_NAME_CONF, query);
   }
 
   /**

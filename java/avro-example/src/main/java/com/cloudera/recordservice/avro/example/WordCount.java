@@ -20,6 +20,8 @@ import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextOutputFormat;
 
+import com.cloudera.recordservice.mr.RecordServiceConfig;
+
 // TODO: rename this package to mr-example.
 public class WordCount {
   public static class Map extends MapReduceBase
@@ -76,8 +78,7 @@ public class WordCount {
     conf.setOutputFormat(TextOutputFormat.class);
 
     if (input.toLowerCase().startsWith("select")) {
-      com.cloudera.recordservice.mapreduce.RecordServiceInputFormatBase.setInputQuery(
-          conf, input);
+      RecordServiceConfig.setInputQuery(conf, input);
     } else {
       FileInputFormat.setInputPaths(conf, new Path(input));
     }
