@@ -41,3 +41,7 @@ make test
 
 mvn test -f $RECORD_SERVICE_HOME/java/pom.xml
 
+# Run Hive SerDe test
+cd $IMPALA_HOME/fe
+mvn -Dtest=HiveSerDeExecutorTest test
+
