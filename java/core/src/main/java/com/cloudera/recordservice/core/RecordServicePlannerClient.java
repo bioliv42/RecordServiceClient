@@ -15,6 +15,7 @@
 package com.cloudera.recordservice.core;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
@@ -184,6 +185,50 @@ public class RecordServicePlannerClient {
       throw new RuntimeException(e);
     }
     return result;
+  }
+
+  /**
+   * Returns a delegation token for the current user. If renewer is set, this renewer
+   * can renew the token.
+   * TODO: better error messages, handling.
+   */
+  public ByteBuffer getDelegationToken(String renewer)
+      throws TRecordServiceException, IOException {
+    try {
+      return plannerClient_.GetDelegationToken(System.getProperty("user.name"), renewer);
+    } catch (TRecordServiceException e) {
+      throw e;
+    } catch (TException e) {
+      throw new IOException("Could not get delegation token.", e);
+    }
+  }
+
+  /**
+   * Cancels the token.
+   */
+  public void cancelDelegationToken(ByteBuffer token)
+      throws TRecordServiceException, IOException {
+    try {
+      plannerClient_.CancelDelegationToken(token);
+    } catch (TRecordServiceException e) {
+      throw e;
+    } catch (TException e) {
+      throw new IOException("Could not cancel delegation token.", e);
+    }
+  }
+
+  /**
+   * Renews the token.
+   */
+  public void renewDelegationToken(ByteBuffer token)
+      throws TRecordServiceException, IOException {
+    try {
+      plannerClient_.RenewDelegationToken(token);
+    } catch (TRecordServiceException e) {
+      throw e;
+    } catch (TException e) {
+      throw new IOException("Could not renew delegation token.", e);
+    }
   }
 
   /**
