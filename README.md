@@ -1,3 +1,6 @@
+Copyright (c) 2015, Cloudera, inc.
+Confidential Cloudera Information: Covered by NDA.
+
 This repro contains the service API and the client integration.
 
 ## Building

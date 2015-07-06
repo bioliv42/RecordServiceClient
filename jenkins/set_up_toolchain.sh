@@ -1,4 +1,7 @@
 #!/bin/bash
+# Copyright (c) 2015, Cloudera, inc.
+# Confidential Cloudera Information: Covered by NDA.
+
 # Set up to get toolchain on the jenkins box. This should only build the
 # first time it is run on the machine.
 if [ -n "$JENKINS_USE_TOOLCHAIN" ]; then

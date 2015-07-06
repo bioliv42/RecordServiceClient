@@ -1,4 +1,7 @@
 #!/bin/bash
+# Copyright (c) 2015, Cloudera, inc.
+# Confidential Cloudera Information: Covered by NDA.
+
 # Loads data and starts the cluster to run local benchmarks.
 
 # Builds record service client.

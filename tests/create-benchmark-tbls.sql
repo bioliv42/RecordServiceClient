@@ -1,3 +1,4 @@
+-- Confidential Cloudera Information: Covered by NDA.
 -- Create databases
 CREATE DATABASE IF NOT EXISTS tpch6gb;
 CREATE DATABASE IF NOT EXISTS tpch6gb_parquet;

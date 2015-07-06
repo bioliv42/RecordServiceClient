@@ -1,3 +1,4 @@
+# Confidential Cloudera Information: Covered by NDA.
 # Copyright 2012 Cloudera Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");

@@ -1,4 +1,7 @@
 #!/bin/bash
+# Copyright (c) 2015, Cloudera, inc.
+# Confidential Cloudera Information: Covered by NDA.
+
 # Sets up a common environment for Jenkins builds.
 # We split this up from preamble_impala.sh because Impala uses a custom version of
 # thrift that it builds.

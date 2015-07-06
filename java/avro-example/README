@@ -1,3 +1,6 @@
+Copyright (c) 2015, Cloudera, inc.
+Confidential Cloudera Information: Covered by NDA.
+
 This project contains examples of existing avro applications. We should
 make sure that these applications can run. When modifying the examples
 to use RecordService, leave the original code in with clear comments.

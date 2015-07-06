@@ -1,3 +1,4 @@
+-- Confidential Cloudera Information: Covered by NDA.
 -- Create databases
 CREATE DATABASE IF NOT EXISTS tpch;
 CREATE DATABASE IF NOT EXISTS rs;

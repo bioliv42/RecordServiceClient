@@ -1,3 +1,4 @@
+# Confidential Cloudera Information: Covered by NDA.
 # - Find GFLAGS (gflags.h, libgflags.a, libgflags.so, and libgflags.so.0)
 # This module defines
 #  GFLAGS_INCLUDE_DIR, directory containing headers

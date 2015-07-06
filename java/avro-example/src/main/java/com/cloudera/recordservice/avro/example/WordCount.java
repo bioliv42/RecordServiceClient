@@ -1,3 +1,4 @@
+// Confidential Cloudera Information: Covered by NDA.
 package com.cloudera.recordservice.avro.example;
 
 import java.io.IOException;

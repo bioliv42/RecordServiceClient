@@ -1,4 +1,7 @@
 #!/bin/bash
+# Copyright (c) 2015, Cloudera, inc.
+# Confidential Cloudera Information: Covered by NDA.
+
 # Builds impala, with output redirected to $WORKSPACE/buildall.log
 # TARGET_BUILD_TYPE can be set to Release/Debug
 

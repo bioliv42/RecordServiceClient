@@ -1,3 +1,4 @@
+// Confidential Cloudera Information: Covered by NDA.
 # Spark w/ Text
 var tpch = sc.textFile("hdfs://localhost:20500/test-warehouse/tpch10gb.db/lineitem/*")
 var q2 = tpch.map(line => line.split('|')(15)).reduce((x,y) => if (x < y) x else y)
