@@ -33,12 +33,11 @@ import com.cloudera.recordservice.thrift.TPlanRequestParams;
 import com.cloudera.recordservice.thrift.TPlanRequestResult;
 import com.cloudera.recordservice.thrift.TProtocolVersion;
 import com.cloudera.recordservice.thrift.TRecordServiceException;
-
 /**
  * Java client for the RecordServicePlanner. This class is not thread safe.
  */
 // TODO: This class should not expose the raw Thrift objects, should use proper logger.
-// TODO: Add retry in the clients.
+// TODO: Make retry interval/attempts configurable.
 public class RecordServicePlannerClient {
   private final static Logger LOG =
       LoggerFactory.getLogger(RecordServicePlannerClient.class);
@@ -47,6 +46,11 @@ public class RecordServicePlannerClient {
   private RecordServicePlanner.Client plannerClient_;
   private TProtocol protocol_;
   private ProtocolVersion protocolVersion_ = null;
+
+  // Number of consecutive attempts before failing any request.
+  private final int maxAttempts_ = 3;
+  // Duration to sleep between retry attempts.
+  private final int retrySleepMs_ = 1000;
 
   /**
    * Generates a plan for 'request', connecting to the planner service at
@@ -156,17 +160,39 @@ public class RecordServicePlannerClient {
     validateIsConnected();
 
     TPlanRequestResult planResult;
-    try {
-      LOG.info("Planning request: " + request);
-      TPlanRequestParams planParams = request.request_;
-      planParams.client_version = TProtocolVersion.V1;
-      planResult = plannerClient_.PlanRequest(planParams);
-    } catch (TException e) {
-      handleThriftException(e, "Could not plan request.");
-      throw new RuntimeException(e);
+    TException firstException = null;
+    boolean connected = true;
+    for (int i = 0; i < maxAttempts_; ++i) {
+      try {
+        if (!connected) {
+          connected = waitAndReconnect();
+          if (!connected) continue;
+        }
+        LOG.info("Planning request: " + request + " with attempt " + (i + 1) + " out of "
+            + maxAttempts_);
+        TPlanRequestParams planParams = request.request_;
+        planParams.client_version = TProtocolVersion.V1;
+        planResult = plannerClient_.PlanRequest(planParams);
+        LOG.debug("PlanRequest generated " + planResult.tasks.size() + " tasks.");
+        return planResult;
+      } catch (TRecordServiceException e) {
+        switch (e.code) {
+          case SERVICE_BUSY:
+            if (firstException == null) firstException = e;
+            LOG.warn("Failed to planRequest(): "  + e);
+            sleepForRetry();
+            break;
+          default:
+            throw e;
+        }
+      } catch (TException e) {
+        connected = false;
+        if (firstException == null) firstException = e;
+        LOG.warn("Failed to planRequest(): "  + e);
+      }
     }
-    LOG.debug("PlanRequest generated " + planResult.tasks.size() + " tasks.");
-    return planResult;
+    handleThriftException(firstException, "Could not plan request.");
+    throw new RuntimeException(firstException);
   }
 
   /**
@@ -176,16 +202,38 @@ public class RecordServicePlannerClient {
     throws IOException, TRecordServiceException {
     validateIsConnected();
     TGetSchemaResult result;
-    try {
-      LOG.info("Getting schema for request: " + request);
-      TPlanRequestParams planParams = request.request_;
-      planParams.client_version = TProtocolVersion.V1;
-      result = plannerClient_.GetSchema(planParams);
-    } catch (TException e) {
-      handleThriftException(e, "Could not get schema.");
-      throw new RuntimeException(e);
+    TException firstException = null;
+    boolean connected = true;
+    for (int i = 0; i < maxAttempts_; ++i) {
+      try {
+        if (!connected) {
+          connected = waitAndReconnect();
+          if (!connected) continue;
+        }
+        LOG.info("Getting schema for request: " + request + " with attempt " + (i + 1)
+            + " out of " + maxAttempts_);
+        TPlanRequestParams planParams = request.request_;
+        planParams.client_version = TProtocolVersion.V1;
+        result = plannerClient_.GetSchema(planParams);
+        return result;
+      } catch (TRecordServiceException e) {
+        switch (e.code) {
+          case SERVICE_BUSY:
+            if (firstException == null) firstException = e;
+            LOG.warn("Failed to getSchema(): "  + e);
+            sleepForRetry();
+            break;
+          default:
+            throw e;
+        }
+      } catch (TException e) {
+        connected = false;
+        if (firstException == null) firstException = e;
+        LOG.warn("Failed to getSchema(): "  + e);
+      }
     }
-    return result;
+    handleThriftException(firstException, "Could not get schema.");
+    throw new RuntimeException(firstException);
   }
 
   /**
@@ -262,6 +310,35 @@ public class RecordServicePlannerClient {
   private void validateIsConnected() throws RuntimeException {
     if (plannerClient_ == null) {
       throw new RuntimeException("Client not connected.");
+    }
+  }
+
+  /**
+   * Sleeps for retrySleepMs_ and reconnects to the planner. Returns
+   * true if the connection was established.
+   */
+  private boolean waitAndReconnect() {
+    sleepForRetry();
+    try {
+      protocol_.getTransport().open();
+      plannerClient_ = new RecordServicePlanner.Client(protocol_);
+      return true;
+    } catch (TTransportException e) {
+      return false;
+    }
+  }
+
+  /**
+   * Sleeps for retrySleepMs_.
+   */
+  private void sleepForRetry() {
+    if (LOG.isInfoEnabled()) {
+      LOG.info("Sleeping for " + retrySleepMs_ + "ms before retrying.");
+    }
+    try {
+      Thread.sleep(retrySleepMs_);
+    } catch (InterruptedException e) {
+      LOG.error("Failed sleeping: " + e);
     }
   }
 }

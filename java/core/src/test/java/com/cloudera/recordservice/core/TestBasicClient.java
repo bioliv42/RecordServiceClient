@@ -155,6 +155,8 @@ public class TestBasicClient {
 
   @Test
   public void connectionDropTest() throws IOException, TRecordServiceException {
+    // TODO: We should allow the client to specify how many retry attempts in another
+    // patch so exercise the true failure case.
     RecordServicePlannerClient planner =
         new RecordServicePlannerClient("localhost", PLANNER_PORT);
     TPlanRequestResult plan =
@@ -172,16 +174,20 @@ public class TestBasicClient {
       exceptionThrown = true;
       assertTrue(e.getMessage().contains("Could not reach service."));
     }
-    assertTrue(exceptionThrown);
+    // should not throw exception as Planner has retry
+    assertFalse(exceptionThrown);
 
     exceptionThrown = false;
+    // Simulate dropping the connection.
+    planner.closeConnectionForTesting();
     try {
       planner.getSchema(Request.createTableScanRequest("tpch.nation"));
     } catch (IOException e) {
       exceptionThrown = true;
       assertTrue(e.getMessage().contains("Could not reach service."));
     }
-    assertTrue(exceptionThrown);
+    // should not throw exception as Planner has retry
+    assertFalse(exceptionThrown);
 
     // Close should still do something reasonable.
     planner.close();

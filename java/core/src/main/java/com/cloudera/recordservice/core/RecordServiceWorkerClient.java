@@ -435,7 +435,7 @@ public class RecordServiceWorkerClient {
     try {
       Thread.sleep(retrySleepMs_);
     } catch (InterruptedException e) {
-      LOG.error("Failed sleeping " + e);
+      LOG.error("Failed sleeping: " + e);
     }
   }
 

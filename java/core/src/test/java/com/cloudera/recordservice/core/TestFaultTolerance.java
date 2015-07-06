@@ -16,6 +16,7 @@
 package com.cloudera.recordservice.core;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 import java.io.IOException;
 
@@ -56,5 +57,34 @@ public class TestFaultTolerance {
     }
 
     assertEquals(numRecords, 25);
+
+    worker.close();
+  }
+
+  @Test
+  public void testPlannerRetry() throws RuntimeException, IOException,
+          TRecordServiceException, InterruptedException {
+    RecordServicePlannerClient planner = new RecordServicePlannerClient(
+        "localhost", PLANNER_PORT);
+
+    planner.closeConnectionForTesting();
+    boolean exceptionThrown = false;
+    try {
+      planner.planRequest(Request.createTableScanRequest("tpch.nation"));
+    } catch (Exception e) {
+      exceptionThrown = true;
+    }
+    assertFalse(exceptionThrown);
+
+    planner.closeConnectionForTesting();
+    exceptionThrown = false;
+    try {
+      planner.getSchema(Request.createTableScanRequest("tpch.nation"));
+    } catch (Exception e) {
+      exceptionThrown = true;
+    }
+    assertFalse(exceptionThrown);
+
+    planner.close();
   }
 }
