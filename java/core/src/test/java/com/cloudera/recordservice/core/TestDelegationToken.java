@@ -18,26 +18,25 @@ package com.cloudera.recordservice.core;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 
 import org.junit.Test;
 
+import com.cloudera.recordservice.thrift.TErrorCode;
 import com.cloudera.recordservice.thrift.TRecordServiceException;
-
 
 public class TestDelegationToken {
   static final int PLANNER_PORT = 40000;
   static final String HOST = "localhost";
-
 
   public TestDelegationToken() {
     // Setup log4j for testing.
     org.apache.log4j.BasicConfigurator.configure();
   }
 
-  // Just some dummy tests to verify plumbing is working.
+
+  // Tests that the APIs fail gracefully if called to a non-secure server.
   @Test
-  public void testAPI() throws RuntimeException, IOException,
+  public void testUnsecureConnection() throws RuntimeException, IOException,
         TRecordServiceException, InterruptedException {
     RecordServicePlannerClient planner = new RecordServicePlannerClient.Builder()
         .connect(HOST, PLANNER_PORT);
@@ -45,29 +44,33 @@ public class TestDelegationToken {
     try {
       planner.getDelegationToken(null);
     } catch (TRecordServiceException e) {
+      assertTrue(e.getCode() == TErrorCode.AUTHENTICATION_ERROR);
+      assertTrue(e.getMessage().contains(
+          "can only be called with a Kerberos connection."));
       exceptionThrown = true;
-      assertTrue(e.getDetail().contains("Not yet implemented"));
     }
     assertTrue(exceptionThrown);
 
     exceptionThrown = false;
     try {
-      planner.cancelDelegationToken(ByteBuffer.allocate(10));
+      planner.cancelDelegationToken(null);
     } catch (TRecordServiceException e) {
+      assertTrue(e.getCode() == TErrorCode.AUTHENTICATION_ERROR);
+      assertTrue(e.getMessage().contains(
+          "can only be called from a secure connection."));
       exceptionThrown = true;
-      assertTrue(e.getDetail().contains("Not yet implemented"));
     }
     assertTrue(exceptionThrown);
 
     exceptionThrown = false;
     try {
-      planner.renewDelegationToken(ByteBuffer.allocate(10));
+      planner.renewDelegationToken(null);
     } catch (TRecordServiceException e) {
+      assertTrue(e.getCode() == TErrorCode.AUTHENTICATION_ERROR);
+      assertTrue(e.getMessage().contains(
+          "can only be called with a Kerberos connection."));
       exceptionThrown = true;
-      assertTrue(e.getDetail().contains("Not yet implemented"));
     }
     assertTrue(exceptionThrown);
-
-    planner.close();
   }
 }

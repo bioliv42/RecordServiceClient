@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.cloudera.recordservice.thrift.RecordServiceWorker;
+import com.cloudera.recordservice.thrift.TDelegationToken;
 import com.cloudera.recordservice.thrift.TErrorCode;
 import com.cloudera.recordservice.thrift.TExecTaskParams;
 import com.cloudera.recordservice.thrift.TExecTaskResult;
@@ -54,6 +55,7 @@ public class RecordServiceWorkerClient {
   private TProtocol protocol_;
   private ProtocolVersion protocolVersion_ = null;
   private String kerberosPrincipal_ = null;
+  private TDelegationToken delegationToken_ = null;
 
   // The set of all active tasks.
   private Map<TUniqueId, TaskState> activeTasks_ = new HashMap<TUniqueId, TaskState>();
@@ -147,7 +149,22 @@ public class RecordServiceWorkerClient {
     }
 
     public Builder setKerberosPrincipal(String principal) {
+      if (client_.delegationToken_ != null) {
+        // TODO: is this the behavior we want? Maybe try one then the other?
+        throw new IllegalStateException(
+            "Cannot set both kerberos principal and delegation token.");
+      }
       client_.kerberosPrincipal_ = principal;
+      return this;
+    }
+
+    public Builder setDelegationToken(TDelegationToken token) {
+      if (client_.kerberosPrincipal_ != null) {
+        // TODO: is this the behavior we want? Maybe try one then the other?
+        throw new IllegalStateException(
+            "Cannot set both kerberos principal and delegation token.");
+      }
+      client_.delegationToken_ = token;
       return this;
     }
 
@@ -352,8 +369,8 @@ public class RecordServiceWorkerClient {
       throw new RuntimeException("Already connected. Must call close() first.");
     }
 
-    TTransport transport = ThriftUtils.createTransport(
-        "RecordServiceWorker", hostname, port, kerberosPrincipal_, timeoutMs_);
+    TTransport transport = ThriftUtils.createTransport("RecordServiceWorker",
+        hostname, port, kerberosPrincipal_, delegationToken_, timeoutMs_);
     protocol_ = new TBinaryProtocol(transport);
     workerClient_ = new RecordServiceWorker.Client(protocol_);
     try {

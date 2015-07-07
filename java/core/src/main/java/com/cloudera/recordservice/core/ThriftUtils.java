@@ -19,8 +19,15 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.security.auth.callback.Callback;
+import javax.security.auth.callback.CallbackHandler;
+import javax.security.auth.callback.NameCallback;
+import javax.security.auth.callback.PasswordCallback;
+import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.auth.login.AppConfigurationEntry;
 import javax.security.auth.login.Configuration;
+import javax.security.sasl.RealmCallback;
+import javax.security.sasl.RealmChoiceCallback;
 import javax.security.sasl.Sasl;
 
 import org.apache.thrift.transport.TSaslClientTransport;
@@ -30,6 +37,7 @@ import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.cloudera.recordservice.thrift.TDelegationToken;
 import com.cloudera.recordservice.thrift.TProtocolVersion;
 
 /**
@@ -38,6 +46,10 @@ import com.cloudera.recordservice.thrift.TProtocolVersion;
  */
 public class ThriftUtils {
   private final static Logger LOG = LoggerFactory.getLogger(ThriftUtils.class);
+
+  private final static String KERBEROS_MECHANISM = "GSSAPI";
+  private final static String TOKEN_MECHANISM = "DIGEST-MD5";
+
   static {
     // This is required to allow clients to connect via kerberos. This is called
     // when the kerberos connection is being opened. The option we need is to
@@ -57,25 +69,56 @@ public class ThriftUtils {
     });
   }
 
+  // Callback for DIGEST-MD5 to provide additional client information. We need to
+  // implement all 4 of the callbacks used for DIGEST-MD5 although we are only
+  // interested in the user and password.
+  private static final class DigestHandler implements CallbackHandler {
+    private final TDelegationToken token_;
+
+    public DigestHandler(TDelegationToken token) {
+      token_ = token;
+    }
+
+    @Override
+    public void handle(Callback[] callbacks)
+        throws IOException, UnsupportedCallbackException {
+      for (Callback cb : callbacks) {
+        if (cb instanceof RealmChoiceCallback) {
+          continue; // Ignore.
+        } else if (cb instanceof NameCallback) {
+          ((NameCallback)cb).setName(token_.identifier);
+        } else if (cb instanceof PasswordCallback) {
+          ((PasswordCallback)cb).setPassword(token_.password.toCharArray());
+        } else if (cb instanceof RealmCallback) {
+          RealmCallback rcb = (RealmCallback)cb;
+          rcb.setText(rcb.getDefaultText());
+        } else {
+          throw new UnsupportedCallbackException(cb, "Unexpected DIGEST-MD5 callback");
+        }
+      }
+    }
+  }
+
   /**
    * Connects to a thrift service running at hostname/port, returning a TTransport
    * object to that service. If kerberosPrincipal is not null, the connection will
-   * be kerberized.
-   * TODO: this should also support delegation tokens.
+   * be kerberized. If delegationToken is not null, we will authenticate using
+   * delegation tokens.
    */
   protected static TTransport createTransport(String service, String hostname, int port,
-      String kerberosPrincipal, int timeoutMs) throws IOException {
-    if (kerberosPrincipal == null) {
-      LOG.info(String.format("Connecting to %s at %s:%d, with timeout:%s",
-          service, hostname, port, timeoutMs));
-    } else {
-      LOG.info(String.format(
-          "Connecting to %s at %s:%d with kerberos principal:%s, with timeout:%s",
-          service, hostname, port, kerberosPrincipal, timeoutMs));
+      String kerberosPrincipal, TDelegationToken token, int timeoutMs) throws IOException {
+    if (kerberosPrincipal != null && token != null) {
+      throw new IllegalArgumentException(
+          "Cannot specify both kerberos principal and delegation token.");
     }
+
     TTransport transport = new TSocket(hostname, port, timeoutMs);
 
     if (kerberosPrincipal != null) {
+      LOG.info(String.format(
+          "Connecting to %s at %s:%d with kerberos principal: %s, with timeout: %sms",
+          service, hostname, port, kerberosPrincipal, timeoutMs));
+
       // Kerberized, wrap the transport in a sasl transport.
       String[] names = kerberosPrincipal.split("[/@]");
       if (names.length != 3) {
@@ -85,21 +128,32 @@ public class ThriftUtils {
       System.setProperty("javax.security.auth.useSubjectCredsOnly", "false");
       Map<String, String> saslProps = new HashMap<String, String>();
       saslProps.put(Sasl.SERVER_AUTH, "true");
-      transport = new TSaslClientTransport("GSSAPI", null,
+      transport = new TSaslClientTransport(KERBEROS_MECHANISM, null,
           names[0], names[1], saslProps, null, transport);
+    } else if (token != null) {
+      LOG.info(String.format(
+          "Connecting to %s at %s:%d using delegation token, with timeout: %sms",
+          service, hostname, port, timeoutMs));
+
+      // Delegation token, wrap the transport in a sasl transport.
+      CallbackHandler callback = new DigestHandler(token);
+      transport = new TSaslClientTransport(TOKEN_MECHANISM, null,
+          "impala", "default",  new HashMap<String, String>(), callback, transport);
+    } else {
+      LOG.info(String.format("Connecting to %s at %s:%d, with timeout: %sms",
+          service, hostname, port, timeoutMs));
     }
 
     try {
       transport.open();
     } catch (TTransportException e) {
-      String msg = String.format("Could not connect to %s: %s:%d, with timeout:%s",
-          service, hostname, port, timeoutMs);
+      String msg = String.format("Could not connect to %s: %s:%d",
+          service, hostname, port);
       LOG.warn(String.format("%s: error: %s", msg, e));
       throw new IOException(msg, e);
     }
 
-    LOG.info(String.format("Connected to %s at %s:%d, with timeout:%s",
-        service, hostname, port, timeoutMs));
+    LOG.info(String.format("Connected to %s at %s:%d", service, hostname, port));
     return transport;
   }
 

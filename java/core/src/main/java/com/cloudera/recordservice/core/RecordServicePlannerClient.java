@@ -16,7 +16,6 @@
 package com.cloudera.recordservice.core;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
@@ -27,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.cloudera.recordservice.thrift.RecordServicePlanner;
+import com.cloudera.recordservice.thrift.TDelegationToken;
 import com.cloudera.recordservice.thrift.TErrorCode;
 import com.cloudera.recordservice.thrift.TGetSchemaResult;
 import com.cloudera.recordservice.thrift.TPlanRequestParams;
@@ -46,6 +46,7 @@ public class RecordServicePlannerClient {
   private TProtocol protocol_;
   private ProtocolVersion protocolVersion_ = null;
   private String kerberosPrincipal_ = null;
+  private TDelegationToken delegationToken_ = null;
 
   // Number of consecutive attempts before failing any request.
   private int maxAttempts_ = 3;
@@ -54,7 +55,7 @@ public class RecordServicePlannerClient {
   private int retrySleepMs_ = 1000;
 
   // Millisecond timeout for TSocket, 0 means infinite timeout.
-  private int timeoutMs_ = 0;
+  private int timeoutMs_ = 10000;
 
   /**
    * Builder to create worker client with various configs.
@@ -81,7 +82,22 @@ public class RecordServicePlannerClient {
     }
 
     public Builder setKerberosPrincipal(String principal) {
+      if (client_.delegationToken_ != null) {
+        // TODO: is this the behavior we want? Maybe try one then the other?
+        throw new IllegalStateException(
+            "Cannot set both kerberos principal and delegation token.");
+      }
       client_.kerberosPrincipal_ = principal;
+      return this;
+    }
+
+    public Builder setDelegationToken(TDelegationToken token) {
+      if (client_.kerberosPrincipal_ != null) {
+        // TODO: is this the behavior we want? Maybe try one then the other?
+        throw new IllegalStateException(
+            "Cannot set both kerberos principal and delegation token.");
+      }
+      client_.delegationToken_ = token;
       return this;
     }
 
@@ -142,11 +158,10 @@ public class RecordServicePlannerClient {
    */
   private void connect(String hostname, int port)
       throws IOException, TRecordServiceException {
-    TTransport transport = ThriftUtils.createTransport(
-        "RecordServicePlanner", hostname, port, kerberosPrincipal_, timeoutMs_);
+    TTransport transport = ThriftUtils.createTransport("RecordServicePlanner", hostname,
+        port, kerberosPrincipal_, delegationToken_, timeoutMs_);
     protocol_ = new TBinaryProtocol(transport);
     plannerClient_ = new RecordServicePlanner.Client(protocol_);
-
     try {
       protocolVersion_ = ThriftUtils.fromThrift(plannerClient_.GetProtocolVersion());
       LOG.debug("Connected to planner service with version: " + protocolVersion_);
@@ -276,9 +291,8 @@ public class RecordServicePlannerClient {
   /**
    * Returns a delegation token for the current user. If renewer is set, this renewer
    * can renew the token.
-   * TODO: better error messages, handling.
    */
-  public ByteBuffer getDelegationToken(String renewer)
+  public TDelegationToken getDelegationToken(String renewer)
       throws TRecordServiceException, IOException {
     try {
       return plannerClient_.GetDelegationToken(System.getProperty("user.name"), renewer);
@@ -292,7 +306,7 @@ public class RecordServicePlannerClient {
   /**
    * Cancels the token.
    */
-  public void cancelDelegationToken(ByteBuffer token)
+  public void cancelDelegationToken(TDelegationToken token)
       throws TRecordServiceException, IOException {
     try {
       plannerClient_.CancelDelegationToken(token);
@@ -306,7 +320,7 @@ public class RecordServicePlannerClient {
   /**
    * Renews the token.
    */
-  public void renewDelegationToken(ByteBuffer token)
+  public void renewDelegationToken(TDelegationToken token)
       throws TRecordServiceException, IOException {
     try {
       plannerClient_.RenewDelegationToken(token);

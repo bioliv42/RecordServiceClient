@@ -409,6 +409,9 @@ enum TErrorCode {
   // The server closed this connection and any active requests due to a timeout.
   // Clients will need to reconnect.
   CONNECTION_TIMED_OUT,
+
+  // Error authenticating.
+  AUTHENTICATION_ERROR,
 }
 
 exception TRecordServiceException {
@@ -426,6 +429,18 @@ exception TRecordServiceException {
 struct TMetricResponse {
   // Set if the metric is defined.
   1: optional string metric
+}
+
+// Serialized delegation token.
+struct TDelegationToken {
+  // Identifier/password for authentication. Do not log the password.
+  // Identifier is opaque but can be logged.
+  1: required string identifier
+  2: required string password
+
+  // Entire serialized token for cancel/renew. Do not log this. It contains
+  // the password.
+  3: required binary token
 }
 
 // This service is responsible for planning requests.
@@ -450,15 +465,15 @@ service RecordServicePlanner {
   // to the 'user').
   // Returns an opaque delegation token which can be subsequently used to authenticate
   // with the RecordServicePlanner and RecordServiceWorker services.
-  binary GetDelegationToken(1:string user, 2:string renewer)
+  TDelegationToken GetDelegationToken(1:string user, 2:string renewer)
       throws(1:TRecordServiceException ex);
 
   // Cancels the delegation token.
-  void CancelDelegationToken(1:binary delegation_token)
+  void CancelDelegationToken(1:TDelegationToken delegation_token)
       throws(1:TRecordServiceException ex);
 
-  // Renews the delegation token.
-  void RenewDelegationToken(1:binary delegation_token)
+  // Renews the delegation token. Duration set from service config.
+  void RenewDelegationToken(1:TDelegationToken delegation_token)
       throws(1:TRecordServiceException ex);
 }
 

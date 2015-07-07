@@ -22,6 +22,7 @@ import java.io.IOException;
 
 import org.junit.Test;
 
+import com.cloudera.recordservice.thrift.TDelegationToken;
 import com.cloudera.recordservice.thrift.TPlanRequestResult;
 import com.cloudera.recordservice.thrift.TRecordServiceException;
 
@@ -35,7 +36,8 @@ public class TestKerberosConnection {
   static final String PRINCIPAL = "impala/vd0224.halxg.cloudera.com@HALXG.CLOUDERA.COM";
 
   static final boolean RUN_KERBEROS_TESTS =
-      System.getenv("RECORD_SERVICE_RUN_KERBEROS_TESTS") == "true";
+      System.getenv("RECORD_SERVICE_RUN_KERBEROS_TESTS") != null &&
+      System.getenv("RECORD_SERVICE_RUN_KERBEROS_TESTS").equalsIgnoreCase("true");
 
   public TestKerberosConnection() {
     // Setup log4j for testing.
@@ -51,13 +53,16 @@ public class TestKerberosConnection {
   public void testConnection() throws RuntimeException, IOException,
         TRecordServiceException, InterruptedException {
     if (!RUN_KERBEROS_TESTS) return;
+
     TPlanRequestResult plan = new RecordServicePlannerClient.Builder()
         .setKerberosPrincipal(PRINCIPAL)
         .planRequest(HOST, PLANNER_PORT, Request.createTableScanRequest("sample_07"));
+
     assertEquals(plan.schema.cols.size(), 4);
 
+    // TODO: use the principal when the worker connection is kerberized.
     RecordServiceWorkerClient worker = new RecordServiceWorkerClient.Builder().
-        setKerberosPrincipal(PRINCIPAL).connect(HOST, WORKER_PORT);
+        setKerberosPrincipal(null).connect(HOST, WORKER_PORT);
     Records records = worker.execAndFetch(plan.tasks.get(0));
     int numRecords = 0;
     while (records.hasNext()) {
@@ -96,6 +101,8 @@ public class TestKerberosConnection {
         exceptionThrown);
 
     // Try worker connection with no principal and bad principal
+    // TODO: enable no principal once worker service is kerberized.
+    /*
     exceptionThrown = false;
     try {
       new RecordServiceWorkerClient.Builder().connect(HOST, WORKER_PORT);
@@ -104,6 +111,7 @@ public class TestKerberosConnection {
     }
     assertTrue("Should not be able to connect without kerberos principal",
         exceptionThrown);
+    */
 
     exceptionThrown = false;
     try {
@@ -114,5 +122,105 @@ public class TestKerberosConnection {
     }
     assertTrue("Should not be able to connect with bad kerberos principal",
         exceptionThrown);
+  }
+
+
+  @Test
+  // Test authentication with delegation token.
+  public void testDelegationToken() throws RuntimeException, IOException,
+        TRecordServiceException, InterruptedException {
+    if (!RUN_KERBEROS_TESTS) return;
+    boolean exceptionThrown = false;
+
+    // Connect to the planner via kerberos.
+    RecordServicePlannerClient kerberizedPlanner = new RecordServicePlannerClient.Builder()
+        .setKerberosPrincipal(PRINCIPAL)
+        .connect(HOST, PLANNER_PORT);
+
+    // Get a token from planner.
+    TDelegationToken token = kerberizedPlanner.getDelegationToken("impala");
+    assertTrue(token.identifier.length() > 0);
+    assertTrue(token.password.length() > 0);
+    assertTrue(token.token.remaining() > token.identifier.length());
+    assertTrue(token.token.remaining() > token.password.length());
+
+    // Renew the token.
+    kerberizedPlanner.renewDelegationToken(token);
+    kerberizedPlanner.close();
+
+    // Connect to the planner using the token.
+    RecordServicePlannerClient tokenPlanner = new RecordServicePlannerClient.Builder().
+        setDelegationToken(token).
+        connect(HOST, PLANNER_PORT);
+
+    // Should only be able to get tokens if the connection is kerberized.
+    exceptionThrown = false;
+    try {
+      tokenPlanner.getDelegationToken(null);
+    } catch (TRecordServiceException e) {
+      exceptionThrown = true;
+      assertTrue(e.getMessage(), e.getMessage().contains(
+          "can only be called with a Kerberos connection."));
+    }
+    assertTrue(exceptionThrown);
+
+    exceptionThrown = false;
+    try {
+      tokenPlanner.renewDelegationToken(token);
+    } catch (TRecordServiceException e) {
+      exceptionThrown = true;
+      assertTrue(e.getMessage(), e.getMessage().contains(
+          "can only be called with a Kerberos connection."));
+    }
+    assertTrue(exceptionThrown);
+
+    // But other APIs should work.
+    TPlanRequestResult plan = tokenPlanner.planRequest(
+        Request.createTableScanRequest("sample_07"));
+    assertTrue(plan.tasks.size() == 1);
+
+    /* TODO: update the worker connection to be secure as well.
+    // Create a worker connection with the token.
+    RecordServiceWorkerClient worker = new RecordServiceWorkerClient.Builder().
+        setDelegationToken(token).connect(HOST, WORKER_PORT);
+
+    // Fetch the results.
+    Records records = worker.execAndFetch(plan.tasks.get(0));
+    int numRecords = 0;
+    while (records.hasNext()) {
+      records.next();
+      ++numRecords;
+    }
+    assertEquals(numRecords, 823);
+    worker.close();
+
+    // Cancel the token. Note that this can be done without a kerberized connection.
+    tokenPlanner.cancelDelegationToken(token);
+
+    // Shouldn't be able to connect with it anymore.
+    try {
+      new RecordServiceWorkerClient.Builder().setDelegationToken(token)
+          .connect(HOST, WORKER_PORT);
+    } catch (IOException e) {
+      exceptionThrown = true;
+      assertTrue(e.getMessage().contains("Invalid token."));
+    }
+    assertTrue(exceptionThrown);
+    */
+    // Cancel the token. Note that this can be done without a kerberized connection.
+    tokenPlanner.cancelDelegationToken(token);
+    tokenPlanner.close();
+
+    // Try to connect with the canceled token. Should fail.
+    exceptionThrown = false;
+    try {
+      new RecordServicePlannerClient.Builder().setDelegationToken(token)
+          .connect(HOST, PLANNER_PORT);
+    } catch (IOException e) {
+      exceptionThrown = true;
+      // TODO: the error is generated deep in the sasl negotiation and we
+      // don't get a generic error. Fix this.
+    }
+    assertTrue(exceptionThrown);
   }
 }
