@@ -44,6 +44,7 @@ if [ -n "$JENKINS_USE_TOOLCHAIN" ]; then
     gcc-$IMPALA_GCC_VERSION \
     avro-$IMPALA_AVRO_VERSION \
     boost-$IMPALA_BOOST_VERSION \
+    breakpad-$IMPALA_BREAKPAD_VERSION \
     bzip2-$IMPALA_BZIP2_VERSION \
     cyrus-sasl-$IMPALA_CYRUS_SASL_VERSION \
     gcc-$IMPALA_GCC_VERSION \
