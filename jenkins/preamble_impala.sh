@@ -52,6 +52,7 @@ if [ -n "$JENKINS_USE_TOOLCHAIN" ]; then
     gperftools-$IMPALA_GPERFTOOLS_VERSION \
     gtest-$IMPALA_GTEST_VERSION \
     llvm-$IMPALA_LLVM_VERSION \
+    llvm-trunk \
     lz4-$IMPALA_LZ4_VERSION \
     openldap-$IMPALA_OPENLDAP_VERSION \
     openssl-$IMPALA_OPENSSL_VERSION \
