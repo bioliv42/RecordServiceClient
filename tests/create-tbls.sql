@@ -1,5 +1,10 @@
 -- Confidential Cloudera Information: Covered by NDA.
 -- Create databases
+-- functional is needed for Hive serde test
+-- on the server side. The test itself assumes the existence
+-- of this database and creates table inside it. Besides this,
+-- we don't need any table from this database at the moment.
+CREATE DATABASE IF NOT EXISTS functional;
 CREATE DATABASE IF NOT EXISTS tpch;
 CREATE DATABASE IF NOT EXISTS rs;
 

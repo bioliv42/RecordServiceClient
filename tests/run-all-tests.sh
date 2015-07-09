@@ -46,3 +46,5 @@ mvn test -f $RECORD_SERVICE_HOME/java/pom.xml
 cd $IMPALA_HOME/fe
 mvn -Dtest=HiveSerDeExecutorTest test
 
+cd $IMPALA_HOME/tests
+./run-tests.py query_test/test_hive_serde.py
