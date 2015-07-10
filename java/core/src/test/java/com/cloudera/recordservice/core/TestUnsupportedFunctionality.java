@@ -61,6 +61,7 @@ public class TestUnsupportedFunctionality {
     testUnsupported("SELECT count(*) FROM tpch.nation group by n_nationkey");
     testUnsupported("SELECT t1.* FROM tpch.nation as t1 JOIN tpch.nation as t2 "+
         "ON t1.n_nationkey = t2.n_nationkey");
+    testUnsupported("SELECT * from tpch.nation LIMIT 1");
     testUnsupported("use default");
     testUnsupported("set num_nodes=1");
     testUnsupported("insert into tpch.nation select * from tpch.nation");
