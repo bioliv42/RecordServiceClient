@@ -40,8 +40,9 @@ public class SampleClientLib {
      */
     System.out.println("Running request: " + query);
 
-    TPlanRequestResult planResult = RecordServicePlannerClient.planRequest(
-        "localhost", PLANNER_PORT, Request.createSqlRequest(query));
+    TPlanRequestResult planResult = new RecordServicePlannerClient.Builder()
+        .planRequest("localhost", PLANNER_PORT, Request.createPathRequest(query));
+
     long totalTimeMs = 0;
 
     int totalRows = 0;

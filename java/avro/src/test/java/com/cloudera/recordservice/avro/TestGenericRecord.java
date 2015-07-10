@@ -37,9 +37,9 @@ public class TestGenericRecord {
 
   @Test
   public void testNation() throws TRecordServiceException, IOException {
-    TPlanRequestResult plan = RecordServicePlannerClient.planRequest(
-        "localhost", PLANNER_PORT,
-        Request.createSqlRequest("select * from tpch.nation"));
+    TPlanRequestResult plan = new RecordServicePlannerClient.Builder()
+        .planRequest("localhost", PLANNER_PORT,
+            Request.createSqlRequest("select * from tpch.nation"));
 
     // Verify schema
     Schema avroSchema = SchemaUtils.convertSchema(plan.schema);

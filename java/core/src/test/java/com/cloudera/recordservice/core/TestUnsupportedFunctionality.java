@@ -39,8 +39,8 @@ public class TestUnsupportedFunctionality {
   private void testUnsupported(String sql) {
     boolean exceptionThrown = false;
     try {
-      RecordServicePlannerClient.planRequest(
-          PLANNER_HOST, PLANNER_PORT, Request.createSqlRequest(sql));
+      new RecordServicePlannerClient.Builder()
+          .planRequest(PLANNER_HOST, PLANNER_PORT, Request.createSqlRequest(sql));
     } catch (IOException e) {
       assertFalse(e.getMessage(), true);
     } catch (TRecordServiceException e) {
@@ -71,8 +71,8 @@ public class TestUnsupportedFunctionality {
     // Test getSchema
     boolean exceptionThrown = false;
     try {
-      RecordServicePlannerClient.getSchema(
-          PLANNER_HOST, PLANNER_PORT, Request.createSqlRequest("select 1"));
+      new RecordServicePlannerClient.Builder()
+          .getSchema(PLANNER_HOST, PLANNER_PORT, Request.createSqlRequest("select 1"));
     } catch (IOException e) {
       assertFalse(e.getMessage(), true);
     } catch (TRecordServiceException e) {

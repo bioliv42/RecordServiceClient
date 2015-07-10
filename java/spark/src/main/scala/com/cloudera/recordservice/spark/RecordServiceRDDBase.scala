@@ -193,8 +193,9 @@ abstract class RecordServiceRDDBase[T:ClassTag](@transient sc: SparkContext)
     }
 
     val planResult = try {
-      RecordServicePlannerClient.planRequest(plannerHost, plannerPort, request,
-          RecordServiceConf.getKerberosPrincipal(sc))
+      new RecordServicePlannerClient.Builder()
+          .setKerberosPrincipal(RecordServiceConf.getKerberosPrincipal(sc))
+          .planRequest(plannerHost, plannerPort, request);
     } catch {
       case e:TRecordServiceException => logError("Could not plan request: " + e.message)
         throw new SparkException("RecordServiceRDD failed", e)

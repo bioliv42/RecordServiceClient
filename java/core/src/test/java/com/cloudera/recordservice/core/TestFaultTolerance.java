@@ -38,10 +38,11 @@ public class TestFaultTolerance {
   @Test
   public void testWorkerRetry() throws RuntimeException, IOException,
         TRecordServiceException, InterruptedException {
-    TPlanRequestResult plan = RecordServicePlannerClient.planRequest(
-        "localhost", PLANNER_PORT, Request.createTableScanRequest("tpch.nation"));
+    TPlanRequestResult plan = new RecordServicePlannerClient.Builder()
+        .planRequest("localhost", PLANNER_PORT,
+            Request.createTableScanRequest("tpch.nation"));
     RecordServiceWorkerClient worker = new RecordServiceWorkerClient.Builder()
-        .setMaxAttempts(3).setSleepDuration(10).setFetchSize(1)
+        .setMaxAttempts(3).setSleepDurationMs(10).setFetchSize(1)
         .connect("localhost", WORKER_PORT);
     Records records = worker.execAndFetch(plan.tasks.get(0));
     int numRecords = 0;
@@ -64,8 +65,9 @@ public class TestFaultTolerance {
   @Test
   public void testPlannerRetry() throws RuntimeException, IOException,
           TRecordServiceException, InterruptedException {
-    RecordServicePlannerClient planner = new RecordServicePlannerClient(
-        "localhost", PLANNER_PORT);
+    RecordServicePlannerClient planner = new RecordServicePlannerClient.Builder()
+        .setMaxAttempts(3).setSleepDurationMs(10)
+        .connect("localhost", PLANNER_PORT);
 
     planner.closeConnectionForTesting();
     boolean exceptionThrown = false;

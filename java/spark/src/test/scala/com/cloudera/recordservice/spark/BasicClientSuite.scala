@@ -136,36 +136,36 @@ class BasicClient extends FunSuite with SharedSparkContext {
 
   test("Invalid Request") {
     val rdd = new RecordServiceRDD(sc)
-    var threwException = false
+    var exceptionThrown = false
     try {
       rdd.count()
     } catch {
       case e:SparkException =>
-        threwException = true
+        exceptionThrown = true
         assert(e.getMessage.contains("Request not set"))
     }
-    assert(threwException)
+    assert(exceptionThrown)
 
     rdd.setStatement("select 1")
-    threwException = false
+    exceptionThrown = false
     try {
       rdd.setTable("foo")
     } catch {
       case e:SparkException =>
-        threwException = true
+        exceptionThrown = true
         assert(e.getMessage.contains("Request is already set"))
     }
-    assert(threwException)
+    assert(exceptionThrown)
 
-    threwException = false
+    exceptionThrown = false
     try {
       rdd.setPath("/a/b/c")
     } catch {
       case e:SparkException =>
-        threwException = true
+        exceptionThrown = true
         assert(e.getMessage.contains("Request is already set"))
     }
-    assert(threwException)
+    assert(exceptionThrown)
   }
 
   test("Counters") {

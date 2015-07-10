@@ -63,15 +63,17 @@ public class ThriftUtils {
    * be kerberized.
    * TODO: this should also support delegation tokens.
    */
-  public static TTransport createTransport(String service, String hostname, int port,
-      String kerberosPrincipal) throws IOException {
+  protected static TTransport createTransport(String service, String hostname, int port,
+      String kerberosPrincipal, int timeoutMs) throws IOException {
     if (kerberosPrincipal == null) {
-      LOG.info(String.format("Connecting to %s at %s:%d", service, hostname, port));
+      LOG.info(String.format("Connecting to %s at %s:%d, with timeout:%s",
+          service, hostname, port, timeoutMs));
     } else {
-      LOG.info(String.format("Connecting to %s at %s:%d with kerberos principal:%s",
-          service, hostname, port, kerberosPrincipal));
+      LOG.info(String.format(
+          "Connecting to %s at %s:%d with kerberos principal:%s, with timeout:%s",
+          service, hostname, port, kerberosPrincipal, timeoutMs));
     }
-    TTransport transport = new TSocket(hostname, port);
+    TTransport transport = new TSocket(hostname, port, timeoutMs);
 
     if (kerberosPrincipal != null) {
       // Kerberized, wrap the transport in a sasl transport.
@@ -90,13 +92,14 @@ public class ThriftUtils {
     try {
       transport.open();
     } catch (TTransportException e) {
-      String msg = String.format(
-          "Could not connect to %s: %s:%d", service, hostname, port);
+      String msg = String.format("Could not connect to %s: %s:%d, with timeout:%s",
+          service, hostname, port, timeoutMs);
       LOG.warn(String.format("%s: error: %s", msg, e));
       throw new IOException(msg, e);
     }
 
-    LOG.info(String.format("Connected to %s at %s:%d", service, hostname, port));
+    LOG.info(String.format("Connected to %s at %s:%d, with timeout:%s",
+        service, hostname, port, timeoutMs));
     return transport;
   }
 

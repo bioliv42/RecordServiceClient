@@ -39,9 +39,8 @@ public class TestDelegationToken {
   @Test
   public void testAPI() throws RuntimeException, IOException,
         TRecordServiceException, InterruptedException {
-    RecordServicePlannerClient planner =
-      new RecordServicePlannerClient(HOST, PLANNER_PORT);
-
+    RecordServicePlannerClient planner = new RecordServicePlannerClient.Builder()
+        .connect(HOST, PLANNER_PORT);
     boolean exceptionThrown = false;
     try {
       planner.getDelegationToken(null);

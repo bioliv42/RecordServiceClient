@@ -35,9 +35,9 @@ public class TestSpecificRecord {
 
   @Test
   public void testNationAll() throws TRecordServiceException, IOException {
-    TPlanRequestResult plan = RecordServicePlannerClient.planRequest(
-        "localhost", PLANNER_PORT,
-        Request.createSqlRequest("select * from tpch.nation"));
+    TPlanRequestResult plan = new RecordServicePlannerClient.Builder()
+        .planRequest("localhost", PLANNER_PORT,
+            Request.createSqlRequest("select * from tpch.nation"));
 
     assertEquals(plan.tasks.size(), 1);
     SpecificRecords<NationAll> records = null;
@@ -63,9 +63,9 @@ public class TestSpecificRecord {
 
   @Test
   public void testNationProjection() throws TRecordServiceException, IOException {
-    TPlanRequestResult plan = RecordServicePlannerClient.planRequest(
-        "localhost", PLANNER_PORT,
-        Request.createSqlRequest("select n_nationkey, n_name from tpch.nation"));
+    TPlanRequestResult plan = new RecordServicePlannerClient.Builder()
+        .planRequest("localhost", PLANNER_PORT,
+            Request.createSqlRequest("select n_nationkey, n_name from tpch.nation"));
 
     assertEquals(plan.tasks.size(), 1);
     SpecificRecords<NationKeyName> records = null;

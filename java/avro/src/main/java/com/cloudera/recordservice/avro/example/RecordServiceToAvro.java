@@ -39,8 +39,8 @@ public class RecordServiceToAvro {
     String query = "select * from tpch.nation";
     if (args.length == 2) query = args[1];
 
-    TPlanRequestResult plan = RecordServicePlannerClient.planRequest(
-        "localhost", PLANNER_PORT, Request.createSqlRequest(query));
+    TPlanRequestResult plan = new RecordServicePlannerClient.Builder()
+        .planRequest("localhost", PLANNER_PORT, Request.createSqlRequest(query));
     Schema avroSchema = SchemaUtils.convertSchema(plan.schema);
     System.out.println("Avro Schema:\n" + avroSchema);
 

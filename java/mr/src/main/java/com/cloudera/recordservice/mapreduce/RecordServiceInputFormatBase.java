@@ -159,11 +159,10 @@ public abstract class RecordServiceInputFormatBase<K, V> extends InputFormat<K, 
 
     TPlanRequestResult result = null;
     try {
-      result = RecordServicePlannerClient.planRequest(
-          jobConf.get(PLANNER_HOST, "localhost"),
-          jobConf.getInt(PLANNER_PORT, 40000),
-          request,
-          jobConf.get(KERBEROS_PRINCIPAL));
+      result = new RecordServicePlannerClient.Builder()
+          .setKerberosPrincipal(jobConf.get(KERBEROS_PRINCIPAL))
+          .planRequest(jobConf.get(PLANNER_HOST, "localhost"),
+              jobConf.getInt(PLANNER_PORT, 40000), request);
     } catch (Exception e) {
       throw new IOException(e);
     }

@@ -82,7 +82,8 @@ public class RSCat {
 
   public static void processPath(String path, int numRecords, String hostname, int port)
       throws TRecordServiceException, IOException {
-    RecordServicePlannerClient rspc = new RecordServicePlannerClient(hostname, port);
+    RecordServicePlannerClient rspc = new RecordServicePlannerClient.Builder()
+        .connect(hostname, port);
     Request planRequest;
     TPlanRequestResult plannerRequest;
     try {
@@ -94,6 +95,8 @@ public class RSCat {
       // exist
       planRequest = Request.createTableScanRequest(path);
       plannerRequest = rspc.planRequest(planRequest);
+    } finally {
+      rspc.close();
     }
     
     Random randGen = new Random();

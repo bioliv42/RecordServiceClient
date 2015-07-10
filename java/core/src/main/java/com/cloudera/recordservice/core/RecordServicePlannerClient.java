@@ -37,7 +37,6 @@ import com.cloudera.recordservice.thrift.TRecordServiceException;
  * Java client for the RecordServicePlanner. This class is not thread safe.
  */
 // TODO: This class should not expose the raw Thrift objects, should use proper logger.
-// TODO: Make retry interval/attempts configurable.
 public class RecordServicePlannerClient {
   private final static Logger LOG =
       LoggerFactory.getLogger(RecordServicePlannerClient.class);
@@ -46,67 +45,105 @@ public class RecordServicePlannerClient {
   private RecordServicePlanner.Client plannerClient_;
   private TProtocol protocol_;
   private ProtocolVersion protocolVersion_ = null;
+  private String kerberosPrincipal_ = null;
 
   // Number of consecutive attempts before failing any request.
-  private final int maxAttempts_ = 3;
+  private int maxAttempts_ = 3;
+
   // Duration to sleep between retry attempts.
-  private final int retrySleepMs_ = 1000;
+  private int retrySleepMs_ = 1000;
+
+  // Millisecond timeout for TSocket, 0 means infinite timeout.
+  private int timeoutMs_ = 0;
 
   /**
-   * Generates a plan for 'request', connecting to the planner service at
-   * hostname/port.
+   * Builder to create worker client with various configs.
    */
-  public static TPlanRequestResult planRequest(String hostname, int port, Request request)
-      throws IOException, TRecordServiceException {
-    return planRequest(hostname, port, request, null);
-  }
+  public final static class Builder {
+    RecordServicePlannerClient client_ = new RecordServicePlannerClient();
 
-  public static TPlanRequestResult planRequest(
-      String hostname, int port, Request request, String kerberosPrincipal)
-      throws IOException, TRecordServiceException {
-    RecordServicePlannerClient client = null;
-    try {
-      client = new RecordServicePlannerClient(hostname, port, kerberosPrincipal);
-      return client.planRequest(request);
-    } finally {
-      if (client != null) client.close();
+    public Builder setMaxAttempts(int maxAttempts) {
+      if (maxAttempts <= 0) {
+        throw new IllegalArgumentException("Attempts must be greater than zero.");
+      }
+      LOG.debug("Setting maxAttempts to " + maxAttempts);
+      client_.maxAttempts_ = maxAttempts;
+      return this;
+    }
+
+    public Builder setSleepDurationMs(int retrySleepMs) {
+      if (retrySleepMs < 0) {
+        throw new IllegalArgumentException("Sleep duration must be non-negative.");
+      }
+      LOG.debug("Setting sleep duration to " + retrySleepMs);
+      client_.retrySleepMs_ = retrySleepMs;
+      return this;
+    }
+
+    public Builder setKerberosPrincipal(String principal) {
+      client_.kerberosPrincipal_ = principal;
+      return this;
+    }
+
+    public Builder setTimeoutMs(int timeoutMs) {
+      if (timeoutMs < 0) {
+        throw new IllegalArgumentException(
+            "Timeout must not be less than 0. Timeout=" + timeoutMs);
+      }
+      LOG.debug("Setting timeoutMs to " + timeoutMs);
+      client_.timeoutMs_ = timeoutMs;
+      return this;
+    }
+
+    /**
+     * Creates a planner client connecting to 'hostname'/'port' with previously
+     * set options, and the caller must call close().
+     */
+    public RecordServicePlannerClient connect(String hostname, int port)
+        throws TRecordServiceException, IOException {
+      client_.connect(hostname, port);
+      return client_;
+    }
+
+    /**
+     * Get the plan request result.
+     */
+    public TPlanRequestResult planRequest(String hostname, int port, Request request)
+        throws IOException, TRecordServiceException{
+      try {
+        client_.connect(hostname, port);
+        return client_.planRequest(request);
+      } finally {
+        client_.close();
+      }
+    }
+
+    /**
+     * Get the schema for 'request'.
+     */
+    public TGetSchemaResult getSchema(String hostname, int port, Request request)
+        throws IOException, TRecordServiceException {
+      try {
+        client_.connect(hostname, port);
+        return client_.getSchema(request);
+      } finally {
+        client_.close();
+      }
     }
   }
 
   /**
-   * Gets the schema for 'request', connecting to the planner service at
-   * hostname/port.
+   *  Private constructor, use builder.
    */
-  public static TGetSchemaResult getSchema(
-      String hostname, int port, Request request)
-      throws IOException, TRecordServiceException {
-    return getSchema(hostname, port, request, null);
-  }
-
-  public static TGetSchemaResult getSchema(
-      String hostname, int port, Request request, String kerberosPrincipal)
-      throws IOException, TRecordServiceException {
-    RecordServicePlannerClient client = null;
-    try {
-      client = new RecordServicePlannerClient(hostname, port, kerberosPrincipal);
-      return client.getSchema(request);
-    } finally {
-      if (client != null) client.close();
-    }
-  }
+  private RecordServicePlannerClient() { }
 
   /**
    * Opens a connection to the RecordServicePlanner.
    */
-  public RecordServicePlannerClient(String hostname, int port)
-     throws IOException, TRecordServiceException {
-    this(hostname, port, null);
-  }
-
-  public RecordServicePlannerClient(String hostname, int port, String kerberosPrincipal)
+  private void connect(String hostname, int port)
       throws IOException, TRecordServiceException {
     TTransport transport = ThriftUtils.createTransport(
-        "RecordServicePlanner", hostname, port, kerberosPrincipal);
+        "RecordServicePlanner", hostname, port, kerberosPrincipal_, timeoutMs_);
     protocol_ = new TBinaryProtocol(transport);
     plannerClient_ = new RecordServicePlanner.Client(protocol_);
 
@@ -300,7 +337,7 @@ public class RecordServicePlannerClient {
     if (e instanceof TRecordServiceException) {
       throw (TRecordServiceException)e;
     } else if (e instanceof TTransportException) {
-      LOG.warn("Could not reach planner serivce.");
+      LOG.warn("Could not reach planner service.");
       throw new IOException("Could not reach service.", e);
     } else {
       throw new IOException(generalMsg, e);

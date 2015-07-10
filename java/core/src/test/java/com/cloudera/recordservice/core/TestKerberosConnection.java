@@ -51,8 +51,9 @@ public class TestKerberosConnection {
   public void testConnection() throws RuntimeException, IOException,
         TRecordServiceException, InterruptedException {
     if (!RUN_KERBEROS_TESTS) return;
-    TPlanRequestResult plan = RecordServicePlannerClient.planRequest(
-        HOST, PLANNER_PORT, Request.createTableScanRequest("sample_07"), PRINCIPAL);
+    TPlanRequestResult plan = new RecordServicePlannerClient.Builder()
+        .setKerberosPrincipal(PRINCIPAL)
+        .planRequest(HOST, PLANNER_PORT, Request.createTableScanRequest("sample_07"));
     assertEquals(plan.schema.cols.size(), 4);
 
     RecordServiceWorkerClient worker = new RecordServiceWorkerClient.Builder().
@@ -75,8 +76,8 @@ public class TestKerberosConnection {
     // Try planner connection with no principal and bad principal
     boolean exceptionThrown = false;
     try {
-      RecordServicePlannerClient.planRequest(
-          HOST, PLANNER_PORT, Request.createTableScanRequest("sample_07"));
+      new RecordServicePlannerClient.Builder()
+          .planRequest(HOST, PLANNER_PORT, Request.createTableScanRequest("sample_07"));
     } catch (TRecordServiceException e) {
       exceptionThrown = true;
     }
@@ -85,9 +86,9 @@ public class TestKerberosConnection {
 
     exceptionThrown = false;
     try {
-      RecordServicePlannerClient.planRequest(
-          HOST, PLANNER_PORT, Request.createTableScanRequest("sample_07"),
-          "BAD/bad.com@bad.com");
+      new RecordServicePlannerClient.Builder()
+          .setKerberosPrincipal("BAD/bad.com@bad.com")
+          .planRequest(HOST, PLANNER_PORT, Request.createTableScanRequest("sample_07"));
     } catch (IOException e) {
       exceptionThrown = true;
     }

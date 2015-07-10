@@ -52,8 +52,8 @@ public class TestStress {
     for (int i = 0; i < numConnections;) {
       ++i;
       try {
-        RecordServicePlannerClient planner =
-          new RecordServicePlannerClient("localhost", PLANNER_PORT);
+        RecordServicePlannerClient planner = new RecordServicePlannerClient.Builder()
+            .connect("localhost", PLANNER_PORT);
         clients.add(planner);
       } catch(TRecordServiceException ex) {
         assertEquals(ex.code, TErrorCode.SERVICE_BUSY);
@@ -68,7 +68,7 @@ public class TestStress {
         // a reasonable client should sleep before retrying.
         Thread.sleep(200); // ms
 
-        c = new RecordServicePlannerClient("localhost", PLANNER_PORT);
+        c = new RecordServicePlannerClient.Builder().connect("localhost", PLANNER_PORT);
         clients.add(c);
       }
     }

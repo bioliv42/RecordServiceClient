@@ -53,6 +53,7 @@ public class RecordServiceWorkerClient {
   private RecordServiceWorker.Client workerClient_;
   private TProtocol protocol_;
   private ProtocolVersion protocolVersion_ = null;
+  private String kerberosPrincipal_ = null;
 
   // The set of all active tasks.
   private Map<TUniqueId, TaskState> activeTasks_ = new HashMap<TUniqueId, TaskState>();
@@ -71,6 +72,9 @@ public class RecordServiceWorkerClient {
 
   // Duration to sleep between retry attempts.
   private int retrySleepMs_ = 1000;
+
+  // Millisecond timeout for TSocket, 0 means infinite timeout.
+  private int timeoutMs_ = 10000;
 
   /**
    * Per task state maintained in the client.
@@ -95,9 +99,8 @@ public class RecordServiceWorkerClient {
   /**
    * Builder to create worker client with various configs.
    */
-  public static class Builder {
+  public final static class Builder {
     RecordServiceWorkerClient client_ = new RecordServiceWorkerClient();
-    String kerberosPrincipal_ = null;
 
     public Builder() {
       LOG.debug("Creating new worker client connection.");
@@ -134,7 +137,7 @@ public class RecordServiceWorkerClient {
       return this;
     }
 
-    public Builder setSleepDuration(int retrySleepMs) {
+    public Builder setSleepDurationMs(int retrySleepMs) {
       if (retrySleepMs < 0) {
         throw new IllegalArgumentException("Sleep duration must be non-negative.");
       }
@@ -144,17 +147,27 @@ public class RecordServiceWorkerClient {
     }
 
     public Builder setKerberosPrincipal(String principal) {
-      kerberosPrincipal_ = principal;
+      client_.kerberosPrincipal_ = principal;
+      return this;
+    }
+
+    public Builder setTimeoutMs(int timeoutMs) {
+      if (timeoutMs < 0) {
+        throw new IllegalArgumentException(
+          "Timeout must not be less than 0. Timeout=" + timeoutMs);
+      }
+      LOG.debug("Setting timeoutMs to " + timeoutMs);
+      client_.timeoutMs_ = timeoutMs;
       return this;
     }
 
     /**
      * Creates a worker client connecting to 'hostname'/'port' with previously
-     * set options.
+     * set options, and the caller must call close().
      */
     public RecordServiceWorkerClient connect(String hostname, int port)
         throws TRecordServiceException, IOException {
-      client_.connect(hostname, port, kerberosPrincipal_);
+      client_.connect(hostname, port);
       return client_;
     }
   }
@@ -333,14 +346,14 @@ public class RecordServiceWorkerClient {
   /**
    * Connects to the RecordServiceWorker running on hostname/port.
    */
-  private void connect(String hostname, int port, String kerberosPrincipal)
+  private void connect(String hostname, int port)
       throws IOException, TRecordServiceException {
     if (workerClient_ != null) {
       throw new RuntimeException("Already connected. Must call close() first.");
     }
 
     TTransport transport = ThriftUtils.createTransport(
-        "RecordServiceWorker", hostname, port, kerberosPrincipal);
+        "RecordServiceWorker", hostname, port, kerberosPrincipal_, timeoutMs_);
     protocol_ = new TBinaryProtocol(transport);
     workerClient_ = new RecordServiceWorker.Client(protocol_);
     try {
@@ -449,7 +462,7 @@ public class RecordServiceWorkerClient {
     if (e instanceof TRecordServiceException) {
       throw (TRecordServiceException)e;
     } else if (e instanceof TTransportException) {
-      LOG.warn("Could not reach worker serivce.");
+      LOG.warn("Could not reach worker service.");
       throw new IOException("Could not reach service.", e);
     } else {
       throw new IOException(generalMsg, e);

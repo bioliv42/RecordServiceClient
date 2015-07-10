@@ -54,8 +54,11 @@ case class RecordServiceRelation(table:String, size:Option[Long])(
   val (plannerHost, plannerPort) = RecordServiceConf.getPlannerHostPort(sqlContext)
 
   override def schema: StructType = {
-    val rsSchema = RecordServicePlannerClient.getSchema(
-      plannerHost, plannerPort, Request.createTableScanRequest(table)).schema
+    val rsSchema = new RecordServicePlannerClient.Builder()
+        .setKerberosPrincipal(
+            RecordServiceConf.getKerberosPrincipal(sqlContext.sparkContext))
+        .getSchema(plannerHost, plannerPort, Request.createTableScanRequest(table))
+        .schema
     convertSchema(rsSchema)
   }
 
