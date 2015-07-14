@@ -39,6 +39,8 @@ class ExternalMiniCluster {
     bool Start();
     bool Wait(int* ret);
 
+    const std::vector<std::string>& GetArgs() { return subprocess_.GetArgs(); }
+
    protected:
     friend class ExternalMiniCluster;
     Process(const std::string& binary, const std::vector<std::string>& args)

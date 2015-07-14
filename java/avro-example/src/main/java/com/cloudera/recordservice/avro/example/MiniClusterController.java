@@ -1,5 +1,5 @@
 // Confidential Cloudera Information: Covered by NDA.
-// Copyright 2014 Cloudera Inc.
+// Copyright 2015 Cloudera Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,8 +17,10 @@ package com.cloudera.recordservice.avro.example;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import org.apache.commons.lang.ArrayUtils;
@@ -46,22 +48,21 @@ public class MiniClusterController {
   public native int GetSpecificNodePid(int plannerPort);
   public native int GetStatestorePid();
   public native int GetCatalogPid();
+  public native int AddImpalaNode();
+  public native String[] GetNodeArgs(int pid);
 
   public static final int DEFAULT_NUM_NODES = 3;
   public static final int BASE_PORT = 30000;
-  // Each mini node in the mini cluster has 6 exposed ports which are all initialized in
-  // the same order offset from that node's base port; .e.g a node with a base port of
-  // 30000 has a planner port of 30000 + PLANNER_PORT_OFFSET or, in this case, 30005
-  public static final int PLANNER_PORT_OFFSET = 5;
   public static final String MINICLUSTER_LIBRARY = "libExternalMiniCluster.so";
   public static final String BUILT_RS_CODE_LOCATION = "/cpp/build/release/recordservice/";
 
   public int catalogPid_ = -1;
   public int statestorePid_ = -1;
-  public List<MiniClusterNode> clusterList_;
   public Thread clusterThread_;
 
   private static MiniClusterController miniCluster_;
+
+  private List<MiniClusterNode> clusterList_;
 
   /**
    * This method starts a minicluster with the specified number of nodes. This
@@ -78,8 +79,9 @@ public class MiniClusterController {
   }
 
   /**
-   * Every node in the local minicluster runs in its own process. This method returns a
-   * hashset of all the process ids of running nodes in the mini cluster.
+   * Every node in the local minicluster runs in its own process. This method
+   * returns a hashset of all the process ids of running nodes in the mini
+   * cluster.
    */
   public HashSet<Integer> getRunningMiniNodePids() {
     HashSet<Integer> pidSet = new HashSet<Integer>();
@@ -98,11 +100,30 @@ public class MiniClusterController {
   }
 
   /**
-   * Given a planner port, this method returns the process id of the node on the local
-   * minicluster
+   * This method adds an impalad to the cluster
+   */
+  public void addImpalad() {
+    int pid = AddImpalaNode();
+    Map<String, Integer> args = processNodeArgs(GetNodeArgs(pid));
+    args.put("pid", pid);
+    MiniClusterNode newNode = new MiniClusterNode(args);
+    clusterList_.add(newNode);
+  }
+
+  /**
+   * Given a planner port, this method returns the process id of the node on the
+   * local minicluster
    */
   public int getSpecificNodePid(int plannerPort) {
     return GetSpecificNodePid(plannerPort);
+  }
+
+  /**
+   * This method returns the number of nodes in the cluster not including the
+   * catalog or the statestore
+   */
+  public int getClusterSize() {
+    return clusterList_.size();
   }
 
   /**
@@ -194,17 +215,15 @@ public class MiniClusterController {
     public int plannerPort_;
     public int workerPort_;
 
-    public MiniClusterNode(int basePort, int pid) {
-      pid_ = pid;
-      // TODO: Do this in a more flexible way. If this is changed in the backend this
-      // will break.
-      beeswaxPort_ = basePort;
-      hs2Port_ = basePort + 1;
-      bePort_ = basePort + 2;
-      webserverPort_ = basePort + 3;
-      statestoreSubscriberPort_ = basePort + 4;
-      plannerPort_ = basePort + 5;
-      workerPort_ = basePort + 6;
+    public MiniClusterNode(Map<String, Integer> args) {
+      pid_ = args.get("pid");
+      beeswaxPort_ = args.get("beeswax_port");
+      hs2Port_ = args.get("hs2_port");
+      bePort_ = args.get("be_port");
+      webserverPort_ = args.get("webserver_port");
+      statestoreSubscriberPort_ = args.get("state_store_subscriber_port");
+      plannerPort_ = args.get("recordservice_planner_port");
+      workerPort_ = args.get("recordservice_worker_port");
     }
   }
 
@@ -246,17 +265,43 @@ public class MiniClusterController {
    */
   private void populateFields() {
     miniCluster_ = this;
-    HashSet<Integer> set = getRunningMiniNodePids();
-    populateNodeList(set.size());
+    populateNodeList();
     catalogPid_ = getCatalogPid();
     statestorePid_ = getStatestorePid();
   }
 
-  private void printExcessNodes(HashSet<Integer> pidSet) {
+  /**
+   * This method takes as input a String array of command line arguments in the
+   * form --<arg name>=<arg integer value> and inserts them into a
+   * Map<ArgName,ArgValue>.
+   */
+  private Map<String, Integer> processNodeArgs(String[] args) {
+    Map<String, Integer> argTable = new HashMap<String, Integer>();
+    if (args == null) {
+      return argTable;
+    }
+    int equalsIndex;
+    for (int i = 0; i < args.length; ++i) {
+      if (args[i].startsWith("--") && ((equalsIndex = args[i].indexOf("=")) != -1)) {
+        String key = args[i].substring(2, equalsIndex);
+        try {
+          Integer value = Integer.parseInt(args[i].substring(equalsIndex + 1));
+          argTable.put(key, value);
+        } catch (NumberFormatException nfe) {
+          nfe.printStackTrace();
+          continue;
+        }
+      }
+    }
+    return argTable;
+  }
+
+  private void printPids(HashSet<Integer> pidSet, String trailingMessage) {
     System.err.println("Nodes with the following pids: ");
-    for (Integer pid : pidSet) System.err.println(pid);
-    System.err
-        .println("were found but are not being tracked by the MiniClusterController");
+    for (Integer pid : pidSet) {
+      System.err.println(pid);
+    }
+    System.err.println(trailingMessage);
   }
 
   /**
@@ -267,7 +312,8 @@ public class MiniClusterController {
     HashSet<Integer> pidSet = getRunningMiniNodePids();
     // Check the cluster list
     if (pidSet.size() > 0 && (clusterList_ == null || clusterList_.size() <= 0)) {
-      printExcessNodes(pidSet);
+      printPids(pidSet,
+          "were found but are not being tracked by the MiniClusterController");
       return false;
     } else {
       for (MiniClusterNode node : clusterList_) {
@@ -280,7 +326,8 @@ public class MiniClusterController {
         pidSet.remove(node.pid_);
       }
       if (pidSet.size() > 0) {
-        printExcessNodes(pidSet);
+        printPids(pidSet,
+            "were found but are not being tracked by the MiniClusterController");
         return false;
       }
     }
@@ -301,15 +348,14 @@ public class MiniClusterController {
   /**
    * This method populates the node list with the live nodes found running
    */
-  private void populateNodeList(int numNodes) {
-    clusterList_ = new ArrayList<MiniClusterNode>(numNodes);
-    for (int i = 0; i < numNodes; ++i) {
-      int offset = i * 7;
-      int pid = getSpecificNodePid(BASE_PORT + offset + PLANNER_PORT_OFFSET);
-      if (pid == -1) {
-        continue;
-      }
-      MiniClusterNode newNode = new MiniClusterNode(BASE_PORT + offset, pid);
+  private void populateNodeList() {
+    clusterList_ = new ArrayList<MiniClusterNode>();
+    int[] nodePids = GetRunningMiniNodePids();
+    for (int i = 0; i < nodePids.length; ++i) {
+      int pid = nodePids[i];
+      Map<String, Integer> args = processNodeArgs(GetNodeArgs(pid));
+      args.put("pid", pid);
+      MiniClusterNode newNode = new MiniClusterNode(args);
       clusterList_.add(newNode);
     }
   }
@@ -340,7 +386,8 @@ public class MiniClusterController {
     populateFields();
   }
 
-  public static void main(String[] args) throws InterruptedException, IOException, NumberFormatException {
+  public static void main(String[] args) throws InterruptedException, IOException,
+      NumberFormatException {
     org.apache.log4j.BasicConfigurator.configure();
     int numNodes = DEFAULT_NUM_NODES;
     if (args.length == 1) {
@@ -348,7 +395,6 @@ public class MiniClusterController {
     }
     MiniClusterController.Start(numNodes);
     MiniClusterController miniCluster = MiniClusterController.instance();
-    miniCluster.getRunningMiniNodePids();
     System.out.println(miniCluster.isClusterStateCorrect());
   }
 }

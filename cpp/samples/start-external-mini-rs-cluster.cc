@@ -101,6 +101,16 @@ void KillNodeByPid(int pid) {
   }
 }
 
+int AddImpalaNode() {
+  ExternalMiniCluster::Impalad* impalad;
+  bool result = cluster.StartImpalad(true, true, &impalad);
+  ExitIfFalse(result);
+  ExitIfFalse(impalad != NULL);
+  printf("%s\n", "Sleeping to allow node to startup");
+  sleep(5);
+  return impalad->pid();
+}
+
 // This method starts a mini cluster with a specified number of nodes. This method does
 // not return
 void StartMiniCluster(int num_nodes) {
@@ -138,6 +148,7 @@ void StartMiniCluster(int num_nodes) {
   } catch (TRecordServiceException e) {
     printf("%s\n", e.message.c_str());
   }
+
   while (1) {
     sleep(10);
   }
@@ -153,10 +164,34 @@ Java_com_cloudera_recordservice_avro_example_MiniClusterController_StartMiniClus
 }
 
 extern "C"
+JNIEXPORT jobjectArray JNICALL
+Java_com_cloudera_recordservice_avro_example_MiniClusterController_GetNodeArgs(
+    JNIEnv* env, jclass caller_class, jint pid) {
+  recordservice::ExternalMiniCluster::Process* node = recordservice::GetImpaladByPid(pid);
+  if (node == NULL) {
+    return NULL;
+  }
+  const vector<string>& args = node->GetArgs();
+  jobjectArray result = env->NewObjectArray(args.size(),
+      env->FindClass("java/lang/String"), NULL);
+  for(int i = 0; i < args.size(); i++) {
+    env->SetObjectArrayElement(result, i, env->NewStringUTF(args[i].c_str()));
+  }
+  return result;
+}
+
+extern "C"
 JNIEXPORT void JNICALL
 Java_com_cloudera_recordservice_avro_example_MiniClusterController_KillNodeByPid(
     JNIEnv* env, jclass caller_class, jint pid) {
   recordservice::KillNodeByPid(pid);
+}
+
+extern "C"
+JNIEXPORT jint JNICALL
+Java_com_cloudera_recordservice_avro_example_MiniClusterController_AddImpalaNode(
+    JNIEnv* env, jclass caller_class) {
+  return recordservice::AddImpalaNode();
 }
 
 extern "C"

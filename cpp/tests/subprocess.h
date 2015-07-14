@@ -93,6 +93,9 @@ class Subprocess {
 
   pid_t pid() const;
 
+  // Return that args used on process startup
+  const std::vector<std::string>& GetArgs() const { return argv_; }
+
  private:
   void SetFdShared(int stdfd, bool share);
   int CheckAndOffer(int stdfd) const;

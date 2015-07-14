@@ -33,7 +33,6 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-
 import com.cloudera.recordservice.avro.example.WordCount.Map;
 import com.cloudera.recordservice.avro.example.WordCount.Reduce;
 
@@ -62,7 +61,7 @@ public class TestMiniClusterController {
   public void tearDown() throws Exception {
   }
 
-  public JobConf createWordCountMRJobConf() throws IOException {
+  public static JobConf createWordCountMRJobConf() throws IOException {
     JobConf conf = new JobConf(WordCount.class);
     fillInWordCountMRJobConf(conf);
     return conf;
@@ -91,8 +90,8 @@ public class TestMiniClusterController {
 
     conf.setInputFormat(com.cloudera.recordservice.mapred.TextInputFormat.class);
     conf.setOutputFormat(TextOutputFormat.class);
-    com.cloudera.recordservice.mr.RecordServiceConfig.setInputQuery(conf,
-        input);
+    com.cloudera.recordservice.mr.RecordServiceConfig.setInputQuery(conf, input);
+    setRandomOutputDir(conf);
   }
 
   /**
@@ -102,7 +101,6 @@ public class TestMiniClusterController {
   @Test
   public void testRunningJobLocally() throws IOException, InterruptedException {
     JobConf sampleJob = createWordCountMRJobConf();
-    setRandomOutputDir(sampleJob);
     RunningJob runningJob = miniCluster_.runJobLocally(sampleJob);
     runningJob.waitForCompletion();
     assertTrue(runningJob.isSuccessful());
@@ -116,7 +114,6 @@ public class TestMiniClusterController {
   public void testGetConfigForMiniCluster() throws IOException {
     JobConf sampleJob = miniCluster_.getJobConf(WordCount.class);
     fillInWordCountMRJobConf(sampleJob);
-    setRandomOutputDir(sampleJob);
     RunningJob runningJob = JobClient.runJob(sampleJob);
     runningJob.waitForCompletion();
     assertTrue(runningJob.isSuccessful());
@@ -130,6 +127,20 @@ public class TestMiniClusterController {
   public void testClusterHealth() throws IOException {
     assertTrue("Cluster is in incorrect state!", miniCluster_.isClusterStateCorrect());
     miniCluster_.killRandomNode();
+    assertTrue("Cluster is in incorrect state!", miniCluster_.isClusterStateCorrect());
+  }
+
+  /**
+   * This method adds a node to the cluster and checks that the cluster state is
+   * still correct.
+   */
+  @Test
+  public void testAddNode() throws InterruptedException {
+    assertTrue("Cluster size is incorrect!",
+        miniCluster_.getClusterSize() == DEFAULT_NODE_NUM);
+    miniCluster_.addImpalad();
+    assertTrue("Cluster size is incorrect!",
+        miniCluster_.getClusterSize() == (DEFAULT_NODE_NUM + 1));
     assertTrue("Cluster is in incorrect state!", miniCluster_.isClusterStateCorrect());
   }
 }
