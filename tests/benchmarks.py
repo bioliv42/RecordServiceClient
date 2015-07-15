@@ -117,9 +117,6 @@ benchmarks = [
           "select l_partkey from tpch6gb_parquet.lineitem")],
       ["java-client", java_client_cmd("select l_partkey from tpch6gb_parquet.lineitem")],
       ["spark-rs", spark_q1("select l_partkey from tpch6gb_parquet.lineitem")],
-      ["hive-rs", hive_rs_cmd(query='select sum(l_partkey) from rs.lineitem_hive_serde',
-          tbl_name='tpch6gb_parquet.lineitem', fetch_size=50000)
-      ],
     ]
   ],
 
