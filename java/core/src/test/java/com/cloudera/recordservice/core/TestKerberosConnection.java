@@ -24,6 +24,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.cloudera.recordservice.thrift.TDelegationToken;
+import com.cloudera.recordservice.thrift.TErrorCode;
 import com.cloudera.recordservice.thrift.TPlanRequestResult;
 import com.cloudera.recordservice.thrift.TRecordServiceException;
 
@@ -36,24 +37,29 @@ public class TestKerberosConnection extends TestBase {
   static final String HOST = "vd0224.halxg.cloudera.com";
   static final String PRINCIPAL = "impala/vd0224.halxg.cloudera.com@HALXG.CLOUDERA.COM";
 
-  static final boolean RUN_KERBEROS_TESTS =
-      System.getenv("RECORD_SERVICE_RUN_KERBEROS_TESTS") != null &&
-      System.getenv("RECORD_SERVICE_RUN_KERBEROS_TESTS").equalsIgnoreCase("true");
+  // Number of rows in the sample_07 table.
+  static final int SAMPLE_07_ROW_COUNT = 823;
+
+  static final boolean HAS_KERBEROS_CREDENTIALS =
+      System.getenv("HAS_KERBEROS_CREDENTIALS") != null &&
+      System.getenv("HAS_KERBEROS_CREDENTIALS").equalsIgnoreCase("true");
 
   @BeforeClass
   public static void setUpBeforeClass() throws Exception {
     TestBase.setUpBeforeClass();
-    if (RUN_KERBEROS_TESTS) {
-      System.out.println("Running kerberos tests.");
+    // Setup log4j for testing.
+    org.apache.log4j.BasicConfigurator.configure();
+    if (HAS_KERBEROS_CREDENTIALS) {
+      System.out.println("Running tests with kerberos credentials.");
     } else {
-      System.out.println("Skipping kerberos tests.");
+      System.out.println("Skipping tests which require kerberos credentials.");
     }
   }
 
   @Test
-  public void testConnection() throws RuntimeException, IOException,
+  public void testConnection() throws IOException,
         TRecordServiceException, InterruptedException {
-    if (!RUN_KERBEROS_TESTS) return;
+    if (!HAS_KERBEROS_CREDENTIALS) return;
 
     TPlanRequestResult plan = new RecordServicePlannerClient.Builder()
         .setKerberosPrincipal(PRINCIPAL)
@@ -61,23 +67,23 @@ public class TestKerberosConnection extends TestBase {
 
     assertEquals(plan.schema.cols.size(), 4);
 
-    // TODO: use the principal when the worker connection is kerberized.
     RecordServiceWorkerClient worker = new RecordServiceWorkerClient.Builder().
-        setKerberosPrincipal(null).connect(HOST, WORKER_PORT);
+        setKerberosPrincipal(PRINCIPAL).connect(HOST, WORKER_PORT);
     Records records = worker.execAndFetch(plan.tasks.get(0));
     int numRecords = 0;
     while (records.hasNext()) {
       records.next();
       ++numRecords;
     }
-    assertEquals(numRecords, 823);
+    assertEquals(numRecords, SAMPLE_07_ROW_COUNT);
+    worker.close();
   }
 
   @Test
   // Test without providing a principal or a bad principal.
-  public void testBadConnection() throws RuntimeException, IOException,
+  public void testBadConnection() throws IOException,
         TRecordServiceException, InterruptedException {
-    if (!RUN_KERBEROS_TESTS) return;
+    if (!HAS_KERBEROS_CREDENTIALS) return;
 
     // Try planner connection with no principal and bad principal
     boolean exceptionThrown = false;
@@ -102,8 +108,6 @@ public class TestKerberosConnection extends TestBase {
         exceptionThrown);
 
     // Try worker connection with no principal and bad principal
-    // TODO: enable no principal once worker service is kerberized.
-    /*
     exceptionThrown = false;
     try {
       new RecordServiceWorkerClient.Builder().connect(HOST, WORKER_PORT);
@@ -112,7 +116,6 @@ public class TestKerberosConnection extends TestBase {
     }
     assertTrue("Should not be able to connect without kerberos principal",
         exceptionThrown);
-    */
 
     exceptionThrown = false;
     try {
@@ -125,12 +128,11 @@ public class TestKerberosConnection extends TestBase {
         exceptionThrown);
   }
 
-
   @Test
   // Test authentication with delegation token.
-  public void testDelegationToken() throws RuntimeException, IOException,
+  public void testDelegationToken() throws IOException,
         TRecordServiceException, InterruptedException {
-    if (!RUN_KERBEROS_TESTS) return;
+    if (!HAS_KERBEROS_CREDENTIALS) return;
     boolean exceptionThrown = false;
 
     // Connect to the planner via kerberos.
@@ -139,20 +141,22 @@ public class TestKerberosConnection extends TestBase {
         .connect(HOST, PLANNER_PORT);
 
     // Get a token from planner.
-    TDelegationToken token = kerberizedPlanner.getDelegationToken("impala");
-    assertTrue(token.identifier.length() > 0);
-    assertTrue(token.password.length() > 0);
-    assertTrue(token.token.remaining() > token.identifier.length());
-    assertTrue(token.token.remaining() > token.password.length());
+    TDelegationToken token1 = kerberizedPlanner.getDelegationToken("impala");
+    assertTrue(token1.identifier.length() > 0);
+    assertTrue(token1.password.length() > 0);
+    assertTrue(token1.token.remaining() > token1.identifier.length());
+    assertTrue(token1.token.remaining() > token1.password.length());
+
+    // Get a second token
+    TDelegationToken token2 = kerberizedPlanner.getDelegationToken("impala");
 
     // Renew the token.
-    kerberizedPlanner.renewDelegationToken(token);
+    kerberizedPlanner.renewDelegationToken(token1);
     kerberizedPlanner.close();
 
     // Connect to the planner using the token.
-    RecordServicePlannerClient tokenPlanner = new RecordServicePlannerClient.Builder().
-        setDelegationToken(token).
-        connect(HOST, PLANNER_PORT);
+    RecordServicePlannerClient tokenPlanner = new RecordServicePlannerClient.Builder()
+        .setDelegationToken(token1).connect(HOST, PLANNER_PORT);
 
     // Should only be able to get tokens if the connection is kerberized.
     exceptionThrown = false;
@@ -167,7 +171,7 @@ public class TestKerberosConnection extends TestBase {
 
     exceptionThrown = false;
     try {
-      tokenPlanner.renewDelegationToken(token);
+      tokenPlanner.renewDelegationToken(token1);
     } catch (TRecordServiceException e) {
       exceptionThrown = true;
       assertTrue(e.getMessage(), e.getMessage().contains(
@@ -180,10 +184,16 @@ public class TestKerberosConnection extends TestBase {
         Request.createTableScanRequest("sample_07"));
     assertTrue(plan.tasks.size() == 1);
 
-    /* TODO: update the worker connection to be secure as well.
+    // Try a new request (this creates a new connection).
+    new RecordServicePlannerClient.Builder().setDelegationToken(token1)
+        .getSchema(HOST, PLANNER_PORT, Request.createTableScanRequest("sample_07"));
+    // Try with other token.
+    new RecordServicePlannerClient.Builder().setDelegationToken(token2)
+        .getSchema(HOST, PLANNER_PORT, Request.createTableScanRequest("sample_07"));
+
     // Create a worker connection with the token.
     RecordServiceWorkerClient worker = new RecordServiceWorkerClient.Builder().
-        setDelegationToken(token).connect(HOST, WORKER_PORT);
+        setDelegationToken(token1).connect(HOST, WORKER_PORT);
 
     // Fetch the results.
     Records records = worker.execAndFetch(plan.tasks.get(0));
@@ -192,35 +202,179 @@ public class TestKerberosConnection extends TestBase {
       records.next();
       ++numRecords;
     }
-    assertEquals(numRecords, 823);
+    assertEquals(numRecords, SAMPLE_07_ROW_COUNT);
     worker.close();
 
     // Cancel the token. Note that this can be done without a kerberized connection.
-    tokenPlanner.cancelDelegationToken(token);
+    tokenPlanner.cancelDelegationToken(token1);
+    tokenPlanner.close();
 
     // Shouldn't be able to connect with it anymore.
     try {
-      new RecordServiceWorkerClient.Builder().setDelegationToken(token)
+      new RecordServiceWorkerClient.Builder().setDelegationToken(token1)
           .connect(HOST, WORKER_PORT);
-    } catch (IOException e) {
-      exceptionThrown = true;
-      assertTrue(e.getMessage().contains("Invalid token."));
-    }
-    assertTrue(exceptionThrown);
-    */
-    // Cancel the token. Note that this can be done without a kerberized connection.
-    tokenPlanner.cancelDelegationToken(token);
-    tokenPlanner.close();
-
-    // Try to connect with the canceled token. Should fail.
-    exceptionThrown = false;
-    try {
-      new RecordServicePlannerClient.Builder().setDelegationToken(token)
-          .connect(HOST, PLANNER_PORT);
     } catch (IOException e) {
       exceptionThrown = true;
       // TODO: the error is generated deep in the sasl negotiation and we
       // don't get a generic error. Fix this.
+    }
+    assertTrue(exceptionThrown);
+
+    // Try to connect with the canceled token. Should fail.
+    exceptionThrown = false;
+    try {
+      new RecordServicePlannerClient.Builder().setDelegationToken(token1)
+          .connect(HOST, PLANNER_PORT).close();
+    } catch (IOException e) {
+      exceptionThrown = true;
+      // TODO: the error is generated deep in the sasl negotiation and we
+      // don't get a generic error. Fix this.
+    }
+    assertTrue(exceptionThrown);
+
+    // Token2 should still work (not cancelled).
+    new RecordServicePlannerClient.Builder().setDelegationToken(token2)
+        .getSchema(HOST, PLANNER_PORT, Request.createTableScanRequest("sample_07"));
+    new RecordServiceWorkerClient.Builder().setDelegationToken(token2)
+        .connect(HOST, WORKER_PORT).close();
+  }
+
+  @Test
+  public void testInvalidToken() throws IOException,
+      TRecordServiceException, InterruptedException {
+    if (!HAS_KERBEROS_CREDENTIALS) return;
+    boolean exceptionThrown = false;
+
+    // Connect to the planner via kerberos.
+    RecordServicePlannerClient kerberizedPlanner = new RecordServicePlannerClient.Builder()
+        .setKerberosPrincipal(PRINCIPAL)
+        .connect(HOST, PLANNER_PORT);
+
+    // Get two tokens from planner.
+    TDelegationToken token1 = kerberizedPlanner.getDelegationToken("impala");
+    TDelegationToken token2 = kerberizedPlanner.getDelegationToken("impala");
+    kerberizedPlanner.close();
+
+    // Verify they work.
+    new RecordServicePlannerClient.Builder()
+        .setDelegationToken(token1).connect(HOST, PLANNER_PORT).close();
+    new RecordServicePlannerClient.Builder()
+        .setDelegationToken(token2).connect(HOST, PLANNER_PORT).close();
+
+    TDelegationToken testToken = new TDelegationToken();
+    try {
+      new RecordServicePlannerClient.Builder().setDelegationToken(testToken)
+          .connect(HOST, PLANNER_PORT);
+    } catch (IOException e) {
+      exceptionThrown = true;
+    }
+    assert(exceptionThrown);
+
+    // Set the identifier but no password
+    testToken.identifier = token1.identifier;
+    try {
+      new RecordServicePlannerClient.Builder().setDelegationToken(testToken)
+          .connect(HOST, PLANNER_PORT).close();
+    } catch (IOException e) {
+      exceptionThrown = true;
+    }
+    assert(exceptionThrown);
+
+    // Set it to the other (wrong password);
+    testToken.password = token2.password;
+    try {
+      new RecordServicePlannerClient.Builder().setDelegationToken(testToken)
+          .connect(HOST, PLANNER_PORT).close();
+    } catch (IOException e) {
+      exceptionThrown = true;
+    }
+    assert(exceptionThrown);
+
+    // Set it to the right password. Everything should still work.
+    testToken.password = token1.password;
+    new RecordServicePlannerClient.Builder().setDelegationToken(testToken)
+        .connect(HOST, PLANNER_PORT).close();
+    new RecordServicePlannerClient.Builder().setDelegationToken(token1)
+        .connect(HOST, PLANNER_PORT).close();
+    new RecordServicePlannerClient.Builder().setDelegationToken(token2)
+        .connect(HOST, PLANNER_PORT).close();
+  }
+
+  // Tests that the delegation token APIs fail gracefully if called to a
+  // non-secure server.
+  @Test
+  public void testUnsecureConnectionTokens() throws IOException,
+        TRecordServiceException, InterruptedException {
+    RecordServicePlannerClient planner = new RecordServicePlannerClient.Builder()
+        .connect("localhost", PLANNER_PORT);
+    boolean exceptionThrown = false;
+    try {
+      planner.getDelegationToken(null);
+    } catch (TRecordServiceException e) {
+      assertTrue(e.getCode() == TErrorCode.AUTHENTICATION_ERROR);
+      assertTrue(e.getMessage().contains(
+          "can only be called with a Kerberos connection."));
+      exceptionThrown = true;
+    }
+    assertTrue(exceptionThrown);
+
+    exceptionThrown = false;
+    try {
+      planner.cancelDelegationToken(null);
+    } catch (TRecordServiceException e) {
+      assertTrue(e.getCode() == TErrorCode.AUTHENTICATION_ERROR);
+      assertTrue(e.getMessage().contains(
+          "can only be called from a secure connection."));
+      exceptionThrown = true;
+    }
+    assertTrue(exceptionThrown);
+
+    exceptionThrown = false;
+    try {
+      planner.renewDelegationToken(null);
+    } catch (TRecordServiceException e) {
+      assertTrue(e.getCode() == TErrorCode.AUTHENTICATION_ERROR);
+      assertTrue(e.getMessage().contains(
+          "can only be called with a Kerberos connection."));
+      exceptionThrown = true;
+    }
+    assertTrue(exceptionThrown);
+    planner.close();
+  }
+
+  // Tests that a secure client connecting to an unsecure server behaves
+  // reasonably.
+  @Test
+  public void testUnsecureConnection() throws IOException,
+      TRecordServiceException, InterruptedException {
+    if (!HAS_KERBEROS_CREDENTIALS) return;
+    boolean exceptionThrown = false;
+
+    // Try to connect to a unsecure server with a principal. This should fail.
+    exceptionThrown = false;
+    try {
+      new RecordServicePlannerClient.Builder()
+          .setKerberosPrincipal(PRINCIPAL)
+          .setTimeoutMs(1000)
+          .connect("localhost", PLANNER_PORT);
+    } catch (IOException e) {
+      assertTrue(e.getMessage().contains(
+          "Ensure the server has security enabled."));
+      exceptionThrown = true;
+    }
+    assertTrue(exceptionThrown);
+
+    // Try to connect to a unsecure server with a principal. This should fail.
+    exceptionThrown = false;
+    try {
+      new RecordServiceWorkerClient.Builder()
+          .setKerberosPrincipal(PRINCIPAL)
+          .setTimeoutMs(1000)
+          .connect("localhost", WORKER_PORT);
+    } catch (IOException e) {
+      assertTrue(e.getMessage().contains(
+          "Ensure the server has security enabled."));
+      exceptionThrown = true;
     }
     assertTrue(exceptionThrown);
   }

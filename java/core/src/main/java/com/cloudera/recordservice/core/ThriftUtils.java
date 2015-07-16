@@ -76,6 +76,7 @@ public class ThriftUtils {
     private final TDelegationToken token_;
 
     public DigestHandler(TDelegationToken token) {
+      assert token != null;
       token_ = token;
     }
 
@@ -88,7 +89,12 @@ public class ThriftUtils {
         } else if (cb instanceof NameCallback) {
           ((NameCallback)cb).setName(token_.identifier);
         } else if (cb instanceof PasswordCallback) {
-          ((PasswordCallback)cb).setPassword(token_.password.toCharArray());
+          PasswordCallback pcb = ((PasswordCallback)cb);
+          if (token_.password == null) {
+            pcb.setPassword(null);
+          } else {
+            pcb.setPassword(token_.password.toCharArray());
+          }
         } else if (cb instanceof RealmCallback) {
           RealmCallback rcb = (RealmCallback)cb;
           rcb.setText(rcb.getDefaultText());
@@ -150,6 +156,18 @@ public class ThriftUtils {
       String msg = String.format("Could not connect to %s: %s:%d",
           service, hostname, port);
       LOG.warn(String.format("%s: error: %s", msg, e));
+      if (e.getMessage() != null && e.getMessage().contains("SocketTimeoutException") &&
+          (kerberosPrincipal != null || token != null)) {
+        // If connecting from a secure connection to a non-secure server, the
+        // connection seems to just hang and the attempt fails with a timeout.
+        // This is because the client is expecting the server to participate
+        // in the handshake which it is not.
+        // This is a heuristic (there are other reasons it can time out) but
+        // likely helpful.
+        // TODO: is it possible to deal with this in the server?
+        msg += " Attempting to connect with a secure connection. " +
+            "Ensure the server has security enabled.";
+      }
       throw new IOException(msg, e);
     }
 
