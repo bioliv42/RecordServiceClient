@@ -27,6 +27,8 @@ import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.security.Credentials;
+import org.apache.hadoop.security.token.Token;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,6 +37,8 @@ import com.cloudera.recordservice.core.Request;
 import com.cloudera.recordservice.mr.RecordReaderCore;
 import com.cloudera.recordservice.mr.Schema;
 import com.cloudera.recordservice.mr.TaskInfo;
+import com.cloudera.recordservice.mr.security.DelegationTokenIdentifier;
+import com.cloudera.recordservice.mr.security.TokenUtils;
 import com.cloudera.recordservice.thrift.TPlanRequestResult;
 import com.cloudera.recordservice.thrift.TRecordServiceException;
 import com.cloudera.recordservice.thrift.TStats;
@@ -82,8 +86,8 @@ public abstract class RecordServiceInputFormatBase<K, V> extends InputFormat<K, 
 
   // Encapsulates results of a plan request, returning the splits and the schema.
   public static class SplitsInfo {
-    public List<InputSplit> splits;
-    public Schema schema;
+    public final List<InputSplit> splits;
+    public final Schema schema;
 
     public SplitsInfo(List<InputSplit> splits, Schema schema) {
       this.splits = splits;
@@ -94,14 +98,23 @@ public abstract class RecordServiceInputFormatBase<K, V> extends InputFormat<K, 
   @Override
   public List<InputSplit> getSplits(JobContext context) throws IOException,
       InterruptedException {
-    return getSplits(context.getConfiguration()).splits;
+    return getSplits(context.getConfiguration(), context.getCredentials()).splits;
   }
 
   /**
    * Looks inside the jobConf to construct the RecordService request. The
    * request can either be a sql statement, table or path.
+   *
+   * This also handles authentication using credentials. If there is a delegation
+   * token in the credentials, that will be used to authenticate the planner
+   * connection. Otherwise, if kerberos is enabled, a token will be generated
+   * and added to the credentials.
+   * TODO: is this behavior sufficient? Do we need to fall back and renew tokens
+   * or does the higher level framework (i.e. oozie) do that?
+   * TODO: move this to another class. Not intuitive the implementation is here.
    */
-  public static SplitsInfo getSplits(Configuration jobConf) throws IOException {
+  public static SplitsInfo getSplits(Configuration jobConf,
+      Credentials credentials) throws IOException {
     LOG.debug("Generating input splits.");
 
     String tblName = jobConf.get(TBL_NAME_CONF);
@@ -158,14 +171,43 @@ public abstract class RecordServiceInputFormatBase<K, V> extends InputFormat<K, 
     }
 
     TPlanRequestResult result = null;
+    RecordServicePlannerClient planner = null;
     try {
-      result = new RecordServicePlannerClient.Builder()
-          .setKerberosPrincipal(jobConf.get(KERBEROS_PRINCIPAL))
-          .planRequest(jobConf.get(PLANNER_HOST, "localhost"),
-              jobConf.getInt(PLANNER_PORT, 40000), request);
+      boolean needToGetToken = false;
+      RecordServicePlannerClient.Builder builder =
+          new RecordServicePlannerClient.Builder();
+      // Try to get the delegation token from the credentials. If it is there, use it.
+      @SuppressWarnings("unchecked")
+      Token<DelegationTokenIdentifier> delegationToken =
+          (Token<DelegationTokenIdentifier>) credentials.getToken(
+              DelegationTokenIdentifier.DELEGATION_KIND);
+
+      if (delegationToken != null) {
+        builder.setDelegationToken(TokenUtils.toTDelegationToken(delegationToken));
+      } else {
+        String kerberosPrincipal = jobConf.get(KERBEROS_PRINCIPAL);
+        if (kerberosPrincipal != null) {
+          builder.setKerberosPrincipal(kerberosPrincipal);
+          needToGetToken = true;
+        }
+      }
+      planner = builder.connect(jobConf.get(PLANNER_HOST, "localhost"),
+          jobConf.getInt(PLANNER_PORT, 40000));
+      result = planner.planRequest(request);
+
+      if (needToGetToken) {
+        // We need to get a delegation token and populate credentials (for the map tasks)
+        // TODO: what to set as renewer?
+        delegationToken =
+            TokenUtils.fromTDelegationToken(planner.getDelegationToken(""));
+        credentials.addToken(DelegationTokenIdentifier.DELEGATION_KIND, delegationToken);
+      }
     } catch (Exception e) {
       throw new IOException(e);
+    } finally {
+      if (planner != null) planner.close();
     }
+
     Schema schema = new Schema(result.getSchema());
     List<InputSplit> splits = new ArrayList<InputSplit>();
     for (TTask tTask : result.getTasks()) {
@@ -275,7 +317,8 @@ public abstract class RecordServiceInputFormatBase<K, V> extends InputFormat<K, 
         throws IOException, InterruptedException {
       RecordServiceInputSplit rsSplit = (RecordServiceInputSplit)split;
       try {
-        reader_ = new RecordReaderCore(context.getConfiguration(), rsSplit.getTaskInfo());
+        reader_ = new RecordReaderCore(context.getConfiguration(),
+            context.getCredentials(), rsSplit.getTaskInfo());
       } catch (Exception e) {
         throw new IOException("Failed to execute task.", e);
       }

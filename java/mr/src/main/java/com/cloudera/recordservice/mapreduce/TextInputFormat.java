@@ -45,7 +45,7 @@ public class TextInputFormat extends
   @Override
   public List<InputSplit> getSplits(JobContext context) throws IOException,
       InterruptedException {
-    SplitsInfo splits = getSplits(context.getConfiguration());
+    SplitsInfo splits = getSplits(context.getConfiguration(), context.getCredentials());
     verifyTextSchema(splits.schema);
     return splits.splits;
   }

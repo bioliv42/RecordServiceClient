@@ -34,7 +34,8 @@ public abstract class RecordServiceInputFormatBase<K, V> implements InputFormat<
   @Override
   public InputSplit[] getSplits(JobConf job, int numSplits) throws IOException {
     com.cloudera.recordservice.mapreduce.RecordServiceInputFormatBase.SplitsInfo splits =
-        com.cloudera.recordservice.mapreduce.RecordServiceInputFormatBase.getSplits(job);
+        com.cloudera.recordservice.mapreduce.RecordServiceInputFormatBase.getSplits(
+            job, job.getCredentials());
     return convertSplits(splits.splits);
   }
 
@@ -64,7 +65,8 @@ public abstract class RecordServiceInputFormatBase<K, V> implements InputFormat<
     protected RecordReaderBase(RecordServiceInputSplit split, JobConf config,
         Reporter reporter) throws IOException {
       try {
-        reader_ = new RecordReaderCore(config, split.getBackingSplit().getTaskInfo());
+        reader_ = new RecordReaderCore(config, config.getCredentials(),
+            split.getBackingSplit().getTaskInfo());
       } catch (Exception e) {
         throw new IOException("Failed to execute task.", e);
       }

@@ -21,7 +21,6 @@ import org.apache.avro.Schema;
 import org.apache.avro.mapred.AvroKey;
 import org.apache.avro.mapred.AvroValue;
 import org.apache.avro.mapreduce.AvroJob;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
@@ -30,8 +29,6 @@ import org.slf4j.LoggerFactory;
 
 import com.cloudera.recordservice.avro.GenericRecords;
 import com.cloudera.recordservice.mapreduce.RecordServiceInputFormatBase;
-import com.cloudera.recordservice.mapreduce.RecordServiceInputSplit;
-import com.cloudera.recordservice.mr.RecordReaderCore;
 import com.cloudera.recordservice.thrift.TRecordServiceException;
 
 /**
@@ -76,9 +73,7 @@ public class AvroKeyValueInputFormat<K, V> extends
    * @param <V> The type of the Avro value to read.
    */
   private static class AvroKeyValueRecordReader<K, V>
-      extends RecordReader<AvroKey<K>, AvroValue<V>> {
-    RecordReaderCore reader_;
-
+      extends RecordReaderBase<AvroKey<K>, AvroValue<V>> {
     // The schema of the returned records.
     private final Schema keySchema_;
     private final Schema valueSchema_;
@@ -91,8 +86,6 @@ public class AvroKeyValueInputFormat<K, V> extends
 
     /** The current value the reader is on. */
     private final AvroValue<V> currentValue_;
-
-    private TaskAttemptContext context_;
 
     /**
      * Constructor.
@@ -136,37 +129,9 @@ public class AvroKeyValueInputFormat<K, V> extends
     @Override
     public void initialize(InputSplit inputSplit, TaskAttemptContext context)
         throws IOException, InterruptedException {
-      RecordServiceInputSplit split = (RecordServiceInputSplit)inputSplit;
-      Configuration config = context.getConfiguration();
-
-      try {
-        reader_ = new RecordReaderCore(config, split.getTaskInfo());
-      } catch (Exception e) {
-        throw new IOException("Failed to execute task.", e);
-      }
+      super.initialize(inputSplit, context);
+      // TODO: do something like this
       //records_ = new SpecificRecords<T>(avroSchema_, records, ResolveBy.NAME);
-      context_ = context;
-    }
-
-    @Override
-    public float getProgress() throws IOException, InterruptedException {
-      if (reader_ == null) return 0;
-      return reader_.records().progress();
-    }
-
-    @Override
-    public void close() throws IOException {
-      if (reader_ != null) {
-        assert(context_ != null);
-        try {
-          RecordServiceInputFormatBase.setCounters(
-              context_, reader_.records().getStatus().stats);
-        } catch (TRecordServiceException e) {
-          LOG.debug("Could not populate counters: " + e);
-        }
-        reader_.close();
-        reader_ = null;
-      }
     }
   }
 }

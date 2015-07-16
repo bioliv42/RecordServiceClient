@@ -36,6 +36,7 @@ import org.apache.hadoop.io.ShortWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.security.Credentials;
 import org.junit.Test;
 
 import com.cloudera.recordservice.core.TestBase;
@@ -49,7 +50,8 @@ public class MapReduceTest extends TestBase {
 
   private void verifyInputSplits(int numSplits, int numCols, Configuration config)
       throws IOException {
-    List<InputSplit> splits = RecordServiceInputFormat.getSplits(config).splits;
+    List<InputSplit> splits = RecordServiceInputFormat.getSplits(
+        config, new Credentials()).splits;
     assertEquals(splits.size(), numSplits);
     RecordServiceInputSplit split = (RecordServiceInputSplit)splits.get(0);
     assertEquals(split.getSchema().getNumColumns(), numCols);
@@ -78,7 +80,7 @@ public class MapReduceTest extends TestBase {
 
     boolean exceptionThrown = false;
     try {
-      RecordServiceInputFormat.getSplits(config);
+      RecordServiceInputFormat.getSplits(config, new Credentials());
     } catch (IllegalArgumentException e) {
       exceptionThrown = true;
       assertTrue(e.getMessage().contains("No input specified"));
@@ -87,13 +89,13 @@ public class MapReduceTest extends TestBase {
 
     // Set db/table and make sure it works.
     config.set(RecordServiceInputFormat.TBL_NAME_CONF, "tpch.nation");
-    RecordServiceInputFormat.getSplits(config);
+    RecordServiceInputFormat.getSplits(config, new Credentials());
 
     // Also set input. This should fail.
     config.set(FileInputFormat.INPUT_DIR, "/test");
     exceptionThrown = false;
     try {
-      RecordServiceInputFormat.getSplits(config);
+      RecordServiceInputFormat.getSplits(config, new Credentials());
     } catch (IllegalArgumentException e) {
       exceptionThrown = true;
       assertTrue(e.getMessage(), e.getMessage().contains(
@@ -106,7 +108,7 @@ public class MapReduceTest extends TestBase {
     config.setStrings(RecordServiceInputFormat.COL_NAMES_CONF, "a");
     exceptionThrown = false;
     try {
-      RecordServiceInputFormat.getSplits(config);
+      RecordServiceInputFormat.getSplits(config, new Credentials());
     } catch (IllegalArgumentException e) {
       exceptionThrown = true;
       assertTrue(e.getMessage().contains(
@@ -160,7 +162,8 @@ public class MapReduceTest extends TestBase {
 
     try {
       RecordServiceInputFormat.setInputTable(config, null, "tpch.nation");
-      List<InputSplit> splits = RecordServiceInputFormat.getSplits(config).splits;
+      List<InputSplit> splits = RecordServiceInputFormat.getSplits(
+          config, new Credentials()).splits;
       reader.initialize((RecordServiceInputSplit)splits.get(0), config);
 
       int numRows = 0;
@@ -180,7 +183,7 @@ public class MapReduceTest extends TestBase {
 
       config.clear();
       RecordServiceInputFormat.setInputTable(config, "tpch", "nation", "n_comment");
-      splits = RecordServiceInputFormat.getSplits(config).splits;
+      splits = RecordServiceInputFormat.getSplits(config, new Credentials()).splits;
       reader.initialize((RecordServiceInputSplit)splits.get(0), config);
       numRows = 0;
       while (reader.nextKeyValue()) {
@@ -208,7 +211,8 @@ public class MapReduceTest extends TestBase {
 
     try {
       RecordServiceInputFormat.setInputTable(config, null, "rs.alltypes");
-      List<InputSplit> splits = RecordServiceInputFormat.getSplits(config).splits;
+      List<InputSplit> splits =
+          RecordServiceInputFormat.getSplits(config, new Credentials()).splits;
 
       int numRows = 0;
       for (InputSplit split: splits) {
@@ -265,7 +269,8 @@ public class MapReduceTest extends TestBase {
 
     try {
       RecordServiceInputFormat.setInputTable(config, null, "rs.alltypes_null");
-      List<InputSplit> splits = RecordServiceInputFormat.getSplits(config).splits;
+      List<InputSplit> splits =
+          RecordServiceInputFormat.getSplits(config, new Credentials()).splits;
 
       int numRows = 0;
       for (InputSplit split: splits) {

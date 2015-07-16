@@ -18,16 +18,23 @@ package com.cloudera.recordservice.mr;
 import java.io.IOException;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.security.Credentials;
+import org.apache.hadoop.security.token.Token;
 
 import com.cloudera.recordservice.core.RecordServiceWorkerClient;
 import com.cloudera.recordservice.core.Records;
-import com.cloudera.recordservice.mapreduce.RecordServiceInputFormatBase;
+import com.cloudera.recordservice.mr.security.DelegationTokenIdentifier;
+import com.cloudera.recordservice.mr.security.TokenUtils;
 import com.cloudera.recordservice.thrift.TNetworkAddress;
 import com.cloudera.recordservice.thrift.TRecordServiceException;
 
 /**
  * Core RecordReader functionality. Classes that implement the MR RecordReader
  * interface should contain this object.
+ *
+ * This class can authenticate to the worker using delegation tokens. We never
+ * try to authenticate using kerberos (the planner should have created the delegation
+ * token) to avoid causing issues with the KDC.
  */
 public class RecordReaderCore {
   // Optional configuration option for performance tuning that configures
@@ -46,18 +53,25 @@ public class RecordReaderCore {
   // Schema for records_
   private Schema schema_;
 
-  public RecordReaderCore(Configuration config, TaskInfo taskInfo)
-      throws TRecordServiceException, IOException {
+  public RecordReaderCore(Configuration config, Credentials credentials,
+      TaskInfo taskInfo) throws TRecordServiceException, IOException {
     try {
       // TODO: handle multiple locations.
       TNetworkAddress task = taskInfo.getLocations()[0];
       int fetchSize = config.getInt(FETCH_SIZE_CONF, DEFAULT_FETCH_SIZE);
-      worker_ = new RecordServiceWorkerClient.Builder()
-          .setFetchSize(fetchSize != -1 ? fetchSize : null)
-          // TODO: enable when the worker service is kerberized.
-          //.setKerberosPrincipal(
-          //    config.get(RecordServiceInputFormatBase.KERBEROS_PRINCIPAL))
-          .connect(task.hostname, task.port);
+
+      // Try to get the delegation token from the credentials. If it is there, use it.
+      @SuppressWarnings("unchecked")
+      Token<DelegationTokenIdentifier> token = (Token<DelegationTokenIdentifier>)
+          credentials.getToken(DelegationTokenIdentifier.DELEGATION_KIND);
+
+      RecordServiceWorkerClient.Builder builder =
+          new RecordServiceWorkerClient.Builder();
+      builder.setFetchSize(fetchSize != -1 ? fetchSize : null);
+      if (token != null) {
+        builder.setDelegationToken(TokenUtils.toTDelegationToken(token));
+      }
+      worker_ = builder.connect(task.hostname, task.port);
       records_ = worker_.execAndFetch(taskInfo.getTask());
     } finally {
       if (records_ == null) close();

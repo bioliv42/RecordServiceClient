@@ -22,6 +22,7 @@ import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
+import org.apache.hadoop.security.Credentials;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -136,7 +137,7 @@ public class RecordServiceInputFormat extends
     void initialize(RecordServiceInputSplit split, Configuration config)
         throws IOException {
       try {
-        reader_ = new RecordReaderCore(config, split.getTaskInfo());
+        reader_ = new RecordReaderCore(config, new Credentials(), split.getTaskInfo());
       } catch (Exception e) {
         throw new IOException("Failed to execute task.", e);
       }
