@@ -24,15 +24,9 @@ import org.junit.Test;
 import com.cloudera.recordservice.thrift.TErrorCode;
 import com.cloudera.recordservice.thrift.TRecordServiceException;
 
-public class TestDelegationToken {
+public class TestDelegationToken extends TestBase {
   static final int PLANNER_PORT = 40000;
   static final String HOST = "localhost";
-
-  public TestDelegationToken() {
-    // Setup log4j for testing.
-    org.apache.log4j.BasicConfigurator.configure();
-  }
-
 
   // Tests that the APIs fail gracefully if called to a non-secure server.
   @Test

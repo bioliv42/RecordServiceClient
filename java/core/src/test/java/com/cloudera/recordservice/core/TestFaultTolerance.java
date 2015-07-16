@@ -26,14 +26,9 @@ import com.cloudera.recordservice.thrift.TPlanRequestResult;
 import com.cloudera.recordservice.thrift.TRecordServiceException;
 
 // Tests fault tolerance and retry logic in the client library.
-public class TestFaultTolerance {
+public class TestFaultTolerance extends TestBase {
   static final int PLANNER_PORT = 40000;
   static final int WORKER_PORT = 40100;
-
-  public TestFaultTolerance() {
-    // Setup log4j for testing.
-    org.apache.log4j.BasicConfigurator.configure();
-  }
 
   @Test
   public void testWorkerRetry() throws RuntimeException, IOException,

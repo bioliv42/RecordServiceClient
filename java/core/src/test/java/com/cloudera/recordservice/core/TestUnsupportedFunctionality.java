@@ -27,14 +27,9 @@ import com.cloudera.recordservice.thrift.TRecordServiceException;
 /**
  * Tests that the RecordService does not support these kind of queries.
  */
-public class TestUnsupportedFunctionality {
+public class TestUnsupportedFunctionality extends TestBase {
   static final String PLANNER_HOST = "localhost";
   static final int PLANNER_PORT = 40000;
-
-  public TestUnsupportedFunctionality() {
-    // Setup log4j for testing.
-    org.apache.log4j.BasicConfigurator.configure();
-  }
 
   private void testUnsupported(String sql) {
     boolean exceptionThrown = false;

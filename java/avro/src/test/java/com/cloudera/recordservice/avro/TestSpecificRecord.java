@@ -26,11 +26,12 @@ import com.cloudera.recordservice.avro.nation.NationAll;
 import com.cloudera.recordservice.avro.nation.NationKeyName;
 import com.cloudera.recordservice.core.RecordServicePlannerClient;
 import com.cloudera.recordservice.core.Request;
+import com.cloudera.recordservice.core.TestBase;
 import com.cloudera.recordservice.core.WorkerClientUtil;
 import com.cloudera.recordservice.thrift.TPlanRequestResult;
 import com.cloudera.recordservice.thrift.TRecordServiceException;
 
-public class TestSpecificRecord {
+public class TestSpecificRecord extends TestBase {
   static final int PLANNER_PORT = 40000;
 
   @Test

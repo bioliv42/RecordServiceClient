@@ -20,6 +20,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.cloudera.recordservice.thrift.TDelegationToken;
@@ -28,7 +29,7 @@ import com.cloudera.recordservice.thrift.TRecordServiceException;
 
 // Tests connect to kerberized cluster. This is not normally run as it involves
 // a non-trivial local set up to get tickets and what not.
-public class TestKerberosConnection {
+public class TestKerberosConnection extends TestBase {
   static final int PLANNER_PORT = 40000;
   static final int WORKER_PORT = 40100;
   // Kerberized cluster.
@@ -39,9 +40,9 @@ public class TestKerberosConnection {
       System.getenv("RECORD_SERVICE_RUN_KERBEROS_TESTS") != null &&
       System.getenv("RECORD_SERVICE_RUN_KERBEROS_TESTS").equalsIgnoreCase("true");
 
-  public TestKerberosConnection() {
-    // Setup log4j for testing.
-    org.apache.log4j.BasicConfigurator.configure();
+  @BeforeClass
+  public static void setUpBeforeClass() throws Exception {
+    TestBase.setUpBeforeClass();
     if (RUN_KERBEROS_TESTS) {
       System.out.println("Running kerberos tests.");
     } else {

@@ -44,14 +44,9 @@ import com.google.common.collect.Lists;
 
 // TODO: add more stats tests.
 // TODO: add testes to verify that we don't retry when the error is not retryable.
-public class TestBasicClient {
+public class TestBasicClient extends TestBase {
   static final int PLANNER_PORT = 40000;
   static final int WORKER_PORT = 40100;
-
-  public TestBasicClient() {
-    // Setup log4j for testing.
-    org.apache.log4j.BasicConfigurator.configure();
-  }
 
   void fetchAndVerifyCount(Records records, int expectedCount)
       throws TRecordServiceException, IOException {

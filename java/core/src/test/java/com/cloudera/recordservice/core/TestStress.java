@@ -29,14 +29,9 @@ import com.cloudera.recordservice.thrift.TRecordServiceException;
 import com.google.common.collect.Lists;
 
 // Tests the clients in stressful environments.
-public class TestStress {
+public class TestStress extends TestBase {
   static final int PLANNER_PORT = 40000;
   static final int WORKER_PORT = 40100;
-
-  public TestStress() {
-    // Setup log4j for testing.
-    org.apache.log4j.BasicConfigurator.configure();
-  }
 
   @Test
   public void testPlannerConnections() throws RuntimeException, IOException,

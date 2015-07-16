@@ -38,13 +38,14 @@ import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.junit.Test;
 
+import com.cloudera.recordservice.core.TestBase;
 import com.cloudera.recordservice.mr.DecimalWritable;
 import com.cloudera.recordservice.mr.RecordServiceRecord;
 import com.cloudera.recordservice.mr.TimestampNanosWritable;
 import com.cloudera.recordservice.thrift.TErrorCode;
 import com.cloudera.recordservice.thrift.TRecordServiceException;
 
-public class MapReduceTest {
+public class MapReduceTest extends TestBase {
 
   private void verifyInputSplits(int numSplits, int numCols, Configuration config)
       throws IOException {
