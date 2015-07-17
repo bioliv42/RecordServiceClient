@@ -55,7 +55,7 @@ public class RecordServicePlannerClient {
   private int retrySleepMs_ = 1000;
 
   // Millisecond timeout for TSocket, 0 means infinite timeout.
-  private int timeoutMs_ = 10000;
+  private int timeoutMs_ = 20000;
 
   /**
    * Builder to create worker client with various configs.

@@ -76,6 +76,10 @@ public class RecordServiceWorkerClient {
   private int retrySleepMs_ = 1000;
 
   // Millisecond timeout for TSocket, 0 means infinite timeout.
+  // TODO: revisit this timeout. A request could take arbitrary time if it has
+  // very selective filters. For example, if all records are filtered out, fetch
+  // will wait until all the data is read. It might make more sense to have the
+  // server return empty result sets in this case to "keep the connection alive".
   private int timeoutMs_ = 10000;
 
   /**

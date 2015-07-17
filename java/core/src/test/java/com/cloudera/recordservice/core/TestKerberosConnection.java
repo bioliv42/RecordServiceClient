@@ -20,6 +20,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 
+import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -59,7 +60,7 @@ public class TestKerberosConnection extends TestBase {
   @Test
   public void testConnection() throws IOException,
         TRecordServiceException, InterruptedException {
-    if (!HAS_KERBEROS_CREDENTIALS) return;
+    Assume.assumeTrue(HAS_KERBEROS_CREDENTIALS);
 
     TPlanRequestResult plan = new RecordServicePlannerClient.Builder()
         .setKerberosPrincipal(PRINCIPAL)
@@ -83,7 +84,7 @@ public class TestKerberosConnection extends TestBase {
   // Test without providing a principal or a bad principal.
   public void testBadConnection() throws IOException,
         TRecordServiceException, InterruptedException {
-    if (!HAS_KERBEROS_CREDENTIALS) return;
+    Assume.assumeTrue(HAS_KERBEROS_CREDENTIALS);
 
     // Try planner connection with no principal and bad principal
     boolean exceptionThrown = false;
@@ -132,7 +133,7 @@ public class TestKerberosConnection extends TestBase {
   // Test authentication with delegation token.
   public void testDelegationToken() throws IOException,
         TRecordServiceException, InterruptedException {
-    if (!HAS_KERBEROS_CREDENTIALS) return;
+    Assume.assumeTrue(HAS_KERBEROS_CREDENTIALS);
     boolean exceptionThrown = false;
 
     // Connect to the planner via kerberos.
@@ -242,7 +243,7 @@ public class TestKerberosConnection extends TestBase {
   @Test
   public void testInvalidToken() throws IOException,
       TRecordServiceException, InterruptedException {
-    if (!HAS_KERBEROS_CREDENTIALS) return;
+    Assume.assumeTrue(HAS_KERBEROS_CREDENTIALS);
     boolean exceptionThrown = false;
 
     // Connect to the planner via kerberos.
@@ -347,7 +348,7 @@ public class TestKerberosConnection extends TestBase {
   @Test
   public void testUnsecureConnection() throws IOException,
       TRecordServiceException, InterruptedException {
-    if (!HAS_KERBEROS_CREDENTIALS) return;
+    Assume.assumeTrue(HAS_KERBEROS_CREDENTIALS);
     boolean exceptionThrown = false;
 
     // Try to connect to a unsecure server with a principal. This should fail.
@@ -358,7 +359,7 @@ public class TestKerberosConnection extends TestBase {
           .setTimeoutMs(1000)
           .connect("localhost", PLANNER_PORT);
     } catch (IOException e) {
-      assertTrue(e.getMessage().contains(
+      assertTrue(e.getMessage(), e.getMessage().contains(
           "Ensure the server has security enabled."));
       exceptionThrown = true;
     }
