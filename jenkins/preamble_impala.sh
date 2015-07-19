@@ -40,29 +40,7 @@ ulimit -a
 if [ -n "$JENKINS_USE_TOOLCHAIN" ]; then
   echo ">>> Bootstrapping toolchain."
   cd $RECORD_SERVICE_HOME
-  python jenkins/bootstrap_toolchain.py \
-    gcc-$IMPALA_GCC_VERSION \
-    avro-$IMPALA_AVRO_VERSION \
-    boost-$IMPALA_BOOST_VERSION \
-    breakpad-$IMPALA_BREAKPAD_VERSION \
-    bzip2-$IMPALA_BZIP2_VERSION \
-    cyrus-sasl-$IMPALA_CYRUS_SASL_VERSION \
-    gcc-$IMPALA_GCC_VERSION \
-    gflags-$IMPALA_GFLAGS_VERSION \
-    glog-$IMPALA_GLOG_VERSION \
-    gperftools-$IMPALA_GPERFTOOLS_VERSION \
-    gtest-$IMPALA_GTEST_VERSION \
-    llvm-$IMPALA_LLVM_VERSION \
-    llvm-trunk \
-    lz4-$IMPALA_LZ4_VERSION \
-    openldap-$IMPALA_OPENLDAP_VERSION \
-    openssl-$IMPALA_OPENSSL_VERSION \
-    rapidjson-$IMPALA_RAPIDJSON_VERSION \
-    re2-$IMPALA_RE2_VERSION \
-    snappy-$IMPALA_SNAPPY_VERSION \
-    thrift-$IMPALA_THRIFT_VERSION \
-    zlib-$IMPALA_ZLIB_VERSION \
-  || { echo "toolchain bootstrap failed"; exit 1; }
+  python jenkins/bootstrap_toolchain.py || { echo "toolchain bootstrap failed"; exit 1; }
 fi
 
 echo "********************************************************************************"

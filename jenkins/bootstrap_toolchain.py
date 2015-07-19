@@ -61,11 +61,32 @@ def bootstrap(packages, destination=None, compiler=None):
   for p in packages:
     download_package(p, destination, compiler)
 
-if __name__ == "__main__":
-  if len(sys.argv) < 3:
-    print "usage bootstrap_toolchain.py compiler [package, package, ...]"
-    sys.exit(1)
+def get_version(name):
+  return name + "-" + os.getenv("IMPALA_" + name.upper() + "_VERSION")
 
-  compiler = sys.argv[1]
-  packages = sys.argv[2:]
+if __name__ == "__main__":
+  compiler = get_version("gcc")
+  packages = [
+                get_version("avro"),
+                get_version("boost"),
+                get_version("breakpad"),
+                get_version("bzip2"),
+                "cyrus-sasl-" + os.getenv("IMPALA_CYRUS_SASL_VERSION"),
+                get_version("gcc"),
+                get_version("gflags"),
+                get_version("glog"),
+                get_version("gperftools"),
+                get_version("gtest"),
+                get_version("llvm"),
+                "llvm-trunk",
+                get_version("lz4"),
+                get_version("openldap"),
+                get_version("openssl"),
+                get_version("rapidjson"),
+                get_version("re2"),
+                get_version("snappy"),
+                get_version("thrift"),
+                get_version("zlib"),
+             ]
+
   bootstrap(packages, compiler=compiler)
