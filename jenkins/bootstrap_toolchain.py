@@ -2,6 +2,7 @@
 import sh
 import os
 import sys
+import re
 
 HOST = "http://unittest.jenkins.cloudera.com/job/verify-impala-toolchain-package-build/"
 SOURCE = "http://github.mtv.cloudera.com/mgrund/impala-deps/raw/master"
@@ -14,14 +15,16 @@ OS_MAPPING = {
   "centos7" : "ec2-package-centos-7",
   "debian6" : "ec2-package-debian-6",
   "debian7" : "ec2-package-debian-7",
+  "debian7.1" : "ec2-package-debian-7",
   "sles11" : "ec2-pacage-sles-11",
   "ubuntu12.04" : "ec2-package-ubuntu-12-04",
   "ubuntu14.04" : "ec2-package-ubuntu-14-04"
 }
 
 def map_release_label():
-  """Gets the right package label from the OS version"""
-  return OS_MAPPING["".join(map(lambda x: x.lower(), sh.lsb_release("-irs").split()))]
+ """Gets the right package label from the OS version"""
+ release = "".join(map(lambda x: x.lower(), sh.lsb_release("-irs").split()))
+ return OS_MAPPING[next(k for k in OS_MAPPING if re.search(k, release))]
 
 
 def download_package(name, destination, compiler=""):
