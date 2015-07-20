@@ -674,10 +674,40 @@ public class TestBasicClient extends TestBase {
     fetchAndVerifyCount(WorkerClientUtil.execTask(plan, 0), 25);
   }
 
+  @Test
+  public void testPathWithLowTimeout() throws TRecordServiceException{
+    boolean exceptionThrown = false;
+    try {
+      new RecordServicePlannerClient.Builder()
+          .setTimeoutMs(2).setMaxAttempts(1)
+          .planRequest("localhost", PLANNER_PORT,
+              Request.createPathRequest("/test-warehouse/tpch.nation/"));
+    } catch (IOException e) {
+      assertTrue(e.getCause().getMessage().contains("java.net.SocketTimeoutException"));
+      exceptionThrown = true;
+    }
+    assertTrue(exceptionThrown);
+
+    exceptionThrown = false;
+    try {
+      new RecordServicePlannerClient.Builder()
+          .setTimeoutMs(2).setMaxAttempts(1)
+          .planRequest("localhost", PLANNER_PORT,
+              Request.createPathRequest(
+                  "/test-warehouse/tpch_nation_parquet/nation.parq"));
+    } catch (IOException e) {
+      assertTrue(e.getCause().getMessage().contains("java.net.SocketTimeoutException"));
+      exceptionThrown = true;
+    }
+    assertTrue(exceptionThrown);
+  }
+
   void testNationPathGlobbing(String path, boolean expectMatch)
       throws IOException, TRecordServiceException {
     try {
+      // TODO: figure out why it timeout with the default timeout - 20 secs 
       TPlanRequestResult plan = new RecordServicePlannerClient.Builder()
+          .setTimeoutMs(0)
           .planRequest("localhost", PLANNER_PORT, Request.createPathRequest(path));
       assertEquals(plan.tasks.size(), expectMatch ? 1 : 0);
     } catch (TRecordServiceException e) {

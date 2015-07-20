@@ -16,10 +16,12 @@
 package com.cloudera.recordservice.core;
 
 import java.io.IOException;
+import java.net.Socket;
 
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TProtocol;
+import org.apache.thrift.transport.TSocket;
 import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
@@ -125,7 +127,7 @@ public class RecordServicePlannerClient {
      * Get the plan request result.
      */
     public TPlanRequestResult planRequest(String hostname, int port, Request request)
-        throws IOException, TRecordServiceException{
+        throws IOException, TRecordServiceException {
       try {
         client_.connect(hostname, port);
         return client_.planRequest(request);
@@ -149,7 +151,7 @@ public class RecordServicePlannerClient {
   }
 
   /**
-   *  Private constructor, use builder.
+   * Private constructor, use builder.
    */
   private RecordServicePlannerClient() { }
 
@@ -220,18 +222,17 @@ public class RecordServicePlannerClient {
           connected = waitAndReconnect();
           if (!connected) continue;
         }
-        LOG.info("Planning request: " + request + " with attempt " + (i + 1) + " out of "
-            + maxAttempts_);
+        LOG.info("Planning request: {} with attempt {}/{}", request, i + 1, maxAttempts_);
         TPlanRequestParams planParams = request.request_;
         planParams.client_version = TProtocolVersion.V1;
         planResult = plannerClient_.PlanRequest(planParams);
-        LOG.debug("PlanRequest generated " + planResult.tasks.size() + " tasks.");
+        LOG.debug("PlanRequest generated {} tasks.", planResult.tasks.size());
         return planResult;
       } catch (TRecordServiceException e) {
         switch (e.code) {
           case SERVICE_BUSY:
             if (firstException == null) firstException = e;
-            LOG.warn("Failed to planRequest(): "  + e);
+            LOG.warn("Failed to planRequest: ", e);
             sleepForRetry();
             break;
           default:
@@ -240,7 +241,7 @@ public class RecordServicePlannerClient {
       } catch (TException e) {
         connected = false;
         if (firstException == null) firstException = e;
-        LOG.warn("Failed to planRequest(): "  + e);
+        LOG.warn("Failed to planRequest: ", e);
       }
     }
     handleThriftException(firstException, "Could not plan request.");
@@ -251,7 +252,7 @@ public class RecordServicePlannerClient {
    * Calls the RecordServicePlanner to return the schema for a request.
    */
   public TGetSchemaResult getSchema(Request request)
-    throws IOException, TRecordServiceException {
+      throws IOException, TRecordServiceException {
     validateIsConnected();
     TGetSchemaResult result;
     TException firstException = null;
@@ -262,8 +263,8 @@ public class RecordServicePlannerClient {
           connected = waitAndReconnect();
           if (!connected) continue;
         }
-        LOG.info("Getting schema for request: " + request + " with attempt " + (i + 1)
-            + " out of " + maxAttempts_);
+        LOG.info("Getting schema for request: {} with attempt {}/{}",
+            request, i + 1, maxAttempts_);
         TPlanRequestParams planParams = request.request_;
         planParams.client_version = TProtocolVersion.V1;
         result = plannerClient_.GetSchema(planParams);
@@ -272,7 +273,7 @@ public class RecordServicePlannerClient {
         switch (e.code) {
           case SERVICE_BUSY:
             if (firstException == null) firstException = e;
-            LOG.warn("Failed to getSchema(): "  + e);
+            LOG.warn("Failed to getSchema: ", e);
             sleepForRetry();
             break;
           default:
@@ -281,7 +282,7 @@ public class RecordServicePlannerClient {
       } catch (TException e) {
         connected = false;
         if (firstException == null) firstException = e;
-        LOG.warn("Failed to getSchema(): "  + e);
+        LOG.warn("Failed to getSchema: ", e);
       }
     }
     handleThriftException(firstException, "Could not get schema.");
@@ -334,11 +335,12 @@ public class RecordServicePlannerClient {
   /**
    * Closes the underlying transport, used to simulate an error with the service
    * connection.
+   *
    * @VisibleForTesting
    */
   void closeConnectionForTesting() {
     protocol_.getTransport().close();
-    assert(!protocol_.getTransport().isOpen());
+    assert (!protocol_.getTransport().isOpen());
   }
 
   /**
@@ -349,10 +351,15 @@ public class RecordServicePlannerClient {
       throws TRecordServiceException, IOException {
     // TODO: this should mark the connection as bad on some error codes.
     if (e instanceof TRecordServiceException) {
-      throw (TRecordServiceException)e;
+      throw (TRecordServiceException) e;
     } else if (e instanceof TTransportException) {
-      LOG.warn("Could not reach planner service.");
-      throw new IOException("Could not reach service.", e);
+      StringBuilder msg = new StringBuilder("Could not reach service");
+      if (e.getCause() != null) {
+        msg.append(" because of " + e.getCause().toString());
+      }
+      msg.append(".");
+      LOG.warn(msg.toString());
+      throw new IOException(msg.toString(), e);
     } else {
       throw new IOException(generalMsg, e);
     }
@@ -371,10 +378,21 @@ public class RecordServicePlannerClient {
   private boolean waitAndReconnect() {
     sleepForRetry();
     try {
-      protocol_.getTransport().open();
-      plannerClient_ = new RecordServicePlanner.Client(protocol_);
+      Socket socket = ((TSocket) protocol_.getTransport()).getSocket();
+      if (socket.isClosed()) {
+        LOG.debug("Socket is closed, will reconnect to {}:{}",
+            socket.getInetAddress().getHostAddress(), socket.getPort());
+        connect(socket.getInetAddress().getHostAddress(), socket.getPort());
+      }
+      if (!protocol_.getTransport().isOpen()) {
+        LOG.debug("TTransport is closed, will reopen");
+        protocol_.getTransport().open();
+        plannerClient_ = new RecordServicePlanner.Client(protocol_);
+      }
       return true;
-    } catch (TTransportException e) {
+    } catch (Exception e) {
+      // TRecordServiceException | TTransportException | IOException e
+      LOG.warn("Failed to reconnect: ", e);
       return false;
     }
   }
