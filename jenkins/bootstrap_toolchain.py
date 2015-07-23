@@ -84,7 +84,6 @@ if __name__ == "__main__":
                 "llvm-trunk",
                 get_version("lz4"),
                 get_version("openldap"),
-                get_version("openssl"),
                 get_version("rapidjson"),
                 get_version("re2"),
                 get_version("snappy"),
