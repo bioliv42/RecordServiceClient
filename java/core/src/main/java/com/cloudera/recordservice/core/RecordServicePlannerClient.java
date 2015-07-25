@@ -59,6 +59,8 @@ public class RecordServicePlannerClient {
   // Millisecond timeout for TSocket, 0 means infinite timeout.
   private int timeoutMs_ = 20000;
 
+  private final String USER = System.getProperty("user.name");
+
   /**
    * Builder to create worker client with various configs.
    */
@@ -225,6 +227,7 @@ public class RecordServicePlannerClient {
         LOG.info("Planning request: {} with attempt {}/{}", request, i + 1, maxAttempts_);
         TPlanRequestParams planParams = request.request_;
         planParams.client_version = TProtocolVersion.V1;
+        planParams.setUser(USER);
         planResult = plannerClient_.PlanRequest(planParams);
         LOG.debug("PlanRequest generated {} tasks.", planResult.tasks.size());
         return planResult;
@@ -266,6 +269,7 @@ public class RecordServicePlannerClient {
         LOG.info("Getting schema for request: {} with attempt {}/{}",
             request, i + 1, maxAttempts_);
         TPlanRequestParams planParams = request.request_;
+        planParams.setUser(USER);
         planParams.client_version = TProtocolVersion.V1;
         result = plannerClient_.GetSchema(planParams);
         return result;
@@ -296,7 +300,7 @@ public class RecordServicePlannerClient {
   public TDelegationToken getDelegationToken(String renewer)
       throws TRecordServiceException, IOException {
     try {
-      return plannerClient_.GetDelegationToken(System.getProperty("user.name"), renewer);
+      return plannerClient_.GetDelegationToken(USER, renewer);
     } catch (TRecordServiceException e) {
       throw e;
     } catch (TException e) {

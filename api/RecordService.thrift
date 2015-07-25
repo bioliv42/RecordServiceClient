@@ -236,6 +236,10 @@ struct TPlanRequestParams {
   // Only one of the below is set depending on request type
   4: optional string sql_stmt
   5: optional TPathRequest path
+
+  // Username for this plan request. On a secure cluster, this is ignored and
+  // instead the authenticated user used.
+  6: optional string user
 }
 
 struct TTask {
