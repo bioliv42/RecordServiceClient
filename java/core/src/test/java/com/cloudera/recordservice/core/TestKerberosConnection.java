@@ -31,11 +31,15 @@ import com.cloudera.recordservice.thrift.TRecordServiceException;
 
 // Tests connect to kerberized cluster. This is not normally run as it involves
 // a non-trivial local set up to get tickets and what not.
+// TODO: add renew/expire tests.
 public class TestKerberosConnection extends TestBase {
   static final int PLANNER_PORT = 40000;
   static final int WORKER_PORT = 40100;
   // Kerberized cluster.
   static final String HOST = "vd0224.halxg.cloudera.com";
+  static final String[] SECURE_CLUSTER =
+      { HOST, "vd0226.halxg.cloudera.com", "vd0228.halxg.cloudera.com" };
+
   static final String PRINCIPAL = "impala/vd0224.halxg.cloudera.com@HALXG.CLOUDERA.COM";
 
   // Number of rows in the sample_07 table.
@@ -378,5 +382,60 @@ public class TestKerberosConnection extends TestBase {
       exceptionThrown = true;
     }
     assertTrue(exceptionThrown);
+  }
+
+  // Tests that tokens are distributed across the cluster.
+  @Test
+  public void testPersistedTokens() throws IOException,
+      TRecordServiceException, InterruptedException {
+    Assume.assumeTrue(HAS_KERBEROS_CREDENTIALS);
+
+    RecordServicePlannerClient planner = new RecordServicePlannerClient.Builder()
+        .setKerberosPrincipal(PRINCIPAL)
+        .connect(HOST, PLANNER_PORT);
+    for (String hostToCancel: SECURE_CLUSTER) {
+      TDelegationToken token = planner.getDelegationToken("impala");
+
+      // Try all the connections, they should all work.
+      for (String host: SECURE_CLUSTER) {
+        new RecordServicePlannerClient.Builder().setDelegationToken(token)
+            .connect(host, PLANNER_PORT).close();
+        new RecordServiceWorkerClient.Builder().setDelegationToken(token)
+            .connect(host, WORKER_PORT).close();
+      }
+
+      // Cancel the token.
+      RecordServicePlannerClient client = new RecordServicePlannerClient.Builder()
+          .setDelegationToken(token)
+          .connect(hostToCancel, PLANNER_PORT);
+      client.cancelDelegationToken(token);
+      client.close();
+
+      // Try all the connections, they should all fail now.
+      for (String host: SECURE_CLUSTER) {
+        boolean exceptionThrown = false;
+        try {
+          new RecordServicePlannerClient.Builder().setDelegationToken(token)
+              .connect(host, PLANNER_PORT).close();
+        } catch (IOException e) {
+          exceptionThrown = true;
+          assertTrue(e.getMessage().contains(
+              "Could not connect to RecordServicePlanner"));
+        }
+        assertTrue(exceptionThrown);
+
+        exceptionThrown = false;
+        try {
+          new RecordServiceWorkerClient.Builder().setDelegationToken(token)
+              .connect(host, WORKER_PORT).close();
+        } catch (IOException e) {
+          exceptionThrown = true;
+          assertTrue(e.getMessage().contains(
+              "Could not connect to RecordServiceWorker"));
+        }
+        assertTrue(exceptionThrown);
+      }
+    }
+    planner.close();
   }
 }
