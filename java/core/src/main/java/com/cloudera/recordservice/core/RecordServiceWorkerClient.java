@@ -85,7 +85,7 @@ public class RecordServiceWorkerClient {
   /**
    * Per task state maintained in the client.
    */
-  public final class TaskState {
+  public final static class TaskState {
     private TUniqueId handle_;
     private final TTask task_;
 
@@ -419,7 +419,7 @@ public class RecordServiceWorkerClient {
           connected = waitAndReconnect();
           if (!connected) continue;
         }
-        LOG.debug("Executing task attempt " + i + " out of " + maxAttempts_ +
+        LOG.debug("Executing task attempt " + (i + 1) + " out of " + maxAttempts_ +
             ". Offset=" + offset);
         TExecTaskResult result = workerClient_.ExecTask(taskParams);
         assert(!activeTasks_.containsKey(result.handle));
