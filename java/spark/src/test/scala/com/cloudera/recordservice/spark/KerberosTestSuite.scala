@@ -23,8 +23,10 @@ class KerberosTestSuite extends FunSuite with BeforeAndAfterAll {
   @transient private var _sc: SparkContext = _
 
   def sc: SparkContext = _sc
-  def ENABLE_KERBEROS_TESTS:Boolean =
-      System.getenv("RECORD_SERVICE_RUN_KERBEROS_TESTS") == "true"
+
+  val HAS_KERBEROS_CREDENTIALS: Boolean =
+      System.getenv("HAS_KERBEROS_CREDENTIALS") != null &&
+      System.getenv("HAS_KERBEROS_CREDENTIALS").equalsIgnoreCase("true")
 
   val conf = new SparkConf(false)
     .set(RecordServiceConf.RECORD_SERVICE_PLANNER_HOST_KEY, "vd0224.halxg.cloudera.com")
@@ -43,7 +45,7 @@ class KerberosTestSuite extends FunSuite with BeforeAndAfterAll {
   }
 
   test("NationTest") {
-    if (ENABLE_KERBEROS_TESTS) {
+    if (HAS_KERBEROS_CREDENTIALS) {
       val rdd = new RecordServiceRecordRDD(sc).setTable("sample_07")
       assert(rdd.count() == 823)
     }

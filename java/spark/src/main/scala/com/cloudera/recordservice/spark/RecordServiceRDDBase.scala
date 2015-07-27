@@ -30,7 +30,8 @@ import scala.collection.mutable.ListBuffer
 import scala.reflect.ClassTag
 
 private class RecordServicePartition(rddId: Int, idx: Int,
-                                     h:Seq[String], p:Seq[Int], t: TTask, s: TSchema)
+                                     h:Seq[String], p:Seq[Int], t: TTask, s: TSchema,
+                                     token: TDelegationToken)
     extends Partition {
   override def hashCode(): Int = 41 * (41 + rddId) + idx
   override val index: Int = idx
@@ -38,11 +39,18 @@ private class RecordServicePartition(rddId: Int, idx: Int,
   val schema: TSchema = s
   val hosts: Seq[String] = h
   val ports: Seq[Int] = p
+  val delegationToken: TDelegationToken = token
 }
 
 /**
  * RDD that is backed by the RecordService. This is the base class that handles some of
  * common Spark and RecordService interactions.
+ *
+ * Security: currently, if kerberos is enabled, the planner request will get a delegation
+ * token that is stored in the partition object. The RDD authenticates with the worker
+ * using this token.
+ * TODO: is there a more proper way to do this in Spark? It doesn't look like SparkContext
+ * has a way to do this.
  */
 abstract class RecordServiceRDDBase[T:ClassTag](@transient sc: SparkContext)
     extends RDD[T](sc, Nil) with Logging {
@@ -133,6 +141,7 @@ abstract class RecordServiceRDDBase[T:ClassTag](@transient sc: SparkContext)
     try {
       val hostIdx = getWorkerToConnectTo(partition.hosts)
       val worker = new RecordServiceWorkerClient.Builder()
+          .setDelegationToken(partition.delegationToken)
           .connect(partition.hosts(hostIdx), partition.ports(hostIdx))
       val records = worker.execAndFetch(partition.task)
       (worker, records)
@@ -192,15 +201,27 @@ abstract class RecordServiceRDDBase[T:ClassTag](@transient sc: SparkContext)
           "Request not set. Must call setStatement(), setTable() or setPath()")
     }
 
-    val planResult = try {
-      new RecordServicePlannerClient.Builder()
-          .setKerberosPrincipal(RecordServiceConf.getKerberosPrincipal(sc))
-          .planRequest(plannerHost, plannerPort, request);
+    var planner: RecordServicePlannerClient = null
+    val (planResult, delegationToken) = try {
+      // TODO: for use cases like oozie, we need to authenticate with the planner via
+      // delegationToken as well. How is this done for spark?
+      val principal = RecordServiceConf.getKerberosPrincipal(sc)
+      planner = new RecordServicePlannerClient.Builder()
+          .setKerberosPrincipal(principal)
+          .connect(plannerHost, plannerPort)
+      val result = planner.planRequest(request)
+      if (principal != null) {
+        (result, planner.getDelegationToken(""))
+      } else {
+        (result, null)
+      }
     } catch {
       case e:TRecordServiceException => logError("Could not plan request: " + e.message)
         throw new SparkException("RecordServiceRDD failed", e)
       case e:TException => logError("Could not plan request: " + e.getMessage())
         throw new SparkException("RecordServiceRDD failed", e)
+    } finally {
+      if (planner != null) planner.close()
     }
 
     val partitions = new Array[Partition](planResult.tasks.size())
@@ -212,7 +233,7 @@ abstract class RecordServiceRDDBase[T:ClassTag](@transient sc: SparkContext)
         ports += planResult.tasks.get(i).local_hosts.get(j).port
       }
       partitions(i) = new RecordServicePartition(id, i, hosts.seq, ports.seq,
-        planResult.tasks.get(i), planResult.schema)
+        planResult.tasks.get(i), planResult.schema, delegationToken)
     }
     schema = planResult.schema
     (planResult, partitions)
