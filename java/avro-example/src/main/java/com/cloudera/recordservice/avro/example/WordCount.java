@@ -63,6 +63,7 @@ public class WordCount {
     }
     input = args[0];
     outputPath = args[1];
+    input = input.trim();
 
     JobConf conf = new JobConf(WordCount.class);
     conf.setJobName("wordcount");
@@ -77,10 +78,17 @@ public class WordCount {
     conf.setInputFormat(com.cloudera.recordservice.mapred.TextInputFormat.class);
     conf.setOutputFormat(TextOutputFormat.class);
 
+    // Set the request type based on the input string.
+    //  - starts with "select" - assume it is a query
+    //  - starts with "/" - assume it is a path
+    //  - otherwise, assume it is a db.table (TODO: validate this).
+    // TODO: this seems generally useful, move it to the library.
     if (input.toLowerCase().startsWith("select")) {
       RecordServiceConfig.setInputQuery(conf, input);
-    } else {
+    } else if (input.startsWith("/")) {
       FileInputFormat.setInputPaths(conf, new Path(input));
+    } else {
+      RecordServiceConfig.setInputTable(conf, null, input);
     }
     FileOutputFormat.setOutputPath(conf, new Path(outputPath));
 
