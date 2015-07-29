@@ -202,4 +202,26 @@ benchmarks = [
       ["impala-rs", impala_tpcds("q73", True)],
     ]
   ],
+
+  [
+    "Query_1M_blocks_10K_partitions_small_files", "cluster",
+    [
+      ["from-cache", impala_on_rs_cmd(
+          "explain select avg(id) from scale_db.num_partitions_10000_blocks_per_partition_100")],
+      # ["invalidated", impala_on_rs_cmd(
+      #     "invalidate metadata scale_db.num_partitions_10000_blocks_per_partition_100;" +
+      #     "explain select avg(id) from scale_db.num_partitions_10000_blocks_per_partition_100")],
+    ]
+  ],
+
+  [
+    "Query_1M_blocks_10K_partitions_single_file", "cluster",
+    [
+      ["from-cache", impala_on_rs_cmd(
+          "explain select avg(id) from scale_db.num_partitions_10000_blocks_per_partition_100_singlefile")],
+      # ["invalidated", impala_on_rs_cmd(
+      #     "invalidate metadata scale_db.num_partitions_10000_blocks_per_partition_100;" +
+      #     "explain select avg(id) from scale_db.num_partitions_10000_blocks_per_partition_100_singlefile")],
+    ]
+  ],
 ]

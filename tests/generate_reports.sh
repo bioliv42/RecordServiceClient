@@ -17,7 +17,7 @@ generate_report() {
   if [ -n "$RESULTS_DIR" ] && [ -e "$RESULTS_DIR/$WORKLOAD" ]; then
     # In this case, we have local results (not in DB) that need to be merged into
     # /tmp/data/tsv. The local results don't have a build number and we want to
-    # assign it the next highest build number. 
+    # assign it the next highest build number.
     local MAX_BUILD=`./collect_benchmark_results.py "$WORKLOAD" $DAYS max_build`
     NEXT_BUILD=$((MAX_BUILD+1))
 
@@ -47,6 +47,8 @@ generate_report "Query2_Avro_6GB" $DAYS $RESULTS_DIR
 generate_report "Query1_Parquet_500GB" $DAYS $RESULTS_DIR
 generate_report "TPCDS_Q7_Parquet_500GB" $DAYS $RESULTS_DIR
 generate_report "TPCDS_Q73_Parquet_500GB" $DAYS $RESULTS_DIR
+generate_report "Query_1M_blocks_10K_partitions_small_files" $DAYS $RESULTS_DIR
+generate_report "Query_1M_blocks_10K_partitions_single_file" $DAYS $RESULTS_DIR
 
 mkdir -p $RECORD_SERVICE_HOME/benchmark_results
 rm -f $RECORD_SERVICE_HOME/benchmark_results/*
