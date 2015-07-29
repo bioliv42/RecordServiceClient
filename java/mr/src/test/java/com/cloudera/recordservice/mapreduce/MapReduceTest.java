@@ -40,6 +40,7 @@ import org.apache.hadoop.security.Credentials;
 import org.junit.Test;
 
 import com.cloudera.recordservice.core.TestBase;
+import com.cloudera.recordservice.mapreduce.testapps.RecordCount;
 import com.cloudera.recordservice.mr.DecimalWritable;
 import com.cloudera.recordservice.mr.RecordServiceConfig;
 import com.cloudera.recordservice.mr.RecordServiceRecord;
@@ -332,5 +333,10 @@ public class MapReduceTest extends TestBase {
         "tpch", "nation", "n_comment", "");
     verifyException("Column list cannot contain empty names.",
         "tpch", "nation", "");
+  }
+
+  @Test
+  public void testJobs() throws IOException {
+    assertEquals(RecordCount.countRecords("hdfs:/test-warehouse/tpch.nation"), 25);
   }
 }
