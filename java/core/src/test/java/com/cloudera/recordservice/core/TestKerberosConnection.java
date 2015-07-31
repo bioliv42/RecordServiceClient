@@ -19,6 +19,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
+import java.util.Random;
 
 import org.junit.Assume;
 import org.junit.BeforeClass;
@@ -52,8 +53,6 @@ public class TestKerberosConnection extends TestBase {
   @BeforeClass
   public static void setUpBeforeClass() throws Exception {
     TestBase.setUpBeforeClass();
-    // Setup log4j for testing.
-    org.apache.log4j.BasicConfigurator.configure();
     if (HAS_KERBEROS_CREDENTIALS) {
       System.out.println("Running tests with kerberos credentials.");
     } else {
@@ -63,7 +62,7 @@ public class TestKerberosConnection extends TestBase {
 
   @Test
   public void testConnection() throws IOException,
-        TRecordServiceException, InterruptedException {
+      TRecordServiceException, InterruptedException {
     Assume.assumeTrue(HAS_KERBEROS_CREDENTIALS);
 
     TPlanRequestResult plan = new RecordServicePlannerClient.Builder()
@@ -437,5 +436,98 @@ public class TestKerberosConnection extends TestBase {
       }
     }
     planner.close();
+  }
+
+  @Test
+  public void testEncryptedTasks() throws IOException, TRecordServiceException {
+    Assume.assumeTrue(HAS_KERBEROS_CREDENTIALS);
+
+    // Testing the case that request is planned on a non-secure cluster and executed
+    // on a secure cluster
+    TPlanRequestResult result = new RecordServicePlannerClient.Builder()
+        .planRequest("localhost", PLANNER_PORT,
+            Request.createTableScanRequest("tpch.nation"));
+
+    RecordServiceWorkerClient worker = new RecordServiceWorkerClient.Builder()
+        .setKerberosPrincipal(PRINCIPAL)
+        .connect(HOST, WORKER_PORT);
+
+    boolean exceptionThrown = false;
+    try {
+      worker.execTask(result.tasks.get(0));
+    } catch (TRecordServiceException e) {
+      exceptionThrown = true;
+      assertEquals(TErrorCode.AUTHENTICATION_ERROR, e.getCode());
+      assertTrue(e.getMessage().contains(
+          "Kerberos is enabled but task is not encrypted"));
+    }
+
+    assertTrue(exceptionThrown);
+    worker.close();
+
+    // Testing the case that request is planned on a secure cluster and executed
+    // on a non-secure cluster
+    result = new RecordServicePlannerClient.Builder()
+        .setKerberosPrincipal(PRINCIPAL)
+        .planRequest(HOST, PLANNER_PORT,
+            Request.createTableScanRequest("sample_07"));
+
+    // The table actually doesn't exist on the local box, but it doesn't
+    // matter since the test should fail before the task queries the table.
+    worker = new RecordServiceWorkerClient.Builder()
+        .connect("localhost", WORKER_PORT);
+
+    exceptionThrown = false;
+    try {
+      worker.execTask(result.tasks.get(0));
+    } catch (TRecordServiceException e) {
+      exceptionThrown = true;
+      assertEquals(TErrorCode.AUTHENTICATION_ERROR, e.getCode());
+      assertTrue(e.getMessage().contains(
+          "Kerberos is not enabled but task is encrypted."));
+    }
+
+    assertTrue(exceptionThrown);
+    worker.close();
+
+    // Testing the case where a task binary is modified, and thus should
+    // fail the HMAC test on the worker.
+    result = new RecordServicePlannerClient.Builder()
+        .setKerberosPrincipal(PRINCIPAL)
+        .planRequest(HOST, PLANNER_PORT,
+            Request.createTableScanRequest("sample_07"));
+
+    worker = new RecordServiceWorkerClient.Builder()
+        .setKerberosPrincipal(PRINCIPAL)
+        .connect(HOST, WORKER_PORT);
+
+    Random rand = new Random();
+    byte[] byteArray = result.tasks.get(0).task.array();
+
+    // Here we swap some random byte with the last byte in the buffer, to make
+    // the task fail authentication. Retry several times since the random byte
+    // may not necessarily be in the task binary.
+    for (int i = 0; i < 10; ++i) {
+      int idx = rand.nextInt(byteArray.length);
+      byte b = byteArray[idx];
+      byteArray[idx] = byteArray[byteArray.length-1];
+      byteArray[byteArray.length-1] = b;
+
+      exceptionThrown = false;
+      try {
+        worker.execTask(result.tasks.get(0));
+      } catch (TRecordServiceException e) {
+        // We could get error during deserialization. In that case, keep retrying.
+        if (e.getMessage().contains("Task is corrupt.")) continue;
+        exceptionThrown = true;
+        assertEquals(TErrorCode.INVALID_TASK, e.getCode());
+        assertTrue(e.getMessage().contains("Task failed authentication."));
+        break;
+      }
+    }
+
+    assertTrue(exceptionThrown);
+    worker.close();
+
   }
 }

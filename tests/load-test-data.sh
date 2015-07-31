@@ -43,6 +43,7 @@ cd $RECORD_SERVICE_HOME
 impala-shell.sh -f tests/create-tbls.sql
 
 # Move any existing data files to where they need to go in HDFS
+hadoop fs -mkdir -p /test-warehouse/tpch.nation/
 hadoop fs -put -f $IMPALA_HOME/testdata/impala-data/tpch/nation/*\
     /test-warehouse/tpch.nation/
 hadoop fs -mkdir -p /test-warehouse/tpch_nation_parquet/
