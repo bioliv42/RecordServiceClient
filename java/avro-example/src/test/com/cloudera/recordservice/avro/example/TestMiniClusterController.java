@@ -1,4 +1,7 @@
+// Confidential Cloudera Information: Covered by NDA.
 package com.cloudera.recordservice.avro.example;
+
+import static org.junit.Assert.*;
 
 import java.io.IOException;
 import java.util.Random;
@@ -16,6 +19,7 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
 
 import com.cloudera.recordservice.avro.example.WordCount.Map;
 import com.cloudera.recordservice.avro.example.WordCount.Reduce;
@@ -38,7 +42,7 @@ public class TestMiniClusterController {
   @Before
   public void setUp() throws Exception {
     miniCluster_ = MiniClusterController.instance();
-    assert miniCluster_.isClusterStateCorrect() : "Cluster is in incorrect state";
+    assertTrue("Cluster is in incorrect state!", miniCluster_.isClusterStateCorrect());
   }
 
   @After
@@ -88,7 +92,7 @@ public class TestMiniClusterController {
     setRandomOutputDir(sampleJob);
     RunningJob runningJob = miniCluster_.runJobLocally(sampleJob);
     runningJob.waitForCompletion();
-    assert runningJob.isSuccessful() : "Job was not completed successfully";
+    assertTrue(runningJob.isSuccessful());
   }
 
   /**
@@ -102,7 +106,7 @@ public class TestMiniClusterController {
     setRandomOutputDir(sampleJob);
     RunningJob runningJob = JobClient.runJob(sampleJob);
     runningJob.waitForCompletion();
-    assert runningJob.isSuccessful() : "Job was not completed successfully";
+    assertTrue(runningJob.isSuccessful());
   }
 
   /**
@@ -111,8 +115,8 @@ public class TestMiniClusterController {
    */
   @Test
   public void testClusterHealth() throws IOException {
-    assert miniCluster_.isClusterStateCorrect() : "Cluster is in incorrect state";
+    assertTrue("Cluster is in incorrect state!", miniCluster_.isClusterStateCorrect());
     miniCluster_.killRandomNode();
-    assert miniCluster_.isClusterStateCorrect() : "Cluster is in incorrect state";
+    assertTrue("Cluster is in incorrect state!", miniCluster_.isClusterStateCorrect());
   }
 }
