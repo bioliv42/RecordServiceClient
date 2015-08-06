@@ -20,6 +20,8 @@ import java.io.IOException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.Credentials;
 import org.apache.hadoop.security.token.Token;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.cloudera.recordservice.core.RecordServiceWorkerClient;
 import com.cloudera.recordservice.core.Records;
@@ -37,6 +39,7 @@ import com.cloudera.recordservice.thrift.TRecordServiceException;
  * token) to avoid causing issues with the KDC.
  */
 public class RecordReaderCore {
+  private final static Logger LOG = LoggerFactory.getLogger(RecordReaderCore.class);
   // Underlying worker connection.
   private RecordServiceWorkerClient worker_;
 
@@ -49,10 +52,16 @@ public class RecordReaderCore {
   public RecordReaderCore(Configuration config, Credentials credentials,
       TaskInfo taskInfo) throws TRecordServiceException, IOException {
     try {
-      // TODO: handle multiple locations.
-      TNetworkAddress task = taskInfo.getLocations()[0];
-      int fetchSize = config.getInt(
-          RecordServiceConfig.FETCH_SIZE_CONF, RecordServiceConfig.DEFAULT_FETCH_SIZE);
+      int fetchSize = config.getInt(RecordServiceConfig.FETCH_SIZE_CONF, -1);
+      long memLimit = config.getLong(RecordServiceConfig.MEM_LIMIT_CONF, -1);
+      long limit = config.getLong(RecordServiceConfig.RECORDS_LIMIT_CONF, -1);
+      int maxAttempts =
+          config.getInt(RecordServiceConfig.TASK_RETRY_ATTEMPTS_CONF, -1);
+      int taskSleepMs = config.getInt(RecordServiceConfig.TASK_RETRY_SLEEP_MS_CONF, -1);
+      int socketTimeoutMs =
+          config.getInt(RecordServiceConfig.TASK_SOCKET_TIMEOUT_MS_CONF, -1);
+      boolean enableLogging =
+          config.getBoolean(RecordServiceConfig.TASK_ENABLE_SERVER_LOGGING_CONF, false);
 
       // Try to get the delegation token from the credentials. If it is there, use it.
       @SuppressWarnings("unchecked")
@@ -61,10 +70,17 @@ public class RecordReaderCore {
 
       RecordServiceWorkerClient.Builder builder =
           new RecordServiceWorkerClient.Builder();
-      builder.setFetchSize(fetchSize != -1 ? fetchSize : null);
-      if (token != null) {
-        builder.setDelegationToken(TokenUtils.toTDelegationToken(token));
-      }
+      if (fetchSize != -1) builder.setFetchSize(fetchSize);
+      if (memLimit != -1) builder.setMemLimit(memLimit);
+      if (limit != -1) builder.setLimit(limit);
+      if (maxAttempts != -1) builder.setMaxAttempts(maxAttempts);
+      if (taskSleepMs != -1) builder.setSleepDurationMs(taskSleepMs);
+      if (socketTimeoutMs != -1) builder.setTimeoutMs(socketTimeoutMs);
+      if (enableLogging) builder.setLoggingLevel(LOG);
+      if (token != null) builder.setDelegationToken(TokenUtils.toTDelegationToken(token));
+
+      // TODO: handle multiple locations.
+      TNetworkAddress task = taskInfo.getLocations()[0];
       worker_ = builder.connect(task.hostname, task.port);
       records_ = worker_.execAndFetch(taskInfo.getTask());
     } finally {

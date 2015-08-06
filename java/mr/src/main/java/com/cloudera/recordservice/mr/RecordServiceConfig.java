@@ -43,13 +43,35 @@ public class RecordServiceConfig {
   // Kerberos principal.
   public final static String KERBEROS_PRINCIPAL_CONF = "recordservice.kerberos.principal";
 
-  // Optional configuration option for performance tuning that configures
-  // the number of max number of records returned when fetching results from
-  // the RecordService. If not set, server default will be used.
+  // Optional configuration option for performance tuning that configures the max number
+  // of records returned when fetching results from the RecordService. If not set,
+  // server default will be used.
   // TODO: It would be nice for the server to adjust this automatically based
   // on how fast the client is able to process records.
-  public final static String FETCH_SIZE_CONF = "recordservice.fetch.size";
-  public final static int DEFAULT_FETCH_SIZE = 50000;
+  public final static String FETCH_SIZE_CONF = "recordservice.task.fetch.size";
+
+  // Optional configuration for the maximum memory the server will use per task.
+  public final static String MEM_LIMIT_CONF = "recordservice.task.memlimit.bytes";
+
+  // Optional configuration for the maximum number of records returned per task.
+  public final static String RECORDS_LIMIT_CONF = "recordservice.task.records.limit";
+
+  // Optional configuration for the maximum number of attempts to retry RecordService
+  // RPCs.
+  public final static String TASK_RETRY_ATTEMPTS_CONF =
+      "recordservice.task.retry.attempts";
+
+  // Optional configuration for sleep between retry attempts.
+  public final static String TASK_RETRY_SLEEP_MS_CONF =
+      "recordservice.task.retry.sleepMs";
+
+  // Optional configuration for timeout on the worker service socket.
+  public final static String TASK_SOCKET_TIMEOUT_MS_CONF =
+      "recordservice.task.socket.timeoutMs";
+
+  // Optional configuration to enable server logging (logging level from log4j)
+  public final static String TASK_ENABLE_SERVER_LOGGING_CONF =
+      "recordservice.task.server.enableLogging";
 
   /**
    * Sets the input configuration to read 'cols' from 'db.tbl'. If the tbl is fully
