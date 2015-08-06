@@ -27,6 +27,7 @@ import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.cloudera.recordservice.thrift.LoggingLevel;
 import com.cloudera.recordservice.thrift.RecordServiceWorker;
 import com.cloudera.recordservice.thrift.TDelegationToken;
 import com.cloudera.recordservice.thrift.TErrorCode;
@@ -81,6 +82,9 @@ public class RecordServiceWorkerClient {
   // will wait until all the data is read. It might make more sense to have the
   // server return empty result sets in this case to "keep the connection alive".
   private int timeoutMs_ = 10000;
+
+  // Server side logging level. null indicates to use server default.
+  private LoggingLevel loggingLevel_ = null;
 
   /**
    * Per task state maintained in the client.
@@ -179,6 +183,35 @@ public class RecordServiceWorkerClient {
       }
       LOG.debug("Setting timeoutMs to " + timeoutMs);
       client_.timeoutMs_ = timeoutMs;
+      return this;
+    }
+
+    /**
+     * Sets the logging level to the level in logger.
+     */
+    public Builder setLoggingLevel(Logger logger) {
+      if (logger == null) {
+        client_.loggingLevel_ = null;
+      } else if (logger.isTraceEnabled()) {
+        client_.loggingLevel_ = LoggingLevel.ALL;
+      } else if (logger.isInfoEnabled()) {
+        client_.loggingLevel_ = LoggingLevel.INFO;
+      } else if (logger.isDebugEnabled()) {
+        client_.loggingLevel_ = LoggingLevel.DEBUG;
+      } else if (logger.isWarnEnabled()) {
+        client_.loggingLevel_ = LoggingLevel.WARN;
+      } else if (logger.isErrorEnabled()) {
+        client_.loggingLevel_ = LoggingLevel.ERROR;
+      } else {
+        client_.loggingLevel_ = null;
+      }
+      LOG.debug("Setting logging level to: " + client_.loggingLevel_);
+      return this;
+    }
+
+    public Builder setLoggingLevel(LoggingLevel level) {
+      client_.loggingLevel_ = level;
+      LOG.debug("Setting logging level to: " + client_.loggingLevel_);
       return this;
     }
 
@@ -410,6 +443,7 @@ public class RecordServiceWorkerClient {
     if (fetchSize_ != null) taskParams.setFetch_size(fetchSize_);
     if (memLimit_ != null) taskParams.setMem_limit(memLimit_);
     if (limit_ != null) taskParams.setLimit(limit_);
+    if (loggingLevel_ != null) taskParams.setLogging_level(loggingLevel_);
 
     TException firstException = null;
     boolean connected = true;

@@ -28,7 +28,10 @@ import java.util.List;
 import java.util.TimeZone;
 
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import com.cloudera.recordservice.thrift.LoggingLevel;
 import com.cloudera.recordservice.thrift.TErrorCode;
 import com.cloudera.recordservice.thrift.TFetchResult;
 import com.cloudera.recordservice.thrift.TGetSchemaResult;
@@ -705,7 +708,7 @@ public class TestBasicClient extends TestBase {
   void testNationPathGlobbing(String path, boolean expectMatch)
       throws IOException, TRecordServiceException {
     try {
-      // TODO: figure out why it timeout with the default timeout - 20 secs 
+      // TODO: figure out why it timeout with the default timeout - 20 secs
       TPlanRequestResult plan = new RecordServicePlannerClient.Builder()
           .setTimeoutMs(0)
           .planRequest("localhost", PLANNER_PORT, Request.createPathRequest(path));
@@ -931,6 +934,33 @@ public class TestBasicClient extends TestBase {
         .setLimit(new Long(1))
         .connect(addr.hostname, addr.port);
     fetchAndVerifyCount(worker.execAndFetch(plan.tasks.get(0)), 1);
+    worker.close();
+  }
+
+  @Test
+  public void testServerLoggingLevels() throws IOException, TRecordServiceException {
+    TPlanRequestResult plan = new RecordServicePlannerClient.Builder()
+        .planRequest("localhost", PLANNER_PORT,
+            Request.createTableScanRequest("tpch.nation"));
+    assertEquals(plan.tasks.size(), 1);
+    TNetworkAddress addr = plan.tasks.get(0).local_hosts.get(0);
+
+    RecordServiceWorkerClient worker = new RecordServiceWorkerClient.Builder()
+        .setLoggingLevel(LoggingLevel.ALL)
+        .connect(addr.hostname, addr.port);
+    fetchAndVerifyCount(worker.execAndFetch(plan.tasks.get(0)), 25);
+    worker.close();
+
+    worker = new RecordServiceWorkerClient.Builder()
+        .setLoggingLevel(LoggerFactory.getLogger(TestBasicClient.class))
+        .connect(addr.hostname, addr.port);
+    fetchAndVerifyCount(worker.execAndFetch(plan.tasks.get(0)), 25);
+    worker.close();
+
+    worker = new RecordServiceWorkerClient.Builder()
+        .setLoggingLevel((Logger)null)
+        .connect(addr.hostname, addr.port);
+    fetchAndVerifyCount(worker.execAndFetch(plan.tasks.get(0)), 25);
     worker.close();
   }
 
