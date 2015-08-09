@@ -49,10 +49,16 @@ public class RecordReaderCore {
   // Schema for records_
   private Schema schema_;
 
+  // Default fetch size to use for MR. This is currently much larger than the
+  // server default but perfs better this way (but uses more memory).
+  // TODO: investigate this more and do this in the server. Remove this.
+  private static final int DEFAULT_FETCH_SIZE = 50000;
+
   public RecordReaderCore(Configuration config, Credentials credentials,
       TaskInfo taskInfo) throws TRecordServiceException, IOException {
     try {
-      int fetchSize = config.getInt(RecordServiceConfig.FETCH_SIZE_CONF, -1);
+      int fetchSize = config.getInt(RecordServiceConfig.FETCH_SIZE_CONF,
+          DEFAULT_FETCH_SIZE);
       long memLimit = config.getLong(RecordServiceConfig.MEM_LIMIT_CONF, -1);
       long limit = config.getLong(RecordServiceConfig.RECORDS_LIMIT_CONF, -1);
       int maxAttempts =
