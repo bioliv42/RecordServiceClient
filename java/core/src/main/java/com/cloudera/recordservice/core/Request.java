@@ -20,6 +20,7 @@ import java.util.List;
 import com.cloudera.recordservice.thrift.TPathRequest;
 import com.cloudera.recordservice.thrift.TPlanRequestParams;
 import com.cloudera.recordservice.thrift.TRequestType;
+import com.cloudera.recordservice.thrift.TSchema;
 
 /**
  * Abstraction over different requests and utilities to build common request
@@ -79,12 +80,30 @@ public class Request {
   }
 
   /**
-   * Creates a request that is a PATH query with filtering
+   * Sets a query for a path request. Invalid for non-path requests.
    */
-  public static Request createPathRequest(String uri, String query) {
-    Request request = createPathRequest(uri);
-    request.request_.path.setQuery(query);
-    return request;
+  public Request setQuery(String query) {
+    verifyPathRequest("setQuery()");
+    request_.path.setQuery(query);
+    return this;
+  }
+
+  /**
+   * Sets the schema for a path request. Invalid for non-path requests.
+   */
+  public Request setSchema(TSchema schema) {
+    verifyPathRequest("setSchema()");
+    request_.path.setSchema(schema);
+    return this;
+  }
+
+  /**
+   * Sets the field delimiter for a path request. Invalid for non-path requests.
+   */
+  public Request setFieldDelimiter(char delimiter) {
+    verifyPathRequest("setFieldDelimiter()");
+    request_.path.setField_delimiter((byte)delimiter);
+    return this;
   }
 
   @Override
@@ -97,5 +116,15 @@ public class Request {
 
   private Request(TPlanRequestParams request) {
     request_ = request;
+  }
+
+  /**
+   * Verifies this request is a path request, throwing an exception if it is not.
+   */
+  private void verifyPathRequest(String callingFunction) {
+    if (request_.request_type != TRequestType.Path) {
+      throw new IllegalArgumentException(callingFunction +
+          " is only callable for path requests.");
+    }
   }
 }

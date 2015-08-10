@@ -160,6 +160,10 @@ struct TPathRequest {
   // the schema
   3: optional TSchema schema
 
+  // Only valid if schema is set. Specifies the field delimiter to use for the files
+  // in 'path'. Only applicable to some file formats.
+  4: optional byte field_delimiter
+
   // The file format of the file at this path.
   // TODO: is this a good idea? How hard should we have the service try to figure
   // it out? What do you do if the path is a directory with different file formats or

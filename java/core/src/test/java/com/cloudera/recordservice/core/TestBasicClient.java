@@ -32,6 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.cloudera.recordservice.thrift.LoggingLevel;
+import com.cloudera.recordservice.thrift.TColumnDesc;
 import com.cloudera.recordservice.thrift.TErrorCode;
 import com.cloudera.recordservice.thrift.TFetchResult;
 import com.cloudera.recordservice.thrift.TGetSchemaResult;
@@ -42,6 +43,7 @@ import com.cloudera.recordservice.thrift.TSchema;
 import com.cloudera.recordservice.thrift.TStats;
 import com.cloudera.recordservice.thrift.TTask;
 import com.cloudera.recordservice.thrift.TTaskStatus;
+import com.cloudera.recordservice.thrift.TType;
 import com.cloudera.recordservice.thrift.TTypeId;
 import com.google.common.collect.Lists;
 
@@ -537,39 +539,10 @@ public class TestBasicClient extends TestBase {
     assertEquals(10, schema.cols.get(11).type.scale);
   }
 
-  /*
-   * Verifies that the schema matches the nation table schema.
-   */
-  private void verifyNationSchema(TSchema schema, boolean parquet) {
-    assertEquals(4, schema.cols.size());
-    assertEquals("n_nationkey", schema.cols.get(0).name);
-    assertEquals(parquet ? TTypeId.INT : TTypeId.SMALLINT,
-        schema.cols.get(0).type.type_id);
-    assertEquals("n_name", schema.cols.get(1).name);
-    assertEquals(TTypeId.STRING, schema.cols.get(1).type.type_id);
-    assertEquals("n_regionkey", schema.cols.get(2).name);
-    assertEquals(parquet ? TTypeId.INT : TTypeId.SMALLINT,
-        schema.cols.get(2).type.type_id);
-    assertEquals("n_comment", schema.cols.get(3).name);
-    assertEquals(TTypeId.STRING, schema.cols.get(3).type.type_id);
-  }
-
-  @Test
-  public void testAllTypes() throws TRecordServiceException, IOException {
+  private void verifyAllTypes(TPlanRequestResult plan)
+      throws TRecordServiceException, IOException {
     RecordServiceWorkerClient worker =
-        new RecordServiceWorkerClient.Builder().connect("localhost", WORKER_PORT);
-
-    // Just ask for the schema.
-    TGetSchemaResult schemaResult = new RecordServicePlannerClient.Builder()
-        .getSchema("localhost", PLANNER_PORT,
-            Request.createTableScanRequest("rs.alltypes"));
-
-    verifyAllTypesSchema(schemaResult.schema);
-
-    // Plan the request
-    TPlanRequestResult plan = new RecordServicePlannerClient.Builder()
-        .planRequest("localhost", PLANNER_PORT,
-            Request.createSqlRequest("select * from rs.alltypes"));
+      new RecordServiceWorkerClient.Builder().connect("localhost", WORKER_PORT);
 
     verifyAllTypesSchema(plan.schema);
 
@@ -577,9 +550,9 @@ public class TestBasicClient extends TestBase {
     format.setTimeZone(TimeZone.getTimeZone("GMT"));
 
     // Execute the task
-    assertEquals( 2, plan.tasks.size());
+    assertEquals(2, plan.tasks.size());
     for (int t = 0; t < 2; ++t) {
-      assertEquals( 3, plan.tasks.get(t).local_hosts.size());
+      assertEquals(3, plan.tasks.get(t).local_hosts.size());
       Records records = worker.execAndFetch(plan.tasks.get(t));
       verifyAllTypesSchema(records.getSchema());
       assertTrue(records.hasNext());
@@ -625,6 +598,39 @@ public class TestBasicClient extends TestBase {
     worker.close();
   }
 
+  /*
+   * Verifies that the schema matches the nation table schema.
+   */
+  private void verifyNationSchema(TSchema schema, boolean parquet) {
+    assertEquals(4, schema.cols.size());
+    assertEquals("n_nationkey", schema.cols.get(0).name);
+    assertEquals(parquet ? TTypeId.INT : TTypeId.SMALLINT,
+        schema.cols.get(0).type.type_id);
+    assertEquals("n_name", schema.cols.get(1).name);
+    assertEquals(TTypeId.STRING, schema.cols.get(1).type.type_id);
+    assertEquals("n_regionkey", schema.cols.get(2).name);
+    assertEquals(parquet ? TTypeId.INT : TTypeId.SMALLINT,
+        schema.cols.get(2).type.type_id);
+    assertEquals("n_comment", schema.cols.get(3).name);
+    assertEquals(TTypeId.STRING, schema.cols.get(3).type.type_id);
+  }
+
+  @Test
+  public void testAllTypes() throws TRecordServiceException, IOException {
+    // Just ask for the schema.
+    TGetSchemaResult schemaResult = new RecordServicePlannerClient.Builder()
+        .getSchema("localhost", PLANNER_PORT,
+            Request.createTableScanRequest("rs.alltypes"));
+
+    verifyAllTypesSchema(schemaResult.schema);
+
+    // Plan the request
+    TPlanRequestResult plan = new RecordServicePlannerClient.Builder()
+        .planRequest("localhost", PLANNER_PORT,
+            Request.createSqlRequest("select * from rs.alltypes"));
+    verifyAllTypes(plan);
+  }
+
   @Test
   public void testAllTypesEmpty() throws TRecordServiceException, IOException {
     TPlanRequestResult plan = new RecordServicePlannerClient.Builder()
@@ -665,6 +671,115 @@ public class TestBasicClient extends TestBase {
     List<String> lines = getAllStrings(plan);
     assertEquals(25, lines.size());
     assertEquals("6|FRANCE|3|refully final requests. regular, ironi", lines.get(6));
+  }
+
+  @Test
+  public void testNationPathWithSchema() throws IOException, TRecordServiceException {
+    RecordServiceWorkerClient worker =
+        new RecordServiceWorkerClient.Builder().connect("localhost", WORKER_PORT);
+
+    // The normal schema is SMALLINT, STRING, SMALLINT, STRING
+
+    // Test with an all string schema.
+    TSchema schema = new TSchema();
+    schema.cols = new ArrayList<TColumnDesc>();
+    schema.cols.add(new TColumnDesc(new TType(TTypeId.STRING), "col1"));
+    schema.cols.add(new TColumnDesc(new TType(TTypeId.STRING), "col2"));
+    schema.cols.add(new TColumnDesc(new TType(TTypeId.STRING), "col3"));
+    schema.cols.add(new TColumnDesc(new TType(TTypeId.STRING), "col4"));
+    TPlanRequestResult plan = new RecordServicePlannerClient.Builder()
+        .planRequest("localhost", PLANNER_PORT,
+            Request.createPathRequest("/test-warehouse/tpch.nation/")
+                .setSchema(schema).setFieldDelimiter('|'));
+    assertEquals(1, plan.tasks.size());
+
+    // Verify schema.
+    assertEquals(schema.cols.size(), plan.schema.cols.size());
+    for (int i = 0; i < plan.schema.cols.size(); ++i) {
+      assertEquals(schema.cols.get(i).name, plan.schema.cols.get(i).name);
+      assertEquals(schema.cols.get(i).type.type_id, plan.schema.cols.get(i).type.type_id);
+    }
+
+    Records records = worker.execAndFetch(plan.tasks.get(0));
+    int numRecords = 0;
+    while (records.hasNext()) {
+      Records.Record record = records.next();
+      ++numRecords;
+      if (numRecords == 1) {
+        assertEquals("0", record.nextByteArray(0).toString());
+        assertEquals("ALGERIA", record.nextByteArray(1).toString());
+        assertEquals("0", record.nextByteArray(2).toString());
+        assertEquals(" haggle. carefully final deposits detect slyly agai",
+            record.nextByteArray(3).toString());
+      }
+    }
+    assertEquals(25, numRecords);
+    records.close();
+
+    // Remap string cols to smallint, these should return null.
+    schema.cols.set(1, new TColumnDesc(new TType(TTypeId.SMALLINT), "col2"));
+    schema.cols.set(3, new TColumnDesc(new TType(TTypeId.SMALLINT), "col4"));
+
+    plan = new RecordServicePlannerClient.Builder().planRequest("localhost", PLANNER_PORT,
+        Request.createPathRequest("/test-warehouse/tpch.nation/")
+            .setSchema(schema).setFieldDelimiter('|'));
+    assertEquals(1, plan.tasks.size());
+
+    // Verify schema.
+    assertEquals(schema.cols.size(), plan.schema.cols.size());
+    for (int i = 0; i < plan.schema.cols.size(); ++i) {
+      assertEquals(schema.cols.get(i).name, plan.schema.cols.get(i).name);
+      assertEquals(schema.cols.get(i).type.type_id, plan.schema.cols.get(i).type.type_id);
+    }
+
+    records = worker.execAndFetch(plan.tasks.get(0));
+    numRecords = 0;
+    while (records.hasNext()) {
+      Records.Record record = records.next();
+      ++numRecords;
+      assertTrue(record.isNull(1));
+      assertTrue(record.isNull(3));
+      if (numRecords == 1) {
+        assertEquals("0", record.nextByteArray(0).toString());
+        assertEquals("0", record.nextByteArray(2).toString());
+      }
+    }
+    assertEquals(25, numRecords);
+    records.close();
+
+    worker.close();
+  }
+
+  @Test
+  public void testAllTypesPathWithSchema() throws IOException, TRecordServiceException {
+    // Create the exact all types schema.
+    TSchema schema = new TSchema();
+    schema.cols = new ArrayList<TColumnDesc>();
+    schema.cols.add(new TColumnDesc(new TType(TTypeId.BOOLEAN), "bool_col"));
+    schema.cols.add(new TColumnDesc(new TType(TTypeId.TINYINT), "tinyint_col"));
+    schema.cols.add(new TColumnDesc(new TType(TTypeId.SMALLINT), "smallint_col"));
+    schema.cols.add(new TColumnDesc(new TType(TTypeId.INT), "int_col"));
+    schema.cols.add(new TColumnDesc(new TType(TTypeId.BIGINT), "bigint_col"));
+    schema.cols.add(new TColumnDesc(new TType(TTypeId.FLOAT), "float_col"));
+    schema.cols.add(new TColumnDesc(new TType(TTypeId.DOUBLE), "double_col"));
+    schema.cols.add(new TColumnDesc(new TType(TTypeId.STRING), "string_col"));
+    TType varCharType = new TType(TTypeId.VARCHAR);
+    varCharType.setLen(10);
+    schema.cols.add(new TColumnDesc(varCharType, "varchar_col"));
+    TType charType = new TType(TTypeId.CHAR);
+    charType.setLen(5);
+    schema.cols.add(new TColumnDesc(charType, "char_col"));
+    schema.cols.add(new TColumnDesc(new TType(TTypeId.TIMESTAMP_NANOS), "timestamp_col"));
+    TType decimalType = new TType(TTypeId.DECIMAL);
+    decimalType.setPrecision(24);
+    decimalType.setScale(10);
+    schema.cols.add(new TColumnDesc(decimalType, "decimal_col"));
+
+    TPlanRequestResult plan = new RecordServicePlannerClient.Builder()
+        .planRequest("localhost", PLANNER_PORT,
+              Request.createPathRequest("/test-warehouse/rs.db/alltypes")
+                  .setSchema(schema));
+    verifyAllTypes(plan);
   }
 
   @Test
@@ -745,8 +860,8 @@ public class TestBasicClient extends TestBase {
   public void testNationPathFiltering() throws IOException, TRecordServiceException {
     TPlanRequestResult plan = new RecordServicePlannerClient.Builder()
         .planRequest("localhost", PLANNER_PORT,
-            Request.createPathRequest("/test-warehouse/tpch.nation/",
-            "select * from __PATH__ where record like '6|FRANCE%'"));
+            Request.createPathRequest("/test-warehouse/tpch.nation/")
+                .setQuery("select * from __PATH__ where record like '6|FRANCE%'"));
     assertEquals(1, plan.tasks.size());
     List<String> lines = getAllStrings(plan);
     assertEquals(1, lines.size());
