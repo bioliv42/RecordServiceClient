@@ -40,7 +40,7 @@ public class TestSpecificRecord extends TestBase {
         .planRequest("localhost", PLANNER_PORT,
             Request.createSqlRequest("select * from tpch.nation"));
 
-    assertEquals(plan.tasks.size(), 1);
+    assertEquals(1, plan.tasks.size());
     SpecificRecords<NationAll> records = null;
     try {
       records = new SpecificRecords<NationAll>(NationAll.SCHEMA$,
@@ -50,13 +50,13 @@ public class TestSpecificRecord extends TestBase {
         NationAll record = records.next();
         ++numRecords;
         if (numRecords == 3) {
-          assertEquals(record.getKey().intValue(), 2);
-          assertEquals(record.getName(), "BRAZIL");
-          assertEquals(record.getRegionKey().intValue(), 1);
-          assertEquals(record.getComment(), "y alongside of the pending deposits. carefully special packages are about the ironic forges. slyly special ");
+          assertEquals(2, record.getKey().intValue());
+          assertEquals("BRAZIL", record.getName());
+          assertEquals(1, record.getRegionKey().intValue());
+          assertEquals("y alongside of the pending deposits. carefully special packages are about the ironic forges. slyly special ", record.getComment());
         }
       }
-      assertEquals(numRecords, 25);
+      assertEquals(25, numRecords);
     } finally {
       if (records != null) records.close();
     }
@@ -68,7 +68,7 @@ public class TestSpecificRecord extends TestBase {
         .planRequest("localhost", PLANNER_PORT,
             Request.createSqlRequest("select n_nationkey, n_name from tpch.nation"));
 
-    assertEquals(plan.tasks.size(), 1);
+    assertEquals(1, plan.tasks.size());
     SpecificRecords<NationKeyName> records = null;
     try {
       records = new SpecificRecords<NationKeyName>(NationKeyName.SCHEMA$,
@@ -78,11 +78,11 @@ public class TestSpecificRecord extends TestBase {
         NationKeyName record = records.next();
         ++numRecords;
         if (numRecords == 4) {
-          assertEquals(record.getNName(), "CANADA");
-          assertEquals(record.getNNationkey().intValue(), 3);
+          assertEquals("CANADA", record.getNName());
+          assertEquals(3, record.getNNationkey().intValue());
         }
       }
-      assertEquals(numRecords, 25);
+      assertEquals(25, numRecords);
     } finally {
       if (records != null) records.close();
     }

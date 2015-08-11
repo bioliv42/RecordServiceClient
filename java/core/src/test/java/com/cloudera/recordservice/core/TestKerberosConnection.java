@@ -69,7 +69,7 @@ public class TestKerberosConnection extends TestBase {
         .setKerberosPrincipal(PRINCIPAL)
         .planRequest(HOST, PLANNER_PORT, Request.createTableScanRequest("sample_07"));
 
-    assertEquals(plan.schema.cols.size(), 4);
+    assertEquals(4, plan.schema.cols.size());
 
     RecordServiceWorkerClient worker = new RecordServiceWorkerClient.Builder().
         setKerberosPrincipal(PRINCIPAL).connect(HOST, WORKER_PORT);
@@ -79,7 +79,7 @@ public class TestKerberosConnection extends TestBase {
       records.next();
       ++numRecords;
     }
-    assertEquals(numRecords, SAMPLE_07_ROW_COUNT);
+    assertEquals(SAMPLE_07_ROW_COUNT, numRecords);
     worker.close();
   }
 
@@ -206,7 +206,7 @@ public class TestKerberosConnection extends TestBase {
       records.next();
       ++numRecords;
     }
-    assertEquals(numRecords, SAMPLE_07_ROW_COUNT);
+    assertEquals(SAMPLE_07_ROW_COUNT, numRecords);
     worker.close();
 
     // Cancel the token. Note that this can be done without a kerberized connection.

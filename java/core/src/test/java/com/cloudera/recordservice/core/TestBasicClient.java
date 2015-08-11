@@ -89,9 +89,9 @@ public class TestBasicClient extends TestBase {
     }
 
     planner = new RecordServicePlannerClient.Builder().connect("localhost", PLANNER_PORT);
-    assertEquals(planner.getProtocolVersion(), ProtocolVersion.V1);
+    assertEquals(ProtocolVersion.V1, planner.getProtocolVersion());
     // Call it again and make sure it's fine.
-    assertEquals(planner.getProtocolVersion(), ProtocolVersion.V1);
+    assertEquals(ProtocolVersion.V1, planner.getProtocolVersion());
 
     // Plan a request.
     planner.planRequest(Request.createSqlRequest("select * from tpch.nation"));
@@ -140,11 +140,11 @@ public class TestBasicClient extends TestBase {
     RecordServiceWorkerClient worker =
         new RecordServiceWorkerClient.Builder().connect("localhost", WORKER_PORT);
 
-    assertEquals(worker.getProtocolVersion(), ProtocolVersion.V1);
+    assertEquals(ProtocolVersion.V1, worker.getProtocolVersion());
     // Call it again and make sure it's fine.
-    assertEquals(worker.getProtocolVersion(), ProtocolVersion.V1);
+    assertEquals(ProtocolVersion.V1, worker.getProtocolVersion());
 
-    assertEquals(worker.numActiveTasks(), 0);
+    assertEquals(0, worker.numActiveTasks());
     worker.close();
 
     // Close again.
@@ -349,7 +349,7 @@ public class TestBasicClient extends TestBase {
       worker.execTask(task);
     } catch (TRecordServiceException e) {
       exceptionThrown = true;
-      assertEquals(e.code, TErrorCode.INVALID_TASK);
+      assertEquals(TErrorCode.INVALID_TASK, e.getCode());
       assertTrue(e.getMessage().contains("Task is corrupt."));
     } finally {
       assertTrue(exceptionThrown);
@@ -365,15 +365,15 @@ public class TestBasicClient extends TestBase {
 
     RecordServiceWorkerClient worker =
         new RecordServiceWorkerClient.Builder().connect("localhost", WORKER_PORT);
-    assertEquals(worker.numActiveTasks(), 0);
+    assertEquals(0, worker.numActiveTasks());
 
     worker.execTask(plan.tasks.get(0));
-    assertEquals(worker.numActiveTasks(), 1);
+    assertEquals(1, worker.numActiveTasks());
     worker.execTask(plan.tasks.get(0));
     RecordServiceWorkerClient.TaskState handle = worker.execTask(plan.tasks.get(0));
-    assertEquals(worker.numActiveTasks(), 3);
+    assertEquals(3, worker.numActiveTasks());
     worker.closeTask(handle);
-    assertEquals(worker.numActiveTasks(), 2);
+    assertEquals(2, worker.numActiveTasks());
 
     // Try to get task status with a closed handle.
     boolean exceptionThrown = false;
@@ -387,11 +387,11 @@ public class TestBasicClient extends TestBase {
 
     // Close again. Should be fine.
     worker.closeTask(handle);
-    assertEquals(worker.numActiveTasks(), 2);
+    assertEquals(2, worker.numActiveTasks());
 
     // Closing the worker should close them all.
     worker.close();
-    assertEquals(worker.numActiveTasks(), 0);
+    assertEquals(0, worker.numActiveTasks());
   }
 
   @Test
@@ -409,8 +409,8 @@ public class TestBasicClient extends TestBase {
     RecordServiceWorkerClient worker =
         new RecordServiceWorkerClient.Builder().connect("localhost", WORKER_PORT);
 
-    assertEquals(plan.tasks.size(), 1);
-    assertEquals(plan.tasks.get(0).local_hosts.size(), 3);
+    assertEquals(1, plan.tasks.size());
+    assertEquals(3, plan.tasks.get(0).local_hosts.size());
 
     Records records = worker.execAndFetch(plan.tasks.get(0));
     int numRecords = 0;
@@ -423,11 +423,11 @@ public class TestBasicClient extends TestBase {
         assertFalse(record.isNull(2));
         assertFalse(record.isNull(3));
 
-        assertEquals(record.nextShort(0), 0);
-        assertEquals(record.nextByteArray(1).toString(), "ALGERIA");
-        assertEquals(record.nextShort(2), 0);
-        assertEquals(record.nextByteArray(3).toString(),
-            " haggle. carefully final deposits detect slyly agai");
+        assertEquals(0, record.nextShort(0));
+        assertEquals("ALGERIA", record.nextByteArray(1).toString());
+        assertEquals(0, record.nextShort(2));
+        assertEquals(" haggle. carefully final deposits detect slyly agai",
+            record.nextByteArray(3).toString());
       }
     }
 
@@ -447,20 +447,20 @@ public class TestBasicClient extends TestBase {
     assertTrue(status.warnings.isEmpty());
 
     TStats stats = status.stats;
-    assertEquals(stats.task_progress, 1, 0.01);
-    assertEquals(stats.num_records_read, 25);
-    assertEquals(stats.num_records_returned, 25);
-    assertEquals(records.progress(), 1, 0.01);
+    assertEquals(1, stats.task_progress, 0.01);
+    assertEquals(25, stats.num_records_read);
+    assertEquals(25, stats.num_records_returned);
+    assertEquals(1, records.progress(), 0.01);
 
     records.close();
 
-    assertEquals(numRecords, 25);
+    assertEquals(25, numRecords);
 
     // Close and run this again. The worker object should still work.
-    assertEquals(worker.numActiveTasks(), 0);
+    assertEquals(0, worker.numActiveTasks());
     worker.close();
 
-    assertEquals(worker.numActiveTasks(), 0);
+    assertEquals(0, worker.numActiveTasks());
     worker.close();
   }
 
@@ -477,15 +477,15 @@ public class TestBasicClient extends TestBase {
         Records.Record record = records.next();
         ++numRecords;
         if (numRecords == 1) {
-          assertEquals(record.nextShort(0), 0);
-          assertEquals(record.nextByteArray(1).toString(), "ALGERIA");
-          assertEquals(record.nextShort(2), 0);
-          assertEquals(record.nextByteArray(3).toString(),
-              " haggle. carefully final deposits detect slyly agai");
+          assertEquals(0, record.nextShort(0));
+          assertEquals("ALGERIA", record.nextByteArray(1).toString());
+          assertEquals(0, record.nextShort(2));
+          assertEquals(" haggle. carefully final deposits detect slyly agai",
+              record.nextByteArray(3).toString());
         }
       }
       records.close();
-      assertEquals(numRecords, 25);
+      assertEquals(25, numRecords);
 
       // Closing records again is idempotent
       records.close();
@@ -506,52 +506,52 @@ public class TestBasicClient extends TestBase {
    * Verifies that the schema matches the alltypes table schema.
    */
   private void verifyAllTypesSchema(TSchema schema) {
-    assertEquals(schema.cols.size(), 12);
-    assertEquals(schema.cols.get(0).name, "bool_col");
-    assertEquals(schema.cols.get(0).type.type_id, TTypeId.BOOLEAN);
-    assertEquals(schema.cols.get(1).name, "tinyint_col");
-    assertEquals(schema.cols.get(1).type.type_id, TTypeId.TINYINT);
-    assertEquals(schema.cols.get(2).name, "smallint_col");
-    assertEquals(schema.cols.get(2).type.type_id, TTypeId.SMALLINT);
-    assertEquals(schema.cols.get(3).name, "int_col");
-    assertEquals(schema.cols.get(3).type.type_id, TTypeId.INT);
-    assertEquals(schema.cols.get(4).name, "bigint_col");
-    assertEquals(schema.cols.get(4).type.type_id, TTypeId.BIGINT);
-    assertEquals(schema.cols.get(5).name, "float_col");
-    assertEquals(schema.cols.get(5).type.type_id, TTypeId.FLOAT);
-    assertEquals(schema.cols.get(6).name, "double_col");
-    assertEquals(schema.cols.get(6).type.type_id, TTypeId.DOUBLE);
-    assertEquals(schema.cols.get(7).name, "string_col");
-    assertEquals(schema.cols.get(7).type.type_id, TTypeId.STRING);
-    assertEquals(schema.cols.get(8).name, "varchar_col");
-    assertEquals(schema.cols.get(8).type.type_id, TTypeId.VARCHAR);
-    assertEquals(schema.cols.get(8).type.len, 10);
-    assertEquals(schema.cols.get(9).name, "char_col");
-    assertEquals(schema.cols.get(9).type.type_id, TTypeId.CHAR);
-    assertEquals(schema.cols.get(9).type.len, 5);
-    assertEquals(schema.cols.get(10).name, "timestamp_col");
-    assertEquals(schema.cols.get(10).type.type_id, TTypeId.TIMESTAMP_NANOS);
-    assertEquals(schema.cols.get(11).name, "decimal_col");
-    assertEquals(schema.cols.get(11).type.type_id, TTypeId.DECIMAL);
-    assertEquals(schema.cols.get(11).type.precision, 24);
-    assertEquals(schema.cols.get(11).type.scale, 10);
+    assertEquals(12, schema.cols.size());
+    assertEquals("bool_col", schema.cols.get(0).name);
+    assertEquals(TTypeId.BOOLEAN, schema.cols.get(0).type.type_id);
+    assertEquals("tinyint_col", schema.cols.get(1).name);
+    assertEquals(TTypeId.TINYINT, schema.cols.get(1).type.type_id);
+    assertEquals("smallint_col", schema.cols.get(2).name);
+    assertEquals(TTypeId.SMALLINT, schema.cols.get(2).type.type_id);
+    assertEquals("int_col", schema.cols.get(3).name);
+    assertEquals(TTypeId.INT, schema.cols.get(3).type.type_id);
+    assertEquals("bigint_col", schema.cols.get(4).name);
+    assertEquals(TTypeId.BIGINT, schema.cols.get(4).type.type_id);
+    assertEquals("float_col", schema.cols.get(5).name);
+    assertEquals(TTypeId.FLOAT, schema.cols.get(5).type.type_id);
+    assertEquals("double_col", schema.cols.get(6).name);
+    assertEquals(TTypeId.DOUBLE, schema.cols.get(6).type.type_id);
+    assertEquals("string_col", schema.cols.get(7).name);
+    assertEquals(TTypeId.STRING, schema.cols.get(7).type.type_id);
+    assertEquals("varchar_col", schema.cols.get(8).name);
+    assertEquals(TTypeId.VARCHAR, schema.cols.get(8).type.type_id);
+    assertEquals(10, schema.cols.get(8).type.len);
+    assertEquals("char_col", schema.cols.get(9).name);
+    assertEquals(TTypeId.CHAR, schema.cols.get(9).type.type_id);
+    assertEquals(5, schema.cols.get(9).type.len);
+    assertEquals("timestamp_col", schema.cols.get(10).name);
+    assertEquals(TTypeId.TIMESTAMP_NANOS, schema.cols.get(10).type.type_id);
+    assertEquals("decimal_col", schema.cols.get(11).name);
+    assertEquals(TTypeId.DECIMAL, schema.cols.get(11).type.type_id);
+    assertEquals(24, schema.cols.get(11).type.precision);
+    assertEquals(10, schema.cols.get(11).type.scale);
   }
 
   /*
    * Verifies that the schema matches the nation table schema.
    */
   private void verifyNationSchema(TSchema schema, boolean parquet) {
-    assertEquals(schema.cols.size(), 4);
-    assertEquals(schema.cols.get(0).name, "n_nationkey");
-    assertEquals(schema.cols.get(0).type.type_id,
-        parquet ? TTypeId.INT : TTypeId.SMALLINT);
-    assertEquals(schema.cols.get(1).name, "n_name");
-    assertEquals(schema.cols.get(1).type.type_id, TTypeId.STRING);
-    assertEquals(schema.cols.get(2).name, "n_regionkey");
-    assertEquals(schema.cols.get(2).type.type_id,
-        parquet ? TTypeId.INT : TTypeId.SMALLINT);
-    assertEquals(schema.cols.get(3).name, "n_comment");
-    assertEquals(schema.cols.get(3).type.type_id, TTypeId.STRING);
+    assertEquals(4, schema.cols.size());
+    assertEquals("n_nationkey", schema.cols.get(0).name);
+    assertEquals(parquet ? TTypeId.INT : TTypeId.SMALLINT,
+        schema.cols.get(0).type.type_id);
+    assertEquals("n_name", schema.cols.get(1).name);
+    assertEquals(TTypeId.STRING, schema.cols.get(1).type.type_id);
+    assertEquals("n_regionkey", schema.cols.get(2).name);
+    assertEquals(parquet ? TTypeId.INT : TTypeId.SMALLINT,
+        schema.cols.get(2).type.type_id);
+    assertEquals("n_comment", schema.cols.get(3).name);
+    assertEquals(TTypeId.STRING, schema.cols.get(3).type.type_id);
   }
 
   @Test
@@ -577,42 +577,42 @@ public class TestBasicClient extends TestBase {
     format.setTimeZone(TimeZone.getTimeZone("GMT"));
 
     // Execute the task
-    assertEquals(plan.tasks.size(), 2);
+    assertEquals( 2, plan.tasks.size());
     for (int t = 0; t < 2; ++t) {
-      assertEquals(plan.tasks.get(t).local_hosts.size(), 3);
+      assertEquals( 3, plan.tasks.get(t).local_hosts.size());
       Records records = worker.execAndFetch(plan.tasks.get(t));
       verifyAllTypesSchema(records.getSchema());
       assertTrue(records.hasNext());
       Records.Record record = records.next();
 
       if (record.nextBoolean(0)) {
-        assertEquals(record.nextByte(1), 0);
-        assertEquals(record.nextShort(2), 1);
-        assertEquals(record.nextInt(3), 2);
-        assertEquals(record.nextLong(4), 3);
-        assertEquals(record.nextFloat(5), 4.0, 0.1);
-        assertEquals(record.nextDouble(6), 5.0, 0.1);
-        assertEquals(record.nextByteArray(7).toString(), "hello");
-        assertEquals(record.nextByteArray(8).toString(), "vchar1");
-        assertEquals(record.nextByteArray(9).toString(), "char1");
-        assertEquals(
-            format.format(record.nextTimestampNanos(10).toTimeStamp()), "2015-01-01");
-        assertEquals(record.nextDecimal(11).toBigDecimal(),
-            new BigDecimal("3.1415920000"));
+        assertEquals(0, record.nextByte(1));
+        assertEquals(1, record.nextShort(2));
+        assertEquals(2, record.nextInt(3));
+        assertEquals(3, record.nextLong(4));
+        assertEquals(4.0, record.nextFloat(5), 0.1);
+        assertEquals(5.0, record.nextDouble(6), 0.1);
+        assertEquals("hello", record.nextByteArray(7).toString());
+        assertEquals("vchar1", record.nextByteArray(8).toString());
+        assertEquals("char1", record.nextByteArray(9).toString());
+        assertEquals("2015-01-01",
+            format.format(record.nextTimestampNanos(10).toTimeStamp()));
+        assertEquals(new BigDecimal("3.1415920000"),
+            record.nextDecimal(11).toBigDecimal());
       } else {
-        assertEquals(record.nextByte(1), 6);
-        assertEquals(record.nextShort(2), 7);
-        assertEquals(record.nextInt(3), 8);
-        assertEquals(record.nextLong(4), 9);
-        assertEquals(record.nextFloat(5), 10.0, 0.1);
-        assertEquals(record.nextDouble(6), 11.0, 0.1);
-        assertEquals(record.nextByteArray(7).toString(), "world");
-        assertEquals(record.nextByteArray(8).toString(), "vchar2");
-        assertEquals(record.nextByteArray(9).toString(), "char2");
-        assertEquals(
-            format.format(record.nextTimestampNanos(10).toTimeStamp()), "2016-01-01");
-        assertEquals(record.nextDecimal(11).toBigDecimal(),
-            new BigDecimal("1234.5678900000"));
+        assertEquals(6, record.nextByte(1));
+        assertEquals(7, record.nextShort(2));
+        assertEquals(8, record.nextInt(3));
+        assertEquals(9, record.nextLong(4));
+        assertEquals(10.0, record.nextFloat(5), 0.1);
+        assertEquals(11.0, record.nextDouble(6), 0.1);
+        assertEquals("world", record.nextByteArray(7).toString());
+        assertEquals("vchar2", record.nextByteArray(8).toString());
+        assertEquals("char2", record.nextByteArray(9).toString());
+        assertEquals("2016-01-01",
+            format.format(record.nextTimestampNanos(10).toTimeStamp()));
+        assertEquals(new BigDecimal("1234.5678900000"),
+            record.nextDecimal(11).toBigDecimal());
       }
 
       // TODO: the Records API needs to be renamed or carefully documented.
@@ -621,7 +621,7 @@ public class TestBasicClient extends TestBase {
       records.close();
     }
 
-    assertEquals(worker.numActiveTasks(), 0);
+    assertEquals(0, worker.numActiveTasks());
     worker.close();
   }
 
@@ -630,7 +630,7 @@ public class TestBasicClient extends TestBase {
     TPlanRequestResult plan = new RecordServicePlannerClient.Builder()
         .planRequest("localhost", PLANNER_PORT,
             Request.createSqlRequest("select * from rs.alltypes_empty"));
-    assertEquals(plan.tasks.size(), 0);
+    assertEquals(0, plan.tasks.size());
     verifyAllTypesSchema(plan.schema);
   }
 
@@ -639,8 +639,8 @@ public class TestBasicClient extends TestBase {
   List<String> getAllStrings(TPlanRequestResult plan)
       throws TRecordServiceException, IOException {
     List<String> results = Lists.newArrayList();
-    assertEquals(plan.schema.cols.size(), 1);
-    assertEquals(plan.schema.cols.get(0).type.type_id, TTypeId.STRING);
+    assertEquals(1, plan.schema.cols.size());
+    assertEquals(TTypeId.STRING, plan.schema.cols.get(0).type.type_id);
     for (int i = 0; i < plan.tasks.size(); ++i) {
       Records records = null;
       try {
@@ -661,10 +661,10 @@ public class TestBasicClient extends TestBase {
     TPlanRequestResult plan = new RecordServicePlannerClient.Builder()
         .planRequest("localhost", PLANNER_PORT,
             Request.createPathRequest("/test-warehouse/tpch.nation/"));
-    assertEquals(plan.tasks.size(), 1);
+    assertEquals(1, plan.tasks.size());
     List<String> lines = getAllStrings(plan);
-    assertEquals(lines.size(), 25);
-    assertEquals(lines.get(6), "6|FRANCE|3|refully final requests. regular, ironi");
+    assertEquals(25, lines.size());
+    assertEquals("6|FRANCE|3|refully final requests. regular, ironi", lines.get(6));
   }
 
   @Test
@@ -672,7 +672,7 @@ public class TestBasicClient extends TestBase {
     TPlanRequestResult plan = new RecordServicePlannerClient.Builder()
         .planRequest("localhost", PLANNER_PORT,
             Request.createPathRequest("/test-warehouse/tpch_nation_parquet/nation.parq"));
-    assertEquals(plan.tasks.size(), 1);
+    assertEquals(1, plan.tasks.size());
     verifyNationSchema(plan.schema, true);
     fetchAndVerifyCount(WorkerClientUtil.execTask(plan, 0), 25);
   }
@@ -712,7 +712,7 @@ public class TestBasicClient extends TestBase {
       TPlanRequestResult plan = new RecordServicePlannerClient.Builder()
           .setTimeoutMs(0)
           .planRequest("localhost", PLANNER_PORT, Request.createPathRequest(path));
-      assertEquals(plan.tasks.size(), expectMatch ? 1 : 0);
+      assertEquals(expectMatch ? 1 : 0, plan.tasks.size());
     } catch (TRecordServiceException e) {
       assertFalse(expectMatch);
       assertTrue(e.code == TErrorCode.INVALID_REQUEST);
@@ -747,10 +747,10 @@ public class TestBasicClient extends TestBase {
         .planRequest("localhost", PLANNER_PORT,
             Request.createPathRequest("/test-warehouse/tpch.nation/",
             "select * from __PATH__ where record like '6|FRANCE%'"));
-    assertEquals(plan.tasks.size(), 1);
+    assertEquals(1, plan.tasks.size());
     List<String> lines = getAllStrings(plan);
-    assertEquals(lines.size(), 1);
-    assertEquals(lines.get(0), "6|FRANCE|3|refully final requests. regular, ironi");
+    assertEquals(1, lines.size());
+    assertEquals("6|FRANCE|3|refully final requests. regular, ironi", lines.get(0));
   }
 
   @Test
@@ -758,10 +758,10 @@ public class TestBasicClient extends TestBase {
     TPlanRequestResult plan = new RecordServicePlannerClient.Builder()
         .planRequest("localhost", PLANNER_PORT,
             Request.createTableScanRequest("rs.nation_projection"));
-    assertEquals(plan.tasks.size(), 1);
-    assertEquals(plan.schema.cols.size(), 2);
-    assertEquals(plan.schema.cols.get(0).name, "n_nationkey");
-    assertEquals(plan.schema.cols.get(1).name, "n_name");
+    assertEquals(1, plan.tasks.size());
+    assertEquals(2, plan.schema.cols.size());
+    assertEquals("n_nationkey", plan.schema.cols.get(0).name);
+    assertEquals("n_name", plan.schema.cols.get(1).name);
 
     for (int i = 0; i < plan.tasks.size(); ++i) {
       Records records = WorkerClientUtil.execTask(plan, i);
@@ -771,29 +771,29 @@ public class TestBasicClient extends TestBase {
         ++numRecords;
         switch (numRecords) {
         case 1:
-          assertEquals(record.nextShort(0), 0);
-          assertEquals(record.nextByteArray(1).toString(), "ALGERIA");
+          assertEquals(0, record.nextShort(0));
+          assertEquals("ALGERIA", record.nextByteArray(1).toString());
           break;
         case 2:
-          assertEquals(record.nextShort(0), 1);
-          assertEquals(record.nextByteArray(1).toString(), "ARGENTINA");
+          assertEquals(1, record.nextShort(0));
+          assertEquals("ARGENTINA", record.nextByteArray(1).toString());
           break;
         case 3:
-          assertEquals(record.nextShort(0), 2);
-          assertEquals(record.nextByteArray(1).toString(), "BRAZIL");
+          assertEquals(2, record.nextShort(0));
+          assertEquals("BRAZIL", record.nextByteArray(1).toString());
           break;
         case 4:
-          assertEquals(record.nextShort(0), 3);
-          assertEquals(record.nextByteArray(1).toString(), "CANADA");
+          assertEquals(3, record.nextShort(0));
+          assertEquals("CANADA", record.nextByteArray(1).toString());
           break;
         case 5:
-          assertEquals(record.nextShort(0), 4);
-          assertEquals(record.nextByteArray(1).toString(), "EGYPT");
+          assertEquals(4, record.nextShort(0));
+          assertEquals("EGYPT", record.nextByteArray(1).toString());
           break;
         }
       }
       records.close();
-      assertEquals(numRecords, 5);
+      assertEquals(5, numRecords);
     }
   }
 
@@ -816,7 +816,7 @@ public class TestBasicClient extends TestBase {
       assertTrue(result.num_records == 0 || result.num_records == 1);
       if (result.done) break;
     }
-    assertEquals(numRecords, 25);
+    assertEquals(25, numRecords);
     worker.close();
   }
 
@@ -836,7 +836,7 @@ public class TestBasicClient extends TestBase {
       worker.fetch(handle);
     } catch (TRecordServiceException e) {
       exceptionThrown = true;
-      assertEquals(e.code, TErrorCode.OUT_OF_MEMORY);
+      assertEquals(TErrorCode.OUT_OF_MEMORY, e.code);
     }
     assertTrue(exceptionThrown);
     worker.closeTask(handle);
@@ -847,11 +847,11 @@ public class TestBasicClient extends TestBase {
       worker.execAndFetch(plan.tasks.get(0));
     } catch (TRecordServiceException e) {
       exceptionThrown = true;
-      assertEquals(e.code, TErrorCode.OUT_OF_MEMORY);
+      assertEquals(TErrorCode.OUT_OF_MEMORY, e.code);
     }
     assertTrue(exceptionThrown);
 
-    assertEquals(worker.numActiveTasks(), 0);
+    assertEquals(0, worker.numActiveTasks());
     worker.close();
   }
 
@@ -860,18 +860,18 @@ public class TestBasicClient extends TestBase {
     TPlanRequestResult plan = new RecordServicePlannerClient.Builder()
         .planRequest("localhost", PLANNER_PORT,
             Request.createProjectionRequest("tpch.nation", null));
-    assertEquals(plan.tasks.size(), 1);
+    assertEquals(1, plan.tasks.size());
 
     // Verify schema
-    assertEquals(plan.schema.cols.size(), 1);
-    assertEquals(plan.schema.cols.get(0).name, "count(*)");
-    assertEquals(plan.schema.cols.get(0).type.type_id, TTypeId.BIGINT);
+    assertEquals(1, plan.schema.cols.size());
+    assertEquals("count(*)", plan.schema.cols.get(0).name);
+    assertEquals(TTypeId.BIGINT, plan.schema.cols.get(0).type.type_id);
 
     // Verify count(*) result.
     Records records = WorkerClientUtil.execTask(plan, 0);
     assertTrue(records.hasNext());
     Records.Record result = records.next();
-    assertEquals(result.nextLong(0), 25);
+    assertEquals(25, result.nextLong(0));
     assertFalse(records.hasNext());
     records.close();
 
@@ -879,18 +879,18 @@ public class TestBasicClient extends TestBase {
     plan = new RecordServicePlannerClient.Builder()
         .planRequest("localhost", PLANNER_PORT,
             Request.createProjectionRequest("tpch.nation", new ArrayList<String>()));
-    assertEquals(plan.tasks.size(), 1);
+    assertEquals(1, plan.tasks.size());
 
     plan = new RecordServicePlannerClient.Builder()
         .planRequest("localhost", PLANNER_PORT,
             Request.createSqlRequest("select count(*), count(*) from tpch.nation"));
 
-    assertEquals(plan.tasks.size(), 1);
-    assertEquals(plan.schema.cols.size(), 2);
-    assertEquals(plan.schema.cols.get(0).name, "count(*)");
-    assertEquals(plan.schema.cols.get(1).name, "count(*)");
-    assertEquals(plan.schema.cols.get(0).type.type_id, TTypeId.BIGINT);
-    assertEquals(plan.schema.cols.get(1).type.type_id, TTypeId.BIGINT);
+    assertEquals(1, plan.tasks.size());
+    assertEquals(2, plan.schema.cols.size());
+    assertEquals("count(*)", plan.schema.cols.get(0).name);
+    assertEquals("count(*)", plan.schema.cols.get(1).name);
+    assertEquals(TTypeId.BIGINT, plan.schema.cols.get(0).type.type_id);
+    assertEquals(TTypeId.BIGINT, plan.schema.cols.get(1).type.type_id);
   }
 
   @Test
@@ -898,10 +898,10 @@ public class TestBasicClient extends TestBase {
     TPlanRequestResult plan = new RecordServicePlannerClient.Builder()
         .planRequest("localhost", PLANNER_PORT, Request.createProjectionRequest(
             "tpch.nation", Lists.newArrayList("n_comment")));
-    assertEquals(plan.tasks.size(), 1);
-    assertEquals(plan.schema.cols.size(), 1);
-    assertEquals(plan.schema.cols.get(0).name, "n_comment");
-    assertEquals(plan.schema.cols.get(0).type.type_id, TTypeId.STRING);
+    assertEquals(1, plan.tasks.size());
+    assertEquals(1, plan.schema.cols.size());
+    assertEquals("n_comment", plan.schema.cols.get(0).name);
+    assertEquals(TTypeId.STRING, plan.schema.cols.get(0).type.type_id);
   }
 
   @Test
@@ -942,7 +942,7 @@ public class TestBasicClient extends TestBase {
     TPlanRequestResult plan = new RecordServicePlannerClient.Builder()
         .planRequest("localhost", PLANNER_PORT,
             Request.createTableScanRequest("tpch.nation"));
-    assertEquals(plan.tasks.size(), 1);
+    assertEquals(1, plan.tasks.size());
     TNetworkAddress addr = plan.tasks.get(0).local_hosts.get(0);
 
     RecordServiceWorkerClient worker = new RecordServiceWorkerClient.Builder()
@@ -969,7 +969,7 @@ public class TestBasicClient extends TestBase {
     TPlanRequestResult plan = new RecordServicePlannerClient.Builder()
         .planRequest("localhost", PLANNER_PORT,
             Request.createTableScanRequest("tpch.nation"));
-    assertEquals(plan.tasks.size(), 1);
+    assertEquals(1, plan.tasks.size());
 
     // Clear the local hosts.
     TTask task = plan.tasks.get(0);

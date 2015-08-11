@@ -54,9 +54,9 @@ public class MapReduceTest extends TestBase {
       throws IOException {
     List<InputSplit> splits = RecordServiceInputFormat.getSplits(
         config, new Credentials()).splits;
-    assertEquals(splits.size(), numSplits);
+    assertEquals(numSplits, splits.size());
     RecordServiceInputSplit split = (RecordServiceInputSplit)splits.get(0);
-    assertEquals(split.getSchema().getNumColumns(), numCols);
+    assertEquals(numCols, split.getSchema().getNumColumns());
   }
 
   private void verifyException(String msg,
@@ -166,7 +166,7 @@ public class MapReduceTest extends TestBase {
       exceptionThrown = true;
       assertTrue(e.getCause() instanceof TRecordServiceException);
       TRecordServiceException ex = (TRecordServiceException)e.getCause();
-      assertEquals(ex.code, TErrorCode.INVALID_REQUEST);
+      assertEquals(TErrorCode.INVALID_REQUEST, ex.code);
     }
     assertTrue(exceptionThrown);
 
@@ -200,16 +200,16 @@ public class MapReduceTest extends TestBase {
       while (reader.nextKeyValue()) {
         LongWritable key = reader.getCurrentKey();
         RecordServiceRecord value = reader.getCurrentValue();
-        assertEquals(key.get(), numRows);
+        assertEquals(numRows, key.get());
         ++numRows;
 
         if (numRows == 10) {
-          assertEquals(value.getColumnValue(1).toString(), "INDONESIA");
+          assertEquals("INDONESIA", value.getColumnValue(1).toString());
         }
       }
       assertFalse(reader.nextKeyValue());
       assertFalse(reader.nextRecord());
-      assertEquals(numRows, 25);
+      assertEquals(25, numRows);
 
       config.clear();
       RecordServiceConfig.setInputTable(config, "tpch", "nation", "n_comment");
@@ -219,12 +219,12 @@ public class MapReduceTest extends TestBase {
       while (reader.nextKeyValue()) {
         RecordServiceRecord value = reader.getCurrentValue();
         if (numRows == 12) {
-          assertEquals(value.getColumnValue(0).toString(),
-              "ously. final, express gifts cajole a");
+          assertEquals("ously. final, express gifts cajole a",
+              value.getColumnValue(0).toString());
         }
         ++numRows;
       }
-      assertEquals(numRows, 25);
+      assertEquals(25, numRows);
     } finally {
       reader.close();
     }
@@ -250,42 +250,42 @@ public class MapReduceTest extends TestBase {
         while (reader.nextKeyValue()) {
           RecordServiceRecord value = reader.getCurrentValue();
           if (((BooleanWritable)value.getColumnValue(0)).get()) {
-            assertEquals(((ByteWritable)value.getColumnValue(1)).get(), 0);
-            assertEquals(((ShortWritable)value.getColumnValue(2)).get(), 1);
-            assertEquals(((IntWritable)value.getColumnValue(3)).get(), 2);
-            assertEquals(((LongWritable)value.getColumnValue(4)).get(), 3);
-            assertEquals(((FloatWritable)value.getColumnValue(5)).get(), 4.0, 0.1);
-            assertEquals(((DoubleWritable)value.getColumnValue(6)).get(), 5.0, 0.1);
-            assertEquals(((Text)value.getColumnValue(7)).toString(), "hello");
-            assertEquals(((Text)value.getColumnValue(8)).toString(), "vchar1");
-            assertEquals(((Text)value.getColumnValue(9)).toString(), "char1");
-            assertEquals(format.format(
-                ((TimestampNanosWritable)value.getColumnValue(10)).get().toTimeStamp()),
-                "2015-01-01");
+            assertEquals(0, ((ByteWritable)value.getColumnValue(1)).get());
+            assertEquals(1, ((ShortWritable)value.getColumnValue(2)).get());
+            assertEquals(2, ((IntWritable)value.getColumnValue(3)).get());
+            assertEquals(3, ((LongWritable)value.getColumnValue(4)).get());
+            assertEquals(4.0, ((FloatWritable)value.getColumnValue(5)).get(), 0.1);
+            assertEquals(5.0, ((DoubleWritable)value.getColumnValue(6)).get(), 0.1);
+            assertEquals("hello", ((Text)value.getColumnValue(7)).toString());
+            assertEquals("vchar1", ((Text)value.getColumnValue(8)).toString());
+            assertEquals("char1", ((Text)value.getColumnValue(9)).toString());
+            assertEquals("2015-01-01", format.format(
+                ((TimestampNanosWritable)value.getColumnValue(10)).get().toTimeStamp()));
             assertEquals(
-                ((DecimalWritable)value.getColumnValue(11)).get().toBigDecimal(),
-                new BigDecimal("3.1415920000"));
+                new BigDecimal("3.1415920000"),
+                ((DecimalWritable)value.getColumnValue(11)).get().toBigDecimal());
           } else {
-            assertEquals(((ByteWritable)value.getColumnValue(1)).get(), 6);
-            assertEquals(((ShortWritable)value.getColumnValue(2)).get(), 7);
-            assertEquals(((IntWritable)value.getColumnValue(3)).get(), 8);
-            assertEquals(((LongWritable)value.getColumnValue(4)).get(), 9);
-            assertEquals(((FloatWritable)value.getColumnValue(5)).get(), 10.0, 0.1);
-            assertEquals(((DoubleWritable)value.getColumnValue(6)).get(), 11.0, 0.1);
-            assertEquals(((Text)value.getColumnValue(7)).toString(), "world");
-            assertEquals(((Text)value.getColumnValue(8)).toString(), "vchar2");
-            assertEquals(((Text)value.getColumnValue(9)).toString(), "char2");
-            assertEquals(format.format(
-                ((TimestampNanosWritable)value.getColumnValue(10)).get().toTimeStamp()),
-                "2016-01-01");
+            assertEquals(6, ((ByteWritable)value.getColumnValue(1)).get());
+            assertEquals(7, ((ShortWritable)value.getColumnValue(2)).get());
+            assertEquals(8, ((IntWritable)value.getColumnValue(3)).get());
+            assertEquals(9, ((LongWritable)value.getColumnValue(4)).get());
+            assertEquals(10.0, ((FloatWritable)value.getColumnValue(5)).get(), 0.1);
+            assertEquals(11.0, ((DoubleWritable)value.getColumnValue(6)).get(), 0.1);
+            assertEquals("world", ((Text)value.getColumnValue(7)).toString());
+            assertEquals("vchar2", ((Text)value.getColumnValue(8)).toString());
+            assertEquals("char2", ((Text)value.getColumnValue(9)).toString());
+            assertEquals("2016-01-01",
+                format.format(
+                    ((TimestampNanosWritable)value.getColumnValue(10))
+                        .get().toTimeStamp()));
             assertEquals(
-                ((DecimalWritable)value.getColumnValue(11)).get().toBigDecimal(),
-                new BigDecimal("1234.5678900000"));
+                new BigDecimal("1234.5678900000"),
+                ((DecimalWritable)value.getColumnValue(11)).get().toBigDecimal());
           }
           ++numRows;
         }
       }
-      assertEquals(numRows, 2);
+      assertEquals(2, numRows);
     } finally {
       reader.close();
     }
@@ -313,7 +313,7 @@ public class MapReduceTest extends TestBase {
           ++numRows;
         }
       }
-      assertEquals(numRows, 1);
+      assertEquals(1, numRows);
     } finally {
       reader.close();
     }
@@ -337,6 +337,6 @@ public class MapReduceTest extends TestBase {
 
   @Test
   public void testJobs() throws IOException {
-    assertEquals(RecordCount.countRecords("hdfs:/test-warehouse/tpch.nation"), 25);
+    assertEquals(25, RecordCount.countRecords("hdfs:/test-warehouse/tpch.nation"));
   }
 }

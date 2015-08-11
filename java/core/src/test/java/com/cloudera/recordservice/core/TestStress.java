@@ -51,7 +51,7 @@ public class TestStress extends TestBase {
             .connect("localhost", PLANNER_PORT);
         clients.add(planner);
       } catch(TRecordServiceException ex) {
-        assertEquals(ex.code, TErrorCode.SERVICE_BUSY);
+        assertEquals(TErrorCode.SERVICE_BUSY, ex.code);
         gotServerBusy = true;
 
         // Closing an existing connection should work.
@@ -93,7 +93,7 @@ public class TestStress extends TestBase {
             .connect("localhost", WORKER_PORT);
         clients.add(worker);
       } catch(TRecordServiceException ex) {
-        assertEquals(ex.code, TErrorCode.SERVICE_BUSY);
+        assertEquals(TErrorCode.SERVICE_BUSY, ex.code);
         gotServerBusy = true;
 
         // Closing an existing connection should work.

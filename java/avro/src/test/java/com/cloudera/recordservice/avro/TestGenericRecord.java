@@ -44,20 +44,20 @@ public class TestGenericRecord extends TestBase {
     // Verify schema
     Schema avroSchema = SchemaUtils.convertSchema(plan.schema);
     assertTrue(avroSchema.getName() == null);
-    assertEquals(avroSchema.getType(), Schema.Type.RECORD);
+    assertEquals(Schema.Type.RECORD, avroSchema.getType());
     List<Schema.Field> fields = avroSchema.getFields();
-    assertEquals(fields.size(), 4);
-    assertEquals(fields.get(0).name(), "n_nationkey");
-    assertEquals(fields.get(0).schema().getType(), Schema.Type.INT);
-    assertEquals(fields.get(1).name(), "n_name");
-    assertEquals(fields.get(1).schema().getType(), Schema.Type.STRING);
-    assertEquals(fields.get(2).name(), "n_regionkey");
-    assertEquals(fields.get(2).schema().getType(), Schema.Type.INT);
-    assertEquals(fields.get(3).name(), "n_comment");
-    assertEquals(fields.get(3).schema().getType(), Schema.Type.STRING);
+    assertEquals(4, fields.size());
+    assertEquals("n_nationkey", fields.get(0).name());
+    assertEquals(Schema.Type.INT, fields.get(0).schema().getType());
+    assertEquals("n_name", fields.get(1).name());
+    assertEquals(Schema.Type.STRING, fields.get(1).schema().getType());
+    assertEquals("n_regionkey", fields.get(2).name());
+    assertEquals(Schema.Type.INT, fields.get(2).schema().getType());
+    assertEquals("n_comment", fields.get(3).name());
+    assertEquals(Schema.Type.STRING, fields.get(3).schema().getType());
 
     // Execute the task
-    assertEquals(plan.tasks.size(), 1);
+    assertEquals(1, plan.tasks.size());
     GenericRecords records = null;
     try {
       records = new GenericRecords(WorkerClientUtil.execTask(plan, 0));
@@ -66,18 +66,18 @@ public class TestGenericRecord extends TestBase {
         GenericData.Record record = records.next();
         ++numRecords;
         if (numRecords == 2) {
-          assertEquals(record.get("n_nationkey"), record.get(0));
-          assertEquals(record.get("n_name"), record.get(1));
-          assertEquals(record.get("n_regionkey"), record.get(2));
-          assertEquals(record.get("n_comment"), record.get(3));
+          assertEquals(record.get(0), record.get("n_nationkey"));
+          assertEquals(record.get(1), record.get("n_name"));
+          assertEquals(record.get(2), record.get("n_regionkey"));
+          assertEquals(record.get(3), record.get("n_comment"));
 
-          assertEquals(record.get("n_nationkey"), 1);
-          assertEquals(record.get("n_name"), "ARGENTINA");
-          assertEquals(record.get("n_regionkey"), 1);
-          assertEquals(record.get("n_comment"), "al foxes promise slyly according to the regular accounts. bold requests alon");
+          assertEquals(1, record.get("n_nationkey"));
+          assertEquals("ARGENTINA", record.get("n_name"));
+          assertEquals(1, record.get("n_regionkey"));
+          assertEquals("al foxes promise slyly according to the regular accounts. bold requests alon", record.get("n_comment"));
         }
       }
-      assertEquals(numRecords, 25);
+      assertEquals(25, numRecords);
     } finally {
       if (records != null) records.close();
     }

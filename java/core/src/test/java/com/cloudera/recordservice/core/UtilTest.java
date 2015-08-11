@@ -34,27 +34,27 @@ public class UtilTest {
     }
 
     ByteArray ba = new ByteArray(buffer, 0, 100);
-    assertEquals(ba.len(), 100);
-    assertEquals(ba.offset(), 0);
-    assertEquals(ba.byteBuffer(), buffer);
+    assertEquals(100, ba.len());
+    assertEquals(0, ba.offset());
+    assertEquals(buffer, ba.byteBuffer());
     for (int i = 0; i < 100; ++i) {
-      assertEquals(ba.byteBuffer().array()[i], (byte)i);
+      assertEquals((byte)i, ba.byteBuffer().array()[i]);
     }
 
     ba = new ByteArray(buffer, 10, 20);
-    assertEquals(ba.len(), 20);
-    assertEquals(ba.offset(), 10);
-    assertEquals(ba.byteBuffer(), buffer);
+    assertEquals(20, ba.len());
+    assertEquals(10, ba.offset());
+    assertEquals(buffer, ba.byteBuffer());
     for (int i = 0; i < ba.len(); ++i) {
-      assertEquals(ba.byteBuffer().array()[i + ba.offset()], (byte)i + ba.offset());
+      assertEquals((byte)i + ba.offset(), ba.byteBuffer().array()[i + ba.offset()]);
     }
   }
 
   @Test
   public void decimalTest() {
-    assertEquals(Decimal.computeByteSize(1, 0), 4);
-    assertEquals(Decimal.computeByteSize(10, 1), 8);
-    assertEquals(Decimal.computeByteSize(30, 1), 16);
+    assertEquals(4, Decimal.computeByteSize(1, 0));
+    assertEquals(8, Decimal.computeByteSize(10, 1));
+    assertEquals(16, Decimal.computeByteSize(30, 1));
 
     boolean exceptionThrown = false;
     try {
@@ -84,17 +84,17 @@ public class UtilTest {
     assertTrue(exceptionThrown);
 
     Decimal decimal = new Decimal(10, 2);
-    assertEquals(decimal.getPrecision(), 10);
-    assertEquals(decimal.getScale(), 2);
-    assertEquals(decimal.getBytes().length, Decimal.computeByteSize(10, 2));
+    assertEquals(10, decimal.getPrecision());
+    assertEquals(2, decimal.getScale());
+    assertEquals(Decimal.computeByteSize(10, 2), decimal.getBytes().length);
   }
 
   @Test
   public void timestampNanosTest() {
     TimestampNanos t = new TimestampNanos();
     t.set(1420070400000L, 100);
-    assertEquals(t.getMillisSinceEpoch(), 1420070400000L);
-    assertEquals(t.getNanos(), 100);
+    assertEquals(1420070400000L, t.getMillisSinceEpoch());
+    assertEquals(100, t.getNanos());
   }
 
   @Test
@@ -103,6 +103,6 @@ public class UtilTest {
     new WorkerClientUtil();
 
     assertTrue(ProtocolVersion.values().length >= 1);
-    assertEquals(ProtocolVersion.valueOf("V1"), ProtocolVersion.V1);
+    assertEquals(ProtocolVersion.V1, ProtocolVersion.valueOf("V1"));
   }
 }
