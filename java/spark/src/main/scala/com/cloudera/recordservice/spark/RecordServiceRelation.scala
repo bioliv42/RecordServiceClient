@@ -184,7 +184,7 @@ case class RecordServiceRelation(table:String, size:Option[Long])(
         val record = input.next()
         assert(record.getSchema().cols.size() == 1)
         assert(record.getSchema().cols.get(0).getType.type_id == TTypeId.BIGINT)
-        var numRows = record.getLong(0)
+        var numRows = record.nextLong(0)
         new Iterator[Row] {
           override def next(): Row = {
             numRows -= 1
@@ -210,20 +210,20 @@ case class RecordServiceRelation(table:String, size:Option[Long])(
             mutableRow.setNullAt(i)
           } else {
             rsSchema.cols.get(i).getType.type_id match {
-              case TTypeId.BOOLEAN => mutableRow.setBoolean(i, x.getBoolean(i))
-              case TTypeId.TINYINT => mutableRow.setInt(i, x.getByte(i))
-              case TTypeId.SMALLINT => mutableRow.setInt(i, x.getShort(i).toInt)
-              case TTypeId.INT => mutableRow.setInt(i, x.getInt(i))
-              case TTypeId.BIGINT => mutableRow.setLong(i, x.getLong(i))
-              case TTypeId.FLOAT => mutableRow.setFloat(i, x.getFloat(i))
-              case TTypeId.DOUBLE => mutableRow.setDouble(i, x.getDouble(i))
-              case TTypeId.STRING => mutableRow.setString(i, x.getByteArray(i).toString)
+              case TTypeId.BOOLEAN => mutableRow.setBoolean(i, x.nextBoolean(i))
+              case TTypeId.TINYINT => mutableRow.setInt(i, x.nextByte(i))
+              case TTypeId.SMALLINT => mutableRow.setInt(i, x.nextShort(i).toInt)
+              case TTypeId.INT => mutableRow.setInt(i, x.nextInt(i))
+              case TTypeId.BIGINT => mutableRow.setLong(i, x.nextLong(i))
+              case TTypeId.FLOAT => mutableRow.setFloat(i, x.nextFloat(i))
+              case TTypeId.DOUBLE => mutableRow.setDouble(i, x.nextDouble(i))
+              case TTypeId.STRING => mutableRow.setString(i, x.nextByteArray(i).toString)
               case TTypeId.DECIMAL =>
-                val d = x.getDecimal(i)
+                val d = x.nextDecimal(i)
                 mutableRow.update(i,
                   Decimal(d.toBigDecimal, d.getPrecision, d.getScale))
               case TTypeId.TIMESTAMP_NANOS =>
-                  mutableRow.update(i, x.getTimestampNanos(i).toTimeStamp)
+                  mutableRow.update(i, x.nextTimestampNanos(i).toTimeStamp)
               case _ => assert(false)
             }
           }

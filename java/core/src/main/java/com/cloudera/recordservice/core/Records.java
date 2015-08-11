@@ -33,6 +33,7 @@ import com.cloudera.recordservice.thrift.TTypeId;
  * Abstraction over records returned from the RecordService. This class is
  * extremely performance sensitive. Not thread-safe.
  */
+@SuppressWarnings("restriction")
 public class Records {
   private static final Unsafe unsafe;
   static {
@@ -84,56 +85,59 @@ public class Records {
     private static final long byteArrayOffset = unsafe.arrayBaseOffset(byte[].class);
 
     /**
-     * For all these getters, returns the value at 'colIdx'. The type of the
-     * column must match. Undefined behavior if it does not match or if called
-     * on a value that is NULL. (We don't want to verify because this is the hot
-     * path. TODO: add a DEBUG mode which verifies the API is being used
-     * correctly.
+     * For all these getters, returns the value at 'colIdx' and advances to the next
+     * value. This must be called in lock-step with Records.next(). This is optimized
+     * for the common case where the caller will read every value of every record.
+     * It is invalid to call next*() for a subset of the records.
+     * The type of the column must match. Undefined behavior if it does not match
+     * or if called on a value that is NULL. (We don't want to verify because this
+     * is the hot path.)
+     * TODO: add a DEBUG mode which verifies the API is being used correctly.
      */
-    public final boolean getBoolean(int colIdx) {
+    public final boolean nextBoolean(int colIdx) {
       byte val = unsafe.getByte(colData_[colIdx].array(), colOffsets_[colIdx]);
       colOffsets_[colIdx] += 1;
       return val != 0;
     }
 
-    public final byte getByte(int colIdx) {
+    public final byte nextByte(int colIdx) {
       byte val = unsafe.getByte(colData_[colIdx].array(), colOffsets_[colIdx]);
       colOffsets_[colIdx] += 1;
       return val;
     }
 
-    public final short getShort(int colIdx) {
+    public final short nextShort(int colIdx) {
       short val = unsafe
           .getShort(colData_[colIdx].array(), colOffsets_[colIdx]);
       colOffsets_[colIdx] += 2;
       return val;
     }
 
-    public final int getInt(int colIdx) {
+    public final int nextInt(int colIdx) {
       int val = unsafe.getInt(colData_[colIdx].array(), colOffsets_[colIdx]);
       colOffsets_[colIdx] += 4;
       return val;
     }
 
-    public final long getLong(int colIdx) {
+    public final long nextLong(int colIdx) {
       long val = unsafe.getLong(colData_[colIdx].array(), colOffsets_[colIdx]);
       colOffsets_[colIdx] += 8;
       return val;
     }
 
-    public final float getFloat(int colIdx) {
+    public final float nextFloat(int colIdx) {
       float val = unsafe.getFloat(colData_[colIdx].array(), colOffsets_[colIdx]);
       colOffsets_[colIdx] += 4;
       return val;
     }
 
-    public final double getDouble(int colIdx) {
+    public final double nextDouble(int colIdx) {
       double val = unsafe.getDouble(colData_[colIdx].array(), colOffsets_[colIdx]);
       colOffsets_[colIdx] += 8;
       return val;
     }
 
-    public final ByteArray getByteArray(int colIdx) {
+    public final ByteArray nextByteArray(int colIdx) {
       int len = byteArrayLen_[colIdx];
       if (len < 0) {
         len = unsafe.getInt(colData_[colIdx].array(), colOffsets_[colIdx]);
@@ -145,7 +149,7 @@ public class Records {
       return byteArrayVals_[colIdx];
     }
 
-    public final TimestampNanos getTimestampNanos(int colIdx) {
+    public final TimestampNanos nextTimestampNanos(int colIdx) {
       TimestampNanos timestamp = timestampNanos_[colIdx];
       long millis = unsafe.getLong(colData_[colIdx].array(), colOffsets_[colIdx]);
       colOffsets_[colIdx] += 8;
@@ -155,7 +159,7 @@ public class Records {
       return timestamp;
     }
 
-    public final Decimal getDecimal(int colIdx) {
+    public final Decimal nextDecimal(int colIdx) {
       int len = byteArrayLen_[colIdx];
       long offset = colOffsets_[colIdx] - byteArrayOffset;
       decimalVals_[colIdx].set(colData_[colIdx], (int)offset, len);

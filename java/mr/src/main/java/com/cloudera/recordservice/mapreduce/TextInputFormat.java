@@ -96,7 +96,7 @@ public class TextInputFormat extends
         // TODO: is this the most proper way to deal with this in MR?
         throw new IOException("Could not fetch record.", e);
       }
-      ByteArray data = reader_.records().next().getByteArray(0);
+      ByteArray data = reader_.records().next().nextByteArray(0);
       record_.set(data.byteBuffer().array(), data.offset(), data.len());
       currentKey_.set(recordNum_++);
       return true;

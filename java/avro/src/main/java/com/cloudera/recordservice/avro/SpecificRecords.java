@@ -96,18 +96,18 @@ public class SpecificRecords<T> {
         continue;
       }
       switch(schema_.getCols().get(i).type.type_id) {
-        case BOOLEAN: record.put(rsIndex, rsRecord.getBoolean(i)); break;
-        case TINYINT: record.put(rsIndex, (int)rsRecord.getByte(i)); break;
-        case SMALLINT: record.put(rsIndex, (int)rsRecord.getShort(i)); break;
-        case INT: record.put(rsIndex, rsRecord.getInt(i)); break;
-        case BIGINT: record.put(rsIndex, rsRecord.getLong(i)); break;
-        case FLOAT: record.put(rsIndex, rsRecord.getFloat(i)); break;
-        case DOUBLE: record.put(rsIndex, rsRecord.getDouble(i)); break;
+        case BOOLEAN: record.put(rsIndex, rsRecord.nextBoolean(i)); break;
+        case TINYINT: record.put(rsIndex, (int)rsRecord.nextByte(i)); break;
+        case SMALLINT: record.put(rsIndex, (int)rsRecord.nextShort(i)); break;
+        case INT: record.put(rsIndex, rsRecord.nextInt(i)); break;
+        case BIGINT: record.put(rsIndex, rsRecord.nextLong(i)); break;
+        case FLOAT: record.put(rsIndex, rsRecord.nextFloat(i)); break;
+        case DOUBLE: record.put(rsIndex, rsRecord.nextDouble(i)); break;
 
         case STRING:
         case VARCHAR:
         case CHAR:
-          record.put(rsIndex, rsRecord.getByteArray(i).toString()); break;
+          record.put(rsIndex, rsRecord.nextByteArray(i).toString()); break;
 
         default:
           throw new RuntimeException(

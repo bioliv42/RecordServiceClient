@@ -62,17 +62,17 @@ public class GenericRecords {
     Record record = new Record(avroSchema_);
     for (int i = 0; i < schema_.getColsSize(); ++i) {
       switch(schema_.getCols().get(i).type.type_id) {
-      case BOOLEAN: record.put(i, rsRecord.getBoolean(i)); break;
-      case TINYINT: record.put(i, (int)rsRecord.getByte(i)); break;
-      case SMALLINT: record.put(i, (int)rsRecord.getShort(i)); break;
-      case INT: record.put(i, rsRecord.getInt(i)); break;
-      case BIGINT: record.put(i, rsRecord.getLong(i)); break;
-      case FLOAT: record.put(i, rsRecord.getFloat(i)); break;
-      case DOUBLE: record.put(i, rsRecord.getDouble(i)); break;
+      case BOOLEAN: record.put(i, rsRecord.nextBoolean(i)); break;
+      case TINYINT: record.put(i, (int)rsRecord.nextByte(i)); break;
+      case SMALLINT: record.put(i, (int)rsRecord.nextShort(i)); break;
+      case INT: record.put(i, rsRecord.nextInt(i)); break;
+      case BIGINT: record.put(i, rsRecord.nextLong(i)); break;
+      case FLOAT: record.put(i, rsRecord.nextFloat(i)); break;
+      case DOUBLE: record.put(i, rsRecord.nextDouble(i)); break;
       case STRING:
       case VARCHAR:
       case CHAR:
-        record.put(i, rsRecord.getByteArray(i).toString()); break;
+        record.put(i, rsRecord.nextByteArray(i).toString()); break;
       default:
         throw new RuntimeException(
             "Unsupported type: " + schema_.getCols().get(i).type);

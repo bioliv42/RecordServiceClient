@@ -103,29 +103,29 @@ class RecordServiceRDD(@transient sc: SparkContext)
             value(i) = writables(i)
             schema(i) match {
               case TTypeId.BOOLEAN =>
-                value(i).asInstanceOf[BooleanWritable].set(record.getBoolean(i))
+                value(i).asInstanceOf[BooleanWritable].set(record.nextBoolean(i))
               case TTypeId.TINYINT =>
-                value(i).asInstanceOf[ByteWritable].set(record.getByte(i))
+                value(i).asInstanceOf[ByteWritable].set(record.nextByte(i))
               case TTypeId.SMALLINT =>
-                value(i).asInstanceOf[ShortWritable].set(record.getShort(i))
+                value(i).asInstanceOf[ShortWritable].set(record.nextShort(i))
               case TTypeId.INT =>
-                value(i).asInstanceOf[IntWritable].set(record.getInt(i))
+                value(i).asInstanceOf[IntWritable].set(record.nextInt(i))
               case TTypeId.BIGINT =>
-                value(i).asInstanceOf[LongWritable].set(record.getLong(i))
+                value(i).asInstanceOf[LongWritable].set(record.nextLong(i))
               case TTypeId.FLOAT =>
-                value(i).asInstanceOf[FloatWritable].set(record.getFloat(i))
+                value(i).asInstanceOf[FloatWritable].set(record.nextFloat(i))
               case TTypeId.DOUBLE =>
-                value(i).asInstanceOf[DoubleWritable].set(record.getDouble(i))
+                value(i).asInstanceOf[DoubleWritable].set(record.nextDouble(i))
               case TTypeId.STRING =>
                 // TODO: ensure this doesn't copy.
-                val v = record.getByteArray(i)
+                val v = record.nextByteArray(i)
                 value(i).asInstanceOf[Text].set(
                     v.byteBuffer().array(), v.offset(), v.len())
               case TTypeId.TIMESTAMP_NANOS =>
-                val ts:TimestampNanos = record.getTimestampNanos(i)
+                val ts:TimestampNanos = record.nextTimestampNanos(i)
                 value(i).asInstanceOf[TimestampNanosWritable].set(ts)
               case TTypeId.DECIMAL =>
-                value(i).asInstanceOf[DecimalWritable].set(record.getDecimal(i))
+                value(i).asInstanceOf[DecimalWritable].set(record.nextDecimal(i))
               case _ => assert(false)
             }
           }

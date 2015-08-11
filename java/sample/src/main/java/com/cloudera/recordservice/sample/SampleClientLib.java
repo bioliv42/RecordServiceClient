@@ -56,7 +56,7 @@ public class SampleClientLib {
         records = WorkerClientUtil.execTask(planResult, i);
         while (records.hasNext()) {
           Record record = records.next();
-          sum += record.getLong(0);
+          sum += record.nextLong(0);
           ++totalRows;
         }
       } finally {

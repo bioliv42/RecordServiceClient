@@ -423,10 +423,10 @@ public class TestBasicClient extends TestBase {
         assertFalse(record.isNull(2));
         assertFalse(record.isNull(3));
 
-        assertEquals(record.getShort(0), 0);
-        assertEquals(record.getByteArray(1).toString(), "ALGERIA");
-        assertEquals(record.getShort(2), 0);
-        assertEquals(record.getByteArray(3).toString(),
+        assertEquals(record.nextShort(0), 0);
+        assertEquals(record.nextByteArray(1).toString(), "ALGERIA");
+        assertEquals(record.nextShort(2), 0);
+        assertEquals(record.nextByteArray(3).toString(),
             " haggle. carefully final deposits detect slyly agai");
       }
     }
@@ -477,10 +477,10 @@ public class TestBasicClient extends TestBase {
         Records.Record record = records.next();
         ++numRecords;
         if (numRecords == 1) {
-          assertEquals(record.getShort(0), 0);
-          assertEquals(record.getByteArray(1).toString(), "ALGERIA");
-          assertEquals(record.getShort(2), 0);
-          assertEquals(record.getByteArray(3).toString(),
+          assertEquals(record.nextShort(0), 0);
+          assertEquals(record.nextByteArray(1).toString(), "ALGERIA");
+          assertEquals(record.nextShort(2), 0);
+          assertEquals(record.nextByteArray(3).toString(),
               " haggle. carefully final deposits detect slyly agai");
         }
       }
@@ -585,33 +585,33 @@ public class TestBasicClient extends TestBase {
       assertTrue(records.hasNext());
       Records.Record record = records.next();
 
-      if (record.getBoolean(0)) {
-        assertEquals(record.getByte(1), 0);
-        assertEquals(record.getShort(2), 1);
-        assertEquals(record.getInt(3), 2);
-        assertEquals(record.getLong(4), 3);
-        assertEquals(record.getFloat(5), 4.0, 0.1);
-        assertEquals(record.getDouble(6), 5.0, 0.1);
-        assertEquals(record.getByteArray(7).toString(), "hello");
-        assertEquals(record.getByteArray(8).toString(), "vchar1");
-        assertEquals(record.getByteArray(9).toString(), "char1");
+      if (record.nextBoolean(0)) {
+        assertEquals(record.nextByte(1), 0);
+        assertEquals(record.nextShort(2), 1);
+        assertEquals(record.nextInt(3), 2);
+        assertEquals(record.nextLong(4), 3);
+        assertEquals(record.nextFloat(5), 4.0, 0.1);
+        assertEquals(record.nextDouble(6), 5.0, 0.1);
+        assertEquals(record.nextByteArray(7).toString(), "hello");
+        assertEquals(record.nextByteArray(8).toString(), "vchar1");
+        assertEquals(record.nextByteArray(9).toString(), "char1");
         assertEquals(
-            format.format(record.getTimestampNanos(10).toTimeStamp()), "2015-01-01");
-        assertEquals(record.getDecimal(11).toBigDecimal(),
+            format.format(record.nextTimestampNanos(10).toTimeStamp()), "2015-01-01");
+        assertEquals(record.nextDecimal(11).toBigDecimal(),
             new BigDecimal("3.1415920000"));
       } else {
-        assertEquals(record.getByte(1), 6);
-        assertEquals(record.getShort(2), 7);
-        assertEquals(record.getInt(3), 8);
-        assertEquals(record.getLong(4), 9);
-        assertEquals(record.getFloat(5), 10.0, 0.1);
-        assertEquals(record.getDouble(6), 11.0, 0.1);
-        assertEquals(record.getByteArray(7).toString(), "world");
-        assertEquals(record.getByteArray(8).toString(), "vchar2");
-        assertEquals(record.getByteArray(9).toString(), "char2");
+        assertEquals(record.nextByte(1), 6);
+        assertEquals(record.nextShort(2), 7);
+        assertEquals(record.nextInt(3), 8);
+        assertEquals(record.nextLong(4), 9);
+        assertEquals(record.nextFloat(5), 10.0, 0.1);
+        assertEquals(record.nextDouble(6), 11.0, 0.1);
+        assertEquals(record.nextByteArray(7).toString(), "world");
+        assertEquals(record.nextByteArray(8).toString(), "vchar2");
+        assertEquals(record.nextByteArray(9).toString(), "char2");
         assertEquals(
-            format.format(record.getTimestampNanos(10).toTimeStamp()), "2016-01-01");
-        assertEquals(record.getDecimal(11).toBigDecimal(),
+            format.format(record.nextTimestampNanos(10).toTimeStamp()), "2016-01-01");
+        assertEquals(record.nextDecimal(11).toBigDecimal(),
             new BigDecimal("1234.5678900000"));
       }
 
@@ -647,7 +647,7 @@ public class TestBasicClient extends TestBase {
         records = WorkerClientUtil.execTask(plan, i);
         while (records.hasNext()) {
           Records.Record record = records.next();
-          results.add(record.getByteArray(0).toString());
+          results.add(record.nextByteArray(0).toString());
         }
       } finally {
         if (records != null) records.close();
@@ -771,24 +771,24 @@ public class TestBasicClient extends TestBase {
         ++numRecords;
         switch (numRecords) {
         case 1:
-          assertEquals(record.getShort(0), 0);
-          assertEquals(record.getByteArray(1).toString(), "ALGERIA");
+          assertEquals(record.nextShort(0), 0);
+          assertEquals(record.nextByteArray(1).toString(), "ALGERIA");
           break;
         case 2:
-          assertEquals(record.getShort(0), 1);
-          assertEquals(record.getByteArray(1).toString(), "ARGENTINA");
+          assertEquals(record.nextShort(0), 1);
+          assertEquals(record.nextByteArray(1).toString(), "ARGENTINA");
           break;
         case 3:
-          assertEquals(record.getShort(0), 2);
-          assertEquals(record.getByteArray(1).toString(), "BRAZIL");
+          assertEquals(record.nextShort(0), 2);
+          assertEquals(record.nextByteArray(1).toString(), "BRAZIL");
           break;
         case 4:
-          assertEquals(record.getShort(0), 3);
-          assertEquals(record.getByteArray(1).toString(), "CANADA");
+          assertEquals(record.nextShort(0), 3);
+          assertEquals(record.nextByteArray(1).toString(), "CANADA");
           break;
         case 5:
-          assertEquals(record.getShort(0), 4);
-          assertEquals(record.getByteArray(1).toString(), "EGYPT");
+          assertEquals(record.nextShort(0), 4);
+          assertEquals(record.nextByteArray(1).toString(), "EGYPT");
           break;
         }
       }
@@ -871,7 +871,7 @@ public class TestBasicClient extends TestBase {
     Records records = WorkerClientUtil.execTask(plan, 0);
     assertTrue(records.hasNext());
     Records.Record result = records.next();
-    assertEquals(result.getLong(0), 25);
+    assertEquals(result.nextLong(0), 25);
     assertFalse(records.hasNext());
     records.close();
 

@@ -89,47 +89,47 @@ public class RecordServiceRecord implements Writable {
       Preconditions.checkNotNull(cInfo);
       switch (cInfo.getType()) {
         case BOOLEAN:
-          ((BooleanWritable) columnValObjects_[i]).set(record.getBoolean(i));
+          ((BooleanWritable) columnValObjects_[i]).set(record.nextBoolean(i));
           break;
         case TINYINT:
-          ((ByteWritable) columnValObjects_[i]).set(record.getByte(i));
+          ((ByteWritable) columnValObjects_[i]).set(record.nextByte(i));
           break;
         case SMALLINT:
-          ((ShortWritable) columnValObjects_[i]).set(record.getShort(i));
+          ((ShortWritable) columnValObjects_[i]).set(record.nextShort(i));
           break;
         case INT:
-          ((IntWritable) columnValObjects_[i]).set(record.getInt(i));
+          ((IntWritable) columnValObjects_[i]).set(record.nextInt(i));
           break;
         case BIGINT:
-          ((LongWritable) columnValObjects_[i]).set(record.getLong(i));
+          ((LongWritable) columnValObjects_[i]).set(record.nextLong(i));
           break;
         case FLOAT:
-          ((FloatWritable) columnValObjects_[i]).set(record.getFloat(i));
+          ((FloatWritable) columnValObjects_[i]).set(record.nextFloat(i));
           break;
         case DOUBLE:
-          ((DoubleWritable) columnValObjects_[i]).set(record.getDouble(i));
+          ((DoubleWritable) columnValObjects_[i]).set(record.nextDouble(i));
           break;
 
         case STRING:
         case VARCHAR:
         case CHAR:
-          ByteArray s = record.getByteArray(i);
+          ByteArray s = record.nextByteArray(i);
           ((Text) columnValObjects_[i]).set(
               s.byteBuffer().array(), s.offset(), s.len());
           break;
 
         case BINARY:
-          ByteArray b = record.getByteArray(i);
+          ByteArray b = record.nextByteArray(i);
           ((BytesWritable) columnValObjects_[i]).set(
               b.byteBuffer().array(), b.offset(), b.len());
           break;
         case TIMESTAMP:
           ((TimestampNanosWritable) columnValObjects_[i]).set(
-              record.getTimestampNanos(i));
+              record.nextTimestampNanos(i));
           break;
         case DECIMAL:
           ((DecimalWritable) columnValObjects_[i]).set(
-              record.getDecimal(i));
+              record.nextDecimal(i));
           break;
         default:
           throw new RuntimeException("Unsupported type: " + cInfo.getType());

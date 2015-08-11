@@ -50,7 +50,7 @@ public class TextInputFormat extends RecordServiceInputFormatBase<LongWritable, 
     public boolean next(LongWritable key, Text value) throws IOException {
       try {
         if (!reader_.records().hasNext()) return false;
-        ByteArray data = reader_.records().next().getByteArray(0);
+        ByteArray data = reader_.records().next().nextByteArray(0);
         value.set(data.byteBuffer().array(), data.offset(), data.len());
         key.set(recordNum_++);
         return true;

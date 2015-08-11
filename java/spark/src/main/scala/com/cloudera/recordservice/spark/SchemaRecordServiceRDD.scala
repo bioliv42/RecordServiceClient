@@ -358,26 +358,26 @@ class SchemaRecordServiceRDD[T:ClassTag](sc: SparkContext,
                 // unnecessary boxing
                 schema(i) match {
                   case TTypeId.BOOLEAN =>
-                    record.getBoolean(i): java.lang.Boolean
+                    record.nextBoolean(i): java.lang.Boolean
                   case TTypeId.TINYINT =>
                     // TODO: does this work? We probably need to cast it to Byte or Char
-                    record.getByte(i): java.lang.Byte
+                    record.nextByte(i): java.lang.Byte
                   case TTypeId.SMALLINT =>
-                    record.getShort(i): java.lang.Short
+                    record.nextShort(i): java.lang.Short
                   case TTypeId.INT =>
-                    record.getInt(i): java.lang.Integer
+                    record.nextInt(i): java.lang.Integer
                   case TTypeId.BIGINT =>
-                    record.getLong(i): java.lang.Long
+                    record.nextLong(i): java.lang.Long
                   case TTypeId.FLOAT =>
-                    record.getFloat(i): java.lang.Float
+                    record.nextFloat(i): java.lang.Float
                   case TTypeId.DOUBLE =>
-                    record.getDouble(i): java.lang.Double
+                    record.nextDouble(i): java.lang.Double
                   case TTypeId.STRING =>
-                    record.getByteArray(i).toString()
+                    record.nextByteArray(i).toString()
                   case TTypeId.TIMESTAMP_NANOS =>
-                    timeStampFormat.format(record.getTimestampNanos(i).toTimeStamp())
+                    timeStampFormat.format(record.nextTimestampNanos(i).toTimeStamp())
                   case TTypeId.DECIMAL =>
-                    record.getDecimal(i).toBigDecimal().toString
+                    record.nextDecimal(i).toBigDecimal().toString
                   case _ =>
                     assert(false)
                     None

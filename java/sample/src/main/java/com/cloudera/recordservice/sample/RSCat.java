@@ -37,40 +37,40 @@ public class RSCat {
       TColumnDesc col = schema.cols.get(i);
       switch (col.type.type_id) {
       case BOOLEAN:
-        returnList.add(new Boolean(r.getBoolean(i)));
+        returnList.add(new Boolean(r.nextBoolean(i)));
         break;
       case TINYINT:
-        returnList.add(new Byte(r.getByte(i)));
+        returnList.add(new Byte(r.nextByte(i)));
         break;
       case SMALLINT:
-        returnList.add(r.getShort(i));
+        returnList.add(r.nextShort(i));
         break;
       case INT:
-        returnList.add(r.getInt(i));
+        returnList.add(r.nextInt(i));
         break;
       case BIGINT:
-        returnList.add(r.getLong(i));
+        returnList.add(r.nextLong(i));
         break;
       case FLOAT:
-        returnList.add(r.getFloat(i));
+        returnList.add(r.nextFloat(i));
         break;
       case DOUBLE:
-        returnList.add(r.getDouble(i));
+        returnList.add(r.nextDouble(i));
         break;
       case STRING:
-        returnList.add(r.getByteArray(i).toString());
+        returnList.add(r.nextByteArray(i).toString());
         break;
       case VARCHAR:
-        returnList.add(r.getByteArray(i).toString());
+        returnList.add(r.nextByteArray(i).toString());
         break;
       case CHAR:
-        returnList.add(r.getByte(i));
+        returnList.add(r.nextByte(i));
         break;
       case TIMESTAMP_NANOS:
-        returnList.add(r.getTimestampNanos(i).toTimeStamp());
+        returnList.add(r.nextTimestampNanos(i).toTimeStamp());
         break;
       case DECIMAL:
-        returnList.add(r.getDecimal(i));
+        returnList.add(r.nextDecimal(i));
         break;
       default:
         throw new RuntimeException("Service returned type that is not supported. Type = "
@@ -98,7 +98,7 @@ public class RSCat {
     } finally {
       rspc.close();
     }
-    
+
     Random randGen = new Random();
     RecordServiceWorkerClient rswc;
     for (int i = 0; i < plannerRequest.tasks.size(); ++i) {

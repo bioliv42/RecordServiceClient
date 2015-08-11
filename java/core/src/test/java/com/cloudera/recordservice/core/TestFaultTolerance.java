@@ -48,7 +48,7 @@ public class TestFaultTolerance extends TestBase {
         worker.closeConnectionForTesting();
       }
       Records.Record record = records.next();
-      assertEquals(record.getShort(0), numRecords);
+      assertEquals(record.nextShort(0), numRecords);
       ++numRecords;
     }
 
