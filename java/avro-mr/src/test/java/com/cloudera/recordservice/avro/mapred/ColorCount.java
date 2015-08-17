@@ -17,35 +17,35 @@
  * limitations under the License.
  */
 
-package com.cloudera.recordservice.avro.example;
+package com.cloudera.recordservice.avro.mapred;
 
 import java.io.IOException;
+import java.util.HashMap;
 
 import org.apache.avro.Schema;
+import org.apache.avro.file.DataFileReader;
+import org.apache.avro.file.FileReader;
+import org.apache.avro.file.SeekableInput;
 import org.apache.avro.generic.GenericData;
-import org.apache.avro.mapred.AvroCollector;
-import org.apache.avro.mapred.AvroJob;
-import org.apache.avro.mapred.AvroMapper;
-import org.apache.avro.mapred.AvroReducer;
-import org.apache.avro.mapred.Pair;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.conf.Configured;
+import org.apache.avro.generic.GenericDatumReader;
+import org.apache.avro.generic.GenericRecord;
+import org.apache.avro.io.DatumReader;
+import org.apache.avro.mapred.*;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.Reporter;
-import org.apache.hadoop.util.Tool;
-import org.apache.hadoop.util.ToolRunner;
 
+import com.cloudera.recordservice.core.TestUtil;
 import com.cloudera.recordservice.mr.RecordServiceConfig;
 
 /**
- * Avro / Mapred Color Count Example with Generic Record.
+ * Mapred application that just counts the color in a data set.
+ * Can be run with or without record service.
  */
-public class MapredColorCount extends Configured implements Tool {
-
-  public static class ColorCountMapper extends AvroMapper<GenericData.Record,
+public class ColorCount {
+  public static class Map extends AvroMapper<GenericData.Record,
       Pair<CharSequence, Integer>> {
     private final static Pair<CharSequence, Integer> PAIR = new Pair("", 1);
 
@@ -54,8 +54,6 @@ public class MapredColorCount extends Configured implements Tool {
         AvroCollector<Pair<CharSequence, Integer>> collector, Reporter reporter)
         throws IOException {
       CharSequence color = (CharSequence) user.get("favorite_color");
-      // We need this check because the User.favorite_color field has
-      // type ["string", "null"]
       if (color == null) {
         color = "none";
       }
@@ -65,9 +63,9 @@ public class MapredColorCount extends Configured implements Tool {
     }
   }
 
-  public static class ColorCountReducer extends AvroReducer<CharSequence, Integer,
+  public static class Reduce extends AvroReducer<CharSequence, Integer,
       Pair<CharSequence, Integer>> {
-    private final static Pair<CharSequence, Integer> PAIR = new Pair("", 1);
+    private final static Pair<CharSequence, Integer> PAIR = new Pair("", 0);
 
     @Override
     public void reduce(CharSequence key, Iterable<Integer> values,
@@ -83,49 +81,43 @@ public class MapredColorCount extends Configured implements Tool {
     }
   }
 
-  public int run(String[] args) throws Exception {
-    org.apache.log4j.BasicConfigurator.configure();
+  /**
+   * Run the MR1 color count with generic records, and return a map of favorite colors to
+   * the number of users.
+   */
+  public static java.util.Map<String, Integer> countColors() throws IOException {
+    String output = TestUtil.getTempDirectory();
+    Path outputPath = new Path(output);
 
-    if (args.length != 2) {
-      System.err.println("Usage: MapredColorCount <input path> <output path>");
-      return -1;
-    }
+    JobConf conf = new JobConf(ColorCount.class);
+    conf.setJobName("MR1 Color Count With Generic Records");
+    conf.setInt("mapreduce.job.reduces", 1);
 
-    JobConf conf = new JobConf(getConf(), MapredColorCount.class);
-    conf.setJobName("colorcount With Generic Records");
-
-    // RECORDSERVICE:
-    // By using the recordservice AvroJob utility, we can configure at run time to
-    // switch between using the recordservice or not.
-    // In this example, we'll set the conf to true to enable the RecordService..
     conf.setBoolean(
         com.cloudera.recordservice.avro.AvroJob.USE_RECORD_SERVICE_INPUT_FORMAT_CONF_KEY,
         true);
     com.cloudera.recordservice.avro.AvroJob.setInputFormat(conf,
         org.apache.avro.mapred.AvroInputFormat.class);
 
-    // RECORDSERVICE:
-    // To read from a table instead of a path, comment out setInputPaths and instead use:
     RecordServiceConfig.setInputTable(conf, "rs", "users");
-    //FileInputFormat.setInputPaths(conf, new Path(args[0]));
+    FileOutputFormat.setOutputPath(conf, outputPath);
 
-    FileOutputFormat.setOutputPath(conf, new Path(args[1]));
-
-    AvroJob.setMapperClass(conf, ColorCountMapper.class);
-    AvroJob.setReducerClass(conf, ColorCountReducer.class);
-
-    // Note that AvroJob.setOutputSchema set relevant config options such as output
-    // format, map output classes, and output key class.
-    // Do not need to setInputSchema when using Generic Records.
+    AvroJob.setMapperClass(conf, Map.class);
+    AvroJob.setReducerClass(conf, Reduce.class);
     AvroJob.setOutputSchema(conf, Pair.getPairSchema(Schema.create(Schema.Type.STRING),
         Schema.create(Schema.Type.INT)));
 
     JobClient.runJob(conf);
-    return 0;
-  }
 
-  public static void main(String[] args) throws Exception {
-    int res = ToolRunner.run(new Configuration(), new MapredColorCount(), args);
-    System.exit(res);
+    // Read the result and return it. Since we set the number of reducers to 1,
+    // there is always just one file containing the value.
+    SeekableInput input = new FsInput(new Path(output + "/part-00000.avro"), conf);
+    DatumReader<GenericRecord> reader = new GenericDatumReader<GenericRecord>();
+    FileReader<GenericRecord> fileReader = DataFileReader.openReader(input, reader);
+    java.util.Map<String, Integer> colorMap = new HashMap<String, Integer>();
+    for (GenericRecord datum: fileReader) {
+      colorMap.put(datum.get(0).toString(), Integer.parseInt(datum.get(1).toString()));
+    }
+    return colorMap;
   }
 }

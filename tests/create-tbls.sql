@@ -62,3 +62,13 @@ insert into rs.alltypes VALUES(false, 6, 7, 8, 9, 10.0, 11.0, "world",
 insert overwrite rs.alltypes_null VALUES(
   NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
+-- Create users table and insert values.
+DROP TABLE IF EXISTS rs.users;
+create table rs.users (name STRING, favorite_number INT, favorite_color STRING);
+
+INSERT OVERWRITE TABLE rs.users VALUES ("Alyssa", 256, "red");
+INSERT INTO TABLE rs.users VALUES ("Ben", 96, "blue");
+INSERT INTO TABLE rs.users VALUES ("Kate", 51, "blue");
+INSERT INTO TABLE rs.users VALUES ("Laura", 19, "red");
+INSERT INTO TABLE rs.users VALUES ("Mike", 22, NULL);
+INSERT INTO TABLE rs.users VALUES ("Zack", 1, "red");

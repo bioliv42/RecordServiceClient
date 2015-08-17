@@ -30,7 +30,7 @@ import com.cloudera.recordservice.thrift.TRecordServiceException;
  * TODO: NULLs
  * TODO: map STRING to BYTES?
  */
-public class GenericRecords {
+public class GenericRecords implements RecordIterator {
   private Records records_;
   private org.apache.avro.Schema avroSchema_;
   private com.cloudera.recordservice.thrift.TSchema schema_;
@@ -61,21 +61,25 @@ public class GenericRecords {
     Records.Record rsRecord = records_.next();
     Record record = new Record(avroSchema_);
     for (int i = 0; i < schema_.getColsSize(); ++i) {
+      if (rsRecord.isNull(i)) {
+        record.put(i, null);
+        continue;
+      }
       switch(schema_.getCols().get(i).type.type_id) {
-      case BOOLEAN: record.put(i, rsRecord.nextBoolean(i)); break;
-      case TINYINT: record.put(i, (int)rsRecord.nextByte(i)); break;
-      case SMALLINT: record.put(i, (int)rsRecord.nextShort(i)); break;
-      case INT: record.put(i, rsRecord.nextInt(i)); break;
-      case BIGINT: record.put(i, rsRecord.nextLong(i)); break;
-      case FLOAT: record.put(i, rsRecord.nextFloat(i)); break;
-      case DOUBLE: record.put(i, rsRecord.nextDouble(i)); break;
-      case STRING:
-      case VARCHAR:
-      case CHAR:
-        record.put(i, rsRecord.nextByteArray(i).toString()); break;
-      default:
-        throw new RuntimeException(
-            "Unsupported type: " + schema_.getCols().get(i).type);
+        case BOOLEAN: record.put(i, rsRecord.nextBoolean(i)); break;
+        case TINYINT: record.put(i, (int)rsRecord.nextByte(i)); break;
+        case SMALLINT: record.put(i, (int)rsRecord.nextShort(i)); break;
+        case INT: record.put(i, rsRecord.nextInt(i)); break;
+        case BIGINT: record.put(i, rsRecord.nextLong(i)); break;
+        case FLOAT: record.put(i, rsRecord.nextFloat(i)); break;
+        case DOUBLE: record.put(i, rsRecord.nextDouble(i)); break;
+        case STRING:
+        case VARCHAR:
+        case CHAR:
+          record.put(i, rsRecord.nextByteArray(i).toString()); break;
+        default:
+          throw new RuntimeException(
+              "Unsupported type: " + schema_.getCols().get(i).type);
       }
     }
     return record;

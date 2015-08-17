@@ -20,6 +20,7 @@ import java.util.List;
 
 import org.apache.avro.Schema;
 import org.apache.avro.Schema.Type;
+import org.apache.avro.specific.SpecificData;
 
 import com.cloudera.recordservice.thrift.TSchema;
 
@@ -51,5 +52,13 @@ public class SchemaUtils {
           schema.getCols().get(i).getName(), fieldSchema, "", null));
     }
     return Schema.createRecord(fields);
+  }
+
+  /**
+   * Check if it is Specific Record according to the input schema from job config.
+   * Return true if the input schema is not null and there is a specific class for it.
+   */
+  public static boolean isSpecificRecordSchema(Schema inputSchema) {
+    return inputSchema != null && new SpecificData().getClass(inputSchema) != null;
   }
 }

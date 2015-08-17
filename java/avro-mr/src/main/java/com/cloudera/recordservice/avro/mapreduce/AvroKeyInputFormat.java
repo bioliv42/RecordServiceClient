@@ -27,8 +27,10 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.cloudera.recordservice.avro.GenericRecords;
+import com.cloudera.recordservice.avro.SchemaUtils;
 import com.cloudera.recordservice.avro.SpecificRecords;
-import com.cloudera.recordservice.avro.SpecificRecords.ResolveBy;
+import com.cloudera.recordservice.avro.RecordIterator;
 import com.cloudera.recordservice.mapreduce.RecordServiceInputFormatBase;
 import com.cloudera.recordservice.thrift.TRecordServiceException;
 
@@ -63,7 +65,7 @@ public class AvroKeyInputFormat<T> extends
     private final AvroKey<T> mCurrentRecord;
 
     // Records to return.
-    private SpecificRecords<T> records_;
+    private RecordIterator<T> records_;
 
     /**
      * Constructor.
@@ -98,11 +100,16 @@ public class AvroKeyInputFormat<T> extends
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public void initialize(InputSplit inputSplit, TaskAttemptContext context)
         throws IOException, InterruptedException {
       super.initialize(inputSplit, context);
-      records_ = new SpecificRecords<T>(
-          avroSchema_, reader_.records(), ResolveBy.NAME);
+      if (SchemaUtils.isSpecificRecordSchema(avroSchema_)) {
+        records_ = new SpecificRecords(avroSchema_, reader_.records(),
+            SpecificRecords.ResolveBy.NAME);
+      } else {
+        records_ = new GenericRecords(reader_.records());
+      }
     }
   }
 }

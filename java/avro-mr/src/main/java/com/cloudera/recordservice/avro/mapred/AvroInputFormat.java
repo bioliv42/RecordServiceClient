@@ -26,8 +26,10 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 
+import com.cloudera.recordservice.avro.GenericRecords;
+import com.cloudera.recordservice.avro.SchemaUtils;
 import com.cloudera.recordservice.avro.SpecificRecords;
-import com.cloudera.recordservice.avro.SpecificRecords.ResolveBy;
+import com.cloudera.recordservice.avro.RecordIterator;
 import com.cloudera.recordservice.mapred.RecordServiceInputFormatBase;
 import com.cloudera.recordservice.mapred.RecordServiceInputSplit;
 import com.cloudera.recordservice.thrift.TRecordServiceException;
@@ -52,18 +54,22 @@ public class AvroInputFormat<T> extends
    * Implementation of the reader. This just reads records from the RecordService
    * and returns them as Avro objects of type T.
    */
+  @SuppressWarnings("unchecked")
   private static class AvroRecordReader<T>
       extends RecordReaderBase<AvroWrapper<T>, NullWritable> {
-    private SpecificRecords<T> records_;
+    private RecordIterator<T> records_;
 
     public AvroRecordReader(JobConf config, Reporter reporter,
         RecordServiceInputSplit split) throws IOException {
       super(split, config, reporter);
       Schema schema = AvroJob.getInputSchema(config);
-      assert(schema != null);
-      // FIXME: this is only right if T is a specific record. Re-think our avro package
-      // object hierarchy to look more like avros?
-      records_ = new SpecificRecords<T>(schema, reader_.records(), ResolveBy.NAME);
+      if (SchemaUtils.isSpecificRecordSchema(schema)) {
+        records_ = new SpecificRecords(schema, reader_.records(),
+            SpecificRecords.ResolveBy.NAME);
+      } else {
+        records_ = new GenericRecords(reader_.records());
+        AvroJob.setInputSchema(config, records_.getSchema());
+      }
     }
 
     public AvroWrapper<T> createKey() {

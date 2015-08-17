@@ -36,7 +36,7 @@ import com.cloudera.recordservice.thrift.TTypeId;
  * TODO: NULLs
  * TODO: map STRING to BYTES?
  */
-public class SpecificRecords<T> {
+public class SpecificRecords<T extends SpecificRecordBase> implements RecordIterator {
   private Records records_;
   private org.apache.avro.Schema avroSchema_;
   private com.cloudera.recordservice.thrift.TSchema schema_;
@@ -79,11 +79,9 @@ public class SpecificRecords<T> {
    */
   @SuppressWarnings("unchecked")
   public T next() throws IOException, TRecordServiceException {
-    SpecificRecordBase record = null;
+    T record = null;
     try {
-      record = (SpecificRecordBase)class_.newInstance();
-    } catch (ClassCastException e) {
-      throw new RuntimeException("Template paramter 'T' must be a SpecificRecord");
+      record = class_.newInstance();
     } catch (Exception e) {
       throw new RuntimeException("Could not create new record instance.", e);
     }
@@ -112,9 +110,9 @@ public class SpecificRecords<T> {
         default:
           throw new RuntimeException(
               "Unsupported type: " + schema_.getCols().get(i).type);
-        }
+      }
     }
-    return (T)record;
+    return record;
   }
 
   /**
