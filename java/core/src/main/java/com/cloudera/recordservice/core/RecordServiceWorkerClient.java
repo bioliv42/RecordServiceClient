@@ -27,7 +27,6 @@ import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.cloudera.recordservice.thrift.LoggingLevel;
 import com.cloudera.recordservice.thrift.RecordServiceWorker;
 import com.cloudera.recordservice.thrift.TDelegationToken;
 import com.cloudera.recordservice.thrift.TErrorCode;
@@ -35,6 +34,7 @@ import com.cloudera.recordservice.thrift.TExecTaskParams;
 import com.cloudera.recordservice.thrift.TExecTaskResult;
 import com.cloudera.recordservice.thrift.TFetchParams;
 import com.cloudera.recordservice.thrift.TFetchResult;
+import com.cloudera.recordservice.thrift.TLoggingLevel;
 import com.cloudera.recordservice.thrift.TRecordServiceException;
 import com.cloudera.recordservice.thrift.TSchema;
 import com.cloudera.recordservice.thrift.TTask;
@@ -84,7 +84,7 @@ public class RecordServiceWorkerClient {
   private int timeoutMs_ = 10000;
 
   // Server side logging level. null indicates to use server default.
-  private LoggingLevel loggingLevel_ = null;
+  private TLoggingLevel loggingLevel_ = null;
 
   /**
    * Per task state maintained in the client.
@@ -193,15 +193,15 @@ public class RecordServiceWorkerClient {
       if (logger == null) {
         client_.loggingLevel_ = null;
       } else if (logger.isTraceEnabled()) {
-        client_.loggingLevel_ = LoggingLevel.ALL;
+        client_.loggingLevel_ = TLoggingLevel.ALL;
       } else if (logger.isInfoEnabled()) {
-        client_.loggingLevel_ = LoggingLevel.INFO;
+        client_.loggingLevel_ = TLoggingLevel.INFO;
       } else if (logger.isDebugEnabled()) {
-        client_.loggingLevel_ = LoggingLevel.DEBUG;
+        client_.loggingLevel_ = TLoggingLevel.DEBUG;
       } else if (logger.isWarnEnabled()) {
-        client_.loggingLevel_ = LoggingLevel.WARN;
+        client_.loggingLevel_ = TLoggingLevel.WARN;
       } else if (logger.isErrorEnabled()) {
-        client_.loggingLevel_ = LoggingLevel.ERROR;
+        client_.loggingLevel_ = TLoggingLevel.ERROR;
       } else {
         client_.loggingLevel_ = null;
       }
@@ -209,7 +209,7 @@ public class RecordServiceWorkerClient {
       return this;
     }
 
-    public Builder setLoggingLevel(LoggingLevel level) {
+    public Builder setLoggingLevel(TLoggingLevel level) {
       client_.loggingLevel_ = level;
       LOG.debug("Setting logging level to: " + client_.loggingLevel_);
       return this;

@@ -81,7 +81,6 @@ enum TTypeId {
 
 // Type specification, containing the enum and any additional parameters the type
 // may need.
-// TODO: how to extend this for complex types.
 struct TType {
   1: required TTypeId type_id
 
@@ -100,7 +99,6 @@ struct TColumnDesc {
 }
 
 // Representation of a RecordServiceSchema.
-// TODO: extend for nested types.
 struct TSchema {
   1: required list<TColumnDesc> cols
 }
@@ -110,27 +108,28 @@ enum TRecordFormat {
   Columnar,
 }
 
-// Serialized columnar data. Instead of using a list of types, this is a custom
-// serialization. Thrift sees this as a byte buffer so we have minimal serialization
-// cost.
-// The serialization is identical to parquet's plain encoding with these exceptions:
-//   - TimestampNanos: Parquet encodes as 8 byte nanos in day and 4 byte Julian day.
-//     RecordService encoding is 8 byte millis since epoch and 4 byte nanos.
+// Serialized columnar data. Each column is a contiguous byte buffer to minimize
+// serialization costs.
+// The serialization is optimized for little-endian machines:
+//   BOOLEAN - Encoded as a single byte.
+//   TINYINT, SMALLINT, INT, BIGINT - Encoded as little endian,
+//        2's complement in the size of this type.
+//   FLOAT, DOUBLE - Encoded as IEEE
+//   STRING, VCHAR - Encoded as a INT followed by the byte data.
+//   CHAR - The byte data.
+//   DECIMAL - Encoded as the unscaled 2's complement little-endian value.
+//   TIMESTAMP_NANOS - Encoded as a BIGINT (8 bytes) millis since epoch followed
+//        by INT(4 byte) nanoseconds offset.
 struct TColumnData {
   // One byte for each value.
   // TODO: turn this into a bitmap.
   1: required binary is_null
 
-  // Serialized data excluding NULLs.
-  // TODO: add detailed spec here but this is just the parquet plain encoding.
-  // Each value is serialized in little endian back to back.
+  // Serialized data excluding NULLs. Values are serialized back to back.
   2: required binary data
 
-  // Is this useful?
-  //3: required i32 num_non_null
-
   // TODO: this is useful if reading remotely.
-  // 4: optional CompressionCodec
+  // 3: optional CompressionCodec
 }
 
 // List of column data for the Columnar record format. This is 1:1 with the
@@ -171,7 +170,7 @@ struct TPathRequest {
   //3: optional TFileFormat file_format
 }
 
-enum LoggingLevel {
+enum TLoggingLevel {
   // The OFF turns off all logging.
   OFF,
 
@@ -212,7 +211,7 @@ struct TLogMessage {
   2: optional string detail
 
   // Level corresponding to this message.
-  3: required LoggingLevel level
+  3: required TLoggingLevel level
 
   // The number of times similar messages have occurred. It is up to the service to
   // decide what counts as a duplicate.
@@ -223,10 +222,6 @@ struct TRequestOptions {
   // If true, fail tasks if an corrupt record is encountered, otherwise, those records
   // are skipped (and warning returned).
   1: optional bool abort_on_corrupt_record = false
-
-  // FIXME: this is useful to try things for now and we may expose this as a
-  // general key/value pair for the server.
-  2: optional map<string, string> debug_options
 }
 
 struct TPlanRequestParams {
@@ -292,7 +287,7 @@ struct TExecTaskParams {
   1: required binary task
 
   // Logging level done by the service the service Service level logging for this task.
-  2: optional LoggingLevel logging_level
+  2: optional TLoggingLevel logging_level
 
   // Maximum number of records that can be returned per fetch. The server can return
   // fewer. If unset, service picks default.
@@ -357,28 +352,31 @@ struct TStats {
   // The number of records returned to the client.
   3: required i64 num_records_returned
 
+  // The number of records that were skipped (due to data errors).
+  4: required i64 num_records_skipped
+
   // Time spent in the record service serializing returned results.
-  4: required i64 serialize_time_ms
+  5: required i64 serialize_time_ms
 
   // Time spent in the client, as measured by the server. This includes
   // time in the data exchange as well as time the client spent working.
-  5: required i64 client_time_ms
+  6: required i64 client_time_ms
 
   //
   // HDFS specific counters
   //
 
   // Time spent in decompression.
-  6: optional i64 decompress_time_ms
+  7: optional i64 decompress_time_ms
 
   // Bytes read from HDFS
-  7: optional i64 bytes_read
+  8: optional i64 bytes_read
 
   // Bytes read from the local data node.
-  8: optional i64 bytes_read_local
+  9: optional i64 bytes_read_local
 
   // Throughput of reading the raw bytes from HDFS, in bytes per second
-  9: optional double hdfs_throughput
+  10: optional double hdfs_throughput
 }
 
 struct TTaskStatus {
@@ -392,7 +390,6 @@ struct TTaskStatus {
   3: required list<TLogMessage> warnings
 }
 
-// FIXME: we need a lot more testing for these.
 enum TErrorCode {
   // The request is invalid or unsupported by the Planner service.
   INVALID_REQUEST,
@@ -486,7 +483,7 @@ service RecordServicePlanner {
   void CancelDelegationToken(1:TDelegationToken delegation_token)
       throws(1:TRecordServiceException ex);
 
-  // Renews the delegation token. Duration set from service config.
+  // Renews the delegation token. Duration set by server configs.
   void RenewDelegationToken(1:TDelegationToken delegation_token)
       throws(1:TRecordServiceException ex);
 }

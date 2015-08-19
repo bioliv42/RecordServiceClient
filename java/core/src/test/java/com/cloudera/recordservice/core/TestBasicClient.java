@@ -31,11 +31,11 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.cloudera.recordservice.thrift.LoggingLevel;
 import com.cloudera.recordservice.thrift.TColumnDesc;
 import com.cloudera.recordservice.thrift.TErrorCode;
 import com.cloudera.recordservice.thrift.TFetchResult;
 import com.cloudera.recordservice.thrift.TGetSchemaResult;
+import com.cloudera.recordservice.thrift.TLoggingLevel;
 import com.cloudera.recordservice.thrift.TNetworkAddress;
 import com.cloudera.recordservice.thrift.TPlanRequestResult;
 import com.cloudera.recordservice.thrift.TRecordServiceException;
@@ -1061,7 +1061,7 @@ public class TestBasicClient extends TestBase {
     TNetworkAddress addr = plan.tasks.get(0).local_hosts.get(0);
 
     RecordServiceWorkerClient worker = new RecordServiceWorkerClient.Builder()
-        .setLoggingLevel(LoggingLevel.ALL)
+        .setLoggingLevel(TLoggingLevel.ALL)
         .connect(addr.hostname, addr.port);
     fetchAndVerifyCount(worker.execAndFetch(plan.tasks.get(0)), 25);
     worker.close();

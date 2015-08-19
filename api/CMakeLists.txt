@@ -27,9 +27,6 @@ cmake_minimum_required(VERSION 2.6)
 #
 # To call this function, pass it the output file list followed by the input thrift files:
 #    i.e. THRIFT_GEN(OUTPUT_FILES, ${THRIFT_FILES})
-#
-# cmake seems to be case sensitive for some keywords. Changing the first IF check to lower
-# case makes it not work.  TODO: investigate this
 function(THRIFT_GEN VAR)
   IF (NOT ARGN)
     MESSAGE(SEND_ERROR "Error: THRIFT_GEN called without any src files")
