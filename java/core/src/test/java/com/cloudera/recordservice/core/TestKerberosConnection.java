@@ -507,7 +507,7 @@ public class TestKerberosConnection extends TestBase {
     // Here we swap some random byte with the last byte in the buffer, to make
     // the task fail authentication. Retry several times since the random byte
     // may not necessarily be in the task binary.
-    for (int i = 0; i < 10; ++i) {
+    for (int i = 0; i < 50; ++i) {
       int idx = rand.nextInt(byteArray.length);
       byte b = byteArray[idx];
       byteArray[idx] = byteArray[byteArray.length-1];
