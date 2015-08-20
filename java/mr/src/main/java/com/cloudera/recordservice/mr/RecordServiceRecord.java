@@ -22,7 +22,6 @@ import java.util.Map;
 
 import org.apache.hadoop.io.BooleanWritable;
 import org.apache.hadoop.io.ByteWritable;
-import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.FloatWritable;
 import org.apache.hadoop.io.IntWritable;
@@ -33,7 +32,6 @@ import org.apache.hadoop.io.Writable;
 
 import com.cloudera.recordservice.core.ByteArray;
 import com.cloudera.recordservice.core.Records.Record;
-import com.cloudera.recordservice.mr.Schema.ColumnInfo;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 
@@ -59,9 +57,8 @@ public class RecordServiceRecord implements Writable {
     columnValObjects_ = new Writable[schema_.getNumColumns()];
     colNameToIdx_ = Maps.newHashMapWithExpectedSize(schema_.getNumColumns());
     for (int i = 0; i < schema_.getNumColumns(); ++i) {
-      ColumnInfo columnInfo = schema_.getColumnInfo(i);
-      colNameToIdx_.put(columnInfo.getColumnName(), i);
-      columnValObjects_[i] = columnInfo.getType().getWritableInstance();
+      colNameToIdx_.put(schema.getColumnInfo(i).name, i);
+      columnValObjects_[i] = getWritableInstance(schema.getColumnInfo(i).type.typeId);
     }
   }
 
@@ -73,10 +70,10 @@ public class RecordServiceRecord implements Writable {
    * This is a performance critical method.
    */
   public void reset(Record record) {
-    if (record.getSchema().getColsSize() != schema_.getNumColumns()) {
+    if (record.getSchema().cols.size() != schema_.getNumColumns()) {
       throw new IllegalArgumentException(String.format("Schema for new record does " +
         "not match existing schema: %d (new) != %d (existing)",
-        record.getSchema().getColsSize(), schema_.getNumColumns()));
+        record.getSchema().cols.size(), schema_.getNumColumns()));
     }
 
     for (int i = 0; i < schema_.getNumColumns(); ++i) {
@@ -85,9 +82,9 @@ public class RecordServiceRecord implements Writable {
         continue;
       }
       columnVals_[i] = columnValObjects_[i];
-      ColumnInfo cInfo = schema_.getColumnInfo(i);
+      com.cloudera.recordservice.core.Schema.ColumnDesc cInfo = schema_.getColumnInfo(i);
       Preconditions.checkNotNull(cInfo);
-      switch (cInfo.getType()) {
+      switch (cInfo.type.typeId) {
         case BOOLEAN:
           ((BooleanWritable) columnValObjects_[i]).set(record.nextBoolean(i));
           break;
@@ -117,13 +114,7 @@ public class RecordServiceRecord implements Writable {
           ((Text) columnValObjects_[i]).set(
               s.byteBuffer().array(), s.offset(), s.len());
           break;
-
-        case BINARY:
-          ByteArray b = record.nextByteArray(i);
-          ((BytesWritable) columnValObjects_[i]).set(
-              b.byteBuffer().array(), b.offset(), b.len());
-          break;
-        case TIMESTAMP:
+        case TIMESTAMP_NANOS:
           ((TimestampNanosWritable) columnValObjects_[i]).set(
               record.nextTimestampNanos(i));
           break;
@@ -132,7 +123,7 @@ public class RecordServiceRecord implements Writable {
               record.nextDecimal(i));
           break;
         default:
-          throw new RuntimeException("Unsupported type: " + cInfo.getType());
+          throw new RuntimeException("Unsupported type: " + cInfo);
       }
     }
   }
@@ -168,7 +159,7 @@ public class RecordServiceRecord implements Writable {
     columnValObjects_ = new Writable[schema_.getNumColumns()];
     for (int i = 0; i < columnValObjects_.length; i++) {
       try {
-        columnValObjects_[i] = schema_.getColumnInfo(i).getType().getWritableInstance();
+        columnValObjects_[i] = getWritableInstance(schema_.getColumnInfo(i).type.typeId);
         columnValObjects_[i].readFields(in);
       } catch (Exception e) {
         throw new IOException(e);
@@ -177,4 +168,26 @@ public class RecordServiceRecord implements Writable {
   }
 
   public Schema getSchema() { return schema_; }
+
+  /**
+   * Returns the corresponding Writable object for this column type.
+   */
+  public Writable getWritableInstance(com.cloudera.recordservice.core.Schema.Type type) {
+    switch (type) {
+      case BOOLEAN: return new BooleanWritable();
+      case TINYINT: return new ByteWritable();
+      case SMALLINT: return new ShortWritable();
+      case INT: return new IntWritable();
+      case BIGINT: return new LongWritable();
+      case FLOAT: return new FloatWritable();
+      case DOUBLE: return new DoubleWritable();
+      case VARCHAR:
+      case CHAR:
+      case STRING: return new Text();
+      case TIMESTAMP_NANOS: return new TimestampNanosWritable();
+      case DECIMAL: return new DecimalWritable();
+      default: throw new UnsupportedOperationException(
+          "Unexpected type: " + toString());
+    }
+  }
 }

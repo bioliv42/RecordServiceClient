@@ -17,14 +17,13 @@ package com.cloudera.recordservice.sample;
 
 import java.io.IOException;
 
-import org.apache.thrift.TException;
-
+import com.cloudera.recordservice.core.PlanRequestResult;
+import com.cloudera.recordservice.core.RecordServiceException;
 import com.cloudera.recordservice.core.RecordServicePlannerClient;
 import com.cloudera.recordservice.core.Records;
 import com.cloudera.recordservice.core.Records.Record;
 import com.cloudera.recordservice.core.Request;
 import com.cloudera.recordservice.core.WorkerClientUtil;
-import com.cloudera.recordservice.thrift.TPlanRequestResult;
 
 /**
  * This is similar to SampleClient except built using the client APIs.
@@ -34,13 +33,13 @@ public class SampleClientLib {
 
   static final String DEFAULT_QUERY = "select n_nationkey from tpch.nation";
 
-  private static void runQuery(String query) throws TException, IOException {
+  private static void runQuery(String query) throws RecordServiceException, IOException {
     /**
      * First talk to the plan service to get the list of tasks.
      */
     System.out.println("Running request: " + query);
 
-    TPlanRequestResult planResult = new RecordServicePlannerClient.Builder()
+    PlanRequestResult planResult = new RecordServicePlannerClient.Builder()
         .planRequest("localhost", PLANNER_PORT, Request.createSqlRequest(query));
 
     long totalTimeMs = 0;
@@ -70,7 +69,7 @@ public class SampleClientLib {
     System.out.println("Took " + totalTimeMs + "ms");
   }
 
-  public static void main(String[] args) throws TException, IOException {
+  public static void main(String[] args) throws RecordServiceException, IOException {
     String query = DEFAULT_QUERY;
     if (args.length > 0) query = args[0];
     runQuery(query);

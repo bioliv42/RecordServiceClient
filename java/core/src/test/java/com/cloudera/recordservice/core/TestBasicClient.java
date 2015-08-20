@@ -19,9 +19,12 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -31,20 +34,6 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.cloudera.recordservice.thrift.TColumnDesc;
-import com.cloudera.recordservice.thrift.TErrorCode;
-import com.cloudera.recordservice.thrift.TFetchResult;
-import com.cloudera.recordservice.thrift.TGetSchemaResult;
-import com.cloudera.recordservice.thrift.TLoggingLevel;
-import com.cloudera.recordservice.thrift.TNetworkAddress;
-import com.cloudera.recordservice.thrift.TPlanRequestResult;
-import com.cloudera.recordservice.thrift.TRecordServiceException;
-import com.cloudera.recordservice.thrift.TSchema;
-import com.cloudera.recordservice.thrift.TStats;
-import com.cloudera.recordservice.thrift.TTask;
-import com.cloudera.recordservice.thrift.TTaskStatus;
-import com.cloudera.recordservice.thrift.TType;
-import com.cloudera.recordservice.thrift.TTypeId;
 import com.google.common.collect.Lists;
 
 // TODO: add more stats tests.
@@ -54,7 +43,7 @@ public class TestBasicClient extends TestBase {
   static final int WORKER_PORT = 40100;
 
   void fetchAndVerifyCount(Records records, int expectedCount)
-      throws TRecordServiceException, IOException {
+      throws RecordServiceException, IOException {
     int count = 0;
     while (records.hasNext()) {
       ++count;
@@ -65,7 +54,7 @@ public class TestBasicClient extends TestBase {
 
   @Test
   public void testPlannerConnection()
-      throws RuntimeException, IOException, TRecordServiceException {
+      throws RuntimeException, IOException, RecordServiceException {
     RecordServicePlannerClient planner = new RecordServicePlannerClient.Builder()
         .connect("localhost", PLANNER_PORT);
     // Test calling the APIs after close.
@@ -138,7 +127,7 @@ public class TestBasicClient extends TestBase {
 
   @Test
   public void testWorkerConnection()
-      throws RuntimeException, IOException, TRecordServiceException {
+      throws RuntimeException, IOException, RecordServiceException {
     RecordServiceWorkerClient worker =
         new RecordServiceWorkerClient.Builder().connect("localhost", WORKER_PORT);
 
@@ -154,13 +143,13 @@ public class TestBasicClient extends TestBase {
   }
 
   @Test
-  public void testConnectionDrop() throws IOException, TRecordServiceException {
+  public void testConnectionDrop() throws IOException, RecordServiceException {
     RecordServicePlannerClient planner = new RecordServicePlannerClient.Builder()
         .setMaxAttempts(1).setSleepDurationMs(0)
         .connect("localhost", PLANNER_PORT);
-    TPlanRequestResult plan =
+    PlanRequestResult plan =
         planner.planRequest(Request.createTableScanRequest("tpch.nation"));
-    TTask task = plan.getTasks().get(0);
+    Task task = plan.tasks.get(0);
 
     // Simulate dropping the connection.
     planner.closeConnectionForTesting();
@@ -266,7 +255,7 @@ public class TestBasicClient extends TestBase {
   }
 
   @Test
-  public void testPlannerTimeout() throws IOException, TRecordServiceException {
+  public void testPlannerTimeout() throws IOException, RecordServiceException {
     boolean exceptionThrown = false;
     try {
       new RecordServicePlannerClient.Builder()
@@ -295,11 +284,11 @@ public class TestBasicClient extends TestBase {
   }
 
   @Test
-  public void testWorkerTimeout() throws IOException, TRecordServiceException {
-    TTask task = new RecordServicePlannerClient.Builder()
+  public void testWorkerTimeout() throws IOException, RecordServiceException {
+    Task task = new RecordServicePlannerClient.Builder()
         .setMaxAttempts(1).setSleepDurationMs(0)
         .planRequest("localhost", PLANNER_PORT,
-            Request.createTableScanRequest("tpch.nation")).getTasks().get(0);
+            Request.createTableScanRequest("tpch.nation")).tasks.get(0);
 
     boolean exceptionThrown = false;
 
@@ -318,7 +307,7 @@ public class TestBasicClient extends TestBase {
   }
 
   @Test
-  public void testWorkerMisuse() throws IOException, TRecordServiceException {
+  public void testWorkerMisuse() throws IOException, RecordServiceException {
     // Connect to a non-existent service
     boolean exceptionThrown = false;
     try {
@@ -340,28 +329,12 @@ public class TestBasicClient extends TestBase {
     } finally {
       assertTrue(exceptionThrown);
     }
-
-    // Connect to the worker and send it bad tasks.
-    RecordServiceWorkerClient worker =
-        new RecordServiceWorkerClient.Builder().connect("localhost", WORKER_PORT);
-    exceptionThrown = false;
-    try {
-      TTask task = new TTask();
-      task.task = ByteBuffer.allocate(100);
-      worker.execTask(task);
-    } catch (TRecordServiceException e) {
-      exceptionThrown = true;
-      assertEquals(TErrorCode.INVALID_TASK, e.getCode());
-      assertTrue(e.getMessage().contains("Task is corrupt."));
-    } finally {
-      assertTrue(exceptionThrown);
-    }
   }
 
   @Test
-  public void testTaskClose() throws TRecordServiceException, IOException {
+  public void testTaskClose() throws RecordServiceException, IOException {
     // Plan the request
-    TPlanRequestResult plan = new RecordServicePlannerClient.Builder()
+    PlanRequestResult plan = new RecordServicePlannerClient.Builder()
         .planRequest("localhost", PLANNER_PORT,
             Request.createSqlRequest("select * from tpch.nation"));
 
@@ -397,9 +370,9 @@ public class TestBasicClient extends TestBase {
   }
 
   @Test
-  public void testNation() throws TRecordServiceException, IOException {
+  public void testNation() throws RecordServiceException, IOException {
     // Plan the request
-    TPlanRequestResult plan = new RecordServicePlannerClient.Builder()
+    PlanRequestResult plan = new RecordServicePlannerClient.Builder()
         .planRequest("localhost", PLANNER_PORT,
             Request.createSqlRequest("select * from tpch.nation"));
     assertTrue(plan.warnings.isEmpty());
@@ -412,9 +385,18 @@ public class TestBasicClient extends TestBase {
         new RecordServiceWorkerClient.Builder().connect("localhost", WORKER_PORT);
 
     assertEquals(1, plan.tasks.size());
-    assertEquals(3, plan.tasks.get(0).local_hosts.size());
+    assertEquals(3, plan.tasks.get(0).localHosts.size());
 
-    Records records = worker.execAndFetch(plan.tasks.get(0));
+    // Serialize/deserialize the task to test the Task code.
+    Task originalTask = plan.tasks.get(0);
+    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+    originalTask.serialize(new DataOutputStream(outputStream));
+    outputStream.flush();
+    ByteArrayInputStream inputStream =
+        new ByteArrayInputStream(outputStream.toByteArray());
+    Task task = Task.deserialize(new DataInputStream(inputStream));
+
+    Records records = worker.execAndFetch(task);
     int numRecords = 0;
     while (records.hasNext()) {
       Records.Record record = records.next();
@@ -444,14 +426,14 @@ public class TestBasicClient extends TestBase {
     assertTrue(exceptionThrown);
 
     // Verify status
-    TTaskStatus status = records.getStatus();
-    assertTrue(status.data_errors.isEmpty());
+    TaskStatus status = records.getStatus();
+    assertTrue(status.dataErrors.isEmpty());
     assertTrue(status.warnings.isEmpty());
 
-    TStats stats = status.stats;
-    assertEquals(1, stats.task_progress, 0.01);
-    assertEquals(25, stats.num_records_read);
-    assertEquals(25, stats.num_records_returned);
+    TaskStatus.Stats stats = status.stats;
+    assertEquals(1, stats.taskProgress, 0.01);
+    assertEquals(25, stats.numRecordsRead);
+    assertEquals(25, stats.numRecordsReturned);
     assertEquals(1, records.progress(), 0.01);
 
     records.close();
@@ -467,9 +449,9 @@ public class TestBasicClient extends TestBase {
   }
 
   @Test
-  public void testNationWithUtility() throws TRecordServiceException, IOException {
+  public void testNationWithUtility() throws RecordServiceException, IOException {
     // Plan the request
-    TPlanRequestResult plan = new RecordServicePlannerClient.Builder()
+    PlanRequestResult plan = new RecordServicePlannerClient.Builder()
         .planRequest("localhost", PLANNER_PORT,
             Request.createSqlRequest("select * from tpch.nation"));
     for (int i = 0; i < plan.tasks.size(); ++i) {
@@ -507,40 +489,48 @@ public class TestBasicClient extends TestBase {
   /*
    * Verifies that the schema matches the alltypes table schema.
    */
-  private void verifyAllTypesSchema(TSchema schema) {
+  private void verifyAllTypesSchema(Schema inputSchema) throws IOException {
+    // Serialize/deserialize the schema before verifying to test that code.
+    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+    inputSchema.serialize(new DataOutputStream(outputStream));
+    outputStream.flush();
+    ByteArrayInputStream inputStream =
+        new ByteArrayInputStream(outputStream.toByteArray());
+    Schema schema = Schema.deserialize(new DataInputStream(inputStream));
+
     assertEquals(12, schema.cols.size());
     assertEquals("bool_col", schema.cols.get(0).name);
-    assertEquals(TTypeId.BOOLEAN, schema.cols.get(0).type.type_id);
+    assertEquals(Schema.Type.BOOLEAN, schema.cols.get(0).type.typeId);
     assertEquals("tinyint_col", schema.cols.get(1).name);
-    assertEquals(TTypeId.TINYINT, schema.cols.get(1).type.type_id);
+    assertEquals(Schema.Type.TINYINT, schema.cols.get(1).type.typeId);
     assertEquals("smallint_col", schema.cols.get(2).name);
-    assertEquals(TTypeId.SMALLINT, schema.cols.get(2).type.type_id);
+    assertEquals(Schema.Type.SMALLINT, schema.cols.get(2).type.typeId);
     assertEquals("int_col", schema.cols.get(3).name);
-    assertEquals(TTypeId.INT, schema.cols.get(3).type.type_id);
+    assertEquals(Schema.Type.INT, schema.cols.get(3).type.typeId);
     assertEquals("bigint_col", schema.cols.get(4).name);
-    assertEquals(TTypeId.BIGINT, schema.cols.get(4).type.type_id);
+    assertEquals(Schema.Type.BIGINT, schema.cols.get(4).type.typeId);
     assertEquals("float_col", schema.cols.get(5).name);
-    assertEquals(TTypeId.FLOAT, schema.cols.get(5).type.type_id);
+    assertEquals(Schema.Type.FLOAT, schema.cols.get(5).type.typeId);
     assertEquals("double_col", schema.cols.get(6).name);
-    assertEquals(TTypeId.DOUBLE, schema.cols.get(6).type.type_id);
+    assertEquals(Schema.Type.DOUBLE, schema.cols.get(6).type.typeId);
     assertEquals("string_col", schema.cols.get(7).name);
-    assertEquals(TTypeId.STRING, schema.cols.get(7).type.type_id);
+    assertEquals(Schema.Type.STRING, schema.cols.get(7).type.typeId);
     assertEquals("varchar_col", schema.cols.get(8).name);
-    assertEquals(TTypeId.VARCHAR, schema.cols.get(8).type.type_id);
+    assertEquals(Schema.Type.VARCHAR, schema.cols.get(8).type.typeId);
     assertEquals(10, schema.cols.get(8).type.len);
     assertEquals("char_col", schema.cols.get(9).name);
-    assertEquals(TTypeId.CHAR, schema.cols.get(9).type.type_id);
+    assertEquals(Schema.Type.CHAR, schema.cols.get(9).type.typeId);
     assertEquals(5, schema.cols.get(9).type.len);
     assertEquals("timestamp_col", schema.cols.get(10).name);
-    assertEquals(TTypeId.TIMESTAMP_NANOS, schema.cols.get(10).type.type_id);
+    assertEquals(Schema.Type.TIMESTAMP_NANOS, schema.cols.get(10).type.typeId);
     assertEquals("decimal_col", schema.cols.get(11).name);
-    assertEquals(TTypeId.DECIMAL, schema.cols.get(11).type.type_id);
+    assertEquals(Schema.Type.DECIMAL, schema.cols.get(11).type.typeId);
     assertEquals(24, schema.cols.get(11).type.precision);
     assertEquals(10, schema.cols.get(11).type.scale);
   }
 
-  private void verifyAllTypes(TPlanRequestResult plan)
-      throws TRecordServiceException, IOException {
+  private void verifyAllTypes(PlanRequestResult plan)
+      throws RecordServiceException, IOException {
     RecordServiceWorkerClient worker =
       new RecordServiceWorkerClient.Builder().connect("localhost", WORKER_PORT);
 
@@ -552,7 +542,7 @@ public class TestBasicClient extends TestBase {
     // Execute the task
     assertEquals(2, plan.tasks.size());
     for (int t = 0; t < 2; ++t) {
-      assertEquals(3, plan.tasks.get(t).local_hosts.size());
+      assertEquals(3, plan.tasks.get(t).localHosts.size());
       Records records = worker.execAndFetch(plan.tasks.get(t));
       verifyAllTypesSchema(records.getSchema());
       assertTrue(records.hasNext());
@@ -601,39 +591,39 @@ public class TestBasicClient extends TestBase {
   /*
    * Verifies that the schema matches the nation table schema.
    */
-  private void verifyNationSchema(TSchema schema, boolean parquet) {
+  private void verifyNationSchema(Schema schema, boolean parquet) {
     assertEquals(4, schema.cols.size());
     assertEquals("n_nationkey", schema.cols.get(0).name);
-    assertEquals(parquet ? TTypeId.INT : TTypeId.SMALLINT,
-        schema.cols.get(0).type.type_id);
+    assertEquals(parquet ? Schema.Type.INT : Schema.Type.SMALLINT,
+        schema.cols.get(0).type.typeId);
     assertEquals("n_name", schema.cols.get(1).name);
-    assertEquals(TTypeId.STRING, schema.cols.get(1).type.type_id);
+    assertEquals(Schema.Type.STRING, schema.cols.get(1).type.typeId);
     assertEquals("n_regionkey", schema.cols.get(2).name);
-    assertEquals(parquet ? TTypeId.INT : TTypeId.SMALLINT,
-        schema.cols.get(2).type.type_id);
+    assertEquals(parquet ? Schema.Type.INT : Schema.Type.SMALLINT,
+        schema.cols.get(2).type.typeId);
     assertEquals("n_comment", schema.cols.get(3).name);
-    assertEquals(TTypeId.STRING, schema.cols.get(3).type.type_id);
+    assertEquals(Schema.Type.STRING, schema.cols.get(3).type.typeId);
   }
 
   @Test
-  public void testAllTypes() throws TRecordServiceException, IOException {
+  public void testAllTypes() throws RecordServiceException, IOException {
     // Just ask for the schema.
-    TGetSchemaResult schemaResult = new RecordServicePlannerClient.Builder()
+    GetSchemaResult schemaResult = new RecordServicePlannerClient.Builder()
         .getSchema("localhost", PLANNER_PORT,
             Request.createTableScanRequest("rs.alltypes"));
 
     verifyAllTypesSchema(schemaResult.schema);
 
     // Plan the request
-    TPlanRequestResult plan = new RecordServicePlannerClient.Builder()
+    PlanRequestResult plan = new RecordServicePlannerClient.Builder()
         .planRequest("localhost", PLANNER_PORT,
             Request.createSqlRequest("select * from rs.alltypes"));
     verifyAllTypes(plan);
   }
 
   @Test
-  public void testAllTypesEmpty() throws TRecordServiceException, IOException {
-    TPlanRequestResult plan = new RecordServicePlannerClient.Builder()
+  public void testAllTypesEmpty() throws RecordServiceException, IOException {
+    PlanRequestResult plan = new RecordServicePlannerClient.Builder()
         .planRequest("localhost", PLANNER_PORT,
             Request.createSqlRequest("select * from rs.alltypes_empty"));
     assertEquals(0, plan.tasks.size());
@@ -642,11 +632,11 @@ public class TestBasicClient extends TestBase {
 
   // Returns all the strings from running plan as a list. The plan must
   // have a schema that returns a single string column.
-  List<String> getAllStrings(TPlanRequestResult plan)
-      throws TRecordServiceException, IOException {
+  List<String> getAllStrings(PlanRequestResult plan)
+      throws RecordServiceException, IOException {
     List<String> results = Lists.newArrayList();
     assertEquals(1, plan.schema.cols.size());
-    assertEquals(TTypeId.STRING, plan.schema.cols.get(0).type.type_id);
+    assertEquals(Schema.Type.STRING, plan.schema.cols.get(0).type.typeId);
     for (int i = 0; i < plan.tasks.size(); ++i) {
       Records records = null;
       try {
@@ -663,8 +653,8 @@ public class TestBasicClient extends TestBase {
   }
 
   @Test
-  public void testNationPath() throws IOException, TRecordServiceException {
-    TPlanRequestResult plan = new RecordServicePlannerClient.Builder()
+  public void testNationPath() throws IOException, RecordServiceException {
+    PlanRequestResult plan = new RecordServicePlannerClient.Builder()
         .planRequest("localhost", PLANNER_PORT,
             Request.createPathRequest("/test-warehouse/tpch.nation/"));
     assertEquals(1, plan.tasks.size());
@@ -674,20 +664,23 @@ public class TestBasicClient extends TestBase {
   }
 
   @Test
-  public void testNationPathWithSchema() throws IOException, TRecordServiceException {
+  public void testNationPathWithSchema() throws IOException, RecordServiceException {
     RecordServiceWorkerClient worker =
         new RecordServiceWorkerClient.Builder().connect("localhost", WORKER_PORT);
 
     // The normal schema is SMALLINT, STRING, SMALLINT, STRING
 
     // Test with an all string schema.
-    TSchema schema = new TSchema();
-    schema.cols = new ArrayList<TColumnDesc>();
-    schema.cols.add(new TColumnDesc(new TType(TTypeId.STRING), "col1"));
-    schema.cols.add(new TColumnDesc(new TType(TTypeId.STRING), "col2"));
-    schema.cols.add(new TColumnDesc(new TType(TTypeId.STRING), "col3"));
-    schema.cols.add(new TColumnDesc(new TType(TTypeId.STRING), "col4"));
-    TPlanRequestResult plan = new RecordServicePlannerClient.Builder()
+    Schema schema = new Schema();
+    schema.cols.add(
+        new Schema.ColumnDesc("col1", new Schema.TypeDesc(Schema.Type.STRING)));
+    schema.cols.add(
+        new Schema.ColumnDesc("col2", new Schema.TypeDesc(Schema.Type.STRING)));
+    schema.cols.add(
+        new Schema.ColumnDesc("col3", new Schema.TypeDesc(Schema.Type.STRING)));
+    schema.cols.add(
+        new Schema.ColumnDesc("col4", new Schema.TypeDesc(Schema.Type.STRING)));
+    PlanRequestResult plan = new RecordServicePlannerClient.Builder()
         .planRequest("localhost", PLANNER_PORT,
             Request.createPathRequest("/test-warehouse/tpch.nation/")
                 .setSchema(schema).setFieldDelimiter('|'));
@@ -697,7 +690,7 @@ public class TestBasicClient extends TestBase {
     assertEquals(schema.cols.size(), plan.schema.cols.size());
     for (int i = 0; i < plan.schema.cols.size(); ++i) {
       assertEquals(schema.cols.get(i).name, plan.schema.cols.get(i).name);
-      assertEquals(schema.cols.get(i).type.type_id, plan.schema.cols.get(i).type.type_id);
+      assertEquals(schema.cols.get(i).type.typeId, plan.schema.cols.get(i).type.typeId);
     }
 
     Records records = worker.execAndFetch(plan.tasks.get(0));
@@ -717,8 +710,10 @@ public class TestBasicClient extends TestBase {
     records.close();
 
     // Remap string cols to smallint, these should return null.
-    schema.cols.set(1, new TColumnDesc(new TType(TTypeId.SMALLINT), "col2"));
-    schema.cols.set(3, new TColumnDesc(new TType(TTypeId.SMALLINT), "col4"));
+    schema.cols.set(1,
+        new Schema.ColumnDesc("col2", new Schema.TypeDesc(Schema.Type.SMALLINT)));
+    schema.cols.set(3,
+        new Schema.ColumnDesc("col4", new Schema.TypeDesc(Schema.Type.SMALLINT)));
 
     plan = new RecordServicePlannerClient.Builder().planRequest("localhost", PLANNER_PORT,
         Request.createPathRequest("/test-warehouse/tpch.nation/")
@@ -729,7 +724,7 @@ public class TestBasicClient extends TestBase {
     assertEquals(schema.cols.size(), plan.schema.cols.size());
     for (int i = 0; i < plan.schema.cols.size(); ++i) {
       assertEquals(schema.cols.get(i).name, plan.schema.cols.get(i).name);
-      assertEquals(schema.cols.get(i).type.type_id, plan.schema.cols.get(i).type.type_id);
+      assertEquals(schema.cols.get(i).type.typeId, plan.schema.cols.get(i).type.typeId);
     }
 
     records = worker.execAndFetch(plan.tasks.get(0));
@@ -751,31 +746,35 @@ public class TestBasicClient extends TestBase {
   }
 
   @Test
-  public void testAllTypesPathWithSchema() throws IOException, TRecordServiceException {
+  public void testAllTypesPathWithSchema() throws IOException, RecordServiceException {
     // Create the exact all types schema.
-    TSchema schema = new TSchema();
-    schema.cols = new ArrayList<TColumnDesc>();
-    schema.cols.add(new TColumnDesc(new TType(TTypeId.BOOLEAN), "bool_col"));
-    schema.cols.add(new TColumnDesc(new TType(TTypeId.TINYINT), "tinyint_col"));
-    schema.cols.add(new TColumnDesc(new TType(TTypeId.SMALLINT), "smallint_col"));
-    schema.cols.add(new TColumnDesc(new TType(TTypeId.INT), "int_col"));
-    schema.cols.add(new TColumnDesc(new TType(TTypeId.BIGINT), "bigint_col"));
-    schema.cols.add(new TColumnDesc(new TType(TTypeId.FLOAT), "float_col"));
-    schema.cols.add(new TColumnDesc(new TType(TTypeId.DOUBLE), "double_col"));
-    schema.cols.add(new TColumnDesc(new TType(TTypeId.STRING), "string_col"));
-    TType varCharType = new TType(TTypeId.VARCHAR);
-    varCharType.setLen(10);
-    schema.cols.add(new TColumnDesc(varCharType, "varchar_col"));
-    TType charType = new TType(TTypeId.CHAR);
-    charType.setLen(5);
-    schema.cols.add(new TColumnDesc(charType, "char_col"));
-    schema.cols.add(new TColumnDesc(new TType(TTypeId.TIMESTAMP_NANOS), "timestamp_col"));
-    TType decimalType = new TType(TTypeId.DECIMAL);
-    decimalType.setPrecision(24);
-    decimalType.setScale(10);
-    schema.cols.add(new TColumnDesc(decimalType, "decimal_col"));
+    Schema schema = new Schema();
+    schema.cols.add(
+        new Schema.ColumnDesc("bool_col", new Schema.TypeDesc(Schema.Type.BOOLEAN)));
+    schema.cols.add(
+        new Schema.ColumnDesc("tinyint_col", new Schema.TypeDesc(Schema.Type.TINYINT)));
+    schema.cols.add(
+        new Schema.ColumnDesc("smallint_col", new Schema.TypeDesc(Schema.Type.SMALLINT)));
+    schema.cols.add(
+        new Schema.ColumnDesc("int_col", new Schema.TypeDesc(Schema.Type.INT)));
+    schema.cols.add(
+        new Schema.ColumnDesc("bigint_col", new Schema.TypeDesc(Schema.Type.BIGINT)));
+    schema.cols.add(
+        new Schema.ColumnDesc("float_col", new Schema.TypeDesc(Schema.Type.FLOAT)));
+    schema.cols.add(
+        new Schema.ColumnDesc("double_col", new Schema.TypeDesc(Schema.Type.DOUBLE)));
+    schema.cols.add(
+        new Schema.ColumnDesc("string_col", new Schema.TypeDesc(Schema.Type.STRING)));
+    schema.cols.add(
+        new Schema.ColumnDesc("varchar_col", Schema.TypeDesc.createVarCharType(10)));
+    schema.cols.add(
+        new Schema.ColumnDesc("char_col", Schema.TypeDesc.createCharType(5)));
+    schema.cols.add(
+        new Schema.ColumnDesc("timestamp_col", new Schema.TypeDesc(Schema.Type.TIMESTAMP_NANOS)));
+    schema.cols.add(
+        new Schema.ColumnDesc("decimal_col", Schema.TypeDesc.createDecimalType(24, 10)));
 
-    TPlanRequestResult plan = new RecordServicePlannerClient.Builder()
+    PlanRequestResult plan = new RecordServicePlannerClient.Builder()
         .planRequest("localhost", PLANNER_PORT,
               Request.createPathRequest("/test-warehouse/rs.db/alltypes")
                   .setSchema(schema));
@@ -783,8 +782,8 @@ public class TestBasicClient extends TestBase {
   }
 
   @Test
-  public void testNationPathParquet() throws IOException, TRecordServiceException {
-    TPlanRequestResult plan = new RecordServicePlannerClient.Builder()
+  public void testNationPathParquet() throws IOException, RecordServiceException {
+    PlanRequestResult plan = new RecordServicePlannerClient.Builder()
         .planRequest("localhost", PLANNER_PORT,
             Request.createPathRequest("/test-warehouse/tpch_nation_parquet/nation.parq"));
     assertEquals(1, plan.tasks.size());
@@ -793,7 +792,7 @@ public class TestBasicClient extends TestBase {
   }
 
   @Test
-  public void testPathWithLowTimeout() throws TRecordServiceException{
+  public void testPathWithLowTimeout() throws RecordServiceException{
     boolean exceptionThrown = false;
     try {
       new RecordServicePlannerClient.Builder()
@@ -821,21 +820,21 @@ public class TestBasicClient extends TestBase {
   }
 
   void testNationPathGlobbing(String path, boolean expectMatch)
-      throws IOException, TRecordServiceException {
+      throws IOException, RecordServiceException {
     try {
       // TODO: figure out why it timeout with the default timeout - 20 secs
-      TPlanRequestResult plan = new RecordServicePlannerClient.Builder()
+      PlanRequestResult plan = new RecordServicePlannerClient.Builder()
           .setTimeoutMs(0)
           .planRequest("localhost", PLANNER_PORT, Request.createPathRequest(path));
       assertEquals(expectMatch ? 1 : 0, plan.tasks.size());
-    } catch (TRecordServiceException e) {
+    } catch (RecordServiceException e) {
       assertFalse(expectMatch);
-      assertTrue(e.code == TErrorCode.INVALID_REQUEST);
+      assertTrue(e.code == RecordServiceException.ErrorCode.INVALID_REQUEST);
     }
   }
 
   @Test
-  public void testNationPathGlobbing() throws IOException, TRecordServiceException {
+  public void testNationPathGlobbing() throws IOException, RecordServiceException {
     // Non-matches
     testNationPathGlobbing("/test-warehouse/tpch.nation/*t", false);
     testNationPathGlobbing("/test-warehouse/tpch.nation/tbl", false);
@@ -857,8 +856,8 @@ public class TestBasicClient extends TestBase {
   }
 
   @Test
-  public void testNationPathFiltering() throws IOException, TRecordServiceException {
-    TPlanRequestResult plan = new RecordServicePlannerClient.Builder()
+  public void testNationPathFiltering() throws IOException, RecordServiceException {
+    PlanRequestResult plan = new RecordServicePlannerClient.Builder()
         .planRequest("localhost", PLANNER_PORT,
             Request.createPathRequest("/test-warehouse/tpch.nation/")
                 .setQuery("select * from __PATH__ where record like '6|FRANCE%'"));
@@ -869,8 +868,8 @@ public class TestBasicClient extends TestBase {
   }
 
   @Test
-  public void testNationView() throws IOException, TRecordServiceException {
-    TPlanRequestResult plan = new RecordServicePlannerClient.Builder()
+  public void testNationView() throws IOException, RecordServiceException {
+    PlanRequestResult plan = new RecordServicePlannerClient.Builder()
         .planRequest("localhost", PLANNER_PORT,
             Request.createTableScanRequest("rs.nation_projection"));
     assertEquals(1, plan.tasks.size());
@@ -913,12 +912,12 @@ public class TestBasicClient extends TestBase {
   }
 
   @Test
-  public void testFetchSize() throws IOException, TRecordServiceException {
-    TPlanRequestResult plan = new RecordServicePlannerClient.Builder()
+  public void testFetchSize() throws IOException, RecordServiceException {
+    PlanRequestResult plan = new RecordServicePlannerClient.Builder()
         .planRequest("localhost", PLANNER_PORT,
             Request.createTableScanRequest("tpch.nation"));
 
-    TNetworkAddress addr = plan.tasks.get(0).local_hosts.get(0);
+    NetworkAddress addr = plan.tasks.get(0).localHosts.get(0);
     RecordServiceWorkerClient worker = new RecordServiceWorkerClient.Builder()
         .setFetchSize(1)
         .connect(addr.hostname, addr.port);
@@ -926,9 +925,9 @@ public class TestBasicClient extends TestBase {
     RecordServiceWorkerClient.TaskState handle = worker.execTask(plan.tasks.get(0));
     int numRecords = 0;
     while (true) {
-      TFetchResult result = worker.fetch(handle);
-      numRecords += result.num_records;
-      assertTrue(result.num_records == 0 || result.num_records == 1);
+      FetchResult result = worker.fetch(handle);
+      numRecords += result.numRecords;
+      assertTrue(result.numRecords == 0 || result.numRecords == 1);
       if (result.done) break;
     }
     assertEquals(25, numRecords);
@@ -936,11 +935,11 @@ public class TestBasicClient extends TestBase {
   }
 
   @Test
-  public void testMemLimitExceeded() throws IOException, TRecordServiceException {
-    TPlanRequestResult plan = new RecordServicePlannerClient.Builder()
+  public void testMemLimitExceeded() throws IOException, RecordServiceException {
+    PlanRequestResult plan = new RecordServicePlannerClient.Builder()
         .planRequest("localhost", PLANNER_PORT,
             Request.createTableScanRequest("tpch.nation"));
-    TNetworkAddress addr = plan.tasks.get(0).local_hosts.get(0);
+    NetworkAddress addr = plan.tasks.get(0).localHosts.get(0);
     RecordServiceWorkerClient worker = new RecordServiceWorkerClient.Builder()
         .setMemLimit(new Long(200))
         .connect(addr.hostname, addr.port);
@@ -949,9 +948,9 @@ public class TestBasicClient extends TestBase {
     boolean exceptionThrown = false;
     try {
       worker.fetch(handle);
-    } catch (TRecordServiceException e) {
+    } catch (RecordServiceException e) {
       exceptionThrown = true;
-      assertEquals(TErrorCode.OUT_OF_MEMORY, e.code);
+      assertEquals(RecordServiceException.ErrorCode.OUT_OF_MEMORY, e.code);
     }
     assertTrue(exceptionThrown);
     worker.closeTask(handle);
@@ -960,9 +959,9 @@ public class TestBasicClient extends TestBase {
     exceptionThrown = false;
     try {
       worker.execAndFetch(plan.tasks.get(0));
-    } catch (TRecordServiceException e) {
+    } catch (RecordServiceException e) {
       exceptionThrown = true;
-      assertEquals(TErrorCode.OUT_OF_MEMORY, e.code);
+      assertEquals(RecordServiceException.ErrorCode.OUT_OF_MEMORY, e.code);
     }
     assertTrue(exceptionThrown);
 
@@ -971,8 +970,8 @@ public class TestBasicClient extends TestBase {
   }
 
   @Test
-  public void testEmptyProjection() throws IOException, TRecordServiceException {
-    TPlanRequestResult plan = new RecordServicePlannerClient.Builder()
+  public void testEmptyProjection() throws IOException, RecordServiceException {
+    PlanRequestResult plan = new RecordServicePlannerClient.Builder()
         .planRequest("localhost", PLANNER_PORT,
             Request.createProjectionRequest("tpch.nation", null));
     assertEquals(1, plan.tasks.size());
@@ -980,7 +979,7 @@ public class TestBasicClient extends TestBase {
     // Verify schema
     assertEquals(1, plan.schema.cols.size());
     assertEquals("count(*)", plan.schema.cols.get(0).name);
-    assertEquals(TTypeId.BIGINT, plan.schema.cols.get(0).type.type_id);
+    assertEquals(Schema.Type.BIGINT, plan.schema.cols.get(0).type.typeId);
 
     // Verify count(*) result.
     Records records = WorkerClientUtil.execTask(plan, 0);
@@ -1004,27 +1003,27 @@ public class TestBasicClient extends TestBase {
     assertEquals(2, plan.schema.cols.size());
     assertEquals("count(*)", plan.schema.cols.get(0).name);
     assertEquals("count(*)", plan.schema.cols.get(1).name);
-    assertEquals(TTypeId.BIGINT, plan.schema.cols.get(0).type.type_id);
-    assertEquals(TTypeId.BIGINT, plan.schema.cols.get(1).type.type_id);
+    assertEquals(Schema.Type.BIGINT, plan.schema.cols.get(0).type.typeId);
+    assertEquals(Schema.Type.BIGINT, plan.schema.cols.get(1).type.typeId);
   }
 
   @Test
-  public void testProjection() throws IOException, TRecordServiceException {
-    TPlanRequestResult plan = new RecordServicePlannerClient.Builder()
+  public void testProjection() throws IOException, RecordServiceException {
+    PlanRequestResult plan = new RecordServicePlannerClient.Builder()
         .planRequest("localhost", PLANNER_PORT, Request.createProjectionRequest(
             "tpch.nation", Lists.newArrayList("n_comment")));
     assertEquals(1, plan.tasks.size());
     assertEquals(1, plan.schema.cols.size());
     assertEquals("n_comment", plan.schema.cols.get(0).name);
-    assertEquals(TTypeId.STRING, plan.schema.cols.get(0).type.type_id);
+    assertEquals(Schema.Type.STRING, plan.schema.cols.get(0).type.typeId);
   }
 
   @Test
-  public void testLimit() throws IOException, TRecordServiceException {
-    TPlanRequestResult plan = new RecordServicePlannerClient.Builder()
+  public void testLimit() throws IOException, RecordServiceException {
+    PlanRequestResult plan = new RecordServicePlannerClient.Builder()
         .planRequest("localhost", PLANNER_PORT,
             Request.createTableScanRequest("tpch.nation"));
-    TNetworkAddress addr = plan.tasks.get(0).local_hosts.get(0);
+    NetworkAddress addr = plan.tasks.get(0).localHosts.get(0);
 
     // Set with a higher than count limit.
     RecordServiceWorkerClient worker = new RecordServiceWorkerClient.Builder()
@@ -1053,15 +1052,15 @@ public class TestBasicClient extends TestBase {
   }
 
   @Test
-  public void testServerLoggingLevels() throws IOException, TRecordServiceException {
-    TPlanRequestResult plan = new RecordServicePlannerClient.Builder()
+  public void testServerLoggingLevels() throws IOException, RecordServiceException {
+    PlanRequestResult plan = new RecordServicePlannerClient.Builder()
         .planRequest("localhost", PLANNER_PORT,
             Request.createTableScanRequest("tpch.nation"));
     assertEquals(1, plan.tasks.size());
-    TNetworkAddress addr = plan.tasks.get(0).local_hosts.get(0);
+    NetworkAddress addr = plan.tasks.get(0).localHosts.get(0);
 
     RecordServiceWorkerClient worker = new RecordServiceWorkerClient.Builder()
-        .setLoggingLevel(TLoggingLevel.ALL)
+        .setLoggingLevel(LoggingLevel.ALL)
         .connect(addr.hostname, addr.port);
     fetchAndVerifyCount(worker.execAndFetch(plan.tasks.get(0)), 25);
     worker.close();
@@ -1080,15 +1079,15 @@ public class TestBasicClient extends TestBase {
   }
 
   @Test
-  public void testNonLocalWorker() throws IOException, TRecordServiceException {
-    TPlanRequestResult plan = new RecordServicePlannerClient.Builder()
+  public void testNonLocalWorker() throws IOException, RecordServiceException {
+    PlanRequestResult plan = new RecordServicePlannerClient.Builder()
         .planRequest("localhost", PLANNER_PORT,
             Request.createTableScanRequest("tpch.nation"));
     assertEquals(1, plan.tasks.size());
 
     // Clear the local hosts.
-    TTask task = plan.tasks.get(0);
-    task.local_hosts.clear();
+    Task task = plan.tasks.get(0);
+    task.localHosts.clear();
     Records records = WorkerClientUtil.execTask(plan, 0);
     fetchAndVerifyCount(records, 25);
     records.close();

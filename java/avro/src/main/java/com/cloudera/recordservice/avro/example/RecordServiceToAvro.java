@@ -22,11 +22,11 @@ import org.apache.avro.generic.GenericData;
 
 import com.cloudera.recordservice.avro.GenericRecords;
 import com.cloudera.recordservice.avro.SchemaUtils;
+import com.cloudera.recordservice.core.PlanRequestResult;
+import com.cloudera.recordservice.core.RecordServiceException;
 import com.cloudera.recordservice.core.RecordServicePlannerClient;
 import com.cloudera.recordservice.core.Request;
 import com.cloudera.recordservice.core.WorkerClientUtil;
-import com.cloudera.recordservice.thrift.TPlanRequestResult;
-import com.cloudera.recordservice.thrift.TRecordServiceException;
 
 /**
  * Example utility that converts results returned from the RecordService
@@ -35,11 +35,11 @@ import com.cloudera.recordservice.thrift.TRecordServiceException;
 public class RecordServiceToAvro {
   static final int PLANNER_PORT = 40000;
 
-  public static void main(String[] args) throws TRecordServiceException, IOException {
+  public static void main(String[] args) throws RecordServiceException, IOException {
     String query = "select * from tpch.nation";
     if (args.length == 2) query = args[1];
 
-    TPlanRequestResult plan = new RecordServicePlannerClient.Builder()
+    PlanRequestResult plan = new RecordServicePlannerClient.Builder()
         .planRequest("localhost", PLANNER_PORT, Request.createSqlRequest(query));
     Schema avroSchema = SchemaUtils.convertSchema(plan.schema);
     System.out.println("Avro Schema:\n" + avroSchema);

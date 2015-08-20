@@ -16,12 +16,11 @@
 package com.cloudera.recordservice.mr.security;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.security.token.Token;
 
-import com.cloudera.recordservice.thrift.TDelegationToken;
+import com.cloudera.recordservice.core.DelegationToken;
 
 /**
  * Utilities to handle token serialization/deserialization.
@@ -30,22 +29,21 @@ public class TokenUtils {
   /**
    * Serializes a token to TDelegationToken.
    */
-  public static TDelegationToken
-      toTDelegationToken(Token<DelegationTokenIdentifier> t) throws IOException {
-    TDelegationToken token = new TDelegationToken();
-    token.identifier = encodeAsString(t.getIdentifier());
-    token.password = encodeAsString(t.getPassword());
-    token.token = ByteBuffer.wrap(t.encodeToUrlString().getBytes());
-    return token;
+  public static DelegationToken
+      toDelegationToken(Token<DelegationTokenIdentifier> t) throws IOException {
+    return new DelegationToken(
+        encodeAsString(t.getIdentifier()),
+        encodeAsString(t.getPassword()),
+        t.encodeToUrlString().getBytes());
   }
 
   /**
    * Deserializes a token from TDelegationToken
    */
   public static Token<DelegationTokenIdentifier>
-      fromTDelegationToken(TDelegationToken t) throws IOException {
+      fromTDelegationToken(DelegationToken t) throws IOException {
     Token<DelegationTokenIdentifier> token = new Token<DelegationTokenIdentifier>();
-    token.decodeFromUrlString(new String(t.getToken()));
+    token.decodeFromUrlString(new String(t.token));
     return token;
   }
 

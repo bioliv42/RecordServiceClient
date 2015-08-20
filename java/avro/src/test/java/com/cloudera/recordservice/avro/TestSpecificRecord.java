@@ -24,19 +24,19 @@ import org.junit.Test;
 import com.cloudera.recordservice.avro.SpecificRecords.ResolveBy;
 import com.cloudera.recordservice.avro.nation.NationAll;
 import com.cloudera.recordservice.avro.nation.NationKeyName;
+import com.cloudera.recordservice.core.PlanRequestResult;
+import com.cloudera.recordservice.core.RecordServiceException;
 import com.cloudera.recordservice.core.RecordServicePlannerClient;
 import com.cloudera.recordservice.core.Request;
 import com.cloudera.recordservice.core.TestBase;
 import com.cloudera.recordservice.core.WorkerClientUtil;
-import com.cloudera.recordservice.thrift.TPlanRequestResult;
-import com.cloudera.recordservice.thrift.TRecordServiceException;
 
 public class TestSpecificRecord extends TestBase {
   static final int PLANNER_PORT = 40000;
 
   @Test
-  public void testNationAll() throws TRecordServiceException, IOException {
-    TPlanRequestResult plan = new RecordServicePlannerClient.Builder()
+  public void testNationAll() throws RecordServiceException, IOException {
+    PlanRequestResult plan = new RecordServicePlannerClient.Builder()
         .planRequest("localhost", PLANNER_PORT,
             Request.createSqlRequest("select * from tpch.nation"));
 
@@ -63,8 +63,8 @@ public class TestSpecificRecord extends TestBase {
   }
 
   @Test
-  public void testNationProjection() throws TRecordServiceException, IOException {
-    TPlanRequestResult plan = new RecordServicePlannerClient.Builder()
+  public void testNationProjection() throws RecordServiceException, IOException {
+    PlanRequestResult plan = new RecordServicePlannerClient.Builder()
         .planRequest("localhost", PLANNER_PORT,
             Request.createSqlRequest("select n_nationkey, n_name from tpch.nation"));
 

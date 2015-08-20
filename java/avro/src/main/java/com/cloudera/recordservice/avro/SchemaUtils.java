@@ -22,17 +22,16 @@ import org.apache.avro.Schema;
 import org.apache.avro.Schema.Type;
 import org.apache.avro.specific.SpecificData;
 
-import com.cloudera.recordservice.thrift.TSchema;
-
 public class SchemaUtils {
   /**
-   * Converts a TSchema to a avro schema.
+   * Converts a RecordService schema to an avro schema.
    */
-  public static org.apache.avro.Schema convertSchema(TSchema schema) {
+  public static Schema convertSchema(
+      com.cloudera.recordservice.core.Schema schema) {
     List<Schema.Field> fields = new ArrayList<Schema.Field>();
-    for (int i = 0; i < schema.getColsSize(); ++i) {
+    for (int i = 0; i < schema.cols.size(); ++i) {
       Schema fieldSchema = null;
-      switch (schema.getCols().get(i).type.type_id) {
+      switch (schema.cols.get(i).type.typeId) {
         case BOOLEAN: fieldSchema = Schema.create(Type.BOOLEAN); break;
         case TINYINT:
         case SMALLINT:
@@ -43,13 +42,13 @@ public class SchemaUtils {
         case STRING:
         case VARCHAR:
         case CHAR:
-          fieldSchema = Schema.create(Type.STRING); break;
+          fieldSchema = Schema.create(Type.STRING);
+          break;
         default:
           throw new RuntimeException(
-              "Unsupported type: " + schema.getCols().get(i).type);
+              "Unsupported type: " + schema.cols.get(i).type.typeId);
       }
-      fields.add(new Schema.Field(
-          schema.getCols().get(i).getName(), fieldSchema, "", null));
+      fields.add(new Schema.Field(schema.cols.get(i).name, fieldSchema, "", null));
     }
     return Schema.createRecord(fields);
   }

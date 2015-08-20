@@ -22,9 +22,6 @@ import java.io.IOException;
 
 import org.junit.Test;
 
-import com.cloudera.recordservice.thrift.TPlanRequestResult;
-import com.cloudera.recordservice.thrift.TRecordServiceException;
-
 // Tests fault tolerance and retry logic in the client library.
 public class TestFaultTolerance extends TestBase {
   static final int PLANNER_PORT = 40000;
@@ -32,8 +29,8 @@ public class TestFaultTolerance extends TestBase {
 
   @Test
   public void testWorkerRetry() throws RuntimeException, IOException,
-        TRecordServiceException, InterruptedException {
-    TPlanRequestResult plan = new RecordServicePlannerClient.Builder()
+        RecordServiceException, InterruptedException {
+    PlanRequestResult plan = new RecordServicePlannerClient.Builder()
         .planRequest("localhost", PLANNER_PORT,
             Request.createTableScanRequest("tpch.nation"));
     RecordServiceWorkerClient worker = new RecordServiceWorkerClient.Builder()
@@ -59,7 +56,7 @@ public class TestFaultTolerance extends TestBase {
 
   @Test
   public void testPlannerRetry() throws RuntimeException, IOException,
-          TRecordServiceException, InterruptedException {
+          RecordServiceException, InterruptedException {
     RecordServicePlannerClient planner = new RecordServicePlannerClient.Builder()
         .setMaxAttempts(3).setSleepDurationMs(10)
         .connect("localhost", PLANNER_PORT);

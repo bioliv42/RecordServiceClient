@@ -37,7 +37,6 @@ import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.cloudera.recordservice.thrift.TDelegationToken;
 import com.cloudera.recordservice.thrift.TProtocolVersion;
 
 /**
@@ -73,9 +72,9 @@ public class ThriftUtils {
   // implement all 4 of the callbacks used for DIGEST-MD5 although we are only
   // interested in the user and password.
   private static final class DigestHandler implements CallbackHandler {
-    private final TDelegationToken token_;
+    private final DelegationToken token_;
 
-    public DigestHandler(TDelegationToken token) {
+    public DigestHandler(DelegationToken token) {
       assert token != null;
       token_ = token;
     }
@@ -111,8 +110,8 @@ public class ThriftUtils {
    * be kerberized. If delegationToken is not null, we will authenticate using
    * delegation tokens.
    */
-  protected static TTransport createTransport(String service, String hostname, int port,
-      String kerberosPrincipal, TDelegationToken token, int timeoutMs) throws IOException {
+  static TTransport createTransport(String service, String hostname, int port,
+      String kerberosPrincipal, DelegationToken token, int timeoutMs) throws IOException {
     if (kerberosPrincipal != null && token != null) {
       throw new IllegalArgumentException(
           "Cannot specify both kerberos principal and delegation token.");
@@ -175,7 +174,7 @@ public class ThriftUtils {
     return transport;
   }
 
-  protected static ProtocolVersion fromThrift(TProtocolVersion v) {
+  static ProtocolVersion fromThrift(TProtocolVersion v) {
     switch (v) {
     case V1: return ProtocolVersion.V1;
     default:

@@ -26,8 +26,8 @@ import org.apache.hadoop.mapred.Reporter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.cloudera.recordservice.core.RecordServiceException;
 import com.cloudera.recordservice.mr.RecordReaderCore;
-import com.cloudera.recordservice.thrift.TRecordServiceException;
 
 public abstract class RecordServiceInputFormatBase<K, V> implements InputFormat<K, V> {
 
@@ -85,7 +85,7 @@ public abstract class RecordServiceInputFormatBase<K, V> implements InputFormat<
         try {
           com.cloudera.recordservice.mapreduce.RecordServiceInputFormatBase.setCounters(
               reporter_, reader_.records().getStatus().stats);
-        } catch (TRecordServiceException e) {
+        } catch (RecordServiceException e) {
           LOG.debug("Could not populate counters: " + e);
         }
         reader_.close();

@@ -28,9 +28,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.cloudera.recordservice.core.ByteArray;
+import com.cloudera.recordservice.core.RecordServiceException;
 import com.cloudera.recordservice.mr.Schema;
-import com.cloudera.recordservice.mr.Schema.ColumnType;
-import com.cloudera.recordservice.thrift.TRecordServiceException;
 
 /**
  * Input format that implements the mr TextInputFormat.
@@ -66,7 +65,8 @@ public class TextInputFormat extends
    */
   public static void verifyTextSchema(Schema schema) {
     if (schema.getNumColumns() != 1 ||
-        schema.getColumnInfo(0).getType() != ColumnType.STRING) {
+        schema.getColumnInfo(0).type.typeId !=
+            com.cloudera.recordservice.core.Schema.Type.STRING) {
       throw new RuntimeException(
           "Mismatched schema: TextInputFormat only accepts request that " +
           "return a single STRING column. Schema=" + schema);
@@ -92,7 +92,7 @@ public class TextInputFormat extends
     public boolean nextKeyValue() throws IOException, InterruptedException {
       try {
         if (!reader_.records().hasNext()) return false;
-      } catch (TRecordServiceException e) {
+      } catch (RecordServiceException e) {
         // TODO: is this the most proper way to deal with this in MR?
         throw new IOException("Could not fetch record.", e);
       }

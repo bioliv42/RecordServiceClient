@@ -19,8 +19,8 @@ import java.io.IOException;
 
 import org.apache.avro.generic.GenericData.Record;
 
+import com.cloudera.recordservice.core.RecordServiceException;
 import com.cloudera.recordservice.core.Records;
-import com.cloudera.recordservice.thrift.TRecordServiceException;
 
 /**
  * This class takes a Records object and provides an iterator interface to
@@ -33,7 +33,7 @@ import com.cloudera.recordservice.thrift.TRecordServiceException;
 public class GenericRecords implements RecordIterator {
   private Records records_;
   private org.apache.avro.Schema avroSchema_;
-  private com.cloudera.recordservice.thrift.TSchema schema_;
+  private com.cloudera.recordservice.core.Schema schema_;
 
   public GenericRecords(Records records) {
     records_ = records  ;
@@ -49,7 +49,7 @@ public class GenericRecords implements RecordIterator {
   /**
    * Returns true if there are more records, false otherwise.
    */
-  public boolean hasNext() throws IOException, TRecordServiceException {
+  public boolean hasNext() throws IOException, RecordServiceException {
     return records_.hasNext();
   }
 
@@ -57,15 +57,15 @@ public class GenericRecords implements RecordIterator {
    * Returns and advances to the next record. Throws exception if
    * there are no more records.
    */
-  public Record next() throws IOException, TRecordServiceException {
+  public Record next() throws IOException, RecordServiceException {
     Records.Record rsRecord = records_.next();
     Record record = new Record(avroSchema_);
-    for (int i = 0; i < schema_.getColsSize(); ++i) {
+    for (int i = 0; i < schema_.cols.size(); ++i) {
       if (rsRecord.isNull(i)) {
         record.put(i, null);
         continue;
       }
-      switch(schema_.getCols().get(i).type.type_id) {
+      switch(schema_.cols.get(i).type.typeId) {
         case BOOLEAN: record.put(i, rsRecord.nextBoolean(i)); break;
         case TINYINT: record.put(i, (int)rsRecord.nextByte(i)); break;
         case SMALLINT: record.put(i, (int)rsRecord.nextShort(i)); break;
@@ -79,7 +79,7 @@ public class GenericRecords implements RecordIterator {
           record.put(i, rsRecord.nextByteArray(i).toString()); break;
         default:
           throw new RuntimeException(
-              "Unsupported type: " + schema_.getCols().get(i).type);
+              "Unsupported type: " + schema_.cols.get(i).type.typeId);
       }
     }
     return record;

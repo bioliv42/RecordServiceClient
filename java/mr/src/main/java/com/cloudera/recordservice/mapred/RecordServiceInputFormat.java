@@ -24,8 +24,8 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 
+import com.cloudera.recordservice.core.RecordServiceException;
 import com.cloudera.recordservice.mr.RecordServiceRecord;
-import com.cloudera.recordservice.thrift.TRecordServiceException;
 
 /**
  * Implementation of RecordServiceInputFormat.
@@ -56,7 +56,7 @@ public class RecordServiceInputFormat extends
         throws IOException {
       try {
         if (!reader_.records().hasNext()) return false;
-      } catch (TRecordServiceException e) {
+      } catch (RecordServiceException e) {
         // TODO: is this the most proper way to deal with this in MR?
         throw new IOException("Could not fetch record.", e);
       }

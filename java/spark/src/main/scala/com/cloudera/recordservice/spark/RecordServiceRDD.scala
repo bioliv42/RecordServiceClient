@@ -18,10 +18,10 @@
 
 package com.cloudera.recordservice.spark
 
+import com.cloudera.recordservice.core.Schema
 import com.cloudera.recordservice.core.TimestampNanos
 import com.cloudera.recordservice.mr.DecimalWritable
 import com.cloudera.recordservice.mr.TimestampNanosWritable
-import com.cloudera.recordservice.thrift._
 import org.apache.hadoop.io._
 import org.apache.spark._
 
@@ -63,7 +63,7 @@ class RecordServiceRDD(@transient sc: SparkContext)
       // Array for return values. value[i] = writables[i] if the value is non-null
       var value = new Array[Writable](partition.schema.cols.size())
 
-      var schema:Array[TTypeId] = simplifySchema(partition.schema)
+      var schema:Array[Schema.Type] = simplifySchema(partition.schema)
 
       // Register an on-task-completion callback to close the input stream.
       context.addTaskCompletionListener{ context => closeIfNeeded() }
@@ -73,18 +73,18 @@ class RecordServiceRDD(@transient sc: SparkContext)
       // Iterate over the schema to create the correct writable types
       for (i <- 0 until writables.length) {
         schema(i) match {
-          case TTypeId.BOOLEAN => writables(i) = new BooleanWritable()
-          case TTypeId.TINYINT => writables(i) = new ByteWritable()
-          case TTypeId.SMALLINT => writables(i) = new ShortWritable()
-          case TTypeId.INT => writables(i) = new IntWritable()
-          case TTypeId.BIGINT => writables(i) = new LongWritable()
-          case TTypeId.FLOAT => writables(i) = new FloatWritable()
-          case TTypeId.DOUBLE => writables(i) = new DoubleWritable()
-          case TTypeId.STRING => writables(i) = new Text()
-          case TTypeId.TIMESTAMP_NANOS => writables(i) = new TimestampNanosWritable()
-          case TTypeId.DECIMAL => writables(i) = new DecimalWritable()
+          case Schema.Type.BOOLEAN => writables(i) = new BooleanWritable()
+          case Schema.Type.TINYINT => writables(i) = new ByteWritable()
+          case Schema.Type.SMALLINT => writables(i) = new ShortWritable()
+          case Schema.Type.INT => writables(i) = new IntWritable()
+          case Schema.Type.BIGINT => writables(i) = new LongWritable()
+          case Schema.Type.FLOAT => writables(i) = new FloatWritable()
+          case Schema.Type.DOUBLE => writables(i) = new DoubleWritable()
+          case Schema.Type.STRING => writables(i) = new Text()
+          case Schema.Type.TIMESTAMP_NANOS => writables(i) = new TimestampNanosWritable()
+          case Schema.Type.DECIMAL => writables(i) = new DecimalWritable()
           case _ => throw new SparkException(
-            "Unsupported type: " + partition.schema.cols.get(i).getType().type_id)
+            "Unsupported type: " + partition.schema.cols.get(i).`type`.typeId)
         }
       }
 
@@ -102,29 +102,29 @@ class RecordServiceRDD(@transient sc: SparkContext)
           } else {
             value(i) = writables(i)
             schema(i) match {
-              case TTypeId.BOOLEAN =>
+              case Schema.Type.BOOLEAN =>
                 value(i).asInstanceOf[BooleanWritable].set(record.nextBoolean(i))
-              case TTypeId.TINYINT =>
+              case Schema.Type.TINYINT =>
                 value(i).asInstanceOf[ByteWritable].set(record.nextByte(i))
-              case TTypeId.SMALLINT =>
+              case Schema.Type.SMALLINT =>
                 value(i).asInstanceOf[ShortWritable].set(record.nextShort(i))
-              case TTypeId.INT =>
+              case Schema.Type.INT =>
                 value(i).asInstanceOf[IntWritable].set(record.nextInt(i))
-              case TTypeId.BIGINT =>
+              case Schema.Type.BIGINT =>
                 value(i).asInstanceOf[LongWritable].set(record.nextLong(i))
-              case TTypeId.FLOAT =>
+              case Schema.Type.FLOAT =>
                 value(i).asInstanceOf[FloatWritable].set(record.nextFloat(i))
-              case TTypeId.DOUBLE =>
+              case Schema.Type.DOUBLE =>
                 value(i).asInstanceOf[DoubleWritable].set(record.nextDouble(i))
-              case TTypeId.STRING =>
+              case Schema.Type.STRING =>
                 // TODO: ensure this doesn't copy.
                 val v = record.nextByteArray(i)
                 value(i).asInstanceOf[Text].set(
                     v.byteBuffer().array(), v.offset(), v.len())
-              case TTypeId.TIMESTAMP_NANOS =>
+              case Schema.Type.TIMESTAMP_NANOS =>
                 val ts:TimestampNanos = record.nextTimestampNanos(i)
                 value(i).asInstanceOf[TimestampNanosWritable].set(ts)
-              case TTypeId.DECIMAL =>
+              case Schema.Type.DECIMAL =>
                 value(i).asInstanceOf[DecimalWritable].set(record.nextDecimal(i))
               case _ => assert(false)
             }

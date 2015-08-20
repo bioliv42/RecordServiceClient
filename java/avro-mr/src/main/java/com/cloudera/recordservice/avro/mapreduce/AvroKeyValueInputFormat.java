@@ -28,8 +28,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.cloudera.recordservice.avro.GenericRecords;
+import com.cloudera.recordservice.core.RecordServiceException;
 import com.cloudera.recordservice.mapreduce.RecordServiceInputFormatBase;
-import com.cloudera.recordservice.thrift.TRecordServiceException;
 
 /**
  * Input format which provides identical functionality to
@@ -109,7 +109,7 @@ public class AvroKeyValueInputFormat<K, V> extends
         if (!records_.hasNext()) return false;
         //mCurrentRecord.datum(records_.next());
         return true;
-      } catch (TRecordServiceException e) {
+      } catch (RecordServiceException e) {
         throw new IOException("Could not fetch record.", e);
       }
     }

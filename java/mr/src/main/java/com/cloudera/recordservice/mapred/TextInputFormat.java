@@ -11,8 +11,7 @@ import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 
 import com.cloudera.recordservice.core.ByteArray;
-import com.cloudera.recordservice.mr.Schema.ColumnType;
-import com.cloudera.recordservice.thrift.TRecordServiceException;
+import com.cloudera.recordservice.core.RecordServiceException;
 
 /**
  * Input format that implements the mr TextInputFormat.
@@ -43,7 +42,8 @@ public class TextInputFormat extends RecordServiceInputFormatBase<LongWritable, 
       super(split, config, reporter);
       // TODO: reimplement guava's Preconditions instead of assert.
       assert(reader_.schema().getNumColumns() == 1);
-      assert(reader_.schema().getColumnInfo(0).getType() == ColumnType.STRING);
+      assert(reader_.schema().getColumnInfo(0).type.typeId ==
+          com.cloudera.recordservice.core.Schema.Type.STRING);
     }
 
     @Override
@@ -54,7 +54,7 @@ public class TextInputFormat extends RecordServiceInputFormatBase<LongWritable, 
         value.set(data.byteBuffer().array(), data.offset(), data.len());
         key.set(recordNum_++);
         return true;
-      } catch (TRecordServiceException e) {
+      } catch (RecordServiceException e) {
         throw new IOException("Could not get next record.", e);
       }
     }

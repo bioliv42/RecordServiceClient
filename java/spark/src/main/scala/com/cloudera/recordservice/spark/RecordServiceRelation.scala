@@ -20,8 +20,7 @@ package com.cloudera.recordservice.spark
 
 import org.apache.commons.lang.StringEscapeUtils.escapeSql
 
-import com.cloudera.recordservice.core.{Request, RecordServicePlannerClient}
-import com.cloudera.recordservice.thrift.{TSchema, TTypeId, TType}
+import com.cloudera.recordservice.core.{Request, RecordServicePlannerClient, Schema}
 import org.apache.hadoop.io._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.expressions.SpecificMutableRow
@@ -69,30 +68,31 @@ case class RecordServiceRelation(table:String, size:Option[Long])(
       super.sizeInBytes
     }
 
-  def remapType(rsType:TType) : DataType = {
-    val result = rsType.type_id match {
-      case TTypeId.BOOLEAN => BooleanType
-      case TTypeId.TINYINT => IntegerType
-      case TTypeId.SMALLINT => IntegerType
-      case TTypeId.INT => IntegerType
-      case TTypeId.BIGINT => LongType
-      case TTypeId.FLOAT => FloatType
-      case TTypeId.DOUBLE => DoubleType
-      case TTypeId.STRING => StringType
-      case TTypeId.DECIMAL => DataTypes.createDecimalType(rsType.precision, rsType.scale)
-      case TTypeId.TIMESTAMP_NANOS => DataTypes.TimestampType
+  def remapType(rsType:Schema.TypeDesc) : DataType = {
+    val result = rsType.typeId match {
+      case Schema.Type.BOOLEAN => BooleanType
+      case Schema.Type.TINYINT => IntegerType
+      case Schema.Type.SMALLINT => IntegerType
+      case Schema.Type.INT => IntegerType
+      case Schema.Type.BIGINT => LongType
+      case Schema.Type.FLOAT => FloatType
+      case Schema.Type.DOUBLE => DoubleType
+      case Schema.Type.STRING => StringType
+      case Schema.Type.DECIMAL =>
+        DataTypes.createDecimalType(rsType.precision, rsType.scale)
+      case Schema.Type.TIMESTAMP_NANOS => DataTypes.TimestampType
       case _ => null
     }
     if (result == null) throw new SparkException("Unsupported type " + rsType)
     result
   }
 
-  def convertSchema(rsSchema: TSchema): StructType = {
-    val fields = new Array[StructField](rsSchema.getCols.size())
-    for (i <- 0 until rsSchema.getCols.size()) {
+  def convertSchema(rsSchema: Schema): StructType = {
+    val fields = new Array[StructField](rsSchema.cols.size())
+    for (i <- 0 until rsSchema.cols.size()) {
       val colName = rsSchema.cols.get(i).name
       val metadata = new MetadataBuilder().putString("name", colName)
-      val colType = remapType(rsSchema.cols.get(i).getType)
+      val colType = remapType(rsSchema.cols.get(i).`type`)
       fields(i) = StructField(colName, colType, true, metadata.build())
     }
     new StructType(fields)
@@ -183,7 +183,7 @@ case class RecordServiceRelation(table:String, size:Option[Long])(
       baseRDD.mapPartitions(input => {
         val record = input.next()
         assert(record.getSchema().cols.size() == 1)
-        assert(record.getSchema().cols.get(0).getType.type_id == TTypeId.BIGINT)
+        assert(record.getSchema().cols.get(0).`type`.typeId == Schema.Type.BIGINT)
         var numRows = record.nextLong(0)
         new Iterator[Row] {
           override def next(): Row = {
@@ -209,20 +209,21 @@ case class RecordServiceRelation(table:String, size:Option[Long])(
           if (x.isNull(i)) {
             mutableRow.setNullAt(i)
           } else {
-            rsSchema.cols.get(i).getType.type_id match {
-              case TTypeId.BOOLEAN => mutableRow.setBoolean(i, x.nextBoolean(i))
-              case TTypeId.TINYINT => mutableRow.setInt(i, x.nextByte(i))
-              case TTypeId.SMALLINT => mutableRow.setInt(i, x.nextShort(i).toInt)
-              case TTypeId.INT => mutableRow.setInt(i, x.nextInt(i))
-              case TTypeId.BIGINT => mutableRow.setLong(i, x.nextLong(i))
-              case TTypeId.FLOAT => mutableRow.setFloat(i, x.nextFloat(i))
-              case TTypeId.DOUBLE => mutableRow.setDouble(i, x.nextDouble(i))
-              case TTypeId.STRING => mutableRow.setString(i, x.nextByteArray(i).toString)
-              case TTypeId.DECIMAL =>
+            rsSchema.cols.get(i).`type`.typeId match {
+              case Schema.Type.BOOLEAN => mutableRow.setBoolean(i, x.nextBoolean(i))
+              case Schema.Type.TINYINT => mutableRow.setInt(i, x.nextByte(i))
+              case Schema.Type.SMALLINT => mutableRow.setInt(i, x.nextShort(i).toInt)
+              case Schema.Type.INT => mutableRow.setInt(i, x.nextInt(i))
+              case Schema.Type.BIGINT => mutableRow.setLong(i, x.nextLong(i))
+              case Schema.Type.FLOAT => mutableRow.setFloat(i, x.nextFloat(i))
+              case Schema.Type.DOUBLE => mutableRow.setDouble(i, x.nextDouble(i))
+              case Schema.Type.STRING =>
+                mutableRow.setString(i, x.nextByteArray(i).toString)
+              case Schema.Type.DECIMAL =>
                 val d = x.nextDecimal(i)
                 mutableRow.update(i,
                   Decimal(d.toBigDecimal, d.getPrecision, d.getScale))
-              case TTypeId.TIMESTAMP_NANOS =>
+              case Schema.Type.TIMESTAMP_NANOS =>
                   mutableRow.update(i, x.nextTimestampNanos(i).toTimeStamp)
               case _ => assert(false)
             }

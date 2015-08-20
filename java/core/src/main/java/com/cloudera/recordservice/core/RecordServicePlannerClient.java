@@ -28,7 +28,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.cloudera.recordservice.thrift.RecordServicePlanner;
-import com.cloudera.recordservice.thrift.TDelegationToken;
 import com.cloudera.recordservice.thrift.TErrorCode;
 import com.cloudera.recordservice.thrift.TGetSchemaResult;
 import com.cloudera.recordservice.thrift.TPlanRequestParams;
@@ -38,7 +37,6 @@ import com.cloudera.recordservice.thrift.TRecordServiceException;
 /**
  * Java client for the RecordServicePlanner. This class is not thread safe.
  */
-// TODO: This class should not expose the raw Thrift objects, should use proper logger.
 public class RecordServicePlannerClient {
   private final static Logger LOG =
       LoggerFactory.getLogger(RecordServicePlannerClient.class);
@@ -48,7 +46,7 @@ public class RecordServicePlannerClient {
   private TProtocol protocol_;
   private ProtocolVersion protocolVersion_ = null;
   private String kerberosPrincipal_ = null;
-  private TDelegationToken delegationToken_ = null;
+  private DelegationToken delegationToken_ = null;
 
   // Number of consecutive attempts before failing any request.
   private int maxAttempts_ = 3;
@@ -95,7 +93,7 @@ public class RecordServicePlannerClient {
       return this;
     }
 
-    public Builder setDelegationToken(TDelegationToken token) {
+    public Builder setDelegationToken(DelegationToken token) {
       if (client_.kerberosPrincipal_ != null) {
         // TODO: is this the behavior we want? Maybe try one then the other?
         throw new IllegalStateException(
@@ -120,7 +118,7 @@ public class RecordServicePlannerClient {
      * set options, and the caller must call close().
      */
     public RecordServicePlannerClient connect(String hostname, int port)
-        throws TRecordServiceException, IOException {
+        throws RecordServiceException, IOException {
       client_.connect(hostname, port);
       return client_;
     }
@@ -128,8 +126,8 @@ public class RecordServicePlannerClient {
     /**
      * Get the plan request result.
      */
-    public TPlanRequestResult planRequest(String hostname, int port, Request request)
-        throws IOException, TRecordServiceException {
+    public PlanRequestResult planRequest(String hostname, int port, Request request)
+        throws IOException, RecordServiceException {
       try {
         client_.connect(hostname, port);
         return client_.planRequest(request);
@@ -141,8 +139,8 @@ public class RecordServicePlannerClient {
     /**
      * Get the schema for 'request'.
      */
-    public TGetSchemaResult getSchema(String hostname, int port, Request request)
-        throws IOException, TRecordServiceException {
+    public GetSchemaResult getSchema(String hostname, int port, Request request)
+        throws IOException, RecordServiceException {
       try {
         client_.connect(hostname, port);
         return client_.getSchema(request);
@@ -161,7 +159,7 @@ public class RecordServicePlannerClient {
    * Opens a connection to the RecordServicePlanner.
    */
   private void connect(String hostname, int port)
-      throws IOException, TRecordServiceException {
+      throws IOException, RecordServiceException {
     TTransport transport = ThriftUtils.createTransport("RecordServicePlanner", hostname,
         port, kerberosPrincipal_, delegationToken_, timeoutMs_);
     protocol_ = new TBinaryProtocol(transport);
@@ -177,7 +175,7 @@ public class RecordServicePlannerClient {
         TRecordServiceException ex = new TRecordServiceException();
         ex.code = TErrorCode.SERVICE_BUSY;
         ex.message = "Server is likely busy. Try the request again.";
-        throw ex;
+        throw new RecordServiceException(ex);
       }
       throw new IOException("Could not get serivce protocol version.", e);
     } catch (TException e) {
@@ -211,8 +209,8 @@ public class RecordServicePlannerClient {
    * Calls the RecordServicePlanner to generate a new plan - set of tasks that can be
    * executed using a RecordServiceWorker.
    */
-  public TPlanRequestResult planRequest(Request request)
-      throws IOException, TRecordServiceException {
+  public PlanRequestResult planRequest(Request request)
+      throws IOException, RecordServiceException {
     validateIsConnected();
 
     TPlanRequestResult planResult;
@@ -230,7 +228,7 @@ public class RecordServicePlannerClient {
         planParams.setUser(USER);
         planResult = plannerClient_.PlanRequest(planParams);
         LOG.debug("PlanRequest generated {} tasks.", planResult.tasks.size());
-        return planResult;
+        return new PlanRequestResult(planResult);
       } catch (TRecordServiceException e) {
         switch (e.code) {
           case SERVICE_BUSY:
@@ -239,7 +237,7 @@ public class RecordServicePlannerClient {
             sleepForRetry();
             break;
           default:
-            throw e;
+            throw new RecordServiceException(e);
         }
       } catch (TException e) {
         connected = false;
@@ -254,8 +252,8 @@ public class RecordServicePlannerClient {
   /**
    * Calls the RecordServicePlanner to return the schema for a request.
    */
-  public TGetSchemaResult getSchema(Request request)
-      throws IOException, TRecordServiceException {
+  public GetSchemaResult getSchema(Request request)
+      throws IOException, RecordServiceException {
     validateIsConnected();
     TGetSchemaResult result;
     TException firstException = null;
@@ -272,7 +270,7 @@ public class RecordServicePlannerClient {
         planParams.setUser(USER);
         planParams.client_version = TProtocolVersion.V1;
         result = plannerClient_.GetSchema(planParams);
-        return result;
+        return new GetSchemaResult(result);
       } catch (TRecordServiceException e) {
         switch (e.code) {
           case SERVICE_BUSY:
@@ -281,7 +279,7 @@ public class RecordServicePlannerClient {
             sleepForRetry();
             break;
           default:
-            throw e;
+            throw new RecordServiceException(e);
         }
       } catch (TException e) {
         connected = false;
@@ -297,12 +295,12 @@ public class RecordServicePlannerClient {
    * Returns a delegation token for the current user. If renewer is set, this renewer
    * can renew the token.
    */
-  public TDelegationToken getDelegationToken(String renewer)
-      throws TRecordServiceException, IOException {
+  public DelegationToken getDelegationToken(String renewer)
+      throws RecordServiceException, IOException {
     try {
-      return plannerClient_.GetDelegationToken(USER, renewer);
+      return new DelegationToken(plannerClient_.GetDelegationToken(USER, renewer));
     } catch (TRecordServiceException e) {
-      throw e;
+      throw new RecordServiceException(e);
     } catch (TException e) {
       throw new IOException("Could not get delegation token.", e);
     }
@@ -311,12 +309,12 @@ public class RecordServicePlannerClient {
   /**
    * Cancels the token.
    */
-  public void cancelDelegationToken(TDelegationToken token)
-      throws TRecordServiceException, IOException {
+  public void cancelDelegationToken(DelegationToken token)
+      throws RecordServiceException, IOException {
     try {
-      plannerClient_.CancelDelegationToken(token);
+      plannerClient_.CancelDelegationToken(token.toThrift());
     } catch (TRecordServiceException e) {
-      throw e;
+      throw new RecordServiceException(e);
     } catch (TException e) {
       throw new IOException("Could not cancel delegation token.", e);
     }
@@ -325,12 +323,12 @@ public class RecordServicePlannerClient {
   /**
    * Renews the token.
    */
-  public void renewDelegationToken(TDelegationToken token)
-      throws TRecordServiceException, IOException {
+  public void renewDelegationToken(DelegationToken token)
+      throws RecordServiceException, IOException {
     try {
-      plannerClient_.RenewDelegationToken(token);
+      plannerClient_.RenewDelegationToken(token.toThrift());
     } catch (TRecordServiceException e) {
-      throw e;
+      throw new RecordServiceException(e);
     } catch (TException e) {
       throw new IOException("Could not renew delegation token.", e);
     }
@@ -352,10 +350,10 @@ public class RecordServicePlannerClient {
    * generalMsg is thrown if we can't infer more information from e.
    */
   private void handleThriftException(TException e, String generalMsg)
-      throws TRecordServiceException, IOException {
+      throws RecordServiceException, IOException {
     // TODO: this should mark the connection as bad on some error codes.
     if (e instanceof TRecordServiceException) {
-      throw (TRecordServiceException) e;
+      throw new RecordServiceException((TRecordServiceException) e);
     } else if (e instanceof TTransportException) {
       StringBuilder msg = new StringBuilder("Could not reach service");
       if (e.getCause() != null) {

@@ -22,8 +22,6 @@ import java.io.IOException;
 
 import org.junit.Test;
 
-import com.cloudera.recordservice.thrift.TRecordServiceException;
-
 /**
  * Tests that the RecordService does not support these kind of queries.
  */
@@ -38,7 +36,7 @@ public class TestUnsupportedFunctionality extends TestBase {
           .planRequest(PLANNER_HOST, PLANNER_PORT, Request.createSqlRequest(sql));
     } catch (IOException e) {
       assertFalse(e.getMessage(), true);
-    } catch (TRecordServiceException e) {
+    } catch (RecordServiceException e) {
       exceptionThrown = true;
       assertTrue(e.getMessage(), e.getMessage().contains("Could not plan request."));
       assertTrue(e.detail,
@@ -70,7 +68,7 @@ public class TestUnsupportedFunctionality extends TestBase {
           .getSchema(PLANNER_HOST, PLANNER_PORT, Request.createSqlRequest("select 1"));
     } catch (IOException e) {
       assertFalse(e.getMessage(), true);
-    } catch (TRecordServiceException e) {
+    } catch (RecordServiceException e) {
       exceptionThrown = true;
       assertTrue(e.getMessage(), e.getMessage().contains("Could not plan request."));
       assertTrue(e.detail,

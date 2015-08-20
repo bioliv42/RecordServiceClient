@@ -108,9 +108,31 @@
             <configuration>
               <artifactSet>
                 <includes>
-                  <include>org.apache.thrift:*</include>
+                  <include>commons-codec:commons-codec</include>
+                  <include>commons-lang:commons-lang</include>
+                  <include>commons-logging:commons-logging</include>
+                  <include>org.apache.httpcomponents:httpcore</include>
+                  <include>org.apache.httpcomponents:httpclient</include>
+                  <include>org.apache.thrift:libthrift</include>
                 </includes>
               </artifactSet>
+              <relocations>
+                <relocation>
+                  <pattern>org.apache.commons</pattern>
+                  <shadedPattern>com.cloudera.recordservice.shade.apache.commons</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>org.apache.httpcomponents</pattern>
+                  <shadedPattern>com.cloudera.recordservice.shade.apache.httpcomponents</shadedPattern>
+                </relocation>
+                  <!-- TODO: not relocated because this is currently
+                       part of the public API
+                       -->
+                <relocation>
+                  <pattern>org.apache.thrift</pattern>
+                  <shadedPattern>com.cloudera.recordservice.shade.apache.thrift</shadedPattern>
+                </relocation>
+              </relocations>
               <minimizeJar>true</minimizeJar>
             </configuration>
           </execution>

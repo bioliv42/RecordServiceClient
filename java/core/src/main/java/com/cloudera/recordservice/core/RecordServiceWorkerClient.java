@@ -16,6 +16,7 @@
 package com.cloudera.recordservice.core;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -28,25 +29,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.cloudera.recordservice.thrift.RecordServiceWorker;
-import com.cloudera.recordservice.thrift.TDelegationToken;
 import com.cloudera.recordservice.thrift.TErrorCode;
 import com.cloudera.recordservice.thrift.TExecTaskParams;
 import com.cloudera.recordservice.thrift.TExecTaskResult;
 import com.cloudera.recordservice.thrift.TFetchParams;
 import com.cloudera.recordservice.thrift.TFetchResult;
-import com.cloudera.recordservice.thrift.TLoggingLevel;
 import com.cloudera.recordservice.thrift.TRecordServiceException;
-import com.cloudera.recordservice.thrift.TSchema;
-import com.cloudera.recordservice.thrift.TTask;
-import com.cloudera.recordservice.thrift.TTaskStatus;
 import com.cloudera.recordservice.thrift.TUniqueId;
 
 /**
  * Java client for the RecordServiceWorker. This class is not thread safe.
  */
-// TODO: Don't expose raw Thrift objects, add Kerberos support.
-// TODO: should we even expose this? What about just exposing the Records
-// object.
 public class RecordServiceWorkerClient {
   private final static Logger LOG =
     LoggerFactory.getLogger(RecordServiceWorkerClient.class);
@@ -56,7 +49,7 @@ public class RecordServiceWorkerClient {
   private TProtocol protocol_;
   private ProtocolVersion protocolVersion_ = null;
   private String kerberosPrincipal_ = null;
-  private TDelegationToken delegationToken_ = null;
+  private DelegationToken delegationToken_ = null;
 
   // The set of all active tasks.
   private Map<TUniqueId, TaskState> activeTasks_ = new HashMap<TUniqueId, TaskState>();
@@ -84,26 +77,26 @@ public class RecordServiceWorkerClient {
   private int timeoutMs_ = 10000;
 
   // Server side logging level. null indicates to use server default.
-  private TLoggingLevel loggingLevel_ = null;
+  private LoggingLevel loggingLevel_ = null;
 
   /**
    * Per task state maintained in the client.
    */
   public final static class TaskState {
     private TUniqueId handle_;
-    private final TTask task_;
+    private final Task task_;
 
     // This is the number of rows that have been fetched from the server.
     private int recordsFetched_;
-    private final TSchema schema_;
+    private final Schema schema_;
 
-    private TaskState(TTask task, TExecTaskResult result) {
+    private TaskState(Task task, TExecTaskResult result) {
       task_ = task;
       handle_ = result.handle;
-      schema_ = result.schema;
+      schema_ = new Schema(result.schema);
     }
 
-    public TSchema getSchema() { return schema_; }
+    public Schema getSchema() { return schema_; }
   }
 
   /**
@@ -166,7 +159,7 @@ public class RecordServiceWorkerClient {
       return this;
     }
 
-    public Builder setDelegationToken(TDelegationToken token) {
+    public Builder setDelegationToken(DelegationToken token) {
       if (client_.kerberosPrincipal_ != null) {
         // TODO: is this the behavior we want? Maybe try one then the other?
         throw new IllegalStateException(
@@ -193,15 +186,15 @@ public class RecordServiceWorkerClient {
       if (logger == null) {
         client_.loggingLevel_ = null;
       } else if (logger.isTraceEnabled()) {
-        client_.loggingLevel_ = TLoggingLevel.ALL;
+        client_.loggingLevel_ = LoggingLevel.ALL;
       } else if (logger.isInfoEnabled()) {
-        client_.loggingLevel_ = TLoggingLevel.INFO;
+        client_.loggingLevel_ = LoggingLevel.INFO;
       } else if (logger.isDebugEnabled()) {
-        client_.loggingLevel_ = TLoggingLevel.DEBUG;
+        client_.loggingLevel_ = LoggingLevel.DEBUG;
       } else if (logger.isWarnEnabled()) {
-        client_.loggingLevel_ = TLoggingLevel.WARN;
+        client_.loggingLevel_ = LoggingLevel.WARN;
       } else if (logger.isErrorEnabled()) {
-        client_.loggingLevel_ = TLoggingLevel.ERROR;
+        client_.loggingLevel_ = LoggingLevel.ERROR;
       } else {
         client_.loggingLevel_ = null;
       }
@@ -209,7 +202,7 @@ public class RecordServiceWorkerClient {
       return this;
     }
 
-    public Builder setLoggingLevel(TLoggingLevel level) {
+    public Builder setLoggingLevel(LoggingLevel level) {
       client_.loggingLevel_ = level;
       LOG.debug("Setting logging level to: " + client_.loggingLevel_);
       return this;
@@ -220,7 +213,7 @@ public class RecordServiceWorkerClient {
      * set options, and the caller must call close().
      */
     public RecordServiceWorkerClient connect(String hostname, int port)
-        throws TRecordServiceException, IOException {
+        throws RecordServiceException, IOException {
       client_.connect(hostname, port);
       return client_;
     }
@@ -277,8 +270,8 @@ public class RecordServiceWorkerClient {
   /**
    * Executes the task asynchronously, returning the handle to the client.
    */
-  public TaskState execTask(TTask task)
-      throws TRecordServiceException, IOException {
+  public TaskState execTask(Task task)
+      throws RecordServiceException, IOException {
     validateIsConnected();
     return execTaskInternal(task, 0);
   }
@@ -287,8 +280,8 @@ public class RecordServiceWorkerClient {
    * Executes the task asynchronously, returning a Rows object that can be
    * used to fetch results.
    */
-  public Records execAndFetch(TTask task)
-      throws TRecordServiceException, IOException {
+  public Records execAndFetch(Task task)
+      throws RecordServiceException, IOException {
     validateIsConnected();
     TaskState result = execTaskInternal(task, 0);
     Records records = null;
@@ -303,8 +296,8 @@ public class RecordServiceWorkerClient {
   /**
    * Fetches a batch of records and returns the result.
    */
-  public TFetchResult fetch(TaskState state)
-      throws TRecordServiceException, IOException {
+  public FetchResult fetch(TaskState state)
+      throws RecordServiceException, IOException {
     validateIsConnected();
     validateHandleIsActive(state);
     TException firstException = null;
@@ -324,9 +317,9 @@ public class RecordServiceWorkerClient {
         if (LOG.isTraceEnabled()) {
           LOG.trace("Fetch returned " + result.num_records + " records.");
         }
-        return result;
+        return new FetchResult(result);
       } catch (TRecordServiceException e) {
-        if (state.task_.results_ordered && e.code == TErrorCode.INVALID_HANDLE) {
+        if (state.task_.resultsOrdered && e.code == TErrorCode.INVALID_HANDLE) {
           LOG.debug("Continuing fault tolerant scan. Record offset=" + state.recordsFetched_);
           // This task returned ordered scans, meaning we can try again and continue
           // the scan. If it is not ordered, we have to fail this task entirely and
@@ -337,7 +330,7 @@ public class RecordServiceWorkerClient {
           continue;
         }
         // There is an error with this request, no point in retrying the request.
-        throw e;
+        throw new RecordServiceException(e);
       } catch (TException e) {
         // In this case, we've hit a general thrift exception, makes sense to try again.
         connected = false;
@@ -353,8 +346,8 @@ public class RecordServiceWorkerClient {
   /**
    * Gets status on the current task executing.
    */
-  public TTaskStatus getTaskStatus(TaskState handle)
-      throws TRecordServiceException, IOException {
+  public TaskStatus getTaskStatus(TaskState handle)
+      throws RecordServiceException, IOException {
     validateIsConnected();
     validateHandleIsActive(handle);
     LOG.debug("Calling getTaskStatus(): " + handle.handle_);
@@ -366,7 +359,7 @@ public class RecordServiceWorkerClient {
           connected = waitAndReconnect();
           if (!connected) continue;
         }
-        return workerClient_.GetTaskStatus(handle.handle_);
+        return new TaskStatus(workerClient_.GetTaskStatus(handle.handle_));
       } catch (TException e) {
         if (firstException == null) firstException = e;
         connected = false;
@@ -401,7 +394,7 @@ public class RecordServiceWorkerClient {
    * Connects to the RecordServiceWorker running on hostname/port.
    */
   private void connect(String hostname, int port)
-      throws IOException, TRecordServiceException {
+      throws IOException, RecordServiceException {
     if (workerClient_ != null) {
       throw new RuntimeException("Already connected. Must call close() first.");
     }
@@ -421,7 +414,7 @@ public class RecordServiceWorkerClient {
         TRecordServiceException ex = new TRecordServiceException();
         ex.code = TErrorCode.SERVICE_BUSY;
         ex.message = "Server is likely busy. Try the request again.";
-        throw ex;
+        throw new RecordServiceException(ex);
       }
       throw new IOException("Could not get service protocol version.", e);
     } catch (TException e) {
@@ -434,16 +427,16 @@ public class RecordServiceWorkerClient {
   /**
    * Executes the task asynchronously, returning the handle the client.
    */
-  private TaskState execTaskInternal(TTask task, long offset)
-          throws TRecordServiceException, IOException {
+  private TaskState execTaskInternal(Task task, long offset)
+          throws RecordServiceException, IOException {
     assert(task != null);
     assert(offset >= 0);
-    TExecTaskParams taskParams = new TExecTaskParams(task.task);
+    TExecTaskParams taskParams = new TExecTaskParams(ByteBuffer.wrap(task.task));
     taskParams.setOffset(offset);
     if (fetchSize_ != null) taskParams.setFetch_size(fetchSize_);
     if (memLimit_ != null) taskParams.setMem_limit(memLimit_);
     if (limit_ != null) taskParams.setLimit(limit_);
-    if (loggingLevel_ != null) taskParams.setLogging_level(loggingLevel_);
+    if (loggingLevel_ != null) taskParams.setLogging_level(loggingLevel_.toThrift());
 
     TException firstException = null;
     boolean connected = true;
@@ -467,7 +460,7 @@ public class RecordServiceWorkerClient {
             sleepForRetry();
             continue;
           default:
-            throw e;
+            throw new RecordServiceException(e);
         }
       } catch (TException e) {
         if (firstException == null) firstException = e;
@@ -512,10 +505,10 @@ public class RecordServiceWorkerClient {
    * generalMsg is thrown if we can't infer more information from e.
    */
   private void handleThriftException(TException e, String generalMsg)
-      throws TRecordServiceException, IOException {
+      throws RecordServiceException, IOException {
     // TODO: this should mark the connection as bad on some error codes.
     if (e instanceof TRecordServiceException) {
-      throw (TRecordServiceException)e;
+      throw new RecordServiceException((TRecordServiceException)e);
     } else if (e instanceof TTransportException) {
       LOG.warn("Could not reach worker service.");
       throw new IOException("Could not reach service.", e);

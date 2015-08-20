@@ -20,21 +20,16 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 import org.apache.hadoop.io.Writable;
-import org.apache.thrift.TDeserializer;
-import org.apache.thrift.TException;
-import org.apache.thrift.TSerializer;
-import org.apache.thrift.protocol.TCompactProtocol;
 
-import com.cloudera.recordservice.thrift.TNetworkAddress;
-import com.cloudera.recordservice.thrift.TTask;
+import com.cloudera.recordservice.core.NetworkAddress;
+import com.cloudera.recordservice.core.Task;
 
 public class TaskInfo implements Writable {
 
-  private TTask task_;
+  private Task task_;
 
   public TaskInfo() {}
-
-  public TaskInfo(TTask task) {
+  public TaskInfo(Task task) {
     this.task_ = task;
   }
 
@@ -43,41 +38,23 @@ public class TaskInfo implements Writable {
     return 100;
   }
 
-  public TNetworkAddress[] getLocations() {
-    TNetworkAddress[] hosts = new TNetworkAddress[task_.getLocal_hostsSize()];
-    for (int i = 0; i < task_.getLocal_hostsSize(); ++i) {
-      hosts[i] = task_.getLocal_hosts().get(i);
+  public NetworkAddress[] getLocations() {
+    NetworkAddress[] hosts = new NetworkAddress[task_.localHosts.size()];
+    for (int i = 0; i < task_.localHosts.size(); ++i) {
+      hosts[i] = task_.localHosts.get(i);
     }
     return hosts;
   }
 
-  public TTask getTask() { return task_; }
+  public Task getTask() { return task_; }
 
   @Override
   public void write(DataOutput out) throws IOException {
-    TSerializer ser = new TSerializer(new TCompactProtocol.Factory());
-    try {
-      byte[] taskBytes = ser.serialize(task_);
-      out.writeInt(taskBytes.length);
-      out.write(taskBytes);
-    } catch (TException e) {
-      throw new IOException(e);
-    }
+    task_.serialize(out);
   }
 
   @Override
   public void readFields(DataInput in) throws IOException {
-    TTask task = new TTask();
-    int numBytes = in.readInt();
-    byte[] taskBytes = new byte[numBytes];
-    in.readFully(taskBytes);
-    TDeserializer deSer = new TDeserializer(new TCompactProtocol.Factory());
-    try {
-      deSer.deserialize(task, taskBytes);
-      this.task_ = task;
-    } catch (TException e) {
-      new IOException(e);
-    }
+    task_ = Task.deserialize(in);
   }
-
 }

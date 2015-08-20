@@ -32,18 +32,18 @@ import org.apache.hadoop.security.token.Token;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.cloudera.recordservice.core.PlanRequestResult;
+import com.cloudera.recordservice.core.RecordServiceException;
 import com.cloudera.recordservice.core.RecordServicePlannerClient;
 import com.cloudera.recordservice.core.Request;
+import com.cloudera.recordservice.core.Task;
+import com.cloudera.recordservice.core.TaskStatus.Stats;
 import com.cloudera.recordservice.mr.RecordReaderCore;
 import com.cloudera.recordservice.mr.RecordServiceConfig;
 import com.cloudera.recordservice.mr.Schema;
 import com.cloudera.recordservice.mr.TaskInfo;
 import com.cloudera.recordservice.mr.security.DelegationTokenIdentifier;
 import com.cloudera.recordservice.mr.security.TokenUtils;
-import com.cloudera.recordservice.thrift.TPlanRequestResult;
-import com.cloudera.recordservice.thrift.TRecordServiceException;
-import com.cloudera.recordservice.thrift.TStats;
-import com.cloudera.recordservice.thrift.TTask;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 
@@ -156,7 +156,7 @@ public abstract class RecordServiceInputFormatBase<K, V> extends InputFormat<K, 
       Preconditions.checkState(false);
     }
 
-    TPlanRequestResult result = null;
+    PlanRequestResult result = null;
     RecordServicePlannerClient planner = null;
     try {
       boolean needToGetToken = false;
@@ -169,7 +169,7 @@ public abstract class RecordServiceInputFormatBase<K, V> extends InputFormat<K, 
               DelegationTokenIdentifier.DELEGATION_KIND);
 
       if (delegationToken != null) {
-        builder.setDelegationToken(TokenUtils.toTDelegationToken(delegationToken));
+        builder.setDelegationToken(TokenUtils.toDelegationToken(delegationToken));
       } else {
         String kerberosPrincipal =
             jobConf.get(RecordServiceConfig.KERBEROS_PRINCIPAL_CONF);
@@ -198,10 +198,10 @@ public abstract class RecordServiceInputFormatBase<K, V> extends InputFormat<K, 
       if (planner != null) planner.close();
     }
 
-    Schema schema = new Schema(result.getSchema());
+    Schema schema = new Schema(result.schema);
     List<InputSplit> splits = new ArrayList<InputSplit>();
-    for (TTask tTask : result.getTasks()) {
-      splits.add(new RecordServiceInputSplit(schema, new TaskInfo(tTask)));
+    for (Task t : result.tasks) {
+      splits.add(new RecordServiceInputSplit(schema, new TaskInfo(t)));
     }
     LOG.debug(String.format("Generated %d splits.", splits.size()));
     return new SplitsInfo(splits, schema);
@@ -210,64 +210,52 @@ public abstract class RecordServiceInputFormatBase<K, V> extends InputFormat<K, 
   /**
    * Populates RecordService counters in ctx from counters.
    */
-  public static void setCounters(TaskAttemptContext ctx, TStats counters) {
+  public static void setCounters(TaskAttemptContext ctx, Stats counters) {
     if (ctx == null) return;
     ctx.getCounter(COUNTERS_GROUP_NAME, "Records Read").setValue(
-        counters.num_records_read);
+        counters.numRecordsRead);
     ctx.getCounter(COUNTERS_GROUP_NAME, "Records Returned").setValue(
-        counters.num_records_returned);
+        counters.numRecordsReturned);
     ctx.getCounter(COUNTERS_GROUP_NAME, "Record Serialization Time(ms)").setValue(
-        counters.serialize_time_ms);
+        counters.serializeTimeMs);
     ctx.getCounter(COUNTERS_GROUP_NAME, "Client Time(ms)").setValue(
-        counters.client_time_ms);
+        counters.clientTimeMs);
 
-    if (counters.isSetBytes_read()) {
+    if (counters.hdfsCountersSet) {
       ctx.getCounter(COUNTERS_GROUP_NAME, "Bytes Read").setValue(
-          counters.bytes_read);
-    }
-    if (counters.isSetDecompress_time_ms()) {
+          counters.bytesRead);
       ctx.getCounter(COUNTERS_GROUP_NAME, "Decompression Time(ms)").setValue(
-          counters.decompress_time_ms);
-    }
-    if (counters.isSetBytes_read_local()) {
+          counters.decompressTimeMs);
       ctx.getCounter(COUNTERS_GROUP_NAME, "Bytes Read Local").setValue(
-          counters.bytes_read_local);
-    }
-    if (counters.isSetHdfs_throughput()) {
+          counters.bytesReadLocal);
       ctx.getCounter(COUNTERS_GROUP_NAME, "HDFS Throughput(MB/s)").setValue(
-          (long)(counters.hdfs_throughput / (1024 * 1024)));
+          (long)(counters.hdfsThroughput / (1024 * 1024)));
     }
   }
 
   /**
    * Populates RecordService counters in ctx from counters.
    */
-  public static void setCounters(Reporter ctx, TStats counters) {
+  public static void setCounters(Reporter ctx, Stats counters) {
     if (ctx == null) return;
     ctx.getCounter(COUNTERS_GROUP_NAME, "Records Read").setValue(
-        counters.num_records_read);
+        counters.numRecordsRead);
     ctx.getCounter(COUNTERS_GROUP_NAME, "Records Returned").setValue(
-        counters.num_records_returned);
+        counters.numRecordsReturned);
     ctx.getCounter(COUNTERS_GROUP_NAME, "Record Serialization Time(ms)").setValue(
-        counters.serialize_time_ms);
+        counters.serializeTimeMs);
     ctx.getCounter(COUNTERS_GROUP_NAME, "Client Time(ms)").setValue(
-        counters.client_time_ms);
+        counters.clientTimeMs);
 
-    if (counters.isSetBytes_read()) {
+    if (counters.hdfsCountersSet) {
       ctx.getCounter(COUNTERS_GROUP_NAME, "Bytes Read").setValue(
-          counters.bytes_read);
-    }
-    if (counters.isSetDecompress_time_ms()) {
+          counters.bytesRead);
       ctx.getCounter(COUNTERS_GROUP_NAME, "Decompression Time(ms)").setValue(
-          counters.decompress_time_ms);
-    }
-    if (counters.isSetBytes_read_local()) {
+          counters.decompressTimeMs);
       ctx.getCounter(COUNTERS_GROUP_NAME, "Bytes Read Local").setValue(
-          counters.bytes_read_local);
-    }
-    if (counters.isSetHdfs_throughput()) {
+          counters.bytesReadLocal);
       ctx.getCounter(COUNTERS_GROUP_NAME, "HDFS Throughput(MB/s)").setValue(
-          (long)(counters.hdfs_throughput / (1024 * 1024)));
+          (long)(counters.hdfsThroughput / (1024 * 1024)));
     }
   }
 
@@ -302,7 +290,7 @@ public abstract class RecordServiceInputFormatBase<K, V> extends InputFormat<K, 
         try {
           RecordServiceInputFormatBase.setCounters(
               context_, reader_.records().getStatus().stats);
-        } catch (TRecordServiceException e) {
+        } catch (RecordServiceException e) {
           LOG.debug("Could not populate counters: " + e);
         }
         reader_.close();

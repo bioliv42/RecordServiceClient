@@ -6,16 +6,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import com.cloudera.recordservice.core.PlanRequestResult;
+import com.cloudera.recordservice.core.RecordServiceException;
 import com.cloudera.recordservice.core.RecordServicePlannerClient;
 import com.cloudera.recordservice.core.RecordServiceWorkerClient;
 import com.cloudera.recordservice.core.Records;
 import com.cloudera.recordservice.core.Records.Record;
 import com.cloudera.recordservice.core.Request;
-import com.cloudera.recordservice.thrift.TColumnDesc;
-import com.cloudera.recordservice.thrift.TPlanRequestResult;
-import com.cloudera.recordservice.thrift.TRecordServiceException;
-import com.cloudera.recordservice.thrift.TSchema;
-import com.cloudera.recordservice.thrift.TTask;
+import com.cloudera.recordservice.core.Schema;
+import com.cloudera.recordservice.core.Schema.ColumnDesc;
+import com.cloudera.recordservice.core.Task;
 import com.google.common.base.Joiner;
 
 public class RSCat {
@@ -31,11 +31,11 @@ public class RSCat {
   static final String USAGE = "Usage: RSCat file/table [number of rows] "
       + "[--hostname host] [--port port]";
 
-  public static List<Object> processRow(Record r, TSchema schema) {
+  public static List<Object> processRow(Record r, Schema schema) {
     List<Object> returnList = new ArrayList<Object>();
     for (int i = 0; i < schema.cols.size(); ++i) {
-      TColumnDesc col = schema.cols.get(i);
-      switch (col.type.type_id) {
+      ColumnDesc col = schema.cols.get(i);
+      switch (col.type.typeId) {
       case BOOLEAN:
         returnList.add(new Boolean(r.nextBoolean(i)));
         break;
@@ -74,22 +74,22 @@ public class RSCat {
         break;
       default:
         throw new RuntimeException("Service returned type that is not supported. Type = "
-            + col.type.type_id);
+            + col.type.typeId);
       }
     }
     return returnList;
   }
 
   public static void processPath(String path, int numRecords, String hostname, int port)
-      throws TRecordServiceException, IOException {
+      throws RecordServiceException, IOException {
     RecordServicePlannerClient rspc = new RecordServicePlannerClient.Builder()
         .connect(hostname, port);
     Request planRequest;
-    TPlanRequestResult plannerRequest;
+    PlanRequestResult plannerRequest;
     try {
       planRequest = Request.createPathRequest(path);
       plannerRequest = rspc.planRequest(planRequest);
-    } catch (TRecordServiceException rse) {
+    } catch (RecordServiceException rse) {
       // This try catch is used to detect the request type. If the path request
       // fails, we know that path is either a table scan request or doesn't
       // exist
@@ -104,13 +104,13 @@ public class RSCat {
     for (int i = 0; i < plannerRequest.tasks.size(); ++i) {
       Records rds = null;
       try {
-        TTask task = plannerRequest.tasks.get(i);
-        int hostChoice = randGen.nextInt(task.local_hosts.size());
+        Task task = plannerRequest.tasks.get(i);
+        int hostChoice = randGen.nextInt(task.localHosts.size());
         rswc = new RecordServiceWorkerClient.Builder().connect(
-            task.local_hosts.get(hostChoice).hostname,
-            task.local_hosts.get(hostChoice).port);
+            task.localHosts.get(hostChoice).hostname,
+            task.localHosts.get(hostChoice).port);
         rds = rswc.execAndFetch(task);
-        TSchema taskSchema = rds.getSchema();
+        Schema taskSchema = rds.getSchema();
         Record record;
         while (rds.hasNext()) {
           record = rds.next();
@@ -163,7 +163,7 @@ public class RSCat {
 
     try {
       processPath(filename, numRecords, hostname, port);
-    } catch (TRecordServiceException e) {
+    } catch (RecordServiceException e) {
       System.err.println(e);
       System.exit(1);
     } catch (IOException io) {

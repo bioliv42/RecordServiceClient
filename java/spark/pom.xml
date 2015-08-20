@@ -179,8 +179,9 @@
               <configuration>
                 <artifactSet>
                   <includes>
-                    <include>com.cloudera.recordservice:*</include>
-                    <include>org.apache.thrift:*</include>
+                    <include>com.cloudera.recordservice:recordservice-core</include>
+                    <include>com.cloudera.recordservice:recordservice-mr</include>
+                    <include>org.apache.thrift:libthrift</include>
                   </includes>
                 </artifactSet>
                 <minimizeJar>true</minimizeJar>

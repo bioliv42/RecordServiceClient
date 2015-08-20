@@ -27,12 +27,12 @@ import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 
 import com.cloudera.recordservice.avro.GenericRecords;
+import com.cloudera.recordservice.avro.RecordIterator;
 import com.cloudera.recordservice.avro.SchemaUtils;
 import com.cloudera.recordservice.avro.SpecificRecords;
-import com.cloudera.recordservice.avro.RecordIterator;
+import com.cloudera.recordservice.core.RecordServiceException;
 import com.cloudera.recordservice.mapred.RecordServiceInputFormatBase;
 import com.cloudera.recordservice.mapred.RecordServiceInputSplit;
-import com.cloudera.recordservice.thrift.TRecordServiceException;
 
 /**
  * Input format which provides identical functionality to
@@ -84,7 +84,7 @@ public class AvroInputFormat<T> extends
         if (!records_.hasNext()) return false;
         wrapper.datum(records_.next());
         return true;
-      } catch (TRecordServiceException e) {
+      } catch (RecordServiceException e) {
         throw new IOException("Could not get next record.", e);
       }
     }

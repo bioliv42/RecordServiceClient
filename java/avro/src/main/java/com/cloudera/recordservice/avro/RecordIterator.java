@@ -21,7 +21,7 @@ package com.cloudera.recordservice.avro;
 
 import java.io.IOException;
 
-import com.cloudera.recordservice.thrift.TRecordServiceException;
+import com.cloudera.recordservice.core.RecordServiceException;
 
 /**
  * Provide an iterator interface and return generic or specific records.
@@ -30,12 +30,12 @@ public interface RecordIterator<T> {
   /**
    * Return true if there are more records, false otherwise.
    */
-  boolean hasNext() throws IOException, TRecordServiceException;
+  boolean hasNext() throws IOException, RecordServiceException;
 
   /**
    * Return and advance to the next record. Throws exception if there are no more records.
    */
-  T next() throws IOException, TRecordServiceException;
+  T next() throws IOException, RecordServiceException;
 
   /**
    * Return the avro schema for the returned records.

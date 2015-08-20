@@ -39,14 +39,13 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.security.Credentials;
 import org.junit.Test;
 
+import com.cloudera.recordservice.core.RecordServiceException;
 import com.cloudera.recordservice.core.TestBase;
 import com.cloudera.recordservice.mapreduce.testapps.RecordCount;
 import com.cloudera.recordservice.mr.DecimalWritable;
 import com.cloudera.recordservice.mr.RecordServiceConfig;
 import com.cloudera.recordservice.mr.RecordServiceRecord;
 import com.cloudera.recordservice.mr.TimestampNanosWritable;
-import com.cloudera.recordservice.thrift.TErrorCode;
-import com.cloudera.recordservice.thrift.TRecordServiceException;
 
 public class MapReduceTest extends TestBase {
 
@@ -164,9 +163,9 @@ public class MapReduceTest extends TestBase {
       verifyInputSplitsTable(1, 1, "tpch.nation", "bad");
     } catch (IOException e) {
       exceptionThrown = true;
-      assertTrue(e.getCause() instanceof TRecordServiceException);
-      TRecordServiceException ex = (TRecordServiceException)e.getCause();
-      assertEquals(TErrorCode.INVALID_REQUEST, ex.code);
+      assertTrue(e.getCause() instanceof RecordServiceException);
+      RecordServiceException ex = (RecordServiceException)e.getCause();
+      assertEquals(RecordServiceException.ErrorCode.INVALID_REQUEST, ex.code);
     }
     assertTrue(exceptionThrown);
 

@@ -26,12 +26,12 @@ import org.apache.hadoop.security.Credentials;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.cloudera.recordservice.core.RecordServiceException;
 import com.cloudera.recordservice.core.Records;
 import com.cloudera.recordservice.core.Records.Record;
 import com.cloudera.recordservice.mr.RecordReaderCore;
 import com.cloudera.recordservice.mr.RecordServiceRecord;
 import com.cloudera.recordservice.mr.Schema;
-import com.cloudera.recordservice.thrift.TRecordServiceException;
 import com.google.common.annotations.VisibleForTesting;
 
 /**
@@ -121,7 +121,7 @@ public class RecordServiceInputFormat extends
       }
       try {
         if (!reader_.records().hasNext()) return false;
-      } catch (TRecordServiceException e) {
+      } catch (RecordServiceException e) {
         // TODO: is this the most proper way to deal with this in MR?
         throw new IOException("Could not fetch record.", e);
       }

@@ -25,19 +25,19 @@ import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
 import org.junit.Test;
 
+import com.cloudera.recordservice.core.PlanRequestResult;
+import com.cloudera.recordservice.core.RecordServiceException;
 import com.cloudera.recordservice.core.RecordServicePlannerClient;
 import com.cloudera.recordservice.core.Request;
 import com.cloudera.recordservice.core.TestBase;
 import com.cloudera.recordservice.core.WorkerClientUtil;
-import com.cloudera.recordservice.thrift.TPlanRequestResult;
-import com.cloudera.recordservice.thrift.TRecordServiceException;
 
 public class TestGenericRecord extends TestBase {
   static final int PLANNER_PORT = 40000;
 
   @Test
-  public void testNation() throws TRecordServiceException, IOException {
-    TPlanRequestResult plan = new RecordServicePlannerClient.Builder()
+  public void testNation() throws RecordServiceException, IOException {
+    PlanRequestResult plan = new RecordServicePlannerClient.Builder()
         .planRequest("localhost", PLANNER_PORT,
             Request.createSqlRequest("select * from tpch.nation"));
 

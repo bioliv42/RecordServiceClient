@@ -25,8 +25,7 @@ import org.apache.avro.specific.SpecificData;
 import org.apache.avro.specific.SpecificRecordBase;
 
 import com.cloudera.recordservice.core.Records;
-import com.cloudera.recordservice.thrift.TRecordServiceException;
-import com.cloudera.recordservice.thrift.TTypeId;
+import com.cloudera.recordservice.core.RecordServiceException;
 
 /**
  * This class takes a Rows object and provides an iterator interface to
@@ -39,7 +38,7 @@ import com.cloudera.recordservice.thrift.TTypeId;
 public class SpecificRecords<T extends SpecificRecordBase> implements RecordIterator {
   private Records records_;
   private org.apache.avro.Schema avroSchema_;
-  private com.cloudera.recordservice.thrift.TSchema schema_;
+  private com.cloudera.recordservice.core.Schema schema_;
   private Class<T> class_;
 
   // For each field in the RecordService record (by ordinal), the corresponding
@@ -69,7 +68,7 @@ public class SpecificRecords<T extends SpecificRecordBase> implements RecordIter
   /**
    * Returns true if there are more records, false otherwise.
    */
-  public boolean hasNext() throws IOException, TRecordServiceException {
+  public boolean hasNext() throws IOException, RecordServiceException {
     return records_.hasNext();
   }
 
@@ -78,7 +77,7 @@ public class SpecificRecords<T extends SpecificRecordBase> implements RecordIter
    * there are no more records.
    */
   @SuppressWarnings("unchecked")
-  public T next() throws IOException, TRecordServiceException {
+  public T next() throws IOException, RecordServiceException {
     T record = null;
     try {
       record = class_.newInstance();
@@ -93,7 +92,7 @@ public class SpecificRecords<T extends SpecificRecordBase> implements RecordIter
       if (rsRecord.isNull(rsIndex)) {
         continue;
       }
-      switch(schema_.getCols().get(rsIndex).type.type_id) {
+      switch(schema_.cols.get(rsIndex).type.typeId) {
         case BOOLEAN: record.put(i, rsRecord.nextBoolean(rsIndex)); break;
         case TINYINT: record.put(i, (int)rsRecord.nextByte(rsIndex)); break;
         case SMALLINT: record.put(i, (int)rsRecord.nextShort(rsIndex)); break;
@@ -109,7 +108,7 @@ public class SpecificRecords<T extends SpecificRecordBase> implements RecordIter
 
         default:
           throw new RuntimeException(
-              "Unsupported type: " + schema_.getCols().get(rsIndex).type);
+              "Unsupported type: " + schema_.cols.get(rsIndex).type);
       }
     }
     return record;
@@ -128,7 +127,8 @@ public class SpecificRecords<T extends SpecificRecordBase> implements RecordIter
   private void resolveType(int recordIndex, int recordServiceIndex) {
     List<Schema.Field> fields = avroSchema_.getFields();
     // TODO: support avro's schema resolution rules with type promotion.
-    TTypeId rsType = schema_.cols.get(recordServiceIndex).type.type_id;
+    com.cloudera.recordservice.core.Schema.Type rsType =
+        schema_.cols.get(recordServiceIndex).type.typeId;
     Schema.Type t = fields.get(recordIndex).schema().getType();
 
     if (t == Type.UNION) {
@@ -163,25 +163,26 @@ public class SpecificRecords<T extends SpecificRecordBase> implements RecordIter
         throw new RuntimeException("???");
 
       case BOOLEAN:
-        if (rsType == TTypeId.BOOLEAN) return;
+        if (rsType == com.cloudera.recordservice.core.Schema.Type.BOOLEAN) return;
         break;
       case INT:
-        if (rsType == TTypeId.TINYINT || rsType == TTypeId.SMALLINT ||
-            rsType == TTypeId.INT) {
+        if (rsType == com.cloudera.recordservice.core.Schema.Type.TINYINT ||
+            rsType == com.cloudera.recordservice.core.Schema.Type.SMALLINT ||
+            rsType == com.cloudera.recordservice.core.Schema.Type.INT) {
           return;
         }
         break;
       case LONG:
-        if (rsType == TTypeId.BIGINT) return;
+        if (rsType == com.cloudera.recordservice.core.Schema.Type.BIGINT) return;
         break;
       case FLOAT:
-        if (rsType == TTypeId.FLOAT) return;
+        if (rsType == com.cloudera.recordservice.core.Schema.Type.FLOAT) return;
         break;
       case DOUBLE:
-        if (rsType == TTypeId.DOUBLE) return;
+        if (rsType == com.cloudera.recordservice.core.Schema.Type.DOUBLE) return;
         break;
       case STRING:
-        if (rsType == TTypeId.STRING) return;
+        if (rsType == com.cloudera.recordservice.core.Schema.Type.STRING) return;
         break;
       default:
         throw new RuntimeException("Unsupported type: " + t);
@@ -201,11 +202,11 @@ public class SpecificRecords<T extends SpecificRecordBase> implements RecordIter
 
     List<Schema.Field> fields = avroSchema_.getFields();
     // Throw exception only when size of read schema is larger than size of write schema.
-    if (fields.size() > schema_.getColsSize()) {
+    if (fields.size() > schema_.cols.size()) {
       // TODO: support avro's  schema evolution rules.
       throw new RuntimeException(
           "Incompatible schema: the number of fields do not match. Record contains " +
-          fields.size() + ". RecordService returned " + schema_.getColsSize());
+          fields.size() + ". RecordService returned " + schema_.cols.size());
     }
     rsIndexToRecordIndex_ = new int[fields.size()];
 
@@ -216,9 +217,9 @@ public class SpecificRecords<T extends SpecificRecordBase> implements RecordIter
       }
     } else if (resolveBy == ResolveBy.NAME) {
       HashMap<String, Integer> rsFields = new HashMap<String, Integer>();
-      for (int i = 0; i < schema_.getColsSize(); ++i) {
+      for (int i = 0; i < schema_.cols.size(); ++i) {
         // TODO: case sensitive?
-        rsFields.put(schema_.getCols().get(i).name.toLowerCase(), i);
+        rsFields.put(schema_.cols.get(i).name.toLowerCase(), i);
       }
 
       for (int i = 0; i < fields.size(); ++i) {

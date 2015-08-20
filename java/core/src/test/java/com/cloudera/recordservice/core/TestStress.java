@@ -24,8 +24,6 @@ import java.util.List;
 
 import org.junit.Test;
 
-import com.cloudera.recordservice.thrift.TErrorCode;
-import com.cloudera.recordservice.thrift.TRecordServiceException;
 import com.google.common.collect.Lists;
 
 // Tests the clients in stressful environments.
@@ -35,7 +33,7 @@ public class TestStress extends TestBase {
 
   @Test
   public void testPlannerConnections() throws RuntimeException, IOException,
-        TRecordServiceException, InterruptedException {
+        RecordServiceException, InterruptedException {
     // This is more than the maximum number of client threads.
     // TODO: fix the thrift connections to not service the request on the
     // connection thread? This might be hard to do.
@@ -50,8 +48,8 @@ public class TestStress extends TestBase {
         RecordServicePlannerClient planner = new RecordServicePlannerClient.Builder()
             .connect("localhost", PLANNER_PORT);
         clients.add(planner);
-      } catch(TRecordServiceException ex) {
-        assertEquals(TErrorCode.SERVICE_BUSY, ex.code);
+      } catch(RecordServiceException ex) {
+        assertEquals(RecordServiceException.ErrorCode.SERVICE_BUSY, ex.code);
         gotServerBusy = true;
 
         // Closing an existing connection should work.
@@ -79,7 +77,7 @@ public class TestStress extends TestBase {
 
   @Test
   public void testWorkerConnections() throws RuntimeException, IOException,
-      TRecordServiceException, InterruptedException {
+      RecordServiceException, InterruptedException {
     // This is more than the maximum number of client threads.
     // TODO: fix the thrift connections to not service the request on the
     // connection thread? This might be hard to do.
@@ -92,8 +90,8 @@ public class TestStress extends TestBase {
         RecordServiceWorkerClient worker = new RecordServiceWorkerClient.Builder()
             .connect("localhost", WORKER_PORT);
         clients.add(worker);
-      } catch(TRecordServiceException ex) {
-        assertEquals(TErrorCode.SERVICE_BUSY, ex.code);
+      } catch(RecordServiceException ex) {
+        assertEquals(RecordServiceException.ErrorCode.SERVICE_BUSY, ex.code);
         gotServerBusy = true;
 
         // Closing an existing connection should work.

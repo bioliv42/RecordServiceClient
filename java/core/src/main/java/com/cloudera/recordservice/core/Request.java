@@ -20,7 +20,6 @@ import java.util.List;
 import com.cloudera.recordservice.thrift.TPathRequest;
 import com.cloudera.recordservice.thrift.TPlanRequestParams;
 import com.cloudera.recordservice.thrift.TRequestType;
-import com.cloudera.recordservice.thrift.TSchema;
 
 /**
  * Abstraction over different requests and utilities to build common request
@@ -91,9 +90,9 @@ public class Request {
   /**
    * Sets the schema for a path request. Invalid for non-path requests.
    */
-  public Request setSchema(TSchema schema) {
+  public Request setSchema(Schema schema) {
     verifyPathRequest("setSchema()");
-    request_.path.setSchema(schema);
+    request_.path.setSchema(schema.toThrift());
     return this;
   }
 
@@ -107,7 +106,6 @@ public class Request {
   }
 
   @Override
-  // TODO: better string?
   public String toString() {
     return request_.toString();
   }

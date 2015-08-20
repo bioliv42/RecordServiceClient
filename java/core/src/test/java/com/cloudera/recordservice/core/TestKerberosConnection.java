@@ -25,11 +25,6 @@ import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.cloudera.recordservice.thrift.TDelegationToken;
-import com.cloudera.recordservice.thrift.TErrorCode;
-import com.cloudera.recordservice.thrift.TPlanRequestResult;
-import com.cloudera.recordservice.thrift.TRecordServiceException;
-
 // Tests connect to kerberized cluster. This is not normally run as it involves
 // a non-trivial local set up to get tickets and what not.
 // TODO: add renew/expire tests.
@@ -62,10 +57,10 @@ public class TestKerberosConnection extends TestBase {
 
   @Test
   public void testConnection() throws IOException,
-      TRecordServiceException, InterruptedException {
+      RecordServiceException, InterruptedException {
     Assume.assumeTrue(HAS_KERBEROS_CREDENTIALS);
 
-    TPlanRequestResult plan = new RecordServicePlannerClient.Builder()
+    PlanRequestResult plan = new RecordServicePlannerClient.Builder()
         .setKerberosPrincipal(PRINCIPAL)
         .planRequest(HOST, PLANNER_PORT, Request.createTableScanRequest("sample_07"));
 
@@ -86,7 +81,7 @@ public class TestKerberosConnection extends TestBase {
   @Test
   // Test without providing a principal or a bad principal.
   public void testBadConnection() throws IOException,
-        TRecordServiceException, InterruptedException {
+        RecordServiceException, InterruptedException {
     Assume.assumeTrue(HAS_KERBEROS_CREDENTIALS);
 
     // Try planner connection with no principal and bad principal
@@ -94,7 +89,7 @@ public class TestKerberosConnection extends TestBase {
     try {
       new RecordServicePlannerClient.Builder()
           .planRequest(HOST, PLANNER_PORT, Request.createTableScanRequest("sample_07"));
-    } catch (TRecordServiceException e) {
+    } catch (RecordServiceException e) {
       exceptionThrown = true;
     }
     assertTrue("Should not be able to connect without kerberos principal",
@@ -115,7 +110,7 @@ public class TestKerberosConnection extends TestBase {
     exceptionThrown = false;
     try {
       new RecordServiceWorkerClient.Builder().connect(HOST, WORKER_PORT);
-    } catch (TRecordServiceException e) {
+    } catch (RecordServiceException e) {
       exceptionThrown = true;
     }
     assertTrue("Should not be able to connect without kerberos principal",
@@ -135,7 +130,7 @@ public class TestKerberosConnection extends TestBase {
   @Test
   // Test authentication with delegation token.
   public void testDelegationToken() throws IOException,
-        TRecordServiceException, InterruptedException {
+        RecordServiceException, InterruptedException {
     Assume.assumeTrue(HAS_KERBEROS_CREDENTIALS);
     boolean exceptionThrown = false;
 
@@ -145,14 +140,14 @@ public class TestKerberosConnection extends TestBase {
         .connect(HOST, PLANNER_PORT);
 
     // Get a token from planner.
-    TDelegationToken token1 = kerberizedPlanner.getDelegationToken("impala");
+    DelegationToken token1 = kerberizedPlanner.getDelegationToken("impala");
     assertTrue(token1.identifier.length() > 0);
     assertTrue(token1.password.length() > 0);
-    assertTrue(token1.token.remaining() > token1.identifier.length());
-    assertTrue(token1.token.remaining() > token1.password.length());
+    assertTrue(token1.token.length > token1.identifier.length());
+    assertTrue(token1.token.length > token1.password.length());
 
     // Get a second token
-    TDelegationToken token2 = kerberizedPlanner.getDelegationToken("impala");
+    DelegationToken token2 = kerberizedPlanner.getDelegationToken("impala");
 
     // Renew the token.
     kerberizedPlanner.renewDelegationToken(token1);
@@ -166,7 +161,7 @@ public class TestKerberosConnection extends TestBase {
     exceptionThrown = false;
     try {
       tokenPlanner.getDelegationToken(null);
-    } catch (TRecordServiceException e) {
+    } catch (RecordServiceException e) {
       exceptionThrown = true;
       assertTrue(e.getMessage(), e.getMessage().contains(
           "can only be called with a Kerberos connection."));
@@ -176,7 +171,7 @@ public class TestKerberosConnection extends TestBase {
     exceptionThrown = false;
     try {
       tokenPlanner.renewDelegationToken(token1);
-    } catch (TRecordServiceException e) {
+    } catch (RecordServiceException e) {
       exceptionThrown = true;
       assertTrue(e.getMessage(), e.getMessage().contains(
           "can only be called with a Kerberos connection."));
@@ -184,7 +179,7 @@ public class TestKerberosConnection extends TestBase {
     assertTrue(exceptionThrown);
 
     // But other APIs should work.
-    TPlanRequestResult plan = tokenPlanner.planRequest(
+    PlanRequestResult plan = tokenPlanner.planRequest(
         Request.createTableScanRequest("sample_07"));
     assertTrue(plan.tasks.size() == 1);
 
@@ -245,7 +240,7 @@ public class TestKerberosConnection extends TestBase {
 
   @Test
   public void testInvalidToken() throws IOException,
-      TRecordServiceException, InterruptedException {
+      RecordServiceException, InterruptedException {
     Assume.assumeTrue(HAS_KERBEROS_CREDENTIALS);
     boolean exceptionThrown = false;
 
@@ -255,8 +250,8 @@ public class TestKerberosConnection extends TestBase {
         .connect(HOST, PLANNER_PORT);
 
     // Get two tokens from planner.
-    TDelegationToken token1 = kerberizedPlanner.getDelegationToken("impala");
-    TDelegationToken token2 = kerberizedPlanner.getDelegationToken("impala");
+    DelegationToken token1 = kerberizedPlanner.getDelegationToken("impala");
+    DelegationToken token2 = kerberizedPlanner.getDelegationToken("impala");
     kerberizedPlanner.close();
 
     // Verify they work.
@@ -265,7 +260,7 @@ public class TestKerberosConnection extends TestBase {
     new RecordServicePlannerClient.Builder()
         .setDelegationToken(token2).connect(HOST, PLANNER_PORT).close();
 
-    TDelegationToken testToken = new TDelegationToken();
+    DelegationToken testToken = new DelegationToken("", "", new byte[10]);
     try {
       new RecordServicePlannerClient.Builder().setDelegationToken(testToken)
           .connect(HOST, PLANNER_PORT);
@@ -275,7 +270,7 @@ public class TestKerberosConnection extends TestBase {
     assert(exceptionThrown);
 
     // Set the identifier but no password
-    testToken.identifier = token1.identifier;
+    testToken = new DelegationToken(token1.identifier, "", new byte[10]);
     try {
       new RecordServicePlannerClient.Builder().setDelegationToken(testToken)
           .connect(HOST, PLANNER_PORT).close();
@@ -285,7 +280,7 @@ public class TestKerberosConnection extends TestBase {
     assert(exceptionThrown);
 
     // Set it to the other (wrong password);
-    testToken.password = token2.password;
+    testToken = new DelegationToken(token1.identifier, token2.password, new byte[10]);
     try {
       new RecordServicePlannerClient.Builder().setDelegationToken(testToken)
           .connect(HOST, PLANNER_PORT).close();
@@ -295,7 +290,7 @@ public class TestKerberosConnection extends TestBase {
     assert(exceptionThrown);
 
     // Set it to the right password. Everything should still work.
-    testToken.password = token1.password;
+    testToken = new DelegationToken(token1.identifier, token1.password, new byte[10]);
     new RecordServicePlannerClient.Builder().setDelegationToken(testToken)
         .connect(HOST, PLANNER_PORT).close();
     new RecordServicePlannerClient.Builder().setDelegationToken(token1)
@@ -308,25 +303,27 @@ public class TestKerberosConnection extends TestBase {
   // non-secure server.
   @Test
   public void testUnsecureConnectionTokens() throws IOException,
-        TRecordServiceException, InterruptedException {
+        RecordServiceException, InterruptedException {
     RecordServicePlannerClient planner = new RecordServicePlannerClient.Builder()
         .connect("localhost", PLANNER_PORT);
     boolean exceptionThrown = false;
     try {
       planner.getDelegationToken(null);
-    } catch (TRecordServiceException e) {
-      assertTrue(e.getCode() == TErrorCode.AUTHENTICATION_ERROR);
+    } catch (RecordServiceException e) {
+      assertTrue(e.code == RecordServiceException.ErrorCode.AUTHENTICATION_ERROR);
       assertTrue(e.getMessage().contains(
           "can only be called with a Kerberos connection."));
       exceptionThrown = true;
     }
     assertTrue(exceptionThrown);
 
+    DelegationToken dummyToken = new DelegationToken("a", "b", new byte[1]);
+
     exceptionThrown = false;
     try {
-      planner.cancelDelegationToken(null);
-    } catch (TRecordServiceException e) {
-      assertTrue(e.getCode() == TErrorCode.AUTHENTICATION_ERROR);
+      planner.cancelDelegationToken(dummyToken);
+    } catch (RecordServiceException e) {
+      assertTrue(e.code == RecordServiceException.ErrorCode.AUTHENTICATION_ERROR);
       assertTrue(e.getMessage().contains(
           "can only be called from a secure connection."));
       exceptionThrown = true;
@@ -335,9 +332,9 @@ public class TestKerberosConnection extends TestBase {
 
     exceptionThrown = false;
     try {
-      planner.renewDelegationToken(null);
-    } catch (TRecordServiceException e) {
-      assertTrue(e.getCode() == TErrorCode.AUTHENTICATION_ERROR);
+      planner.renewDelegationToken(dummyToken);
+    } catch (RecordServiceException e) {
+      assertTrue(e.code == RecordServiceException.ErrorCode.AUTHENTICATION_ERROR);
       assertTrue(e.getMessage().contains(
           "can only be called with a Kerberos connection."));
       exceptionThrown = true;
@@ -350,7 +347,7 @@ public class TestKerberosConnection extends TestBase {
   // reasonably.
   @Test
   public void testUnsecureConnection() throws IOException,
-      TRecordServiceException, InterruptedException {
+      RecordServiceException, InterruptedException {
     Assume.assumeTrue(HAS_KERBEROS_CREDENTIALS);
     boolean exceptionThrown = false;
 
@@ -386,14 +383,14 @@ public class TestKerberosConnection extends TestBase {
   // Tests that tokens are distributed across the cluster.
   @Test
   public void testPersistedTokens() throws IOException,
-      TRecordServiceException, InterruptedException {
+      RecordServiceException, InterruptedException {
     Assume.assumeTrue(HAS_KERBEROS_CREDENTIALS);
 
     RecordServicePlannerClient planner = new RecordServicePlannerClient.Builder()
         .setKerberosPrincipal(PRINCIPAL)
         .connect(HOST, PLANNER_PORT);
     for (String hostToCancel: SECURE_CLUSTER) {
-      TDelegationToken token = planner.getDelegationToken("impala");
+      DelegationToken token = planner.getDelegationToken("impala");
 
       // Try all the connections, they should all work.
       for (String host: SECURE_CLUSTER) {
@@ -439,12 +436,12 @@ public class TestKerberosConnection extends TestBase {
   }
 
   @Test
-  public void testEncryptedTasks() throws IOException, TRecordServiceException {
+  public void testEncryptedTasks() throws IOException, RecordServiceException {
     Assume.assumeTrue(HAS_KERBEROS_CREDENTIALS);
 
     // Testing the case that request is planned on a non-secure cluster and executed
     // on a secure cluster
-    TPlanRequestResult result = new RecordServicePlannerClient.Builder()
+    PlanRequestResult result = new RecordServicePlannerClient.Builder()
         .planRequest("localhost", PLANNER_PORT,
             Request.createTableScanRequest("tpch.nation"));
 
@@ -455,9 +452,9 @@ public class TestKerberosConnection extends TestBase {
     boolean exceptionThrown = false;
     try {
       worker.execTask(result.tasks.get(0));
-    } catch (TRecordServiceException e) {
+    } catch (RecordServiceException e) {
       exceptionThrown = true;
-      assertEquals(TErrorCode.AUTHENTICATION_ERROR, e.getCode());
+      assertEquals(RecordServiceException.ErrorCode.AUTHENTICATION_ERROR, e.code);
       assertTrue(e.getMessage().contains(
           "Kerberos is enabled but task is not encrypted"));
     }
@@ -480,9 +477,9 @@ public class TestKerberosConnection extends TestBase {
     exceptionThrown = false;
     try {
       worker.execTask(result.tasks.get(0));
-    } catch (TRecordServiceException e) {
+    } catch (RecordServiceException e) {
       exceptionThrown = true;
-      assertEquals(TErrorCode.AUTHENTICATION_ERROR, e.getCode());
+      assertEquals(RecordServiceException.ErrorCode.AUTHENTICATION_ERROR, e.code);
       assertTrue(e.getMessage().contains(
           "Kerberos is not enabled but task is encrypted."));
     }
@@ -502,7 +499,7 @@ public class TestKerberosConnection extends TestBase {
         .connect(HOST, WORKER_PORT);
 
     Random rand = new Random();
-    byte[] byteArray = result.tasks.get(0).task.array();
+    byte[] byteArray = result.tasks.get(0).task;
 
     // Here we swap some random byte with the last byte in the buffer, to make
     // the task fail authentication. Retry several times since the random byte
@@ -516,11 +513,11 @@ public class TestKerberosConnection extends TestBase {
       exceptionThrown = false;
       try {
         worker.execTask(result.tasks.get(0));
-      } catch (TRecordServiceException e) {
+      } catch (RecordServiceException e) {
         // We could get error during deserialization. In that case, keep retrying.
         if (e.getMessage().contains("Task is corrupt.")) continue;
         exceptionThrown = true;
-        assertEquals(TErrorCode.INVALID_TASK, e.getCode());
+        assertEquals(RecordServiceException.ErrorCode.INVALID_TASK, e.code);
         assertTrue(e.getMessage().contains("Task failed authentication."));
         break;
       }

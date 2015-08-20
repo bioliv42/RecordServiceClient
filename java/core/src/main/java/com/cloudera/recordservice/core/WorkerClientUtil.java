@@ -17,11 +17,6 @@ package com.cloudera.recordservice.core;
 
 import java.io.IOException;
 
-import com.cloudera.recordservice.thrift.TNetworkAddress;
-import com.cloudera.recordservice.thrift.TPlanRequestResult;
-import com.cloudera.recordservice.thrift.TRecordServiceException;
-import com.cloudera.recordservice.thrift.TTask;
-
 public class WorkerClientUtil {
   /**
    * Utility function to launch task 'taskId' in plan at the first host.
@@ -30,21 +25,21 @@ public class WorkerClientUtil {
    * TODO: move this into a test/sample directory? Real frameworks have
    * to deal with much more stuff.
    */
-  public static Records execTask(TPlanRequestResult plan, int taskId)
-      throws TRecordServiceException, IOException {
+  public static Records execTask(PlanRequestResult plan, int taskId)
+      throws RecordServiceException, IOException {
     if (taskId >= plan.tasks.size() || taskId < 0) {
       throw new RuntimeException("Invalid task id.");
     }
 
-    TTask task = plan.tasks.get(taskId);
-    TNetworkAddress host = null;
-    if (task.local_hosts.isEmpty()) {
+    Task task = plan.tasks.get(taskId);
+    NetworkAddress host = null;
+    if (task.localHosts.isEmpty()) {
       if (plan.hosts.isEmpty()) {
         throw new RuntimeException("No hosts are provided to run this task.");
       }
       host = plan.hosts.get(0);
     } else {
-      host = task.local_hosts.get(0);
+      host = task.localHosts.get(0);
     }
 
     return new RecordServiceWorkerClient.Builder()

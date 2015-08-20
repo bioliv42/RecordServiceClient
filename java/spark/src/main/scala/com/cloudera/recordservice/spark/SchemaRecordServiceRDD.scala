@@ -25,7 +25,7 @@ import java.util
 import java.util.TimeZone
 
 import com.cloudera.recordservice.core.Request
-import com.cloudera.recordservice.thrift._
+import com.cloudera.recordservice.core.Schema
 import org.apache.spark._
 
 import scala.reflect.ClassTag
@@ -104,7 +104,7 @@ class SchemaRecordServiceRDD[T:ClassTag](sc: SparkContext,
   }
 
   var fields:Array[String] = extractFields()
-  var types:Array[TTypeId] = extractTypes()
+  var types:Array[Schema.Type] = extractTypes()
 
   var defaultVal:Option[T] = None
   var ignoreUnhandledNull:Boolean = false
@@ -134,26 +134,26 @@ class SchemaRecordServiceRDD[T:ClassTag](sc: SparkContext,
 
   private def extractTypes() = {
     val f = recordClass.getDeclaredFields()
-    val result = new Array[TTypeId](f.size)
+    val result = new Array[Schema.Type](f.size)
     for (i <- 0 until f.length) {
       if (f(i).getType.getName == "boolean") {
-        result(i) = TTypeId.BOOLEAN
+        result(i) = Schema.Type.BOOLEAN
       } else if (f(i).getType.getName == "byte") {
-        result(i) = TTypeId.TINYINT
+        result(i) = Schema.Type.TINYINT
       } else if (f(i).getType.getName == "char") {
-        result(i) = TTypeId.TINYINT
+        result(i) = Schema.Type.TINYINT
       } else if (f(i).getType.getName == "short") {
-        result(i) = TTypeId.SMALLINT
+        result(i) = Schema.Type.SMALLINT
       } else if (f(i).getType.getName == "int") {
-        result(i) = TTypeId.INT
+        result(i) = Schema.Type.INT
       } else if (f(i).getType.getName == "long") {
-        result(i) = TTypeId.BIGINT
+        result(i) = Schema.Type.BIGINT
       } else if (f(i).getType.getName == "float") {
-        result(i) = TTypeId.FLOAT
+        result(i) = Schema.Type.FLOAT
       } else if (f(i).getType.getName == "double") {
-        result(i) = TTypeId.DOUBLE
+        result(i) = Schema.Type.DOUBLE
       } else if (f(i).getType.getName == "java.lang.String") {
-        result(i) = TTypeId.STRING
+        result(i) = Schema.Type.STRING
       } else {
         throw new SparkException("Case class uses types that are unsupported. " +
           "Only basic types and String are supported. Type=" + f(i).getType().getName())
@@ -162,26 +162,26 @@ class SchemaRecordServiceRDD[T:ClassTag](sc: SparkContext,
     result
   }
 
-  private def printSchema(schema:TSchema) = {
+  private def printSchema(schema:Schema) = {
     val builder:StringBuilder = new StringBuilder("schema: {\n")
     for (i <- 0 until schema.cols.size()) {
       builder.append("  ")
              .append(schema.cols.get(i).name)
              .append(":")
-             .append(schema.cols.get(i).getType.type_id)
+             .append(schema.cols.get(i).`type`.typeId)
              .append("\n")
     }
     builder.append("}")
     builder.toString()
   }
 
-  private def verifySchema(schema: TSchema) = {
-    val simplifiedSchema:Array[TTypeId] = simplifySchema(schema)
+  private def verifySchema(schema: Schema) = {
+    val simplifiedSchema:Array[Schema.Type] = simplifySchema(schema)
     for (i <- 0 until simplifiedSchema.length) {
       // TODO: best way to handle timestamp/decimal in spark/scala?
-      if (simplifiedSchema(i) == TTypeId.TIMESTAMP_NANOS ||
-          simplifiedSchema(i) == TTypeId.DECIMAL) {
-        simplifiedSchema(i) = TTypeId.STRING
+      if (simplifiedSchema(i) == Schema.Type.TIMESTAMP_NANOS ||
+          simplifiedSchema(i) == Schema.Type.DECIMAL) {
+        simplifiedSchema(i) = Schema.Type.STRING
       }
     }
 
@@ -197,7 +197,7 @@ class SchemaRecordServiceRDD[T:ClassTag](sc: SparkContext,
           throw new SparkException("Schema mismatch. The type of field '" + fields(i) +
             "' does not match the result type. " +
              "Expected type: " + types(i) + " Actual type: " +
-            schema.cols.get(i).getType.type_id)
+            schema.cols.get(i).`type`.typeId)
         }
       }
     } else {
@@ -217,7 +217,7 @@ class SchemaRecordServiceRDD[T:ClassTag](sc: SparkContext,
               throw new SparkException("Schema mismatch. The type of field '" +
                 fields(i) + "' does not match the result type. " +
                 "Expected type: " + types(i) + " Actual type: " +
-                schema.cols.get(j).getType.type_id)
+                schema.cols.get(j).`type`.typeId)
             }
           }
         }
@@ -278,7 +278,7 @@ class SchemaRecordServiceRDD[T:ClassTag](sc: SparkContext,
     // Default values for each field. Only used/populated if defaultVal is set.
     var defaultVals:Array[AnyRef] = new Array[AnyRef](partition.schema.cols.size())
 
-    val schema:Array[TTypeId] = simplifySchema(partition.schema)
+    val schema:Array[Schema.Type] = simplifySchema(partition.schema)
 
     val allMethods = value.getClass.getMethods()
     // TODO: try to dedup some of this code.
@@ -357,26 +357,26 @@ class SchemaRecordServiceRDD[T:ClassTag](sc: SparkContext,
                 // TODO: make sure this is the cheapest way to do this and we're not doing
                 // unnecessary boxing
                 schema(i) match {
-                  case TTypeId.BOOLEAN =>
+                  case Schema.Type.BOOLEAN =>
                     record.nextBoolean(i): java.lang.Boolean
-                  case TTypeId.TINYINT =>
+                  case Schema.Type.TINYINT =>
                     // TODO: does this work? We probably need to cast it to Byte or Char
                     record.nextByte(i): java.lang.Byte
-                  case TTypeId.SMALLINT =>
+                  case Schema.Type.SMALLINT =>
                     record.nextShort(i): java.lang.Short
-                  case TTypeId.INT =>
+                  case Schema.Type.INT =>
                     record.nextInt(i): java.lang.Integer
-                  case TTypeId.BIGINT =>
+                  case Schema.Type.BIGINT =>
                     record.nextLong(i): java.lang.Long
-                  case TTypeId.FLOAT =>
+                  case Schema.Type.FLOAT =>
                     record.nextFloat(i): java.lang.Float
-                  case TTypeId.DOUBLE =>
+                  case Schema.Type.DOUBLE =>
                     record.nextDouble(i): java.lang.Double
-                  case TTypeId.STRING =>
+                  case Schema.Type.STRING =>
                     record.nextByteArray(i).toString()
-                  case TTypeId.TIMESTAMP_NANOS =>
+                  case Schema.Type.TIMESTAMP_NANOS =>
                     timeStampFormat.format(record.nextTimestampNanos(i).toTimeStamp())
-                  case TTypeId.DECIMAL =>
+                  case Schema.Type.DECIMAL =>
                     record.nextDecimal(i).toBigDecimal().toString
                   case _ =>
                     assert(false)

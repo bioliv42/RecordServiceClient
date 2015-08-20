@@ -21,19 +21,10 @@ import java.nio.ByteBuffer;
 
 import sun.misc.Unsafe;
 
-import com.cloudera.recordservice.thrift.TFetchResult;
-import com.cloudera.recordservice.thrift.TRecordFormat;
-import com.cloudera.recordservice.thrift.TRecordServiceException;
-import com.cloudera.recordservice.thrift.TSchema;
-import com.cloudera.recordservice.thrift.TTaskStatus;
-import com.cloudera.recordservice.thrift.TType;
-import com.cloudera.recordservice.thrift.TTypeId;
-
 /**
  * Abstraction over records returned from the RecordService. This class is
  * extremely performance sensitive. Not thread-safe.
  */
-@SuppressWarnings("restriction")
 public class Records {
   private static final Unsafe unsafe;
   static {
@@ -75,7 +66,7 @@ public class Records {
     private final int[] byteArrayLen_;
 
     // Schema of the record
-    private final TSchema schema_;
+    private final Schema schema_;
 
     // Returns if the col at 'colIdx' is NULL.
     public boolean isNull(int colIdx) {
@@ -167,7 +158,7 @@ public class Records {
       return decimalVals_[colIdx];
     }
 
-    protected Record(TSchema schema) {
+    protected Record(Schema schema) {
       recordIdx_ = -1;
       colOffsets_ = new long[schema.cols.size()];
       colData_ = new ByteBuffer[schema.cols.size()];
@@ -178,22 +169,22 @@ public class Records {
       byteArrayLen_ = new int[schema.cols.size()];
       schema_ = schema;
       for (int i = 0; i < colOffsets_.length; ++i) {
-        TType type = schema_.cols.get(i).type;
-        if (type.type_id == TTypeId.STRING || type.type_id == TTypeId.VARCHAR) {
+        Schema.TypeDesc type = schema_.cols.get(i).type;
+        if (type.typeId == Schema.Type.STRING || type.typeId == Schema.Type.VARCHAR) {
           byteArrayVals_[i] = new ByteArray();
         }
-        if (type.type_id == TTypeId.TIMESTAMP_NANOS) {
+        if (type.typeId == Schema.Type.TIMESTAMP_NANOS) {
           timestampNanos_[i] = new TimestampNanos();
         }
 
-        if (type.type_id == TTypeId.CHAR) {
+        if (type.typeId == Schema.Type.CHAR) {
           byteArrayVals_[i] = new ByteArray();
           byteArrayLen_[i] = type.len;
         } else {
           byteArrayLen_[i] = -1;
         }
 
-        if (type.type_id == TTypeId.DECIMAL) {
+        if (type.typeId == Schema.Type.DECIMAL) {
           decimalVals_[i] = new Decimal(type.precision, type.scale);
           byteArrayLen_[i] = Decimal.computeByteSize(type.precision, type.scale);
         }
@@ -201,13 +192,13 @@ public class Records {
     }
 
     // Resets the state of the row to return the next batch.
-    protected void reset(TFetchResult result) throws RuntimeException {
+    protected void reset(FetchResult result) throws RuntimeException {
       recordIdx_ = -1;
       for (int i = 0; i < colOffsets_.length; ++i) {
-        nulls_[i] = result.columnar_records.cols.get(i).is_null;
+        nulls_[i] = result.records.cols.get(i).is_null;
         colOffsets_[i] = byteArrayOffset;
-        TType type = schema_.cols.get(i).type;
-        switch (type.type_id) {
+        Schema.TypeDesc type = schema_.cols.get(i).type;
+        switch (type.typeId) {
         case BOOLEAN:
         case TINYINT:
         case SMALLINT:
@@ -220,7 +211,7 @@ public class Records {
         case CHAR:
         case TIMESTAMP_NANOS:
         case DECIMAL:
-          colData_[i] = result.columnar_records.cols.get(i).data;
+          colData_[i] = result.records.cols.get(i).data;
           break;
         default:
           throw new RuntimeException(
@@ -229,7 +220,7 @@ public class Records {
       }
     }
 
-    public TSchema getSchema() { return schema_; }
+    public Schema getSchema() { return schema_; }
   }
 
   // Client and task handle
@@ -237,7 +228,7 @@ public class Records {
   private RecordServiceWorkerClient.TaskState handle_;
 
   // The current fetchResult from the RecordServiceWorker. Never null.
-  private TFetchResult fetchResult_;
+  private FetchResult fetchResult_;
 
   // Record object that is returned. Reused across calls to next()
   private final Record record_;
@@ -252,9 +243,9 @@ public class Records {
   /**
    * Returns true if there are more records.
    */
-  public boolean hasNext() throws IOException, TRecordServiceException {
+  public boolean hasNext() throws IOException, RecordServiceException {
     assert(fetchResult_ != null);
-    while (record_.recordIdx_ == fetchResult_.num_records - 1) {
+    while (record_.recordIdx_ == fetchResult_.numRecords - 1) {
       if (fetchResult_.done) {
         hasNext_ = false;
         return false;
@@ -288,7 +279,7 @@ public class Records {
    * Returns the status of the underlying task. This issues an RPC to the server
    * and cannot be used in the hot path.
    */
-  public TTaskStatus getStatus() throws IOException, TRecordServiceException {
+  public TaskStatus getStatus() throws IOException, RecordServiceException {
     if (handle_ == null) throw new RuntimeException("Task already closed.");
     return worker_.getTaskStatus(handle_);
   }
@@ -296,7 +287,7 @@ public class Records {
   /**
    * Returns the schema for the returned records.
    */
-  public TSchema getSchema() { return record_.getSchema(); }
+  public Schema getSchema() { return record_.getSchema(); }
 
   /**
    * Returns the progress. [0, 1]
@@ -305,7 +296,7 @@ public class Records {
 
   protected Records(RecordServiceWorkerClient worker,
       RecordServiceWorkerClient.TaskState handle)
-      throws IOException, TRecordServiceException {
+      throws IOException, RecordServiceException {
     worker_ = worker;
     handle_ = handle;
 
@@ -314,16 +305,16 @@ public class Records {
     hasNext_ = hasNext();
   }
 
-  private void nextBatch() throws IOException, TRecordServiceException {
+  private void nextBatch() throws IOException, RecordServiceException {
     if (handle_ == null) {
       throw new RuntimeException("Task has been closed already.");
     }
     fetchResult_ = worker_.fetch(handle_);
-    if (fetchResult_.record_format != TRecordFormat.Columnar) {
+    if (fetchResult_.recordFormat != FetchResult.RecordFormat.Columnar) {
       throw new RuntimeException("Unsupported record format");
     }
     record_.reset(fetchResult_);
-    progress_ = (float)fetchResult_.task_progress;
+    progress_ = (float)fetchResult_.taskProgress;
   }
 
 }

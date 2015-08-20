@@ -23,12 +23,12 @@ import org.apache.hadoop.security.token.Token;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.cloudera.recordservice.core.NetworkAddress;
+import com.cloudera.recordservice.core.RecordServiceException;
 import com.cloudera.recordservice.core.RecordServiceWorkerClient;
 import com.cloudera.recordservice.core.Records;
 import com.cloudera.recordservice.mr.security.DelegationTokenIdentifier;
 import com.cloudera.recordservice.mr.security.TokenUtils;
-import com.cloudera.recordservice.thrift.TNetworkAddress;
-import com.cloudera.recordservice.thrift.TRecordServiceException;
 
 /**
  * Core RecordReader functionality. Classes that implement the MR RecordReader
@@ -55,7 +55,7 @@ public class RecordReaderCore {
   private static final int DEFAULT_FETCH_SIZE = 50000;
 
   public RecordReaderCore(Configuration config, Credentials credentials,
-      TaskInfo taskInfo) throws TRecordServiceException, IOException {
+      TaskInfo taskInfo) throws RecordServiceException, IOException {
     try {
       int fetchSize = config.getInt(RecordServiceConfig.FETCH_SIZE_CONF,
           DEFAULT_FETCH_SIZE);
@@ -83,10 +83,10 @@ public class RecordReaderCore {
       if (taskSleepMs != -1) builder.setSleepDurationMs(taskSleepMs);
       if (socketTimeoutMs != -1) builder.setTimeoutMs(socketTimeoutMs);
       if (enableLogging) builder.setLoggingLevel(LOG);
-      if (token != null) builder.setDelegationToken(TokenUtils.toTDelegationToken(token));
+      if (token != null) builder.setDelegationToken(TokenUtils.toDelegationToken(token));
 
       // TODO: handle multiple locations.
-      TNetworkAddress task = taskInfo.getLocations()[0];
+      NetworkAddress task = taskInfo.getLocations()[0];
       worker_ = builder.connect(task.hostname, task.port);
       records_ = worker_.execAndFetch(taskInfo.getTask());
     } finally {

@@ -19,10 +19,8 @@
 package com.cloudera.recordservice.spark
 
 import com.cloudera.recordservice.core._
-import com.cloudera.recordservice.thrift._
 import org.apache.spark._
 import org.apache.spark.rdd.RDD
-import org.apache.thrift.TException
 
 import java.net.InetAddress
 
@@ -30,16 +28,16 @@ import scala.collection.mutable.ListBuffer
 import scala.reflect.ClassTag
 
 private class RecordServicePartition(rddId: Int, idx: Int,
-                                     h:Seq[String], p:Seq[Int], t: TTask, s: TSchema,
-                                     token: TDelegationToken)
+                                     h:Seq[String], p:Seq[Int], t: Task, s: Schema,
+                                     token: DelegationToken)
     extends Partition {
   override def hashCode(): Int = 41 * (41 + rddId) + idx
   override val index: Int = idx
-  val task: TTask = t
-  val schema: TSchema = s
+  val task: Task = t
+  val schema: Schema = s
   val hosts: Seq[String] = h
   val ports: Seq[Int] = p
-  val delegationToken: TDelegationToken = token
+  val delegationToken: DelegationToken = token
 }
 
 /**
@@ -70,7 +68,7 @@ abstract class RecordServiceRDDBase[T:ClassTag](@transient sc: SparkContext)
   var (plannerHost, plannerPort) = RecordServiceConf.getPlannerHostPort(sc)
 
   // Result schema (after projection)
-  var schema:TSchema = null
+  var schema:Schema = null
 
   def setStatement(stmt:String) = {
     verifySetRequest()
@@ -96,7 +94,7 @@ abstract class RecordServiceRDDBase[T:ClassTag](@transient sc: SparkContext)
     this
   }
 
-  def getSchema(): TSchema = {
+  def getSchema(): Schema = {
     if (schema == null) {
       // TODO: this is kind of awkward. Introduce a new plan() API?
       throw new SparkException("getSchema() can only be called after getPartitions")
@@ -146,21 +144,19 @@ abstract class RecordServiceRDDBase[T:ClassTag](@transient sc: SparkContext)
       val records = worker.execAndFetch(partition.task)
       (worker, records)
     } catch {
-      case e:TRecordServiceException => logError("Could not exec request: " + e.message)
-        throw new SparkException("RecordServiceRDD failed", e)
-      case e:TException => logError("Could not exec request: " + e.getMessage())
+      case e:RecordServiceException => logError("Could not exec request: " + e.message)
         throw new SparkException("RecordServiceRDD failed", e)
     }
   }
 
   // Returns a simplified schema for 'schema'. The RecordService supports richer types
   // than Spark so collapse types.
-  protected def simplifySchema(schema:TSchema) : Array[TTypeId] = {
-    val result = new Array[TTypeId](schema.cols.size())
+  protected def simplifySchema(schema:Schema) : Array[Schema.Type] = {
+    val result = new Array[Schema.Type](schema.cols.size())
     for (i <- 0 until schema.cols.size()) {
-      val t = schema.cols.get(i).getType.type_id
-      if (t == TTypeId.VARCHAR || t == TTypeId.CHAR) {
-        result(i) = TTypeId.STRING
+      val t = schema.cols.get(i).`type`.typeId
+      if (t == Schema.Type.VARCHAR || t == Schema.Type.CHAR) {
+        result(i) = Schema.Type.STRING
       } else {
         result(i) = t
       }
@@ -174,13 +170,13 @@ abstract class RecordServiceRDDBase[T:ClassTag](@transient sc: SparkContext)
    */
   protected def updateCounters(records:Records) = {
     val stats = records.getStatus.stats
-    recordsReadAccum += stats.num_records_read
-    recordsReturnedAccum += stats.num_records_returned
-    serializeTimeAccum += stats.serialize_time_ms
-    clientTimeAccum += stats.client_time_ms
-    decompressTimeAccum += stats.decompress_time_ms
-    bytesReadAccum += stats.bytes_read
-    bytesReadLocalAccum += stats.bytes_read_local
+    recordsReadAccum += stats.numRecordsRead
+    recordsReturnedAccum += stats.numRecordsReturned
+    serializeTimeAccum += stats.serializeTimeMs
+    clientTimeAccum += stats.clientTimeMs
+    decompressTimeAccum += stats.decompressTimeMs
+    bytesReadAccum += stats.bytesRead
+    bytesReadLocalAccum += stats.bytesReadLocal
   }
 
   /**
@@ -216,9 +212,7 @@ abstract class RecordServiceRDDBase[T:ClassTag](@transient sc: SparkContext)
         (result, null)
       }
     } catch {
-      case e:TRecordServiceException => logError("Could not plan request: " + e.message)
-        throw new SparkException("RecordServiceRDD failed", e)
-      case e:TException => logError("Could not plan request: " + e.getMessage())
+      case e:RecordServiceException => logError("Could not plan request: " + e.message)
         throw new SparkException("RecordServiceRDD failed", e)
     } finally {
       if (planner != null) planner.close()
@@ -228,9 +222,9 @@ abstract class RecordServiceRDDBase[T:ClassTag](@transient sc: SparkContext)
     for (i <- 0 until planResult.tasks.size()) {
       val hosts = ListBuffer[String]()
       val ports = ListBuffer[Int]()
-      for (j <- 0 until planResult.tasks.get(i).local_hosts.size()) {
-        hosts += planResult.tasks.get(i).local_hosts.get(j).hostname
-        ports += planResult.tasks.get(i).local_hosts.get(j).port
+      for (j <- 0 until planResult.tasks.get(i).localHosts.size()) {
+        hosts += planResult.tasks.get(i).localHosts.get(j).hostname
+        ports += planResult.tasks.get(i).localHosts.get(j).port
       }
       partitions(i) = new RecordServicePartition(id, i, hosts.seq, ports.seq,
         planResult.tasks.get(i), planResult.schema, delegationToken)
