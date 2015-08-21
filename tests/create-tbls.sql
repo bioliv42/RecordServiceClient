@@ -64,11 +64,11 @@ insert overwrite rs.alltypes_null VALUES(
 
 -- Create users table and insert values.
 DROP TABLE IF EXISTS rs.users;
-create table rs.users (name STRING, favorite_number INT, favorite_color STRING);
+create table rs.users (name STRING, favorite_number INT, age INT, favorite_animal STRING, favorite_color STRING);
 
-INSERT OVERWRITE TABLE rs.users VALUES ("Alyssa", 256, "red");
-INSERT INTO TABLE rs.users VALUES ("Ben", 96, "blue");
-INSERT INTO TABLE rs.users VALUES ("Kate", 51, "blue");
-INSERT INTO TABLE rs.users VALUES ("Laura", 19, "red");
-INSERT INTO TABLE rs.users VALUES ("Mike", 22, NULL);
-INSERT INTO TABLE rs.users VALUES ("Zack", 1, "red");
+INSERT OVERWRITE TABLE rs.users VALUES ("Alyssa", 256, 10, "sun bear", "red");
+INSERT INTO TABLE rs.users VALUES ("Ben", 96, 21, "dog", "blue");
+INSERT INTO TABLE rs.users VALUES ("Kate", 51, 14, "elk", "blue");
+INSERT INTO TABLE rs.users VALUES ("Laura", 19, 30, "cat", "red");
+INSERT INTO TABLE rs.users VALUES ("Mike", 22, 60, NULL, NULL);
+INSERT INTO TABLE rs.users VALUES ("Zack", 1, 56, "dog", "red");

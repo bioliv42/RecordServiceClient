@@ -87,29 +87,29 @@ public class SpecificRecords<T extends SpecificRecordBase> implements RecordIter
     }
 
     Records.Record rsRecord = records_.next();
-    for (int i = 0; i < schema_.getColsSize(); ++i) {
+    for (int i = 0; i < rsIndexToRecordIndex_.length; ++i) {
       int rsIndex = rsIndexToRecordIndex_[i];
-      if (rsRecord.isNull(i)) {
-        record.put(rsIndex, null);
+      // Just use default value in read schema if it is null in rsRecord.
+      if (rsRecord.isNull(rsIndex)) {
         continue;
       }
-      switch(schema_.getCols().get(i).type.type_id) {
-        case BOOLEAN: record.put(rsIndex, rsRecord.nextBoolean(i)); break;
-        case TINYINT: record.put(rsIndex, (int)rsRecord.nextByte(i)); break;
-        case SMALLINT: record.put(rsIndex, (int)rsRecord.nextShort(i)); break;
-        case INT: record.put(rsIndex, rsRecord.nextInt(i)); break;
-        case BIGINT: record.put(rsIndex, rsRecord.nextLong(i)); break;
-        case FLOAT: record.put(rsIndex, rsRecord.nextFloat(i)); break;
-        case DOUBLE: record.put(rsIndex, rsRecord.nextDouble(i)); break;
+      switch(schema_.getCols().get(rsIndex).type.type_id) {
+        case BOOLEAN: record.put(i, rsRecord.nextBoolean(rsIndex)); break;
+        case TINYINT: record.put(i, (int)rsRecord.nextByte(rsIndex)); break;
+        case SMALLINT: record.put(i, (int)rsRecord.nextShort(rsIndex)); break;
+        case INT: record.put(i, rsRecord.nextInt(rsIndex)); break;
+        case BIGINT: record.put(i, rsRecord.nextLong(rsIndex)); break;
+        case FLOAT: record.put(i, rsRecord.nextFloat(rsIndex)); break;
+        case DOUBLE: record.put(i, rsRecord.nextDouble(rsIndex)); break;
 
         case STRING:
         case VARCHAR:
         case CHAR:
-          record.put(rsIndex, rsRecord.nextByteArray(i).toString()); break;
+          record.put(i, rsRecord.nextByteArray(rsIndex).toString()); break;
 
         default:
           throw new RuntimeException(
-              "Unsupported type: " + schema_.getCols().get(i).type);
+              "Unsupported type: " + schema_.getCols().get(rsIndex).type);
       }
     }
     return record;
@@ -128,7 +128,7 @@ public class SpecificRecords<T extends SpecificRecordBase> implements RecordIter
   private void resolveType(int recordIndex, int recordServiceIndex) {
     List<Schema.Field> fields = avroSchema_.getFields();
     // TODO: support avro's schema resolution rules with type promotion.
-    TTypeId rsType = schema_.cols.get(recordIndex).type.type_id;
+    TTypeId rsType = schema_.cols.get(recordServiceIndex).type.type_id;
     Schema.Type t = fields.get(recordIndex).schema().getType();
 
     if (t == Type.UNION) {
@@ -200,7 +200,8 @@ public class SpecificRecords<T extends SpecificRecordBase> implements RecordIter
     }
 
     List<Schema.Field> fields = avroSchema_.getFields();
-    if (fields.size() != schema_.getColsSize()) {
+    // Throw exception only when size of read schema is larger than size of write schema.
+    if (fields.size() > schema_.getColsSize()) {
       // TODO: support avro's  schema evolution rules.
       throw new RuntimeException(
           "Incompatible schema: the number of fields do not match. Record contains " +
