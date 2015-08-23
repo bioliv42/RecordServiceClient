@@ -324,7 +324,7 @@ public class MapReduceTest extends TestBase {
     Configuration config = new Configuration();
     RecordServiceConfig.setInputTable(config, "tpch", "nation", null);
     verifyInputSplits(1, 4, config);
-    verifyException("Table does not exist", "", "nation", "n_comment");
+    verifyException("Could not resolve table reference", "", "nation", "n_comment");
     verifyException("'tbl' must be non-empty", "tpch", null, "n_comment");
     verifyException("'tbl' must be non-empty", "tpch", "", "n_comment");
     verifyException("Column list cannot contain empty names.",
