@@ -18,6 +18,7 @@ package com.cloudera.recordservice.mr;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.hadoop.io.BooleanWritable;
@@ -32,8 +33,6 @@ import org.apache.hadoop.io.Writable;
 
 import com.cloudera.recordservice.core.ByteArray;
 import com.cloudera.recordservice.core.Records.Record;
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Maps;
 
 public class RecordServiceRecord implements Writable {
   // Array of Writable objects. This is created once and reused.
@@ -49,13 +48,13 @@ public class RecordServiceRecord implements Writable {
   // Map of column name to column value index in columnValues_.
   // TODO: Handle column names should be case-insensitive, we need to handle
   // that efficiently.
-  private Map<String, Integer> colNameToIdx_ = Maps.newHashMap();
+  private Map<String, Integer> colNameToIdx_;
 
   public RecordServiceRecord(Schema schema) {
     schema_ = schema;
     columnVals_ = new Writable[schema_.getNumColumns()];
     columnValObjects_ = new Writable[schema_.getNumColumns()];
-    colNameToIdx_ = Maps.newHashMapWithExpectedSize(schema_.getNumColumns());
+    colNameToIdx_ = new HashMap<String, Integer>();
     for (int i = 0; i < schema_.getNumColumns(); ++i) {
       colNameToIdx_.put(schema.getColumnInfo(i).name, i);
       columnValObjects_[i] = getWritableInstance(schema.getColumnInfo(i).type.typeId);
@@ -83,7 +82,7 @@ public class RecordServiceRecord implements Writable {
       }
       columnVals_[i] = columnValObjects_[i];
       com.cloudera.recordservice.core.Schema.ColumnDesc cInfo = schema_.getColumnInfo(i);
-      Preconditions.checkNotNull(cInfo);
+      assert cInfo != null;
       switch (cInfo.type.typeId) {
         case BOOLEAN:
           ((BooleanWritable) columnValObjects_[i]).set(record.nextBoolean(i));

@@ -24,8 +24,6 @@ import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.cloudera.recordservice.core.ByteArray;
 import com.cloudera.recordservice.core.RecordServiceException;
@@ -37,9 +35,6 @@ import com.cloudera.recordservice.mr.Schema;
  */
 public class TextInputFormat extends
     RecordServiceInputFormatBase<LongWritable, Text> {
-
-  private static final Logger LOG =
-      LoggerFactory.getLogger(TextInputFormat.class);
 
   @Override
   public List<InputSplit> getSplits(JobContext context) throws IOException,

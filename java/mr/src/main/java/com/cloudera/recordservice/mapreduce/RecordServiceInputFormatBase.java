@@ -44,8 +44,6 @@ import com.cloudera.recordservice.mr.Schema;
 import com.cloudera.recordservice.mr.TaskInfo;
 import com.cloudera.recordservice.mr.security.DelegationTokenIdentifier;
 import com.cloudera.recordservice.mr.security.TokenUtils;
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Lists;
 
 /**
  * The base RecordService input format that handles functionality common to
@@ -140,7 +138,11 @@ public abstract class RecordServiceInputFormatBase<K, V> extends InputFormat<K, 
         // Reconcile this.
         request = Request.createTableScanRequest(tblName);
       } else {
-        request = Request.createProjectionRequest(tblName, Lists.newArrayList(colNames));
+        List<String> projection = new ArrayList<String>();
+        for (String c: colNames) {
+          projection.add(c);
+        }
+        request = Request.createProjectionRequest(tblName, projection);
       }
     } else if (inputDir != null) {
       // TODO: inputDir is a comma separate list of paths. The service needs to
@@ -153,7 +155,7 @@ public abstract class RecordServiceInputFormatBase<K, V> extends InputFormat<K, 
     } else if (sqlQuery != null) {
       request = Request.createSqlRequest(sqlQuery);
     } else {
-      Preconditions.checkState(false);
+      assert false;
     }
 
     PlanRequestResult result = null;

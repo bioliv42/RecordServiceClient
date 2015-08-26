@@ -46,17 +46,11 @@
     </repository>
   </repositories>
 
-  <!-- TODO: this pulls in a lot dependencies, we should exclude as much as possible -->
   <dependencies>
     <dependency>
       <groupId>com.cloudera.recordservice</groupId>
       <artifactId>recordservice-core</artifactId>
       <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.thrift</groupId>
-      <artifactId>libthrift</artifactId>
-      <version>${thrift.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.hadoop</groupId>

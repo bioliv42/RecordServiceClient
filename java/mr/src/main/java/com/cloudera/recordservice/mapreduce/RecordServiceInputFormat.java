@@ -23,8 +23,6 @@ import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.security.Credentials;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.cloudera.recordservice.core.RecordServiceException;
 import com.cloudera.recordservice.core.Records;
@@ -41,9 +39,6 @@ import com.google.common.annotations.VisibleForTesting;
  */
 public class RecordServiceInputFormat extends
     RecordServiceInputFormatBase<LongWritable, RecordServiceRecord> {
-
-  private static final Logger LOG =
-      LoggerFactory.getLogger(RecordServiceInputFormat.class);
 
   @Override
   public RecordReader<LongWritable, RecordServiceRecord>

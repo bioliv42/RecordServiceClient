@@ -125,9 +125,6 @@
                   <pattern>org.apache.httpcomponents</pattern>
                   <shadedPattern>com.cloudera.recordservice.shade.apache.httpcomponents</shadedPattern>
                 </relocation>
-                  <!-- TODO: not relocated because this is currently
-                       part of the public API
-                       -->
                 <relocation>
                   <pattern>org.apache.thrift</pattern>
                   <shadedPattern>com.cloudera.recordservice.shade.apache.thrift</shadedPattern>

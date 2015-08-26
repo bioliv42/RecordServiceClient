@@ -84,7 +84,6 @@
               <artifactSet>
                 <includes>
                   <include>com.cloudera.recordservice:*</include>
-                  <include>org.apache.thrift:*</include>
                 </includes>
               </artifactSet>
             </configuration>

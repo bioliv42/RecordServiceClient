@@ -75,17 +75,6 @@ public class MapReduceTest extends TestBase {
     assertTrue(exceptionThrown);
   }
 
-  private void verifyException(Configuration config, String msg) {
-    boolean exceptionThrown = false;
-    try {
-      RecordServiceInputFormat.getSplits(config, new Credentials());
-    } catch (IOException e) {
-      exceptionThrown = true;
-      assertTrue(e.getMessage(), e.getMessage().contains(msg));
-    }
-    assertTrue(exceptionThrown);
-  }
-
   private void verifyInputSplitsTable(int numSplits, int numCols,
       String tbl, String... cols) throws IOException {
     Configuration config = new Configuration();

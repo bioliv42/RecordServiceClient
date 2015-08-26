@@ -22,7 +22,6 @@ import java.io.IOException;
 import org.apache.hadoop.io.WritableComparable;
 
 import com.cloudera.recordservice.core.Decimal;
-import com.google.common.base.Preconditions;
 
 /**
  * Writable for decimal data.
@@ -56,7 +55,7 @@ public class DecimalWritable implements WritableComparable<DecimalWritable> {
   @Override
   public int compareTo(DecimalWritable o) {
     // Comparing the integer values is correct (fixed scale) and cheaper.
-    Preconditions.checkState(decimal_.getScale() == o.get().getScale());
+    assert decimal_.getScale() == o.get().getScale();
     return decimal_.toBigInteger().compareTo(o.get().toBigInteger());
   }
 }

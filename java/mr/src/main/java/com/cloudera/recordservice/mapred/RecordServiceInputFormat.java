@@ -28,7 +28,7 @@ import com.cloudera.recordservice.core.RecordServiceException;
 import com.cloudera.recordservice.mr.RecordServiceRecord;
 
 /**
- * Implementation of RecordServiceInputFormat.
+ * Input format which returns (NULL, RecordServiceRecord).
  */
 public class RecordServiceInputFormat extends
     RecordServiceInputFormatBase<WritableComparable<?>, RecordServiceRecord> {
@@ -66,7 +66,6 @@ public class RecordServiceInputFormat extends
 
     @Override
     public WritableComparable<?> createKey() {
-      // TODO: is this legit?
       return NullWritable.get();
     }
 
