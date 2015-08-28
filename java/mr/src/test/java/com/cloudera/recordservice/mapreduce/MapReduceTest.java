@@ -186,9 +186,7 @@ public class MapReduceTest extends TestBase {
 
       int numRows = 0;
       while (reader.nextKeyValue()) {
-        LongWritable key = reader.getCurrentKey();
         RecordServiceRecord value = reader.getCurrentValue();
-        assertEquals(numRows, key.get());
         ++numRows;
 
         if (numRows == 10) {

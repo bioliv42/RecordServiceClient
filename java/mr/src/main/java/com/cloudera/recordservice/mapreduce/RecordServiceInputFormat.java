@@ -18,7 +18,7 @@ package com.cloudera.recordservice.mapreduce;
 import java.io.IOException;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
@@ -33,15 +33,15 @@ import com.cloudera.recordservice.mr.Schema;
 import com.google.common.annotations.VisibleForTesting;
 
 /**
- * Input format which returns <Long, RecordServiceReceord>
+ * Input format which returns <NULL, RecordServiceReceord>
  * TODO: is this useful? This introduces the RecordServiceRecord "object"
  * model.
  */
 public class RecordServiceInputFormat extends
-    RecordServiceInputFormatBase<LongWritable, RecordServiceRecord> {
+    RecordServiceInputFormatBase<NullWritable, RecordServiceRecord> {
 
   @Override
-  public RecordReader<LongWritable, RecordServiceRecord>
+  public RecordReader<NullWritable, RecordServiceRecord>
       createRecordReader(InputSplit split, TaskAttemptContext context)
           throws IOException, InterruptedException {
     RecordServiceRecordReader rReader = new RecordServiceRecordReader();
@@ -53,25 +53,16 @@ public class RecordServiceInputFormat extends
    * RecordReader implementation that uses the RecordService for data access. Values
    * are returned as RecordServiceRecords, which contain schema and data for a single
    * record.
-   * Keys are the record number returned by this RecordReader.
    * To reduce the creation of new objects, existing storage is reused for both
    * keys and values (objects are updated in-place).
-   * TODO: Should keys just be NullWritables?
    */
   public static class RecordServiceRecordReader extends
-      RecordReaderBase<LongWritable, RecordServiceRecord> {
+      RecordReaderBase<NullWritable, RecordServiceRecord> {
     // Current record being processed
     private Records.Record currentRSRecord_;
 
     // The record that is returned. Updated in-place when nextKeyValue() is called.
     private RecordServiceRecord record_;
-
-    // The current record number assigned this record. Incremented each time
-    // nextKeyValue() is called and assigned to currentKey_.
-    private static long recordNum_ = 0;
-
-    // The key corresponding to the record.
-    private final LongWritable currentKey_ = new LongWritable();
 
     // True after initialize() has fully completed.
     private volatile boolean isInitialized_ = false;
@@ -91,14 +82,12 @@ public class RecordServiceInputFormat extends
 
       if (!nextRecord()) return false;
       record_.reset(currentRSRecord_);
-      currentKey_.set(recordNum_++);
       return true;
     }
 
     @Override
-    public LongWritable getCurrentKey() throws IOException,
-        InterruptedException {
-      return currentKey_;
+    public NullWritable getCurrentKey() throws IOException, InterruptedException {
+      return NullWritable.get();
     }
 
     @Override
