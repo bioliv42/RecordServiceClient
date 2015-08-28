@@ -16,6 +16,8 @@
 package com.cloudera.recordservice.mr;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.util.Random;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.Credentials;
@@ -85,8 +87,25 @@ public class RecordReaderCore {
       if (enableLogging) builder.setLoggingLevel(LOG);
       if (token != null) builder.setDelegationToken(TokenUtils.toDelegationToken(token));
 
-      // TODO: handle multiple locations.
-      NetworkAddress task = taskInfo.getLocations()[0];
+      NetworkAddress task = null;
+      String localHost = InetAddress.getLocalHost().getHostAddress();
+      NetworkAddress[] locations = taskInfo.getLocations();
+
+      for (NetworkAddress loc : locations) {
+        if (localHost.equals(loc.hostname)) {
+          task = loc;
+          break;
+        }
+      }
+      // We can't schedule the task locally. Now randomly pick a host for it to
+      // distribute the tasks more evenly.
+      if (task == null) {
+        Random rand = new Random();
+        task = locations[rand.nextInt(locations.length)];
+        LOG.debug("Cannot schedule task {} locally. Randomly selected host {} " +
+            "to execute it", taskInfo.getTask().taskId, task.hostname);
+      }
+
       worker_ = builder.connect(task.hostname, task.port);
       records_ = worker_.execAndFetch(taskInfo.getTask());
     } finally {
