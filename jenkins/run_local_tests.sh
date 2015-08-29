@@ -20,6 +20,12 @@ echo ">>> Starting all services"
 cd $IMPALA_HOME
 . testdata/bin/run-all.sh
 
+# Start up Impala
+cd $IMPALA_HOME
+. ${IMPALA_HOME}/bin/set-pythonpath.sh
+
+bin/start-impala-cluster.py -s 1 --start_recordservice --catalogd_args="-load_catalog_in_background=false"
+
 echo ">>> Loading test data"
 . $RECORD_SERVICE_HOME/tests/load-test-data.sh
 echo ">>> Running tests"

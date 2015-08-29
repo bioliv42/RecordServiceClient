@@ -32,12 +32,6 @@ if [ ! -d ${DATADST}/tpch ]; then
   popd
 fi
 
-# Start up Impala
-cd $IMPALA_HOME
-. ${IMPALA_HOME}/bin/set-pythonpath.sh
-
-bin/start-impala-cluster.py -s 1 --catalogd_args="-load_catalog_in_background=false"
-
 # Load the test data we need.
 cd $RECORD_SERVICE_HOME
 impala-shell.sh -f tests/create-tbls.sql
