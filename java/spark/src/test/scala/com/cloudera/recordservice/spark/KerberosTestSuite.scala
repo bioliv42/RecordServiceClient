@@ -15,6 +15,8 @@
 
 package com.cloudera.recordservice.spark
 
+import com.cloudera.recordservice.mr.RecordServiceConfig
+
 import org.apache.spark.{SparkContext, SparkConf}
 import org.scalatest.{BeforeAndAfterAll, FunSuite}
 
@@ -29,8 +31,8 @@ class KerberosTestSuite extends FunSuite with BeforeAndAfterAll {
       System.getenv("HAS_KERBEROS_CREDENTIALS").equalsIgnoreCase("true")
 
   val conf = new SparkConf(false)
-    .set(RecordServiceConf.RECORD_SERVICE_PLANNER_HOST_KEY, "vd0224.halxg.cloudera.com")
-    .set(RecordServiceConf.RECORD_SERVICE_KERBEROS_PRINCIPAL_KEY,
+    .set(RecordServiceConfig.PLANNER_HOSTPORTS_CONF, "vd0224.halxg.cloudera.com:40000")
+    .set(RecordServiceConfig.KERBEROS_PRINCIPAL_CONF,
         "impala/vd0224.halxg.cloudera.com@HALXG.CLOUDERA.COM")
 
   override def beforeAll() {

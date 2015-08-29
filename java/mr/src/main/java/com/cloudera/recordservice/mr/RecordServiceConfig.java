@@ -16,10 +16,14 @@
 package com.cloudera.recordservice.mr;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.util.StringUtils;
+
+import com.cloudera.recordservice.core.NetworkAddress;
 
 /**
  * Config keys and values for the RecordService and utilities to set them.
@@ -34,16 +38,12 @@ public class RecordServiceConfig {
   // The subset of columns to read.
   public final static String COL_NAMES_CONF = "recordservice.col.names";
 
-  // Host/Port of the planner service.
-  public final static String PLANNER_HOST_CONF = "recordservice.planner.host";
-  public final static String PLANNER_PORT_CONF = "recordservice.planner.port";
+  // Host/Port of the planner service. Comma separated list.
+  public final static String PLANNER_HOSTPORTS_CONF = "recordservice.planner.hostports";
 
-  public static final String DEFAULT_PLANNER_HOST =
+  public static final String DEFAULT_PLANNER_HOSTPORTS =
     System.getenv("RECORD_SERVICE_PLANNER_HOST") != null ?
-        System.getenv("RECORD_SERVICE_PLANNER_HOST") : "localhost";
-  public static final int DEFAULT_PLANNER_PORT =
-    System.getenv("RECORD_SERVICE_PLANNER_PORT") != null ?
-        Integer.parseInt(System.getenv("RECORD_SERVICE_PLANNER_PORT")) : 40000;
+        System.getenv("RECORD_SERVICE_PLANNER_HOST") + ":40000" : "localhost:40000";
 
   // Kerberos principal.
   public final static String KERBEROS_PRINCIPAL_CONF = "recordservice.kerberos.principal";
@@ -122,5 +122,35 @@ public class RecordServiceConfig {
       str.append(StringUtils.escapeString(path.toString()));
     }
     conf.set("mapred.input.dir", str.toString());
+  }
+
+
+  /**
+   * Returns a random hostport from plannerHostPortsStr. Each hostport should be
+   * comma separated.
+   */
+  public static List<NetworkAddress> getPlannerHostPort(String plannerHostPortsStr)
+      throws IOException {
+    String[] plannerHostPorts = plannerHostPortsStr.trim().split(",");
+    if (plannerHostPorts.length == 0) {
+      throw new IOException("Invalid planner host port list: " + plannerHostPortsStr);
+    }
+    List<NetworkAddress> result = new ArrayList<NetworkAddress>();
+    for (String hostPortStr: plannerHostPorts) {
+      if (hostPortStr.length() == 0) continue;
+      String[] hostPort = hostPortStr.split(":");
+      if (hostPort.length != 2) {
+        throw new IOException("Invalid hostport: " + hostPort);
+      }
+      String host = hostPort[0];
+      int port = 0;
+      try {
+        port = Integer.parseInt(hostPort[1]);
+      } catch (NumberFormatException e) {
+        throw new IOException("Invalid hostport: " + hostPort);
+      }
+      result.add(new NetworkAddress(host, port));
+    }
+    return result;
   }
 }

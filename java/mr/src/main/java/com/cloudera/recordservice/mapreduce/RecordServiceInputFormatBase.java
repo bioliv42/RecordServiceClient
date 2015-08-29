@@ -26,18 +26,19 @@ import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
-import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.security.Credentials;
 import org.apache.hadoop.security.token.Token;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.cloudera.recordservice.core.NetworkAddress;
 import com.cloudera.recordservice.core.PlanRequestResult;
 import com.cloudera.recordservice.core.RecordServiceException;
 import com.cloudera.recordservice.core.RecordServicePlannerClient;
 import com.cloudera.recordservice.core.Request;
 import com.cloudera.recordservice.core.Task;
 import com.cloudera.recordservice.core.TaskStatus.Stats;
+import com.cloudera.recordservice.mr.PlanUtil;
 import com.cloudera.recordservice.mr.RecordReaderCore;
 import com.cloudera.recordservice.mr.RecordServiceConfig;
 import com.cloudera.recordservice.mr.Schema;
@@ -82,9 +83,6 @@ public abstract class RecordServiceInputFormatBase<K, V> extends InputFormat<K, 
   }
 
   /**
-   * Looks inside the jobConf to construct the RecordService request. The
-   * request can either be a sql statement, table or path.
-   *
    * This also handles authentication using credentials. If there is a delegation
    * token in the credentials, that will be used to authenticate the planner
    * connection. Otherwise, if kerberos is enabled, a token will be generated
@@ -95,102 +93,22 @@ public abstract class RecordServiceInputFormatBase<K, V> extends InputFormat<K, 
    */
   public static SplitsInfo getSplits(Configuration jobConf,
       Credentials credentials) throws IOException {
-    LOG.debug("Generating input splits.");
-
-    String tblName = jobConf.get(RecordServiceConfig.TBL_NAME_CONF);
-    String inputDir = jobConf.get(FileInputFormat.INPUT_DIR);
-    String sqlQuery = jobConf.get(RecordServiceConfig.QUERY_NAME_CONF);
-
-    int numSet = 0;
-    if (tblName != null) ++numSet;
-    if (inputDir != null) ++numSet;
-    if (sqlQuery != null) ++numSet;
-
-    if (numSet == 0) {
-      throw new IllegalArgumentException("No input specified. Specify either '" +
-          RecordServiceConfig.TBL_NAME_CONF + "', '" +
-          RecordServiceConfig.QUERY_NAME_CONF + "' or '" +
-          FileInputFormat.INPUT_DIR + "'");
-    }
-    if (numSet > 1) {
-      throw new IllegalArgumentException("More than one input specified. Can " +
-          "only specify one of '" +
-          RecordServiceConfig.TBL_NAME_CONF + "'=" + tblName + ", '" +
-          FileInputFormat.INPUT_DIR + "'=" + inputDir + ", '" +
-          RecordServiceConfig.QUERY_NAME_CONF + "'=" + sqlQuery);
-    }
-
-    String[] colNames = jobConf.getStrings(RecordServiceConfig.COL_NAMES_CONF);
-    if (colNames == null) colNames = new String[0];
-
-    if (tblName == null && colNames.length > 0) {
-      // TODO: support this.
-      throw new IllegalArgumentException(
-          "Column projections can only be specified with table inputs.");
-    }
-
-    Request request = null;
-    if (tblName != null) {
-      if (colNames.length == 0) {
-        // If length of colNames = 0, return all possible columns
-        // TODO: this has slightly different meaning than createProjectionRequest()
-        // which treats empty columns as an empty projection. i.e. select * vs count(*)
-        // Reconcile this.
-        request = Request.createTableScanRequest(tblName);
-      } else {
-        List<String> projection = new ArrayList<String>();
-        for (String c: colNames) {
-          projection.add(c);
-        }
-        request = Request.createProjectionRequest(tblName, projection);
-      }
-    } else if (inputDir != null) {
-      // TODO: inputDir is a comma separate list of paths. The service needs to
-      // handle that.
-      if (inputDir.contains(",")) {
-        throw new IllegalArgumentException(
-            "Only reading a single directory is currently supported.");
-      }
-      request = Request.createPathRequest(inputDir);
-    } else if (sqlQuery != null) {
-      request = Request.createSqlRequest(sqlQuery);
-    } else {
-      assert false;
-    }
+    Request request = PlanUtil.getRequest(jobConf);
+    List<NetworkAddress> plannerHostPorts = RecordServiceConfig.getPlannerHostPort(
+        jobConf.get(RecordServiceConfig.PLANNER_HOSTPORTS_CONF,
+                    RecordServiceConfig.DEFAULT_PLANNER_HOSTPORTS));
+    String kerberosPrincipal =
+        jobConf.get(RecordServiceConfig.KERBEROS_PRINCIPAL_CONF);
 
     PlanRequestResult result = null;
-    RecordServicePlannerClient planner = null;
+    RecordServicePlannerClient planner =
+        PlanUtil.getPlanner(plannerHostPorts, kerberosPrincipal, credentials);
     try {
-      boolean needToGetToken = false;
-      RecordServicePlannerClient.Builder builder =
-          new RecordServicePlannerClient.Builder();
-      // Try to get the delegation token from the credentials. If it is there, use it.
-      @SuppressWarnings("unchecked")
-      Token<DelegationTokenIdentifier> delegationToken =
-          (Token<DelegationTokenIdentifier>) credentials.getToken(
-              DelegationTokenIdentifier.DELEGATION_KIND);
-
-      if (delegationToken != null) {
-        builder.setDelegationToken(TokenUtils.toDelegationToken(delegationToken));
-      } else {
-        String kerberosPrincipal =
-            jobConf.get(RecordServiceConfig.KERBEROS_PRINCIPAL_CONF);
-        if (kerberosPrincipal != null) {
-          builder.setKerberosPrincipal(kerberosPrincipal);
-          needToGetToken = true;
-        }
-      }
-      planner = builder.connect(
-          jobConf.get(RecordServiceConfig.PLANNER_HOST_CONF,
-              RecordServiceConfig.DEFAULT_PLANNER_HOST),
-          jobConf.getInt(RecordServiceConfig.PLANNER_PORT_CONF,
-              RecordServiceConfig.DEFAULT_PLANNER_PORT));
       result = planner.planRequest(request);
-
-      if (needToGetToken) {
+      if (planner.isKerberosAuthenticated()) {
         // We need to get a delegation token and populate credentials (for the map tasks)
         // TODO: what to set as renewer?
-        delegationToken =
+        Token<DelegationTokenIdentifier> delegationToken =
             TokenUtils.fromTDelegationToken(planner.getDelegationToken(""));
         credentials.addToken(DelegationTokenIdentifier.DELEGATION_KIND, delegationToken);
       }

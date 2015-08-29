@@ -19,6 +19,7 @@
 package com.cloudera.recordservice.spark
 
 import com.cloudera.recordservice.core._
+import com.cloudera.recordservice.mr.PlanUtil
 import org.apache.spark._
 import org.apache.spark.rdd.RDD
 
@@ -65,7 +66,8 @@ abstract class RecordServiceRDDBase[T:ClassTag](@transient sc: SparkContext)
   // Request to make
   @transient var request:Request = null
 
-  var (plannerHost, plannerPort) = RecordServiceConf.getPlannerHostPort(sc)
+  var plannerHostPorts:java.util.List[NetworkAddress] =
+      RecordServiceConf.getPlannerHostPort(sc)
 
   // Result schema (after projection)
   var schema:Schema = null
@@ -106,8 +108,8 @@ abstract class RecordServiceRDDBase[T:ClassTag](@transient sc: SparkContext)
    * Sets the planner host/port to connect to. Default pulls from configs.
    */
   def setPlannerHostPort(host:String, port:Int): Unit = {
-    plannerHost = host
-    plannerPort = port
+    plannerHostPorts.clear()
+    plannerHostPorts.add(new NetworkAddress(host, port))
   }
 
   protected def verifySetRequest() = {
@@ -200,11 +202,10 @@ abstract class RecordServiceRDDBase[T:ClassTag](@transient sc: SparkContext)
     var planner: RecordServicePlannerClient = null
     val (planResult, delegationToken) = try {
       // TODO: for use cases like oozie, we need to authenticate with the planner via
-      // delegationToken as well. How is this done for spark?
+      // delegationToken as well. How is this done for spark? How do we get at the
+      // credentials object.
       val principal = RecordServiceConf.getKerberosPrincipal(sc)
-      planner = new RecordServicePlannerClient.Builder()
-          .setKerberosPrincipal(principal)
-          .connect(plannerHost, plannerPort)
+      planner = PlanUtil.getPlanner(plannerHostPorts, principal, null)
       val result = planner.planRequest(request)
       if (principal != null) {
         (result, planner.getDelegationToken(""))

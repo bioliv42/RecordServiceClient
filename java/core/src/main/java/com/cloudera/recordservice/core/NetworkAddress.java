@@ -30,14 +30,19 @@ public class NetworkAddress implements Serializable {
   public final String hostname;
   public final int port;
 
+  public NetworkAddress(String hostname, int port) {
+    this.hostname = hostname;
+    this.port = port;
+  }
+
+  @Override
+  public String toString() {
+    return hostname + ":" + port;
+  }
+
   NetworkAddress(TNetworkAddress address) {
     hostname = address.hostname;
     port = address.port;
-  }
-
-  NetworkAddress(String hostname, int port) {
-    this.hostname = hostname;
-    this.port = port;
   }
 
   /**

@@ -39,6 +39,7 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.security.Credentials;
 import org.junit.Test;
 
+import com.cloudera.recordservice.core.NetworkAddress;
 import com.cloudera.recordservice.core.RecordServiceException;
 import com.cloudera.recordservice.core.TestBase;
 import com.cloudera.recordservice.mapreduce.testapps.RecordCount;
@@ -319,6 +320,14 @@ public class MapReduceTest extends TestBase {
         "tpch", "nation", "n_comment", "");
     verifyException("Column list cannot contain empty names.",
         "tpch", "nation", "");
+
+    List<NetworkAddress> hostports =
+        RecordServiceConfig.getPlannerHostPort("a:1234,b:12");
+    assertEquals(2, hostports.size());
+    assertEquals("a", hostports.get(0).hostname);
+    assertEquals(1234, hostports.get(0).port);
+    assertEquals("b", hostports.get(1).hostname);
+    assertEquals(12, hostports.get(1).port);
   }
 
   @Test

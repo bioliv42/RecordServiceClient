@@ -16,51 +16,24 @@
 package com.cloudera.recordservice.spark
 
 import org.apache.spark.{SparkException, SparkContext}
-import org.apache.spark.sql.SQLContext
+
+import com.cloudera.recordservice.core.NetworkAddress
+import com.cloudera.recordservice.mr.RecordServiceConfig
 
 object RecordServiceConf {
-  val RECORD_SERVICE_PLANNER_HOST_KEY: String = "recordservice.planner.host"
-  val RECORD_SERVICE_PLANNER_PORT_KEY: String = "recordservice.planner.port"
-  val RECORD_SERVICE_KERBEROS_PRINCIPAL_KEY: String = "recordservice.kerberos.principal"
-  val DEFAULT_PLANNER_HOST: String =
-  if (System.getenv("RECORD_SERVICE_PLANNER_HOST") == null) {
-    "localhost"
-  } else {
-    System.getenv("RECORD_SERVICE_PLANNER_HOST")
-  }
-  val DEFAULT_PLANNER_PORT: Int = 40000
-
   /**
-   * Returns the record service planner host/port.
+   * Returns the list of record service planner host/port.
    */
-  def getPlannerHostPort(sc:SparkContext) : (String, Int) = {
-    val host =
-        sc.getConf.getOption(RECORD_SERVICE_PLANNER_HOST_KEY).
-          getOrElse(DEFAULT_PLANNER_HOST)
-    val port =
-        sc.getConf.getInt(RECORD_SERVICE_PLANNER_PORT_KEY, DEFAULT_PLANNER_PORT)
-    (host, port)
-  }
-
-  /**
-   * Returns the record service planner host/port, first looking in the SQLContext.
-   */
-  def getPlannerHostPort(ctx:SQLContext) : (String, Int) = {
-    var (host, port) = getPlannerHostPort(ctx.sparkContext)
-    host = ctx.getConf(RECORD_SERVICE_PLANNER_HOST_KEY, host)
-    try {
-      port = ctx.getConf(RECORD_SERVICE_PLANNER_PORT_KEY, port.toString()).toInt
-    } catch {
-      case e: Exception =>
-        throw new SparkException("Invalid port config", e)
-    }
-    (host, port)
+  def getPlannerHostPort(sc:SparkContext) : java.util.List[NetworkAddress] = {
+    val hostports = sc.getConf.getOption(RecordServiceConfig.PLANNER_HOSTPORTS_CONF)
+        .getOrElse(RecordServiceConfig.DEFAULT_PLANNER_HOSTPORTS)
+    RecordServiceConfig.getPlannerHostPort(hostports)
   }
 
   /**
    * Returns the kerberos principal to connect with.
    */
   def getKerberosPrincipal(sc:SparkContext) : String = {
-    sc.getConf.getOption(RECORD_SERVICE_KERBEROS_PRINCIPAL_KEY).getOrElse(null)
+    sc.getConf.getOption(RecordServiceConfig.KERBEROS_PRINCIPAL_CONF).getOrElse(null)
   }
 }

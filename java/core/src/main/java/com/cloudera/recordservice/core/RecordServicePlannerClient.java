@@ -151,11 +151,6 @@ public class RecordServicePlannerClient {
   }
 
   /**
-   * Private constructor, use builder.
-   */
-  private RecordServicePlannerClient() { }
-
-  /**
    * Opens a connection to the RecordServicePlanner.
    */
   private void connect(String hostname, int port)
@@ -211,6 +206,11 @@ public class RecordServicePlannerClient {
     validateIsConnected();
     return protocolVersion_;
   }
+
+  /**
+   * Returns true if this client is authenticated with kerberos.
+   */
+  public boolean isKerberosAuthenticated() { return kerberosPrincipal_ != null; }
 
   /**
    * Calls the RecordServicePlanner to generate a new plan - set of tasks that can be
@@ -340,6 +340,11 @@ public class RecordServicePlannerClient {
       throw new IOException("Could not renew delegation token.", e);
     }
   }
+
+  /**
+   * Private constructor, use builder.
+   */
+  private RecordServicePlannerClient() { }
 
   /**
    * Closes the underlying transport, used to simulate an error with the service

@@ -21,6 +21,7 @@ package com.cloudera.recordservice.spark
 import org.apache.commons.lang.StringEscapeUtils.escapeSql
 
 import com.cloudera.recordservice.core.{Request, RecordServicePlannerClient, Schema}
+import com.cloudera.recordservice.mr.PlanUtil
 import org.apache.hadoop.io._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.expressions.SpecificMutableRow
@@ -50,15 +51,16 @@ case class RecordServiceRelation(table:String, size:Option[Long])(
         @transient val sqlContext:SQLContext)
     extends BaseRelation with PrunedFilteredScan with Logging {
 
-  val (plannerHost, plannerPort) = RecordServiceConf.getPlannerHostPort(sqlContext)
-
   override def schema: StructType = {
-    val rsSchema = new RecordServicePlannerClient.Builder()
-        .setKerberosPrincipal(
-            RecordServiceConf.getKerberosPrincipal(sqlContext.sparkContext))
-        .getSchema(plannerHost, plannerPort, Request.createTableScanRequest(table))
-        .schema
-    convertSchema(rsSchema)
+    val planner = PlanUtil.getPlanner(
+      RecordServiceConf.getPlannerHostPort(sqlContext.sparkContext),
+      RecordServiceConf.getKerberosPrincipal(sqlContext.sparkContext),
+      null)
+    try {
+      convertSchema(planner.getSchema(Request.createTableScanRequest(table)).schema)
+    } finally {
+      planner.close()
+    }
   }
 
   override val sizeInBytes =
@@ -174,7 +176,6 @@ case class RecordServiceRelation(table:String, size:Option[Long])(
       sb.append(" " + filterWhereClause(filters))
       baseRDD.setStatement(sb.toString())
     }
-    baseRDD.setPlannerHostPort(plannerHost, plannerPort)
 
     if (emptyProjection) {
       // We have an empty projection so we've mapped this to a count(*) in the
