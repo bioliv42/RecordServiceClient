@@ -72,3 +72,9 @@ INSERT INTO TABLE rs.users VALUES ("Kate", 51, 14, "elk", "blue");
 INSERT INTO TABLE rs.users VALUES ("Laura", 19, 30, "cat", "red");
 INSERT INTO TABLE rs.users VALUES ("Mike", 22, 60, NULL, NULL);
 INSERT INTO TABLE rs.users VALUES ("Zack", 1, 56, "dog", "red");
+
+-- Create nullUsers table and insert values.
+DROP TABLE IF EXISTS rs.nullUsers;
+create table rs.nullUsers (name STRING, favorite_number INT, age INT, favorite_animal STRING, favorite_color STRING);
+
+INSERT OVERWRITE TABLE rs.nullUsers VALUES ("Alyssa", 256, NULL, "sun bear", "red");

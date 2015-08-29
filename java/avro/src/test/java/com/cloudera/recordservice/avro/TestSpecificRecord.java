@@ -16,14 +16,17 @@
 package com.cloudera.recordservice.avro;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 
 import org.junit.Test;
 
-import com.cloudera.recordservice.avro.SpecificRecords.ResolveBy;
 import com.cloudera.recordservice.avro.nation.NationAll;
 import com.cloudera.recordservice.avro.nation.NationKeyName;
+import com.cloudera.recordservice.avro.RecordUtil.ResolveBy;
+import com.cloudera.recordservice.avro.user.UserWithInvalidExtraCols;
+import com.cloudera.recordservice.avro.user.UserWithValidExtraCols;
 import com.cloudera.recordservice.core.PlanRequestResult;
 import com.cloudera.recordservice.core.RecordServiceException;
 import com.cloudera.recordservice.core.RecordServicePlannerClient;
@@ -53,7 +56,9 @@ public class TestSpecificRecord extends TestBase {
           assertEquals(2, record.getKey().intValue());
           assertEquals("BRAZIL", record.getName());
           assertEquals(1, record.getRegionKey().intValue());
-          assertEquals("y alongside of the pending deposits. carefully special packages are about the ironic forges. slyly special ", record.getComment());
+          assertEquals("y alongside of the pending deposits. carefully special " +
+              "packages are about the ironic forges. slyly special ",
+              record.getComment());
         }
       }
       assertEquals(25, numRecords);
@@ -85,6 +90,64 @@ public class TestSpecificRecord extends TestBase {
       assertEquals(25, numRecords);
     } finally {
       if (records != null) records.close();
+    }
+  }
+
+  /**
+   * Test the case when writer schema does not contain columns in reader schema,
+   * while reader schema does not have default value.
+   */
+  @Test
+  public void testInvalidExtraCols() throws RecordServiceException, IOException{
+    PlanRequestResult plan = new RecordServicePlannerClient.Builder()
+        .planRequest("localhost", PLANNER_PORT,
+            Request.createSqlRequest("select * from rs.users"));
+    SpecificRecords<UserWithInvalidExtraCols> records = null;
+    assertEquals(6, plan.tasks.size());
+    boolean exceptionThrown = false;
+    for (int i = plan.tasks.size() - 1; i >= 0; --i) {
+      try {
+        records = new SpecificRecords<UserWithInvalidExtraCols>(
+            UserWithInvalidExtraCols.SCHEMA$, WorkerClientUtil.execTask(plan, i),
+            ResolveBy.NAME);
+        // test records with columns without default value: string and union
+        records.next();
+      } catch (RuntimeException e) {
+        exceptionThrown = true;
+        assertTrue(e.getMessage().contains("Default value is not set"));
+      } finally {
+        assertEquals(true, exceptionThrown);
+        exceptionThrown = false;
+        if (records != null) records.close();
+      }
+    }
+  }
+
+  /**
+   * Test the case when writer schema does not contain columns in reader schema,
+   * while reader schema has default value for these columns.
+   */
+  @Test
+  public void testValidExtraCols() throws RecordServiceException, IOException{
+    PlanRequestResult plan = new RecordServicePlannerClient.Builder()
+        .planRequest("localhost", PLANNER_PORT,
+            Request.createSqlRequest("select * from rs.users"));
+    SpecificRecords<UserWithValidExtraCols> records = null;
+    assertEquals(6, plan.tasks.size());
+    for (int i = plan.tasks.size() - 1; i >= 0; --i) {
+      try {
+        records = new SpecificRecords<UserWithValidExtraCols>(
+            UserWithValidExtraCols.SCHEMA$, WorkerClientUtil.execTask(plan, i),
+            ResolveBy.NAME);
+
+        UserWithValidExtraCols record = records.next();
+        // test int with default value = 10
+        assertEquals(10, record.getDefaultNum().intValue());
+        // test union with default value = null
+        assertEquals(null, record.getDefaultUnion());
+      } finally {
+        if (records != null) records.close();
+      }
     }
   }
 }

@@ -28,6 +28,7 @@ import org.apache.hadoop.mapred.Reporter;
 
 import com.cloudera.recordservice.avro.GenericRecords;
 import com.cloudera.recordservice.avro.RecordIterator;
+import com.cloudera.recordservice.avro.RecordUtil;
 import com.cloudera.recordservice.avro.SchemaUtils;
 import com.cloudera.recordservice.avro.SpecificRecords;
 import com.cloudera.recordservice.core.RecordServiceException;
@@ -37,8 +38,6 @@ import com.cloudera.recordservice.mapred.RecordServiceInputSplit;
 /**
  * Input format which provides identical functionality to
  * org.apache.mapred.AvroInputFormat
- *
- * TODO: support projection
  */
 public class AvroInputFormat<T> extends
     RecordServiceInputFormatBase<AvroWrapper<T>, NullWritable> {
@@ -65,7 +64,7 @@ public class AvroInputFormat<T> extends
       Schema schema = AvroJob.getInputSchema(config);
       if (SchemaUtils.isSpecificRecordSchema(schema)) {
         records_ = new SpecificRecords(schema, reader_.records(),
-            SpecificRecords.ResolveBy.NAME);
+            RecordUtil.ResolveBy.NAME);
       } else {
         records_ = new GenericRecords(reader_.records());
         AvroJob.setInputSchema(config, records_.getSchema());

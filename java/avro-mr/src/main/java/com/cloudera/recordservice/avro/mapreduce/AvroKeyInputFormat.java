@@ -31,6 +31,7 @@ import com.cloudera.recordservice.avro.GenericRecords;
 import com.cloudera.recordservice.avro.SchemaUtils;
 import com.cloudera.recordservice.avro.SpecificRecords;
 import com.cloudera.recordservice.avro.RecordIterator;
+import com.cloudera.recordservice.avro.RecordUtil;
 import com.cloudera.recordservice.core.RecordServiceException;
 import com.cloudera.recordservice.mapreduce.RecordServiceInputFormatBase;
 
@@ -106,7 +107,7 @@ public class AvroKeyInputFormat<T> extends
       super.initialize(inputSplit, context);
       if (SchemaUtils.isSpecificRecordSchema(avroSchema_)) {
         records_ = new SpecificRecords(avroSchema_, reader_.records(),
-            SpecificRecords.ResolveBy.NAME);
+            RecordUtil.ResolveBy.NAME);
       } else {
         records_ = new GenericRecords(reader_.records());
       }

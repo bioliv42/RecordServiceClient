@@ -21,26 +21,27 @@ import org.apache.avro.Schema;
 import org.apache.avro.mapred.AvroKey;
 import org.apache.avro.mapred.AvroValue;
 import org.apache.avro.mapreduce.AvroJob;
+import org.apache.avro.specific.SpecificRecordBase;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.cloudera.recordservice.avro.GenericRecords;
+import com.cloudera.recordservice.avro.KeyValueRecords;
 import com.cloudera.recordservice.core.RecordServiceException;
 import com.cloudera.recordservice.mapreduce.RecordServiceInputFormatBase;
 
 /**
  * Input format which provides identical functionality to
  * org.apache.mapreduce.AvroKeyValueInputFormat
- *
- * TODO: this is not implemented.
  */
-public class AvroKeyValueInputFormat<K, V> extends
+public class AvroKeyValueInputFormat<K extends SpecificRecordBase,
+    V extends SpecificRecordBase> extends
     RecordServiceInputFormatBase<AvroKey<K>, AvroValue<V> > {
 
-  private static final Logger LOG = LoggerFactory.getLogger(AvroKeyValueInputFormat.class);
+  private static final Logger LOG =
+      LoggerFactory.getLogger(AvroKeyValueInputFormat.class);
 
   @Override
   public RecordReader<AvroKey<K>, AvroValue<V>> createRecordReader(
@@ -72,14 +73,14 @@ public class AvroKeyValueInputFormat<K, V> extends
    * @param <K> The type of the Avro key to read.
    * @param <V> The type of the Avro value to read.
    */
-  private static class AvroKeyValueRecordReader<K, V>
-      extends RecordReaderBase<AvroKey<K>, AvroValue<V>> {
+  private static class AvroKeyValueRecordReader<K extends SpecificRecordBase,
+      V extends SpecificRecordBase> extends RecordReaderBase<AvroKey<K>, AvroValue<V>> {
     // The schema of the returned records.
     private final Schema keySchema_;
     private final Schema valueSchema_;
 
     // Records to return.
-    private GenericRecords records_;
+    private KeyValueRecords<K, V> records_;
 
     /** The current key the reader is on. */
     private final AvroKey<K> currentKey_;
@@ -95,11 +96,6 @@ public class AvroKeyValueInputFormat<K, V> extends
       valueSchema_ = valueSchema;
       currentKey_ = new AvroKey<K>(null);
       currentValue_ = new AvroValue<V>(null);
-
-      // FIXME
-      // This is a bit tricky. We want the RecordService to return the union of the
-      // key and value schema and then populate key/value from that.
-      throw new RuntimeException("Not implemented");
     }
 
     /** {@inheritDoc} */
@@ -107,7 +103,9 @@ public class AvroKeyValueInputFormat<K, V> extends
     public boolean nextKeyValue() throws IOException, InterruptedException {
       try {
         if (!records_.hasNext()) return false;
-        //mCurrentRecord.datum(records_.next());
+        KeyValueRecords.KeyValuePair<K, V> nextRecord = records_.next();
+        currentKey_.datum(nextRecord.KEY);
+        currentValue_.datum(nextRecord.VALUE);
         return true;
       } catch (RecordServiceException e) {
         throw new IOException("Could not fetch record.", e);
@@ -130,8 +128,7 @@ public class AvroKeyValueInputFormat<K, V> extends
     public void initialize(InputSplit inputSplit, TaskAttemptContext context)
         throws IOException, InterruptedException {
       super.initialize(inputSplit, context);
-      // TODO: do something like this
-      //records_ = new SpecificRecords<T>(avroSchema_, records, ResolveBy.NAME);
+      records_ = new KeyValueRecords<K, V>(keySchema_, valueSchema_, reader_.records());
     }
   }
 }
