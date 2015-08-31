@@ -51,12 +51,6 @@ import com.cloudera.recordservice.mr.security.TokenUtils;
  * The base RecordService input format that handles functionality common to
  * all RecordService InputFormats.
  *
- * TODO: this input format should subsume the functionality of all the
- * input formats we want to work with. This means respecting the configs
- * from all of them (or the ones from them we care about). These include:
- *   - FileInputFormat
- *   - HCat
- *   - ?
  * TODO: clean this up. Come up with a nicer way to deal with mapred and mapreduce.
  */
 public abstract class RecordServiceInputFormatBase<K, V> extends InputFormat<K, V> {
@@ -202,7 +196,7 @@ public abstract class RecordServiceInputFormatBase<K, V> extends InputFormat<K, 
       try {
         reader_ = new RecordReaderCore(context.getConfiguration(),
             context.getCredentials(), rsSplit.getTaskInfo());
-      } catch (Exception e) {
+      } catch (RecordServiceException e) {
         throw new IOException("Failed to execute task.", e);
       }
       context_ = context;

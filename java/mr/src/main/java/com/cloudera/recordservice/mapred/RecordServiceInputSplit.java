@@ -21,6 +21,9 @@ import java.io.IOException;
 
 import org.apache.hadoop.mapred.InputSplit;
 
+/**
+ * Wrapper around mapreduce.InputSplit which implements the mapred interface.
+ */
 public class RecordServiceInputSplit implements InputSplit {
   private com.cloudera.recordservice.mapreduce.RecordServiceInputSplit split_;
 
@@ -41,15 +44,17 @@ public class RecordServiceInputSplit implements InputSplit {
   public void readFields(DataInput in) throws IOException {
     this.split_ =
         new com.cloudera.recordservice.mapreduce.RecordServiceInputSplit();
-    this.split_.readFields(in);
-
+    split_.readFields(in);
   }
 
   @Override
   public long getLength() {
     try {
-      return this.split_.getLength();
-    } catch (Exception e) {
+      return split_.getLength();
+    } catch (IOException e) {
+      // Wrap in an unchecked exception.
+      throw new RuntimeException(e);
+    } catch (InterruptedException e) {
       // Wrap in an unchecked exception.
       throw new RuntimeException(e);
     }

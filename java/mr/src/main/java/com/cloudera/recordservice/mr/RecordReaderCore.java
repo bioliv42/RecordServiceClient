@@ -45,7 +45,7 @@ public class RecordReaderCore {
   // Underlying worker connection.
   private RecordServiceWorkerClient worker_;
 
-  // Current row batch that is being processed.
+  // Iterator over the records returned by the server.
   private Records records_;
 
   // Schema for records_
@@ -56,59 +56,62 @@ public class RecordReaderCore {
   // TODO: investigate this more and do this in the server. Remove this.
   private static final int DEFAULT_FETCH_SIZE = 50000;
 
+  /**
+   * Creates a RecordReaderCore to read the records for taskInfo.
+   */
   public RecordReaderCore(Configuration config, Credentials credentials,
       TaskInfo taskInfo) throws RecordServiceException, IOException {
+    int fetchSize = config.getInt(RecordServiceConfig.FETCH_SIZE_CONF,
+        DEFAULT_FETCH_SIZE);
+    long memLimit = config.getLong(RecordServiceConfig.MEM_LIMIT_CONF, -1);
+    long limit = config.getLong(RecordServiceConfig.RECORDS_LIMIT_CONF, -1);
+    int maxAttempts =
+        config.getInt(RecordServiceConfig.TASK_RETRY_ATTEMPTS_CONF, -1);
+    int taskSleepMs = config.getInt(RecordServiceConfig.TASK_RETRY_SLEEP_MS_CONF, -1);
+    int socketTimeoutMs =
+        config.getInt(RecordServiceConfig.TASK_SOCKET_TIMEOUT_MS_CONF, -1);
+    boolean enableLogging =
+        config.getBoolean(RecordServiceConfig.TASK_ENABLE_SERVER_LOGGING_CONF, false);
+
+    // Try to get the delegation token from the credentials. If it is there, use it.
+    @SuppressWarnings("unchecked")
+    Token<DelegationTokenIdentifier> token = (Token<DelegationTokenIdentifier>)
+        credentials.getToken(DelegationTokenIdentifier.DELEGATION_KIND);
+
+    RecordServiceWorkerClient.Builder builder =
+        new RecordServiceWorkerClient.Builder();
+    if (fetchSize != -1) builder.setFetchSize(fetchSize);
+    if (memLimit != -1) builder.setMemLimit(memLimit);
+    if (limit != -1) builder.setLimit(limit);
+    if (maxAttempts != -1) builder.setMaxAttempts(maxAttempts);
+    if (taskSleepMs != -1) builder.setSleepDurationMs(taskSleepMs);
+    if (socketTimeoutMs != -1) builder.setTimeoutMs(socketTimeoutMs);
+    if (enableLogging) builder.setLoggingLevel(LOG);
+    if (token != null) builder.setDelegationToken(TokenUtils.toDelegationToken(token));
+
+    NetworkAddress address = null;
+    String localHost = InetAddress.getLocalHost().getHostAddress();
+    NetworkAddress[] locations = taskInfo.getLocations();
+
+    for (NetworkAddress loc : locations) {
+      if (localHost.equals(loc.hostname)) {
+        address = loc;
+        break;
+      }
+    }
+    // We can't schedule the task locally. Now randomly pick a host for it to
+    // distribute the tasks more evenly.
+    // TODO: revisit this. We have a choice here of picking a remote
+    // RecordServiceWorker with a local DN (what we do now) or picking the local
+    // RecordServiceWorker with a remote DN.
+    if (address == null) {
+      Random rand = new Random();
+      address = locations[rand.nextInt(locations.length)];
+      LOG.info("Cannot schedule task {} locally. Randomly selected host {} " +
+          "to execute it", taskInfo.getTask().taskId, address.hostname);
+    }
+
     try {
-      int fetchSize = config.getInt(RecordServiceConfig.FETCH_SIZE_CONF,
-          DEFAULT_FETCH_SIZE);
-      long memLimit = config.getLong(RecordServiceConfig.MEM_LIMIT_CONF, -1);
-      long limit = config.getLong(RecordServiceConfig.RECORDS_LIMIT_CONF, -1);
-      int maxAttempts =
-          config.getInt(RecordServiceConfig.TASK_RETRY_ATTEMPTS_CONF, -1);
-      int taskSleepMs = config.getInt(RecordServiceConfig.TASK_RETRY_SLEEP_MS_CONF, -1);
-      int socketTimeoutMs =
-          config.getInt(RecordServiceConfig.TASK_SOCKET_TIMEOUT_MS_CONF, -1);
-      boolean enableLogging =
-          config.getBoolean(RecordServiceConfig.TASK_ENABLE_SERVER_LOGGING_CONF, false);
-
-      // Try to get the delegation token from the credentials. If it is there, use it.
-      @SuppressWarnings("unchecked")
-      Token<DelegationTokenIdentifier> token = (Token<DelegationTokenIdentifier>)
-          credentials.getToken(DelegationTokenIdentifier.DELEGATION_KIND);
-
-      RecordServiceWorkerClient.Builder builder =
-          new RecordServiceWorkerClient.Builder();
-      if (fetchSize != -1) builder.setFetchSize(fetchSize);
-      if (memLimit != -1) builder.setMemLimit(memLimit);
-      if (limit != -1) builder.setLimit(limit);
-      if (maxAttempts != -1) builder.setMaxAttempts(maxAttempts);
-      if (taskSleepMs != -1) builder.setSleepDurationMs(taskSleepMs);
-      if (socketTimeoutMs != -1) builder.setTimeoutMs(socketTimeoutMs);
-      if (enableLogging) builder.setLoggingLevel(LOG);
-      if (token != null) builder.setDelegationToken(TokenUtils.toDelegationToken(token));
-
-      NetworkAddress address = null;
-      String localHost = InetAddress.getLocalHost().getHostAddress();
-      NetworkAddress[] locations = taskInfo.getLocations();
-
-      for (NetworkAddress loc : locations) {
-        if (localHost.equals(loc.hostname)) {
-          address = loc;
-          break;
-        }
-      }
-      // We can't schedule the task locally. Now randomly pick a host for it to
-      // distribute the tasks more evenly.
-      // TODO: revisit this. We have a choice here of picking a remote
-      // RecordServiceWorker with a local DN (what we do now) or picking the local
-      // RecordServiceWorker with a remote DN.
-      if (address == null) {
-        Random rand = new Random();
-        address = locations[rand.nextInt(locations.length)];
-        LOG.info("Cannot schedule task {} locally. Randomly selected host {} " +
-            "to execute it", taskInfo.getTask().taskId, address.hostname);
-      }
-
       worker_ = builder.connect(address.hostname, address.port);
       records_ = worker_.execAndFetch(taskInfo.getTask());
     } finally {

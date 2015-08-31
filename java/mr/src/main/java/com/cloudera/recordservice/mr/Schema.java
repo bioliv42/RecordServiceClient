@@ -22,9 +22,8 @@ import java.io.IOException;
 import org.apache.hadoop.io.Writable;
 
 /**
- * The Schema class provides metadata for the Record. It contains
- * the information of all columns for the record as well as the number
- * of columns.
+ * The Schema class provides metadata for records. It is a wrapper for
+ * core.Schema but implements the Writable interface.
  */
 public class Schema implements Writable {
   private com.cloudera.recordservice.core.Schema schema_;

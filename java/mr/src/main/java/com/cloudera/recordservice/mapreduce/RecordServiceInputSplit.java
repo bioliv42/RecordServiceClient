@@ -37,8 +37,8 @@ public class RecordServiceInputSplit extends InputSplit implements Writable {
   public RecordServiceInputSplit() {}
 
   public RecordServiceInputSplit(Schema schema, TaskInfo taskInfo) {
-    this.schema_ = schema;
-    this.taskInfo_ = taskInfo;
+    schema_ = schema;
+    taskInfo_ = taskInfo;
   }
 
   public Schema getSchema() {
@@ -71,9 +71,9 @@ public class RecordServiceInputSplit extends InputSplit implements Writable {
 
   @Override
   public void readFields(DataInput in) throws IOException {
-    this.schema_ = new Schema();
-    this.schema_.readFields(in);
-    this.taskInfo_ = new TaskInfo();
-    this.taskInfo_.readFields(in);
+    schema_ = new Schema();
+    schema_.readFields(in);
+    taskInfo_ = new TaskInfo();
+    taskInfo_.readFields(in);
   }
 }

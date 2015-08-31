@@ -24,13 +24,16 @@ import org.apache.hadoop.io.Writable;
 import com.cloudera.recordservice.core.NetworkAddress;
 import com.cloudera.recordservice.core.Task;
 
+/**
+ * Wrapper around core.Task, implementing the Wrtiable interface.
+ */
 public class TaskInfo implements Writable {
 
   private Task task_;
 
   public TaskInfo() {}
   public TaskInfo(Task task) {
-    this.task_ = task;
+    task_ = task;
   }
 
   // TODO : Some representation of the size of output

@@ -28,7 +28,7 @@ import com.cloudera.recordservice.core.Decimal;
  */
 public class DecimalWritable implements WritableComparable<DecimalWritable> {
 
-  Decimal decimal_ = null;
+  private Decimal decimal_;
 
   public DecimalWritable() {}
 

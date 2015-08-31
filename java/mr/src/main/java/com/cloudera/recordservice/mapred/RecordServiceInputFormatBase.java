@@ -42,7 +42,7 @@ public abstract class RecordServiceInputFormatBase<K, V> implements InputFormat<
   /**
    * Converts splits from mapreduce to mapred splits.
    */
-  public static InputSplit[] convertSplits(
+  static InputSplit[] convertSplits(
       List<org.apache.hadoop.mapreduce.InputSplit> splits) {
     InputSplit[] retSplits = new InputSplit[splits.size()];
     for (int i = 0; i < splits.size(); ++i) {
@@ -67,7 +67,7 @@ public abstract class RecordServiceInputFormatBase<K, V> implements InputFormat<
       try {
         reader_ = new RecordReaderCore(config, config.getCredentials(),
             split.getBackingSplit().getTaskInfo());
-      } catch (Exception e) {
+      } catch (RecordServiceException e) {
         throw new IOException("Failed to execute task.", e);
       }
       reporter_ = reporter;

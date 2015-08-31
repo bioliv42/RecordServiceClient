@@ -30,7 +30,6 @@ import com.cloudera.recordservice.core.Records.Record;
 import com.cloudera.recordservice.mr.RecordReaderCore;
 import com.cloudera.recordservice.mr.RecordServiceRecord;
 import com.cloudera.recordservice.mr.Schema;
-import com.google.common.annotations.VisibleForTesting;
 
 /**
  * Input format which returns <NULL, RecordServiceReceord>
@@ -65,7 +64,7 @@ public class RecordServiceInputFormat extends
     private RecordServiceRecord record_;
 
     // True after initialize() has fully completed.
-    private volatile boolean isInitialized_ = false;
+    private boolean isInitialized_ = false;
 
     /**
      * The general contract of the RecordReader is that the client (Mapper) calls
@@ -117,12 +116,12 @@ public class RecordServiceInputFormat extends
     public Record currentRecord() { return currentRSRecord_; }
     public boolean isInitialized() { return isInitialized_; }
 
-    @VisibleForTesting
+    //@VisibleForTesting
     void initialize(RecordServiceInputSplit split, Configuration config)
         throws IOException {
       try {
         reader_ = new RecordReaderCore(config, new Credentials(), split.getTaskInfo());
-      } catch (Exception e) {
+      } catch (RecordServiceException e) {
         throw new IOException("Failed to execute task.", e);
       }
       record_ = new RecordServiceRecord(schema());
