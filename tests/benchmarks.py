@@ -49,6 +49,12 @@ def java_client_cmd(query):
       "com.cloudera.recordservice.sample.SampleClientLib " +\
       "\"" + query + "\""
 
+def mr_record_count(query, outpath):
+  return "hadoop jar " + os.environ['RECORD_SERVICE_HOME'] +\
+      "/java/avro-example/target/recordservice-avro-example-0.1.jar " +\
+      "com.cloudera.recordservice.avro.example.RecordCount " +\
+      "\"" + query + "\"" + " \"" + outpath + "\""
+
 def hive_rs_cmd(query, tbl_name, fetch_size):
   # Builds a query string that will run using the RecordService
   rs_query = """
@@ -179,6 +185,8 @@ benchmarks = [
   [
     "Query1_Parquet_500GB", "cluster",
     [
+      ["mr", mr_record_count("select ss_item_sk from tpcds500gb_parquet.store_sales",
+                             "/tmp/jenkins/recordcount_output")],
       ["impala", impala_shell_cmd(
           "select count(ss_item_sk) from tpcds500gb_parquet.store_sales")],
       ["impala-rs", impala_on_rs_cmd(
