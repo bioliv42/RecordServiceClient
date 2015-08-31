@@ -20,6 +20,7 @@ import re
 
 HOST = "http://unittest.jenkins.cloudera.com/job/verify-impala-toolchain-package-build/"
 SOURCE = "http://github.mtv.cloudera.com/mgrund/impala-deps/raw/master"
+BUILD = "63"
 
 OS_MAPPING = {
   "centos6" : "ec2-package-centos-6",
@@ -45,8 +46,8 @@ def download_package(name, destination, compiler=""):
   label = map_release_label()
   if len(compiler) > 0:
     compiler = "-" + compiler
-  url = "{0}/label={1}/lastSuccessfulBuild/artifact/toolchain/build/{2}{3}.tar.gz".format(
-    HOST, label, name, compiler)
+  url = "{0}/{1}/label={2}/artifact/toolchain/build/{3}{4}.tar.gz".format(
+    HOST, BUILD, label, name, compiler)
 
   # Download the file
   print "Downloading {0}".format(name)
