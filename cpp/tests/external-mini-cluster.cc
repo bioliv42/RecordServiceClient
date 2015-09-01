@@ -30,7 +30,7 @@ namespace recordservice {
 
 const int BASE_PORT = 30000;
 
-const char* ExternalMiniCluster::Impalad::NAME = "impalad";
+const char* ExternalMiniCluster::RecordServiced::NAME = "recordserviced";
 const char* ExternalMiniCluster::Statestored::NAME = "statestored";
 const char* ExternalMiniCluster::Catalogd::NAME = "catalogd";
 
@@ -51,9 +51,9 @@ ExternalMiniCluster::ExternalMiniCluster(bool debug)
 ExternalMiniCluster::~ExternalMiniCluster() {
   if (statestored_ != NULL) Kill(statestored_);
   if (catalogd_ != NULL) Kill(catalogd_);
-  unordered_set<Impalad*> copy = impalads_;
-  impalads_.clear();
-  for (unordered_set<Impalad*>::iterator it = copy.begin(); it != copy.end(); ++it) {
+  unordered_set<RecordServiced*> copy = recordserviceds_;
+  recordserviceds_.clear();
+  for (unordered_set<RecordServiced*>::iterator it = copy.begin(); it != copy.end(); ++it) {
     Kill(*it);
   }
 }
@@ -66,8 +66,8 @@ string ExternalMiniCluster::Catalogd::GetBinaryPath() {
   return "catalog/catalogd";
 }
 
-string ExternalMiniCluster::Impalad::GetBinaryPath() {
-  return "service/impalad";
+string ExternalMiniCluster::RecordServiced::GetBinaryPath() {
+  return "service/recordserviced";
 }
 
 string ExternalMiniCluster::NextPort() {
@@ -125,21 +125,21 @@ bool ExternalMiniCluster::StartStatestored(Statestored** process) {
   return true;
 }
 
-// Starts an impalad, optionally running the recordservice planner and worker
-// services.
-bool ExternalMiniCluster::StartImpalad(
+bool ExternalMiniCluster::StartRecordServiced(
     bool start_record_service_planner, bool start_record_service_worker,
-    Impalad** process) {
+    RecordServiced** process) {
+  assert(start_record_service_worker || start_record_service_planner);
+
   *process = NULL;
 
-  string binary = build_home_ + Impalad::GetBinaryPath();
+  string binary = build_home_ + RecordServiced::GetBinaryPath();
   map<string, string> args;
 
   args["beeswax_port"] = NextPort();
   args["hs2_port"] = NextPort();
   args["be_port"] = NextPort();
-  args["webserver_port"] = NextPort();
-  args["state_store_subscriber_port"] = NextPort();
+  args["recordservice_webserver_port"] = NextPort();
+  args["recordservice_state_store_subscriber_port"] = NextPort();
   args["v"] = "1";
 
   if (start_record_service_planner) {
@@ -153,15 +153,16 @@ bool ExternalMiniCluster::StartImpalad(
     args["recordservice_worker_port"] = "0";
   }
 
-  *process = new Impalad(binary, ConstructArgs(binary, args));
+  *process = new RecordServiced(binary, ConstructArgs(binary, args));
   if (!(*process)->Start()) return false;
 
   if (start_record_service_planner) {
     (*process)->planner_port_ = atoi(args["recordservice_planner_port"].c_str());
   }
-  impalads_.insert(*process);
+  recordserviceds_.insert(*process);
   cout << "Started " << (*process)->name() << " pid: " << (*process)->pid() << endl
-       << "    Debug webpage running on port: " << args["webserver_port"] << endl;
+       << "    Debug webpage running on port: "
+       << args["recordservice_webserver_port"] << endl;
   return true;
 }
 
@@ -183,7 +184,7 @@ bool ExternalMiniCluster::Kill(Process* process) {
   } else if (process == catalogd_) {
     catalogd_ = NULL;
   } else {
-    impalads_.erase((Impalad*)process);
+    recordserviceds_.erase((RecordServiced*)process);
   }
   delete process;
   return true;

@@ -78,7 +78,7 @@ class ExternalMiniCluster {
     static const char* NAME;
   };
 
-  class Impalad : public Process {
+  class RecordServiced : public Process {
    public:
     virtual const char* name() const { return NAME; }
 
@@ -88,7 +88,7 @@ class ExternalMiniCluster {
 
    private:
     friend class ExternalMiniCluster;
-    Impalad(const std::string& binary, const std::vector<std::string>& args)
+    RecordServiced(const std::string& binary, const std::vector<std::string>& args)
       : Process(binary, args) {
     }
     static std::string GetBinaryPath();
@@ -105,14 +105,14 @@ class ExternalMiniCluster {
   // Starts a catalogd process.
   bool StartCatalogd(Catalogd** process);
 
-  // Returns the number of running impalads.
-  int num_impalads() const { return impalads_.size(); }
+  // Returns the number of running recordserviceds.
+  int num_recordserviceds() const { return recordserviceds_.size(); }
 
-  // Starts an impalad, optionally running the recordservice planner and worker
+  // Starts an recordservied, optionally running the recordservice planner and worker
   // services.
-  bool StartImpalad(
+  bool StartRecordServiced(
       bool start_recordservice_planner, bool start_recordservice_worker,
-      Impalad** impalad);
+      RecordServiced** recordserviced);
 
   // Kills (kill -9) process. The process object is also destroyed after this.
   // Waits until the process is killed before returning.
@@ -122,7 +122,9 @@ class ExternalMiniCluster {
 
   Catalogd* get_catalogd() { return catalogd_; }
 
-  const boost::unordered_set<Impalad*>& get_impalads() { return impalads_; }
+  const boost::unordered_set<RecordServiced*>& get_recordserviceds() {
+    return recordserviceds_;
+  }
 
  private:
   const bool debug_;
@@ -130,7 +132,7 @@ class ExternalMiniCluster {
   std::string build_home_;
   Statestored* statestored_;
   Catalogd* catalogd_;
-  boost::unordered_set<Impalad*> impalads_;
+  boost::unordered_set<RecordServiced*> recordserviceds_;
 
   // TODO: reuse ports for killed processes if we run tests that cycle enough
   // processes.

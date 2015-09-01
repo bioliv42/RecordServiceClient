@@ -48,7 +48,7 @@ public class MiniClusterController {
   public native int GetSpecificNodePid(int plannerPort);
   public native int GetStatestorePid();
   public native int GetCatalogPid();
-  public native int AddImpalaNode();
+  public native int AddRecordServiceNode();
   public native String[] GetNodeArgs(int pid);
 
   public static final int DEFAULT_NUM_NODES = 3;
@@ -100,10 +100,10 @@ public class MiniClusterController {
   }
 
   /**
-   * This method adds an impalad to the cluster
+   * This method adds a recordserviced to the cluster
    */
-  public void addImpalad() {
-    int pid = AddImpalaNode();
+  public void addRecordServiced() {
+    int pid = AddRecordServiceNode();
     Map<String, Integer> args = processNodeArgs(GetNodeArgs(pid));
     args.put("pid", pid);
     MiniClusterNode newNode = new MiniClusterNode(args);

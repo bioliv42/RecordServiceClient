@@ -40,14 +40,14 @@ TEST(ExternalMiniCluster, Basic) {
   EXPECT_TRUE(result);
   EXPECT_TRUE(catalogd != NULL);
 
-  ExternalMiniCluster::Impalad* recordservice_planner = NULL;
+  ExternalMiniCluster::RecordServiced* recordservice_planner = NULL;
 
   for (int i = 0; i < 3; ++i) {
-    ExternalMiniCluster::Impalad* impalad;
-    result = cluster.StartImpalad(true, true, &impalad);
+    ExternalMiniCluster::RecordServiced* recordserviced;
+    result = cluster.StartRecordServiced(true, true, &recordserviced);
     EXPECT_TRUE(result);
-    EXPECT_TRUE(impalad != NULL);
-    if (recordservice_planner == NULL) recordservice_planner = impalad;
+    EXPECT_TRUE(recordserviced != NULL);
+    if (recordservice_planner == NULL) recordservice_planner = recordserviced;
   }
 
   // TODO: remove this. This is the time it takes for the daemon to start up

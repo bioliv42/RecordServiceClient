@@ -57,20 +57,24 @@ string ExecuteCmdOnMachine(const char* cmd) {
   return result;
 }
 
-vector<int> GetRunningImpaladPids() {
-  const unordered_set<ExternalMiniCluster::Impalad*>& impalads = cluster.get_impalads();
+vector<int> GetRunningRecordServicedPids() {
+  const unordered_set<ExternalMiniCluster::RecordServiced*>& recordserviceds =
+      cluster.get_recordserviceds();
   vector<int> pids;
-  for (unordered_set<ExternalMiniCluster::Impalad*>::iterator it = impalads.begin();
-    it != impalads.end(); ++it) {
+  for (unordered_set<ExternalMiniCluster::RecordServiced*>::iterator it =
+      recordserviceds.begin();
+    it != recordserviceds.end(); ++it) {
     pids.push_back((*it)->pid());
   }
   return pids;
 }
 
 int GetSpecificNodePid(int planner_port) {
-  const unordered_set<ExternalMiniCluster::Impalad*>& impalads = cluster.get_impalads();
-  for (unordered_set<ExternalMiniCluster::Impalad*>::iterator it = impalads.begin();
-    it != impalads.end(); ++it) {
+  const unordered_set<ExternalMiniCluster::RecordServiced*>& recordserviceds =
+      cluster.get_recordserviceds();
+  for (unordered_set<ExternalMiniCluster::RecordServiced*>::iterator it =
+      recordserviceds.begin();
+    it != recordserviceds.end(); ++it) {
     if ((*it)->recordservice_planner_port() == planner_port) {
       return (*it)->pid();
     }
@@ -78,10 +82,12 @@ int GetSpecificNodePid(int planner_port) {
   return -1;
 }
 
-ExternalMiniCluster::Process* GetImpaladByPid(int pid) {
-  const unordered_set<ExternalMiniCluster::Impalad*>& impalads = cluster.get_impalads();
-  for (unordered_set<ExternalMiniCluster::Impalad*>::iterator it = impalads.begin();
-    it != impalads.end(); ++it) {
+ExternalMiniCluster::Process* GetRecordServicedByPid(int pid) {
+  const unordered_set<ExternalMiniCluster::RecordServiced*>& recordserviceds =
+      cluster.get_recordserviceds();
+  for (unordered_set<ExternalMiniCluster::RecordServiced*>::iterator it =
+      recordserviceds.begin();
+    it != recordserviceds.end(); ++it) {
     if ((*it)->pid() == pid) {
       return *it;
     }
@@ -90,7 +96,7 @@ ExternalMiniCluster::Process* GetImpaladByPid(int pid) {
 }
 
 void KillNodeByPid(int pid) {
-  ExternalMiniCluster::Process* node = GetImpaladByPid(pid);
+  ExternalMiniCluster::Process* node = GetRecordServicedByPid(pid);
   if (node != NULL) {
     cluster.Kill(node);
   } else if (cluster.get_catalogd() != NULL && cluster.get_catalogd()->pid() == pid) {
@@ -101,14 +107,14 @@ void KillNodeByPid(int pid) {
   }
 }
 
-int AddImpalaNode() {
-  ExternalMiniCluster::Impalad* impalad;
-  bool result = cluster.StartImpalad(true, true, &impalad);
+int AddRecordServiceNode() {
+  ExternalMiniCluster::RecordServiced* recordserviced;
+  bool result = cluster.StartRecordServiced(true, true, &recordserviced);
   ExitIfFalse(result);
-  ExitIfFalse(impalad != NULL);
+  ExitIfFalse(recordserviced != NULL);
   printf("%s\n", "Sleeping to allow node to startup");
   sleep(5);
-  return impalad->pid();
+  return recordserviced->pid();
 }
 
 // This method starts a mini cluster with a specified number of nodes. This method does
@@ -125,14 +131,14 @@ void StartMiniCluster(int num_nodes) {
   ExitIfFalse(result);
   ExitIfFalse(catalogd != NULL);
 
-  ExternalMiniCluster::Impalad* recordservice_planner = NULL;
+  ExternalMiniCluster::RecordServiced* recordservice_planner = NULL;
 
   for (int i = 0; i < num_nodes; ++i) {
-    ExternalMiniCluster::Impalad* impalad;
-    result = cluster.StartImpalad(true, true, &impalad);
+    ExternalMiniCluster::RecordServiced* recordserviced;
+    result = cluster.StartRecordServiced(true, true, &recordserviced);
     ExitIfFalse(result);
-    ExitIfFalse(impalad != NULL);
-    if (recordservice_planner == NULL) recordservice_planner = impalad;
+    ExitIfFalse(recordserviced != NULL);
+    if (recordservice_planner == NULL) recordservice_planner = recordserviced;
   }
 
   printf("%s\n", "Sleeping to allow cluster to startup");
@@ -167,7 +173,8 @@ extern "C"
 JNIEXPORT jobjectArray JNICALL
 Java_com_cloudera_recordservice_avro_example_MiniClusterController_GetNodeArgs(
     JNIEnv* env, jclass caller_class, jint pid) {
-  recordservice::ExternalMiniCluster::Process* node = recordservice::GetImpaladByPid(pid);
+  recordservice::ExternalMiniCluster::Process* node =
+      recordservice::GetRecordServicedByPid(pid);
   if (node == NULL) {
     return NULL;
   }
@@ -189,16 +196,16 @@ Java_com_cloudera_recordservice_avro_example_MiniClusterController_KillNodeByPid
 
 extern "C"
 JNIEXPORT jint JNICALL
-Java_com_cloudera_recordservice_avro_example_MiniClusterController_AddImpalaNode(
+Java_com_cloudera_recordservice_avro_example_MiniClusterController_AddRecordServiceNode(
     JNIEnv* env, jclass caller_class) {
-  return recordservice::AddImpalaNode();
+  return recordservice::AddRecordServiceNode();
 }
 
 extern "C"
 JNIEXPORT jintArray JNICALL
 Java_com_cloudera_recordservice_avro_example_MiniClusterController_GetRunningMiniNodePids(
     JNIEnv* env, jclass caller_class) {
-  vector<int> pid_vector = recordservice::GetRunningImpaladPids();
+  vector<int> pid_vector = recordservice::GetRunningRecordServicedPids();
   jintArray result = (env)->NewIntArray(pid_vector.size());
   env->SetIntArrayRegion(result, 0, pid_vector.size(), &pid_vector[0]);
   return result;

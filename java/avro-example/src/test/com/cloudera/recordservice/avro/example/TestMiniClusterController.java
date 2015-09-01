@@ -138,7 +138,7 @@ public class TestMiniClusterController {
   public void testAddNode() throws InterruptedException {
     assertTrue("Cluster size is incorrect!",
         miniCluster_.getClusterSize() == DEFAULT_NODE_NUM);
-    miniCluster_.addImpalad();
+    miniCluster_.addRecordServiced();
     assertTrue("Cluster size is incorrect!",
         miniCluster_.getClusterSize() == (DEFAULT_NODE_NUM + 1));
     assertTrue("Cluster is in incorrect state!", miniCluster_.isClusterStateCorrect());
