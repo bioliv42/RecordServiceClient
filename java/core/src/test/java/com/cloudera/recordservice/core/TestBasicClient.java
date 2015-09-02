@@ -114,13 +114,17 @@ public class TestBasicClient extends TestBase {
 
     // Try a bad port that is another thrift service.
     exceptionThrown = false;
+    RecordServicePlannerClient client = null;
     try {
-      new RecordServicePlannerClient.Builder().connect("localhost", 21000);
+      client = new RecordServicePlannerClient.Builder().
+          setMaxAttempts(1).connect("localhost", 40100);
+      client.getSchema(Request.createTableScanRequest("tpch.nation"));
     } catch (IOException e) {
       exceptionThrown = true;
-      assertTrue(e.getMessage(), e.getMessage().contains(
-          "is not running the RecordServicePlanner"));
+      assertTrue(e.getMessage(), e.getCause().getMessage().contains(
+          "Invalid method name"));
     } finally {
+      client.close();
       assertTrue(exceptionThrown);
     }
   }
@@ -315,17 +319,6 @@ public class TestBasicClient extends TestBase {
     } catch (IOException e) {
       exceptionThrown = true;
       assertTrue(e.getMessage().contains("Could not connect to RecordServiceWorker"));
-    } finally {
-      assertTrue(exceptionThrown);
-    }
-
-    // Connect to non-worker thrift service.
-    exceptionThrown = false;
-    try {
-      new RecordServiceWorkerClient.Builder().connect("localhost", 21000);
-    } catch (IOException e) {
-      exceptionThrown = true;
-      assertTrue(e.getMessage().contains("is not running the RecordServiceWorker"));
     } finally {
       assertTrue(exceptionThrown);
     }

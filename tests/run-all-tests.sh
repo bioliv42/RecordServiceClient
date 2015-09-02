@@ -31,16 +31,25 @@ echo "Running mini cluster tests."
 export RUN_MINI_CLUSTER_TESTS=true
 make test
 
-# Start up the cluster for the tests that need a cluster already running.
-cd $IMPALA_HOME
-bin/start-impala-cluster.py -s 1 --catalogd_args="-load_catalog_in_background=false"
 echo "Running non-mini cluster tests."
 
-pushd $RECORD_SERVICE_HOME
+# Start up a recordserviced and run the client tests. Note that at this point
+# there is no impala cluster running
+cd $IMPALA_HOME
+bin/start-impala-cluster.py -s 1 --catalogd_args="-load_catalog_in_background=false"
+# TODO: update bin/start-impala-cluster.py
+killall -9 impalad
+killall -9 statestored
+killall -9 catalogd
+
+cd $RECORD_SERVICE_HOME
 unset RUN_MINI_CLUSTER_TESTS
 make test
-
 mvn test -f $RECORD_SERVICE_HOME/java/pom.xml
+
+# Start up the cluster for the tests that need an Impala cluster already running.
+cd $IMPALA_HOME
+bin/start-impala-cluster.py -s 1 --catalogd_args="-load_catalog_in_background=false"
 
 # Run Hive SerDe test
 cd $IMPALA_HOME/fe
