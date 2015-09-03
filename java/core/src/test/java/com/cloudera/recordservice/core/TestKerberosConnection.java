@@ -395,8 +395,10 @@ public class TestKerberosConnection extends TestBase {
       // Try all the connections, they should all work.
       for (String host: SECURE_CLUSTER) {
         new RecordServicePlannerClient.Builder().setDelegationToken(token)
+            .setSleepDurationMs(30000)
             .connect(host, PLANNER_PORT).close();
         new RecordServiceWorkerClient.Builder().setDelegationToken(token)
+            .setSleepDurationMs(30000)
             .connect(host, WORKER_PORT).close();
       }
 
