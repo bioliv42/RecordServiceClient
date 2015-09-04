@@ -166,20 +166,27 @@ public class RecordServicePlannerClient {
     plannerClient_ = new RecordServicePlanner.Client(protocol_);
     try {
       protocolVersion_ = ThriftUtils.fromThrift(plannerClient_.GetProtocolVersion());
-      LOG.debug("Connected to planner service with version: " + protocolVersion_);
+      LOG.debug("Connected to RecordServicePlanner with version: " + protocolVersion_);
+    } catch (TRecordServiceException e) {
+      // For 'GetProtocolVersion' call, the server side will first establish
+      // the connection, and then throws the exception when it's processing the call.
+      // The client is responsible to close the connection after seeing the exception.
+      close();
+      LOG.warn("Connection is rejected because RecordServicePlanner has reached the " +
+          "maximum number of connections it is able to handle.");
+      throw new RecordServiceException(e);
     } catch (TTransportException e) {
-      LOG.warn("Could not connect to planner service. " + e);
+      LOG.warn("Could not connect to RecordServicePlanner. " + e);
       if (e.getType() == TTransportException.END_OF_FILE) {
-        // TODO: this is basically a total hack. It looks like there is an issue in
-        // thrift where the exception thrown by the server is swallowed.
         TRecordServiceException ex = new TRecordServiceException();
         ex.code = TErrorCode.SERVICE_BUSY;
-        ex.message = "Server is likely busy. Try the request again.";
+        ex.message = "Connection to RecordServicePlanner has failed. Please check if " +
+            "the client has the same security setting as the server.";
         throw new RecordServiceException(ex);
       }
-      throw new IOException("Could not get serivce protocol version.", e);
+      throw new IOException("Could not get service protocol version.", e);
     } catch (TException e) {
-      LOG.warn("Could not connection to planner service. " + e);
+      LOG.warn("Could not connection to RecordServicePlanner. " + e);
       throw new IOException("Could not get service protocol version. It's likely " +
           "the service at " + hostname + ":" + port + " is not running the " +
           "RecordServicePlanner.", e);

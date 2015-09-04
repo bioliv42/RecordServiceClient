@@ -405,15 +405,22 @@ public class RecordServiceWorkerClient {
     workerClient_ = new RecordServiceWorker.Client(protocol_);
     try {
       protocolVersion_ = ThriftUtils.fromThrift(workerClient_.GetProtocolVersion());
-      LOG.debug("Connected to worker service with version: " + protocolVersion_);
+      LOG.debug("Connected to RecordServiceWorker with version: " + protocolVersion_);
+    } catch (TRecordServiceException e) {
+      // For 'GetProtocolVersion' call, the server side will first establish
+      // the connection, and then throws the exception when it's processing the call.
+      // The client is responsible to close the connection after seeing the exception.
+      close();
+      LOG.warn("Connection is rejected because RecordServiceWorker has reached the " +
+          "maximum number of connections it is able to handle.");
+      throw new RecordServiceException(e);
     } catch (TTransportException e) {
-      LOG.warn("Could not connect to worker service. " + e);
+      LOG.warn("Could not connect to RecordServiceWorker. " + e);
       if (e.getType() == TTransportException.END_OF_FILE) {
-        // TODO: this is basically a total hack. It looks like there is an issue in
-        // thrift where the exception thrown by the server is swallowed.
         TRecordServiceException ex = new TRecordServiceException();
         ex.code = TErrorCode.SERVICE_BUSY;
-        ex.message = "Server is likely busy. Try the request again.";
+        ex.message = "Connection to RecordServiceWorker has failed. Please check if " +
+        "the client has the same security setting as the server.";
         throw new RecordServiceException(ex);
       }
       throw new IOException("Could not get service protocol version.", e);
