@@ -27,7 +27,6 @@ import com.cloudera.recordservice.core.Records;
  * return generic records.
  *
  * TODO: reuse records?
- * TODO: NULLs
  * TODO: map STRING to BYTES?
  */
 public class GenericRecords implements RecordIterator {

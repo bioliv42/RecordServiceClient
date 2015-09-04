@@ -29,6 +29,8 @@ import com.cloudera.recordservice.core.Records;
 
 /**
  * Util class for SpecificRecords and KeyValueRecords.
+ *
+ * TODO: map STRING to BYTES?
  */
 public class RecordUtil {
 

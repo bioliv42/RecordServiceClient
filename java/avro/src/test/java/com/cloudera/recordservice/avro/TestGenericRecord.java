@@ -74,7 +74,8 @@ public class TestGenericRecord extends TestBase {
           assertEquals(1, record.get("n_nationkey"));
           assertEquals("ARGENTINA", record.get("n_name"));
           assertEquals(1, record.get("n_regionkey"));
-          assertEquals("al foxes promise slyly according to the regular accounts. bold requests alon", record.get("n_comment"));
+          assertEquals("al foxes promise slyly according to the regular accounts. " +
+              "bold requests alon", record.get("n_comment"));
         }
       }
       assertEquals(25, numRecords);

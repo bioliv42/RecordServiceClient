@@ -45,7 +45,8 @@ public class GenericMain {
 
     // Deserialize users from disk
     DatumReader<GenericRecord> datumReader = new GenericDatumReader<GenericRecord>(schema);
-    DataFileReader<GenericRecord> dataFileReader = new DataFileReader<GenericRecord>(file, datumReader);
+    DataFileReader<GenericRecord> dataFileReader =
+        new DataFileReader<GenericRecord>(file, datumReader);
     GenericRecord user = null;
     while (dataFileReader.hasNext()) {
       // Reuse user object by passing it to next(). This saves us from

@@ -50,9 +50,9 @@ public class AvroKeyInputFormat<T> extends
       throws IOException, InterruptedException {
     Schema readerSchema = AvroJob.getInputKeySchema(context.getConfiguration());
     if (null == readerSchema) {
-      // FIXME: handle this. The writer schema is just the HMS schema for us.
       LOG.warn("Reader schema was not set. Use AvroJob.setInputKeySchema() if desired.");
       LOG.info("Using a reader schema equal to the writer schema.");
+      LOG.info("Using GenericRecords instead of SpecificRecords.");
     }
     return new AvroKeyRecordReader<T>(readerSchema);
   }

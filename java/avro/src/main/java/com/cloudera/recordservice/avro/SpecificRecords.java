@@ -29,8 +29,6 @@ import com.cloudera.recordservice.core.RecordServiceException;
  * return specific records.
  *
  * TODO: reuse records?
- * TODO: NULLs
- * TODO: map STRING to BYTES?
  */
 public class SpecificRecords<T extends SpecificRecordBase> implements RecordIterator {
   private Records records_;

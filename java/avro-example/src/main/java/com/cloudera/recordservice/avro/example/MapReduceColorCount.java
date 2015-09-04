@@ -44,6 +44,8 @@ public class MapReduceColorCount extends Configured implements Tool {
 
   public static class ColorCountMapper extends
       Mapper<AvroKey<User>, NullWritable, Text, IntWritable> {
+    private final static IntWritable ONE = new IntWritable(1);
+    private final static Text COLOR = new Text();
 
     @Override
     public void map(AvroKey<User> key, NullWritable value, Context context)
@@ -52,12 +54,15 @@ public class MapReduceColorCount extends Configured implements Tool {
       if (color == null) {
         color = "none";
       }
-      context.write(new Text(color.toString()), new IntWritable(1));
+      COLOR.set(color.toString());
+      context.write(COLOR, ONE);
     }
   }
 
   public static class ColorCountReducer extends
       Reducer<Text, IntWritable, AvroKey<CharSequence>, AvroValue<Integer>> {
+    private final static AvroKey<CharSequence> KEY = new AvroKey();
+    private final static AvroValue<Integer> VALUE = new AvroValue();
 
     @Override
     public void reduce(Text key, Iterable<IntWritable> values,
@@ -67,7 +72,9 @@ public class MapReduceColorCount extends Configured implements Tool {
       for (IntWritable value : values) {
         sum += value.get();
       }
-      context.write(new AvroKey<CharSequence>(key.toString()), new AvroValue<Integer>(sum));
+      KEY.datum(key.toString());
+      VALUE.datum(sum);
+      context.write(KEY, VALUE);
     }
   }
 
