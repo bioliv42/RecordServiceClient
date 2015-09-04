@@ -40,7 +40,10 @@ import com.google.common.collect.Lists;
 // TODO: add testes to verify that we don't retry when the error is not retryable.
 public class TestBasicClient extends TestBase {
   static final int PLANNER_PORT = 40000;
-  static final int WORKER_PORT = 40100;
+
+  // Most tests should use the worker port returned from the plan. Only use this
+  // for tests that are testing worker connections specifically.
+  static final int DEFAULT_WORKER_PORT = 40100;
 
   void fetchAndVerifyCount(Records records, int expectedCount)
       throws RecordServiceException, IOException {
@@ -133,7 +136,7 @@ public class TestBasicClient extends TestBase {
   public void testWorkerConnection()
       throws RuntimeException, IOException, RecordServiceException {
     RecordServiceWorkerClient worker =
-        new RecordServiceWorkerClient.Builder().connect("localhost", WORKER_PORT);
+        new RecordServiceWorkerClient.Builder().connect("localhost", DEFAULT_WORKER_PORT);
 
     assertEquals(ProtocolVersion.V1, worker.getProtocolVersion());
     // Call it again and make sure it's fine.
@@ -185,7 +188,7 @@ public class TestBasicClient extends TestBase {
     // Testing failures, don't retry.
     RecordServiceWorkerClient worker = new RecordServiceWorkerClient.Builder()
         .setMaxAttempts(1).setSleepDurationMs(0)
-        .connect("localhost", WORKER_PORT);
+        .connect("localhost", DEFAULT_WORKER_PORT);
 
     fetchAndVerifyCount(worker.execAndFetch(task), 25);
 
@@ -219,7 +222,7 @@ public class TestBasicClient extends TestBase {
     worker = new RecordServiceWorkerClient.Builder()
         .setMaxAttempts(1).setSleepDurationMs(0)
         .setFetchSize(1)
-        .connect("localhost", WORKER_PORT);
+        .connect("localhost", DEFAULT_WORKER_PORT);
 
     // Execute a fetch once.
     RecordServiceWorkerClient.TaskState handle = worker.execTask(task);
@@ -299,7 +302,7 @@ public class TestBasicClient extends TestBase {
     try {
       RecordServiceWorkerClient worker = new RecordServiceWorkerClient.Builder()
           .setMaxAttempts(1).setSleepDurationMs(0).setTimeoutMs(1)
-          .connect("localhost", WORKER_PORT);
+          .connect("localhost", DEFAULT_WORKER_PORT);
       worker.execAndFetch(task);
       worker.close();
     } catch (IOException e) {
@@ -331,8 +334,9 @@ public class TestBasicClient extends TestBase {
         .planRequest("localhost", PLANNER_PORT,
             Request.createSqlRequest("select * from tpch.nation"));
 
+    NetworkAddress addr = plan.tasks.get(0).localHosts.get(0);
     RecordServiceWorkerClient worker =
-        new RecordServiceWorkerClient.Builder().connect("localhost", WORKER_PORT);
+        new RecordServiceWorkerClient.Builder().connect(addr.hostname, addr.port);
     assertEquals(0, worker.numActiveTasks());
 
     worker.execTask(plan.tasks.get(0));
@@ -372,13 +376,13 @@ public class TestBasicClient extends TestBase {
 
     // Verify schema
     verifyNationSchema(plan.schema, false);
-
-    // Execute the task
-    RecordServiceWorkerClient worker =
-        new RecordServiceWorkerClient.Builder().connect("localhost", WORKER_PORT);
-
     assertEquals(1, plan.tasks.size());
     assertEquals(3, plan.tasks.get(0).localHosts.size());
+
+    // Execute the task
+    NetworkAddress addr = plan.tasks.get(0).localHosts.get(0);
+    RecordServiceWorkerClient worker =
+        new RecordServiceWorkerClient.Builder().connect(addr.hostname, addr.port);
 
     // Serialize/deserialize the task to test the Task code.
     Task originalTask = plan.tasks.get(0);
@@ -524,8 +528,9 @@ public class TestBasicClient extends TestBase {
 
   private void verifyAllTypes(PlanRequestResult plan)
       throws RecordServiceException, IOException {
+    NetworkAddress addr = plan.tasks.get(0).localHosts.get(0);
     RecordServiceWorkerClient worker =
-      new RecordServiceWorkerClient.Builder().connect("localhost", WORKER_PORT);
+        new RecordServiceWorkerClient.Builder().connect(addr.hostname, addr.port);
 
     verifyAllTypesSchema(plan.schema);
 
@@ -658,9 +663,6 @@ public class TestBasicClient extends TestBase {
 
   @Test
   public void testNationPathWithSchema() throws IOException, RecordServiceException {
-    RecordServiceWorkerClient worker =
-        new RecordServiceWorkerClient.Builder().connect("localhost", WORKER_PORT);
-
     // The normal schema is SMALLINT, STRING, SMALLINT, STRING
 
     // Test with an all string schema.
@@ -685,6 +687,10 @@ public class TestBasicClient extends TestBase {
       assertEquals(schema.cols.get(i).name, plan.schema.cols.get(i).name);
       assertEquals(schema.cols.get(i).type.typeId, plan.schema.cols.get(i).type.typeId);
     }
+
+    NetworkAddress addr = plan.tasks.get(0).localHosts.get(0);
+    RecordServiceWorkerClient worker =
+        new RecordServiceWorkerClient.Builder().connect(addr.hostname, addr.port);
 
     Records records = worker.execAndFetch(plan.tasks.get(0));
     int numRecords = 0;
