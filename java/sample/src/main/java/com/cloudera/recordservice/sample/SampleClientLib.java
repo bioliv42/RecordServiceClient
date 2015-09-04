@@ -29,7 +29,12 @@ import com.cloudera.recordservice.core.WorkerClientUtil;
  * This is similar to SampleClient except built using the client APIs.
  */
 public class SampleClientLib {
-  static final int PLANNER_PORT = 40000;
+  static final String PLANNER_HOST =
+    System.getenv("RECORD_SERVICE_PLANNER_HOST") != null ?
+        System.getenv("RECORD_SERVICE_PLANNER_HOST") : "localhost";
+  static final int PLANNER_PORT =
+    System.getenv("RECORD_SERVICE_PLANNER_PORT") != null ?
+        Integer.parseInt(System.getenv("RECORD_SERVICE_PLANNER_PORT")) : 40000;
 
   static final String DEFAULT_QUERY = "select n_nationkey from tpch.nation";
 
@@ -40,7 +45,7 @@ public class SampleClientLib {
     System.out.println("Running request: " + query);
 
     PlanRequestResult planResult = new RecordServicePlannerClient.Builder()
-        .planRequest("localhost", PLANNER_PORT, Request.createSqlRequest(query));
+        .planRequest(PLANNER_HOST, PLANNER_PORT, Request.createSqlRequest(query));
 
     long totalTimeMs = 0;
 

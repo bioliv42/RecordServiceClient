@@ -45,7 +45,7 @@ killall -9 catalogd
 cd $RECORD_SERVICE_HOME
 unset RUN_MINI_CLUSTER_TESTS
 make test
-mvn test -f $RECORD_SERVICE_HOME/java/pom.xml
+mvn clean package -f $RECORD_SERVICE_HOME/java/pom.xml
 
 # Start up the cluster for the tests that need an Impala cluster already running.
 cd $IMPALA_HOME

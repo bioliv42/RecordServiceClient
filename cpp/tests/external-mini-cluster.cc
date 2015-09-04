@@ -139,7 +139,6 @@ bool ExternalMiniCluster::StartRecordServiced(
   args["hs2_port"] = NextPort();
   args["be_port"] = NextPort();
   args["recordservice_webserver_port"] = NextPort();
-  args["recordservice_state_store_subscriber_port"] = NextPort();
   args["v"] = "1";
 
   if (start_record_service_planner) {

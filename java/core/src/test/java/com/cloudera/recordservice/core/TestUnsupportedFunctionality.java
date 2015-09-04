@@ -26,8 +26,6 @@ import org.junit.Test;
  * Tests that the RecordService does not support these kind of queries.
  */
 public class TestUnsupportedFunctionality extends TestBase {
-  static final String PLANNER_HOST = "localhost";
-  static final int PLANNER_PORT = 40000;
 
   private void testUnsupported(String sql) {
     boolean exceptionThrown = false;

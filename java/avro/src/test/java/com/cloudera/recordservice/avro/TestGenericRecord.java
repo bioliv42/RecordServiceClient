@@ -33,12 +33,10 @@ import com.cloudera.recordservice.core.TestBase;
 import com.cloudera.recordservice.core.WorkerClientUtil;
 
 public class TestGenericRecord extends TestBase {
-  static final int PLANNER_PORT = 40000;
-
   @Test
   public void testNation() throws RecordServiceException, IOException {
     PlanRequestResult plan = new RecordServicePlannerClient.Builder()
-        .planRequest("localhost", PLANNER_PORT,
+        .planRequest(PLANNER_HOST, PLANNER_PORT,
             Request.createSqlRequest("select * from tpch.nation"));
 
     // Verify schema

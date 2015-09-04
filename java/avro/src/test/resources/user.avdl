@@ -1,4 +1,4 @@
-@namespace("com.cloudera.recordservice.avro.user")
+@namespace("com.cloudera.recordservice.avro")
 protocol UserProtocol {
   record UserKey {
     int age;

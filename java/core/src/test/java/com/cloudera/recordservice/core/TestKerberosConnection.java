@@ -29,8 +29,6 @@ import org.junit.Test;
 // a non-trivial local set up to get tickets and what not.
 // TODO: add renew/expire tests.
 public class TestKerberosConnection extends TestBase {
-  static final int PLANNER_PORT = 40000;
-  static final int WORKER_PORT = 40100;
   // Kerberized cluster.
   static final String HOST = "vd0224.halxg.cloudera.com";
   static final String[] SECURE_CLUSTER =
@@ -67,7 +65,7 @@ public class TestKerberosConnection extends TestBase {
     assertEquals(4, plan.schema.cols.size());
 
     RecordServiceWorkerClient worker = new RecordServiceWorkerClient.Builder().
-        setKerberosPrincipal(PRINCIPAL).connect(HOST, WORKER_PORT);
+        setKerberosPrincipal(PRINCIPAL).connect(HOST, DEFAULT_WORKER_PORT);
     Records records = worker.execAndFetch(plan.tasks.get(0));
     int numRecords = 0;
     while (records.hasNext()) {
@@ -109,7 +107,7 @@ public class TestKerberosConnection extends TestBase {
     // Try worker connection with no principal and bad principal
     exceptionThrown = false;
     try {
-      new RecordServiceWorkerClient.Builder().connect(HOST, WORKER_PORT);
+      new RecordServiceWorkerClient.Builder().connect(HOST, DEFAULT_WORKER_PORT);
     } catch (RecordServiceException e) {
       exceptionThrown = true;
     }
@@ -119,7 +117,7 @@ public class TestKerberosConnection extends TestBase {
     exceptionThrown = false;
     try {
       new RecordServiceWorkerClient.Builder().setKerberosPrincipal("BAD/bad.com@bad.com")
-          .connect(HOST, WORKER_PORT);
+          .connect(HOST, DEFAULT_WORKER_PORT);
     } catch (IOException e) {
       exceptionThrown = true;
     }
@@ -191,7 +189,7 @@ public class TestKerberosConnection extends TestBase {
 
     // Create a worker connection with the token.
     RecordServiceWorkerClient worker = new RecordServiceWorkerClient.Builder().
-        setDelegationToken(token1).connect(HOST, WORKER_PORT);
+        setDelegationToken(token1).connect(HOST, DEFAULT_WORKER_PORT);
 
     // Fetch the results.
     Records records = worker.execAndFetch(plan.tasks.get(0));
@@ -211,7 +209,7 @@ public class TestKerberosConnection extends TestBase {
     exceptionThrown = false;
     try {
       new RecordServiceWorkerClient.Builder().setDelegationToken(token1)
-          .connect(HOST, WORKER_PORT);
+          .connect(HOST, DEFAULT_WORKER_PORT);
     } catch (IOException e) {
       exceptionThrown = true;
       // TODO: the error is generated deep in the sasl negotiation and we
@@ -235,7 +233,7 @@ public class TestKerberosConnection extends TestBase {
     new RecordServicePlannerClient.Builder().setDelegationToken(token2)
         .getSchema(HOST, PLANNER_PORT, Request.createTableScanRequest("sample_07"));
     new RecordServiceWorkerClient.Builder().setDelegationToken(token2)
-        .connect(HOST, WORKER_PORT).close();
+        .connect(HOST, DEFAULT_WORKER_PORT).close();
   }
 
   @Test
@@ -307,7 +305,7 @@ public class TestKerberosConnection extends TestBase {
   public void testUnsecureConnectionTokens() throws IOException,
         RecordServiceException, InterruptedException {
     RecordServicePlannerClient planner = new RecordServicePlannerClient.Builder()
-        .connect("localhost", PLANNER_PORT);
+        .connect(PLANNER_HOST, PLANNER_PORT);
     boolean exceptionThrown = false;
     try {
       planner.getDelegationToken(null);
@@ -358,7 +356,7 @@ public class TestKerberosConnection extends TestBase {
       new RecordServicePlannerClient.Builder()
           .setKerberosPrincipal(PRINCIPAL)
           .setTimeoutMs(1000)
-          .connect("localhost", PLANNER_PORT);
+          .connect(PLANNER_HOST, PLANNER_PORT);
     } catch (IOException e) {
       assertTrue(e.getMessage(), e.getMessage().contains(
           "Ensure the server has security enabled."));
@@ -372,7 +370,7 @@ public class TestKerberosConnection extends TestBase {
       new RecordServiceWorkerClient.Builder()
           .setKerberosPrincipal(PRINCIPAL)
           .setTimeoutMs(1000)
-          .connect("localhost", WORKER_PORT);
+          .connect(PLANNER_HOST, DEFAULT_WORKER_PORT);
     } catch (IOException e) {
       assertTrue(e.getMessage().contains(
           "Ensure the server has security enabled."));
@@ -400,7 +398,7 @@ public class TestKerberosConnection extends TestBase {
             .connect(host, PLANNER_PORT).close();
         new RecordServiceWorkerClient.Builder().setDelegationToken(token)
             .setSleepDurationMs(30000)
-            .connect(host, WORKER_PORT).close();
+            .connect(host, DEFAULT_WORKER_PORT).close();
       }
 
       // Cancel the token.
@@ -426,7 +424,7 @@ public class TestKerberosConnection extends TestBase {
         exceptionThrown = false;
         try {
           new RecordServiceWorkerClient.Builder().setDelegationToken(token)
-              .connect(host, WORKER_PORT).close();
+              .connect(host, DEFAULT_WORKER_PORT).close();
         } catch (IOException e) {
           exceptionThrown = true;
           assertTrue(e.getMessage().contains(
@@ -445,12 +443,12 @@ public class TestKerberosConnection extends TestBase {
     // Testing the case that request is planned on a non-secure cluster and executed
     // on a secure cluster
     PlanRequestResult result = new RecordServicePlannerClient.Builder()
-        .planRequest("localhost", PLANNER_PORT,
+        .planRequest(PLANNER_HOST, PLANNER_PORT,
             Request.createTableScanRequest("tpch.nation"));
 
     RecordServiceWorkerClient worker = new RecordServiceWorkerClient.Builder()
         .setKerberosPrincipal(PRINCIPAL)
-        .connect(HOST, WORKER_PORT);
+        .connect(HOST, DEFAULT_WORKER_PORT);
 
     boolean exceptionThrown = false;
     try {
@@ -475,7 +473,7 @@ public class TestKerberosConnection extends TestBase {
     // The table actually doesn't exist on the local box, but it doesn't
     // matter since the test should fail before the task queries the table.
     worker = new RecordServiceWorkerClient.Builder()
-        .connect("localhost", WORKER_PORT);
+        .connect(PLANNER_HOST, DEFAULT_WORKER_PORT);
 
     exceptionThrown = false;
     try {
@@ -499,7 +497,7 @@ public class TestKerberosConnection extends TestBase {
 
     worker = new RecordServiceWorkerClient.Builder()
         .setKerberosPrincipal(PRINCIPAL)
-        .connect(HOST, WORKER_PORT);
+        .connect(HOST, DEFAULT_WORKER_PORT);
 
     Random rand = new Random();
     byte[] byteArray = result.tasks.get(0).task;

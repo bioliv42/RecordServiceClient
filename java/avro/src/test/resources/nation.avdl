@@ -1,4 +1,4 @@
-@namespace("com.cloudera.recordservice.avro.nation")
+@namespace("com.cloudera.recordservice.avro")
 protocol NationProtocol {
   record NationAll {
     int key;

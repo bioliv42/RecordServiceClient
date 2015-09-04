@@ -44,22 +44,20 @@ import com.cloudera.recordservice.thrift.TTask;
  * This example explicitly does not use the abstractions in the client
  * package but drives the Thrift interfaces directly.
  */
-public class SampleClient {
+public class SampleClient extends TestBase {
   static final String DEFAULT_QUERY = "select n_nationkey from tpch.nation";
-  static final int PLANNER_PORT = 40000;
-  static final int WORKER_PORT = 40100;
 
   static TProtocol createConnection(int port, String serviceName)
     throws TTransportException {
-      TTransport transport = new TSocket("localhost", port);
-      try {
-        transport.open();
-      } catch (TTransportException e) {
-        System.err.println("Could not connect to service: " + serviceName);
-        throw e;
-      }
-      return new TBinaryProtocol(transport);
+    TTransport transport = new TSocket(PLANNER_HOST, port);
+    try {
+      transport.open();
+    } catch (TTransportException e) {
+      System.err.println("Could not connect to service: " + serviceName);
+      throw e;
     }
+    return new TBinaryProtocol(transport);
+  }
 
   private static void runQuery(String query) throws TException {
     /**
@@ -95,7 +93,7 @@ public class SampleClient {
     for (TTask task: planResult.tasks) {
       /* Start executing the task */
       RecordServiceWorker.Client worker = new RecordServiceWorker.Client(
-          createConnection(WORKER_PORT, "Worker"));
+          createConnection(task.local_hosts.get(0).port, "Worker"));
       TExecTaskResult taskResult;
       try {
         TExecTaskParams taskParams = new TExecTaskParams(task.task);

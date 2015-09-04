@@ -36,9 +36,14 @@ public class RecordServiceConfig {
 
   // Host/Port of the planner service.
   public final static String PLANNER_HOST_CONF = "recordservice.planner.host";
-  public final static String DEFAULT_PLANNER_HOST = "localhost";
   public final static String PLANNER_PORT_CONF = "recordservice.planner.port";
-  public final static int DEFAULT_PLANNER_PORT = 40000;
+
+  public static final String DEFAULT_PLANNER_HOST =
+    System.getenv("RECORD_SERVICE_PLANNER_HOST") != null ?
+        System.getenv("DEFAULT_PLANNER_HOST") : "localhost";
+  public static final int DEFAULT_PLANNER_PORT =
+    System.getenv("RECORD_SERVICE_PLANNER_PORT") != null ?
+        Integer.parseInt(System.getenv("RECORD_SERVICE_PLANNER_PORT")) : 40000;
 
   // Kerberos principal.
   public final static String KERBEROS_PRINCIPAL_CONF = "recordservice.kerberos.principal";

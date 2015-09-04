@@ -28,9 +28,6 @@ import com.google.common.collect.Lists;
 
 // Tests the clients in stressful environments.
 public class TestStress extends TestBase {
-  static final int PLANNER_PORT = 40000;
-  static final int WORKER_PORT = 40100;
-
   @Test
   public void testPlannerConnections() throws RuntimeException, IOException,
         RecordServiceException, InterruptedException {
@@ -46,7 +43,7 @@ public class TestStress extends TestBase {
       ++i;
       try {
         RecordServicePlannerClient planner = new RecordServicePlannerClient.Builder()
-            .connect("localhost", PLANNER_PORT);
+            .connect(PLANNER_HOST, PLANNER_PORT);
         clients.add(planner);
       } catch(RecordServiceException ex) {
         assertEquals(RecordServiceException.ErrorCode.SERVICE_BUSY, ex.code);
@@ -61,7 +58,7 @@ public class TestStress extends TestBase {
         // a reasonable client should sleep before retrying.
         Thread.sleep(200); // ms
 
-        c = new RecordServicePlannerClient.Builder().connect("localhost", PLANNER_PORT);
+        c = new RecordServicePlannerClient.Builder().connect(PLANNER_HOST, PLANNER_PORT);
         clients.add(c);
       }
     }
@@ -88,7 +85,7 @@ public class TestStress extends TestBase {
     for (int i = 0; i < numConnections; ++i) {
       try {
         RecordServiceWorkerClient worker = new RecordServiceWorkerClient.Builder()
-            .connect("localhost", WORKER_PORT);
+            .connect(PLANNER_HOST, DEFAULT_WORKER_PORT);
         clients.add(worker);
       } catch(RecordServiceException ex) {
         assertEquals(RecordServiceException.ErrorCode.SERVICE_BUSY, ex.code);
@@ -101,7 +98,7 @@ public class TestStress extends TestBase {
         Thread.sleep(200);
 
         c = new RecordServiceWorkerClient.Builder()
-            .connect("localhost", WORKER_PORT);
+            .connect(PLANNER_HOST, DEFAULT_WORKER_PORT);
         clients.add(c);
       }
     }

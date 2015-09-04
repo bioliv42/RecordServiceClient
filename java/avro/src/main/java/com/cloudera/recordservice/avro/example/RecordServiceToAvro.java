@@ -33,14 +33,17 @@ import com.cloudera.recordservice.core.WorkerClientUtil;
  * as avro, output as json.
  */
 public class RecordServiceToAvro {
-  static final int PLANNER_PORT = 40000;
+  static final String PLANNER_HOST = System.getenv("RECORD_SERVICE_PLANNER_HOST") != null ?
+      System.getenv("RECORD_SERVICE_PLANNER_HOST") : "localhost";
+  static final int PLANNER_PORT = System.getenv("RECORD_SERVICE_PLANNER_PORT") != null ?
+      Integer.parseInt(System.getenv("RECORD_SERVICE_PLANNER_PORT")) : 40000;
 
   public static void main(String[] args) throws RecordServiceException, IOException {
     String query = "select * from tpch.nation";
     if (args.length == 2) query = args[1];
 
     PlanRequestResult plan = new RecordServicePlannerClient.Builder()
-        .planRequest("localhost", PLANNER_PORT, Request.createSqlRequest(query));
+        .planRequest(PLANNER_HOST, PLANNER_PORT, Request.createSqlRequest(query));
     Schema avroSchema = SchemaUtils.convertSchema(plan.schema);
     System.out.println("Avro Schema:\n" + avroSchema);
 

@@ -24,18 +24,15 @@ import org.junit.Test;
 
 // Tests fault tolerance and retry logic in the client library.
 public class TestFaultTolerance extends TestBase {
-  static final int PLANNER_PORT = 40000;
-  static final int WORKER_PORT = 40100;
-
   @Test
   public void testWorkerRetry() throws RuntimeException, IOException,
         RecordServiceException, InterruptedException {
     PlanRequestResult plan = new RecordServicePlannerClient.Builder()
-        .planRequest("localhost", PLANNER_PORT,
+        .planRequest(PLANNER_HOST, PLANNER_PORT,
             Request.createTableScanRequest("tpch.nation"));
     RecordServiceWorkerClient worker = new RecordServiceWorkerClient.Builder()
         .setMaxAttempts(3).setSleepDurationMs(10).setFetchSize(1)
-        .connect("localhost", WORKER_PORT);
+        .connect(PLANNER_HOST, DEFAULT_WORKER_PORT);
     Records records = worker.execAndFetch(plan.tasks.get(0));
     int numRecords = 0;
     while (records.hasNext()) {
@@ -59,7 +56,7 @@ public class TestFaultTolerance extends TestBase {
           RecordServiceException, InterruptedException {
     RecordServicePlannerClient planner = new RecordServicePlannerClient.Builder()
         .setMaxAttempts(3).setSleepDurationMs(10)
-        .connect("localhost", PLANNER_PORT);
+        .connect(PLANNER_HOST, PLANNER_PORT);
 
     planner.closeConnectionForTesting();
     boolean exceptionThrown = false;

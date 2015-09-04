@@ -39,12 +39,6 @@ import com.google.common.collect.Lists;
 // TODO: add more stats tests.
 // TODO: add testes to verify that we don't retry when the error is not retryable.
 public class TestBasicClient extends TestBase {
-  static final int PLANNER_PORT = 40000;
-
-  // Most tests should use the worker port returned from the plan. Only use this
-  // for tests that are testing worker connections specifically.
-  static final int DEFAULT_WORKER_PORT = 40100;
-
   void fetchAndVerifyCount(Records records, int expectedCount)
       throws RecordServiceException, IOException {
     int count = 0;
@@ -59,7 +53,7 @@ public class TestBasicClient extends TestBase {
   public void testPlannerConnection()
       throws RuntimeException, IOException, RecordServiceException {
     RecordServicePlannerClient planner = new RecordServicePlannerClient.Builder()
-        .connect("localhost", PLANNER_PORT);
+        .connect(PLANNER_HOST, PLANNER_PORT);
     // Test calling the APIs after close.
     planner.close();
     boolean exceptionThrown = false;
@@ -82,7 +76,8 @@ public class TestBasicClient extends TestBase {
       assertTrue(exceptionThrown);
     }
 
-    planner = new RecordServicePlannerClient.Builder().connect("localhost", PLANNER_PORT);
+    planner = new RecordServicePlannerClient.Builder()
+        .connect(PLANNER_HOST, PLANNER_PORT);
     assertEquals(ProtocolVersion.V1, planner.getProtocolVersion());
     // Call it again and make sure it's fine.
     assertEquals(ProtocolVersion.V1, planner.getProtocolVersion());
@@ -97,7 +92,7 @@ public class TestBasicClient extends TestBase {
     // Try connecting to a bad planner.
     exceptionThrown = false;
     try {
-      new RecordServicePlannerClient.Builder().connect("localhost", 12345);
+      new RecordServicePlannerClient.Builder().connect(PLANNER_HOST, 12345);
     } catch (IOException e) {
       exceptionThrown = true;
       assertTrue(e.getMessage().contains("Could not connect to RecordServicePlanner"));
@@ -120,7 +115,7 @@ public class TestBasicClient extends TestBase {
     RecordServicePlannerClient client = null;
     try {
       client = new RecordServicePlannerClient.Builder().
-          setMaxAttempts(1).connect("localhost", 40100);
+          setMaxAttempts(1).connect(PLANNER_HOST, 40100);
       client.getSchema(Request.createTableScanRequest("tpch.nation"));
     } catch (IOException e) {
       exceptionThrown = true;
@@ -136,7 +131,8 @@ public class TestBasicClient extends TestBase {
   public void testWorkerConnection()
       throws RuntimeException, IOException, RecordServiceException {
     RecordServiceWorkerClient worker =
-        new RecordServiceWorkerClient.Builder().connect("localhost", DEFAULT_WORKER_PORT);
+        new RecordServiceWorkerClient.Builder()
+            .connect(PLANNER_HOST, DEFAULT_WORKER_PORT);
 
     assertEquals(ProtocolVersion.V1, worker.getProtocolVersion());
     // Call it again and make sure it's fine.
@@ -153,7 +149,7 @@ public class TestBasicClient extends TestBase {
   public void testConnectionDrop() throws IOException, RecordServiceException {
     RecordServicePlannerClient planner = new RecordServicePlannerClient.Builder()
         .setMaxAttempts(1).setSleepDurationMs(0)
-        .connect("localhost", PLANNER_PORT);
+        .connect(PLANNER_HOST, PLANNER_PORT);
     PlanRequestResult plan =
         planner.planRequest(Request.createTableScanRequest("tpch.nation"));
     Task task = plan.tasks.get(0);
@@ -188,7 +184,7 @@ public class TestBasicClient extends TestBase {
     // Testing failures, don't retry.
     RecordServiceWorkerClient worker = new RecordServiceWorkerClient.Builder()
         .setMaxAttempts(1).setSleepDurationMs(0)
-        .connect("localhost", DEFAULT_WORKER_PORT);
+        .connect(PLANNER_HOST, DEFAULT_WORKER_PORT);
 
     fetchAndVerifyCount(worker.execAndFetch(task), 25);
 
@@ -222,7 +218,7 @@ public class TestBasicClient extends TestBase {
     worker = new RecordServiceWorkerClient.Builder()
         .setMaxAttempts(1).setSleepDurationMs(0)
         .setFetchSize(1)
-        .connect("localhost", DEFAULT_WORKER_PORT);
+        .connect(PLANNER_HOST, DEFAULT_WORKER_PORT);
 
     // Execute a fetch once.
     RecordServiceWorkerClient.TaskState handle = worker.execTask(task);
@@ -267,7 +263,7 @@ public class TestBasicClient extends TestBase {
     try {
       new RecordServicePlannerClient.Builder()
           .setMaxAttempts(1).setSleepDurationMs(0).setTimeoutMs(1)
-          .planRequest("localhost", PLANNER_PORT,
+          .planRequest(PLANNER_HOST, PLANNER_PORT,
               Request.createTableScanRequest("tpch.nation"));
     } catch (IOException e) {
       exceptionThrown = true;
@@ -280,7 +276,7 @@ public class TestBasicClient extends TestBase {
     try {
       new RecordServicePlannerClient.Builder()
           .setMaxAttempts(1).setSleepDurationMs(0).setTimeoutMs(1)
-          .getSchema("localhost", PLANNER_PORT,
+          .getSchema(PLANNER_HOST, PLANNER_PORT,
               Request.createTableScanRequest("tpch.nation"));
     } catch (IOException e) {
       exceptionThrown = true;
@@ -294,7 +290,7 @@ public class TestBasicClient extends TestBase {
   public void testWorkerTimeout() throws IOException, RecordServiceException {
     Task task = new RecordServicePlannerClient.Builder()
         .setMaxAttempts(1).setSleepDurationMs(0)
-        .planRequest("localhost", PLANNER_PORT,
+        .planRequest(PLANNER_HOST, PLANNER_PORT,
             Request.createTableScanRequest("tpch.nation")).tasks.get(0);
 
     boolean exceptionThrown = false;
@@ -302,7 +298,7 @@ public class TestBasicClient extends TestBase {
     try {
       RecordServiceWorkerClient worker = new RecordServiceWorkerClient.Builder()
           .setMaxAttempts(1).setSleepDurationMs(0).setTimeoutMs(1)
-          .connect("localhost", DEFAULT_WORKER_PORT);
+          .connect(PLANNER_HOST, DEFAULT_WORKER_PORT);
       worker.execAndFetch(task);
       worker.close();
     } catch (IOException e) {
@@ -331,7 +327,7 @@ public class TestBasicClient extends TestBase {
   public void testTaskClose() throws RecordServiceException, IOException {
     // Plan the request
     PlanRequestResult plan = new RecordServicePlannerClient.Builder()
-        .planRequest("localhost", PLANNER_PORT,
+        .planRequest(PLANNER_HOST, PLANNER_PORT,
             Request.createSqlRequest("select * from tpch.nation"));
 
     NetworkAddress addr = plan.tasks.get(0).localHosts.get(0);
@@ -370,7 +366,7 @@ public class TestBasicClient extends TestBase {
   public void testNation() throws RecordServiceException, IOException {
     // Plan the request
     PlanRequestResult plan = new RecordServicePlannerClient.Builder()
-        .planRequest("localhost", PLANNER_PORT,
+        .planRequest(PLANNER_HOST, PLANNER_PORT,
             Request.createSqlRequest("select * from tpch.nation"));
     assertTrue(plan.warnings.isEmpty());
 
@@ -449,7 +445,7 @@ public class TestBasicClient extends TestBase {
   public void testNationWithUtility() throws RecordServiceException, IOException {
     // Plan the request
     PlanRequestResult plan = new RecordServicePlannerClient.Builder()
-        .planRequest("localhost", PLANNER_PORT,
+        .planRequest(PLANNER_HOST, PLANNER_PORT,
             Request.createSqlRequest("select * from tpch.nation"));
     for (int i = 0; i < plan.tasks.size(); ++i) {
       Records records = WorkerClientUtil.execTask(plan, i);
@@ -607,14 +603,14 @@ public class TestBasicClient extends TestBase {
   public void testAllTypes() throws RecordServiceException, IOException {
     // Just ask for the schema.
     GetSchemaResult schemaResult = new RecordServicePlannerClient.Builder()
-        .getSchema("localhost", PLANNER_PORT,
+        .getSchema(PLANNER_HOST, PLANNER_PORT,
             Request.createTableScanRequest("rs.alltypes"));
 
     verifyAllTypesSchema(schemaResult.schema);
 
     // Plan the request
     PlanRequestResult plan = new RecordServicePlannerClient.Builder()
-        .planRequest("localhost", PLANNER_PORT,
+        .planRequest(PLANNER_HOST, PLANNER_PORT,
             Request.createSqlRequest("select * from rs.alltypes"));
     verifyAllTypes(plan);
   }
@@ -622,7 +618,7 @@ public class TestBasicClient extends TestBase {
   @Test
   public void testAllTypesEmpty() throws RecordServiceException, IOException {
     PlanRequestResult plan = new RecordServicePlannerClient.Builder()
-        .planRequest("localhost", PLANNER_PORT,
+        .planRequest(PLANNER_HOST, PLANNER_PORT,
             Request.createSqlRequest("select * from rs.alltypes_empty"));
     assertEquals(0, plan.tasks.size());
     verifyAllTypesSchema(plan.schema);
@@ -653,7 +649,7 @@ public class TestBasicClient extends TestBase {
   @Test
   public void testNationPath() throws IOException, RecordServiceException {
     PlanRequestResult plan = new RecordServicePlannerClient.Builder()
-        .planRequest("localhost", PLANNER_PORT,
+        .planRequest(PLANNER_HOST, PLANNER_PORT,
             Request.createPathRequest("/test-warehouse/tpch.nation/"));
     assertEquals(1, plan.tasks.size());
     List<String> lines = getAllStrings(plan);
@@ -676,7 +672,7 @@ public class TestBasicClient extends TestBase {
     schema.cols.add(
         new Schema.ColumnDesc("col4", new Schema.TypeDesc(Schema.Type.STRING)));
     PlanRequestResult plan = new RecordServicePlannerClient.Builder()
-        .planRequest("localhost", PLANNER_PORT,
+        .planRequest(PLANNER_HOST, PLANNER_PORT,
             Request.createPathRequest("/test-warehouse/tpch.nation/")
                 .setSchema(schema).setFieldDelimiter('|'));
     assertEquals(1, plan.tasks.size());
@@ -714,7 +710,7 @@ public class TestBasicClient extends TestBase {
     schema.cols.set(3,
         new Schema.ColumnDesc("col4", new Schema.TypeDesc(Schema.Type.SMALLINT)));
 
-    plan = new RecordServicePlannerClient.Builder().planRequest("localhost", PLANNER_PORT,
+    plan = new RecordServicePlannerClient.Builder().planRequest(PLANNER_HOST, PLANNER_PORT,
         Request.createPathRequest("/test-warehouse/tpch.nation/")
             .setSchema(schema).setFieldDelimiter('|'));
     assertEquals(1, plan.tasks.size());
@@ -774,7 +770,7 @@ public class TestBasicClient extends TestBase {
         new Schema.ColumnDesc("decimal_col", Schema.TypeDesc.createDecimalType(24, 10)));
 
     PlanRequestResult plan = new RecordServicePlannerClient.Builder()
-        .planRequest("localhost", PLANNER_PORT,
+        .planRequest(PLANNER_HOST, PLANNER_PORT,
               Request.createPathRequest("/test-warehouse/rs.db/alltypes")
                   .setSchema(schema));
     verifyAllTypes(plan);
@@ -783,7 +779,7 @@ public class TestBasicClient extends TestBase {
   @Test
   public void testNationPathParquet() throws IOException, RecordServiceException {
     PlanRequestResult plan = new RecordServicePlannerClient.Builder()
-        .planRequest("localhost", PLANNER_PORT,
+        .planRequest(PLANNER_HOST, PLANNER_PORT,
             Request.createPathRequest("/test-warehouse/tpch_nation_parquet/nation.parq"));
     assertEquals(1, plan.tasks.size());
     verifyNationSchema(plan.schema, true);
@@ -796,7 +792,7 @@ public class TestBasicClient extends TestBase {
     try {
       new RecordServicePlannerClient.Builder()
           .setTimeoutMs(2).setMaxAttempts(1)
-          .planRequest("localhost", PLANNER_PORT,
+          .planRequest(PLANNER_HOST, PLANNER_PORT,
               Request.createPathRequest("/test-warehouse/tpch.nation/"));
     } catch (IOException e) {
       assertTrue(e.getCause().getMessage().contains("java.net.SocketTimeoutException"));
@@ -808,7 +804,7 @@ public class TestBasicClient extends TestBase {
     try {
       new RecordServicePlannerClient.Builder()
           .setTimeoutMs(2).setMaxAttempts(1)
-          .planRequest("localhost", PLANNER_PORT,
+          .planRequest(PLANNER_HOST, PLANNER_PORT,
               Request.createPathRequest(
                   "/test-warehouse/tpch_nation_parquet/nation.parq"));
     } catch (IOException e) {
@@ -824,7 +820,7 @@ public class TestBasicClient extends TestBase {
       // TODO: figure out why it timeout with the default timeout - 20 secs
       PlanRequestResult plan = new RecordServicePlannerClient.Builder()
           .setTimeoutMs(0)
-          .planRequest("localhost", PLANNER_PORT, Request.createPathRequest(path));
+          .planRequest(PLANNER_HOST, PLANNER_PORT, Request.createPathRequest(path));
       assertEquals(expectMatch ? 1 : 0, plan.tasks.size());
     } catch (RecordServiceException e) {
       assertFalse(expectMatch);
@@ -857,7 +853,7 @@ public class TestBasicClient extends TestBase {
   @Test
   public void testNationPathFiltering() throws IOException, RecordServiceException {
     PlanRequestResult plan = new RecordServicePlannerClient.Builder()
-        .planRequest("localhost", PLANNER_PORT,
+        .planRequest(PLANNER_HOST, PLANNER_PORT,
             Request.createPathRequest("/test-warehouse/tpch.nation/")
                 .setQuery("select * from __PATH__ where record like '6|FRANCE%'"));
     assertEquals(1, plan.tasks.size());
@@ -869,7 +865,7 @@ public class TestBasicClient extends TestBase {
   @Test
   public void testNationView() throws IOException, RecordServiceException {
     PlanRequestResult plan = new RecordServicePlannerClient.Builder()
-        .planRequest("localhost", PLANNER_PORT,
+        .planRequest(PLANNER_HOST, PLANNER_PORT,
             Request.createTableScanRequest("rs.nation_projection"));
     assertEquals(1, plan.tasks.size());
     assertEquals(2, plan.schema.cols.size());
@@ -913,7 +909,7 @@ public class TestBasicClient extends TestBase {
   @Test
   public void testFetchSize() throws IOException, RecordServiceException {
     PlanRequestResult plan = new RecordServicePlannerClient.Builder()
-        .planRequest("localhost", PLANNER_PORT,
+        .planRequest(PLANNER_HOST, PLANNER_PORT,
             Request.createTableScanRequest("tpch.nation"));
 
     NetworkAddress addr = plan.tasks.get(0).localHosts.get(0);
@@ -936,7 +932,7 @@ public class TestBasicClient extends TestBase {
   @Test
   public void testMemLimitExceeded() throws IOException, RecordServiceException {
     PlanRequestResult plan = new RecordServicePlannerClient.Builder()
-        .planRequest("localhost", PLANNER_PORT,
+        .planRequest(PLANNER_HOST, PLANNER_PORT,
             Request.createTableScanRequest("tpch.nation"));
     NetworkAddress addr = plan.tasks.get(0).localHosts.get(0);
     RecordServiceWorkerClient worker = new RecordServiceWorkerClient.Builder()
@@ -971,7 +967,7 @@ public class TestBasicClient extends TestBase {
   @Test
   public void testEmptyProjection() throws IOException, RecordServiceException {
     PlanRequestResult plan = new RecordServicePlannerClient.Builder()
-        .planRequest("localhost", PLANNER_PORT,
+        .planRequest(PLANNER_HOST, PLANNER_PORT,
             Request.createProjectionRequest("tpch.nation", null));
     assertEquals(1, plan.tasks.size());
 
@@ -990,12 +986,12 @@ public class TestBasicClient extends TestBase {
 
     // Empty column list should do the same
     plan = new RecordServicePlannerClient.Builder()
-        .planRequest("localhost", PLANNER_PORT,
+        .planRequest(PLANNER_HOST, PLANNER_PORT,
             Request.createProjectionRequest("tpch.nation", new ArrayList<String>()));
     assertEquals(1, plan.tasks.size());
 
     plan = new RecordServicePlannerClient.Builder()
-        .planRequest("localhost", PLANNER_PORT,
+        .planRequest(PLANNER_HOST, PLANNER_PORT,
             Request.createSqlRequest("select count(*), count(*) from tpch.nation"));
 
     assertEquals(1, plan.tasks.size());
@@ -1009,7 +1005,7 @@ public class TestBasicClient extends TestBase {
   @Test
   public void testProjection() throws IOException, RecordServiceException {
     PlanRequestResult plan = new RecordServicePlannerClient.Builder()
-        .planRequest("localhost", PLANNER_PORT, Request.createProjectionRequest(
+        .planRequest(PLANNER_HOST, PLANNER_PORT, Request.createProjectionRequest(
             "tpch.nation", Lists.newArrayList("n_comment")));
     assertEquals(1, plan.tasks.size());
     assertEquals(1, plan.schema.cols.size());
@@ -1020,7 +1016,7 @@ public class TestBasicClient extends TestBase {
   @Test
   public void testLimit() throws IOException, RecordServiceException {
     PlanRequestResult plan = new RecordServicePlannerClient.Builder()
-        .planRequest("localhost", PLANNER_PORT,
+        .planRequest(PLANNER_HOST, PLANNER_PORT,
             Request.createTableScanRequest("tpch.nation"));
     NetworkAddress addr = plan.tasks.get(0).localHosts.get(0);
 
@@ -1053,7 +1049,7 @@ public class TestBasicClient extends TestBase {
   @Test
   public void testServerLoggingLevels() throws IOException, RecordServiceException {
     PlanRequestResult plan = new RecordServicePlannerClient.Builder()
-        .planRequest("localhost", PLANNER_PORT,
+        .planRequest(PLANNER_HOST, PLANNER_PORT,
             Request.createTableScanRequest("tpch.nation"));
     assertEquals(1, plan.tasks.size());
     NetworkAddress addr = plan.tasks.get(0).localHosts.get(0);
@@ -1080,7 +1076,7 @@ public class TestBasicClient extends TestBase {
   @Test
   public void testNonLocalWorker() throws IOException, RecordServiceException {
     PlanRequestResult plan = new RecordServicePlannerClient.Builder()
-        .planRequest("localhost", PLANNER_PORT,
+        .planRequest(PLANNER_HOST, PLANNER_PORT,
             Request.createTableScanRequest("tpch.nation"));
     assertEquals(1, plan.tasks.size());
 

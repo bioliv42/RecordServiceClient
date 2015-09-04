@@ -26,8 +26,6 @@ import java.io.IOException;
 
 import org.junit.Test;
 
-import com.cloudera.recordservice.avro.user.UserKey;
-import com.cloudera.recordservice.avro.user.UserValue;
 import com.cloudera.recordservice.core.PlanRequestResult;
 import com.cloudera.recordservice.core.RecordServiceException;
 import com.cloudera.recordservice.core.RecordServicePlannerClient;
@@ -39,15 +37,13 @@ import com.cloudera.recordservice.core.WorkerClientUtil;
  * Test the functionality of KeyValueRecords.
  */
 public class TestKeyValueRecords extends TestBase {
-  static final int PLANNER_PORT = 40000;
-
   /**
    * Test key / value records in table rs.users.
    */
   @Test
   public void testUserKeyValue() throws IOException, RecordServiceException {
     PlanRequestResult plan = new RecordServicePlannerClient.Builder()
-        .planRequest("localhost", PLANNER_PORT,
+        .planRequest(PLANNER_HOST, PLANNER_PORT,
             Request.createSqlRequest("select * from rs.users"));
     assertEquals(6, plan.tasks.size());
 
@@ -108,7 +104,7 @@ public class TestKeyValueRecords extends TestBase {
   @Test
   public void testNullUsers() throws IOException, RecordServiceException {
     PlanRequestResult plan = new RecordServicePlannerClient.Builder()
-        .planRequest("localhost", PLANNER_PORT,
+        .planRequest(PLANNER_HOST, PLANNER_PORT,
             Request.createSqlRequest("select * from rs.nullUsers"));
     assertEquals(1, plan.tasks.size());
 
