@@ -15,13 +15,19 @@
 
 cmake_minimum_required(VERSION 2.6)
 
+if (APPLE)
+  message(STATUS "Building CPP library not currently supported.")
+elseif (UNIX)
+  SET(BUILD_CPP True)
+endif()
+
 IF (DEFINED ENV{IMPALA_TOOLCHAIN})
-message(STATUS "Toolchain enabled. Building with toolchain compiler.")
-message(STATUS "Toolchain home: $ENV{IMPALA_TOOLCHAIN}")
-set(GCC_ROOT $ENV{IMPALA_TOOLCHAIN}/gcc-4.9.2)
-set(CMAKE_C_COMPILER ${GCC_ROOT}/bin/gcc)
-set(CMAKE_CXX_COMPILER ${GCC_ROOT}/bin/g++)
-message(STATUS "CMAKE_CXX_COMPILER: ${CMAKE_CXX_COMPILER}")
+  message(STATUS "Toolchain enabled. Building with toolchain compiler.")
+  message(STATUS "Toolchain home: $ENV{IMPALA_TOOLCHAIN}")
+  set(GCC_ROOT $ENV{IMPALA_TOOLCHAIN}/gcc-4.9.2)
+  set(CMAKE_C_COMPILER ${GCC_ROOT}/bin/gcc)
+  set(CMAKE_CXX_COMPILER ${GCC_ROOT}/bin/g++)
+  message(STATUS "CMAKE_CXX_COMPILER: ${CMAKE_CXX_COMPILER}")
 ENDIF (DEFINED ENV{IMPALA_TOOLCHAIN})
 
 # generate CTest input files
@@ -43,30 +49,32 @@ message(STATUS "Thrift compiler: ${THRIFT_COMPILER}")
 add_library(thriftstatic STATIC IMPORTED)
 set_target_properties(thriftstatic PROPERTIES IMPORTED_LOCATION ${THRIFT_STATIC_LIB})
 
-# find GFlags headers and libs (needed for GLog)
-find_package(GFlags REQUIRED)
-include_directories(${GFLAGS_INCLUDE_DIR})
-set(LIBS ${LIBS} ${GFLAGS_LIBS})
-# for static linking with GFLAGS, GFLAGS_STATIC_LIB is set in GFLAGS' find module
-add_library(gflagsstatic STATIC IMPORTED)
-set_target_properties(gflagsstatic PROPERTIES IMPORTED_LOCATION ${GFLAGS_STATIC_LIB})
-message(STATUS "GFlags include dir: " ${GFLAGS_INCLUDE_DIR})
+if (BUILD_CPP)
+  # find GFlags headers and libs (needed for GLog)
+  find_package(GFlags REQUIRED)
+  include_directories(${GFLAGS_INCLUDE_DIR})
+  set(LIBS ${LIBS} ${GFLAGS_LIBS})
+  # for static linking with GFLAGS, GFLAGS_STATIC_LIB is set in GFLAGS' find module
+  add_library(gflagsstatic STATIC IMPORTED)
+  set_target_properties(gflagsstatic PROPERTIES IMPORTED_LOCATION ${GFLAGS_STATIC_LIB})
+  message(STATUS "GFlags include dir: " ${GFLAGS_INCLUDE_DIR})
 
-# find GTest headers and libs
-find_package(GTest REQUIRED)
-include_directories(${GTEST_INCLUDE_DIR})
-set(LIBS ${LIBS} ${GTEST_LIBRARIES})
-add_library(gtest STATIC IMPORTED)
-set_target_properties(gtest PROPERTIES IMPORTED_LOCATION "${GTEST_LIBRARY}")
-message(STATUS "GTest include dir: " ${GTEST_INCLUDE_DIR})
-message(STATUS "GTest library: " ${GTEST_LIBRARY})
+  # find GTest headers and libs
+  find_package(GTest REQUIRED)
+  include_directories(${GTEST_INCLUDE_DIR})
+  set(LIBS ${LIBS} ${GTEST_LIBRARIES})
+  add_library(gtest STATIC IMPORTED)
+  set_target_properties(gtest PROPERTIES IMPORTED_LOCATION "${GTEST_LIBRARY}")
+  message(STATUS "GTest include dir: " ${GTEST_INCLUDE_DIR})
+  message(STATUS "GTest library: " ${GTEST_LIBRARY})
 
-# find jni headers and libs
-find_package(JNI REQUIRED)
-include_directories(${JNI_INCLUDE_DIRS})
-set(LIBS ${LIBS} ${JNI_LIBRARIES})
-message(STATUS "JNI_INCLUDE_DIRS: ${JNI_INCLUDE_DIRS}")
-message(STATUS "JNI_LIBRARIES: ${JNI_LIBRARIES}")
+  # find jni headers and libs
+  find_package(JNI REQUIRED)
+  include_directories(${JNI_INCLUDE_DIRS})
+  set(LIBS ${LIBS} ${JNI_LIBRARIES})
+  message(STATUS "JNI_INCLUDE_DIRS: ${JNI_INCLUDE_DIRS}")
+  message(STATUS "JNI_LIBRARIES: ${JNI_LIBRARIES}")
+endif()
 
 # compiler flags that are common across debug/release builds
 #  - msse4.2: Enable sse4.2 compiler intrinsics.
@@ -138,11 +146,13 @@ add_definitions(-fPIC)
 
 # compile these subdirs using their own CMakeLists.txt
 add_subdirectory(api)
-add_subdirectory(cpp/samples)
-add_subdirectory(cpp/tests)
 
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-variable")
-add_subdirectory(cpp/generated-sources/gen-cpp)
+if (BUILD_CPP)
+  add_subdirectory(cpp/samples)
+  add_subdirectory(cpp/tests)
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-variable")
+  add_subdirectory(cpp/generated-sources/gen-cpp)
+endif()
 
 # where to put generated libraries
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${BUILD_OUTPUT_ROOT_DIRECTORY}")

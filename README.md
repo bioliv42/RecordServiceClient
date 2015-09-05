@@ -5,8 +5,7 @@ This repro contains the service API and the client integration.
 
 ## Building
 Prereqs:
-- Thrift. Note if you are using the version of thrift shipped with the record service server set THRIFT_HOME=/home/{$USER}/RecordService/thirdparty/thrift-0.9.0/build/
-- scala
+- Thrift. The thrift compiler needs to be on the path. Any 0.9.* version will work.
 
 To build this repo the first time:
 
@@ -21,11 +20,15 @@ To build this repo the first time:
 
 The thirdparty steps only need to be done once initially.
 
+On OSX:
+The above steps will work but the C++ artifacts will not be built.
+
+## Running tests.
 After this step, you will want to build the daemons which are based on the Impala repo.
+
 Follow the Impala instructions there. The scripts below generally require 
 RECORD_SERVICE_HOME and IMPALA_HOME to be set.
 
-## Running tests.
 First start up the local CDH cluster. This is done with
 
     $IMPALA_HOME/testdata/bin/run-all.sh
