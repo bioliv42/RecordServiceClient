@@ -185,13 +185,13 @@ benchmarks = [
   [
     "Query1_Parquet_500GB", "cluster",
     [
-      ["mr", mr_record_count("select ss_item_sk from tpcds500gb_parquet.store_sales",
-                             "/tmp/jenkins/recordcount_output")],
       ["impala", impala_shell_cmd(
           "select count(ss_item_sk) from tpcds500gb_parquet.store_sales")],
       ["impala-rs", impala_on_rs_cmd(
           "set num_scanner_threads=32;" +
           "select count(ss_item_sk) from tpcds500gb_parquet.store_sales")],
+      ["mr", mr_record_count("select ss_item_sk from tpcds500gb_parquet.store_sales",
+                             "/tmp/jenkins/recordcount_output")],
     ]
   ],
 
