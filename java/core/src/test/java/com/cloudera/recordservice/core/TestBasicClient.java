@@ -127,7 +127,7 @@ public class TestBasicClient extends TestBase {
       assertTrue(e.getMessage(), e.getCause().getMessage().contains(
           "Invalid method name"));
     } finally {
-      client.close();
+      if (client != null) client.close();
       assertTrue(exceptionThrown);
     }
   }
@@ -940,7 +940,7 @@ public class TestBasicClient extends TestBase {
             Request.createTableScanRequest("tpch.nation"));
     NetworkAddress addr = plan.tasks.get(0).localHosts.get(0);
     RecordServiceWorkerClient worker = new RecordServiceWorkerClient.Builder()
-        .setMemLimit(new Long(200))
+        .setMemLimit(200L)
         .connect(addr.hostname, addr.port);
 
     RecordServiceWorkerClient.TaskState handle = worker.execTask(plan.tasks.get(0));
@@ -1026,7 +1026,7 @@ public class TestBasicClient extends TestBase {
 
     // Set with a higher than count limit.
     RecordServiceWorkerClient worker = new RecordServiceWorkerClient.Builder()
-        .setLimit(new Long(30))
+        .setLimit(30L)
         .connect(addr.hostname, addr.port);
     fetchAndVerifyCount(worker.execAndFetch(plan.tasks.get(0)), 25);
     worker.close();
@@ -1038,13 +1038,13 @@ public class TestBasicClient extends TestBase {
     worker.close();
 
     worker = new RecordServiceWorkerClient.Builder()
-        .setLimit(new Long(10))
+        .setLimit(10L)
         .connect(addr.hostname, addr.port);
     fetchAndVerifyCount(worker.execAndFetch(plan.tasks.get(0)), 10);
     worker.close();
 
     worker = new RecordServiceWorkerClient.Builder()
-        .setLimit(new Long(1))
+        .setLimit(1L)
         .connect(addr.hostname, addr.port);
     fetchAndVerifyCount(worker.execAndFetch(plan.tasks.get(0)), 1);
     worker.close();
@@ -1095,7 +1095,7 @@ public class TestBasicClient extends TestBase {
     boolean exceptionThrown = false;
     plan.hosts.clear();
     try {
-      records = WorkerClientUtil.execTask(plan, 0);
+      WorkerClientUtil.execTask(plan, 0);
     } catch (RuntimeException e) {
       exceptionThrown = true;
       assertTrue(e.getMessage(), e.getMessage().contains("No hosts are provided"));

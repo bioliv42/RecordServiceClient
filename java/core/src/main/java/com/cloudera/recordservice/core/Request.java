@@ -61,7 +61,7 @@ public class Request {
         if (i != 0) sb.append(", ");
         sb.append(cols.get(i));
       }
-      sb.append(" FROM " + table);
+      sb.append(" FROM ").append(table);
       request.sql_stmt = sb.toString();
     }
     return new Request(request);

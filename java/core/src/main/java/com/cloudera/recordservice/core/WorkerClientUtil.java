@@ -32,7 +32,7 @@ public class WorkerClientUtil {
     }
 
     Task task = plan.tasks.get(taskId);
-    NetworkAddress host = null;
+    NetworkAddress host;
     if (task.localHosts.isEmpty()) {
       if (plan.hosts.isEmpty()) {
         throw new RuntimeException("No hosts are provided to run this task.");

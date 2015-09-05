@@ -357,7 +357,7 @@ public class RecordServicePlannerClient {
     } else if (e instanceof TTransportException) {
       StringBuilder msg = new StringBuilder("Could not reach service");
       if (e.getCause() != null) {
-        msg.append(" because of " + e.getCause().toString());
+        msg.append(" because of ").append(e.getCause().toString());
       }
       msg.append(".");
       LOG.warn(msg.toString());

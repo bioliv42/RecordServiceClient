@@ -158,7 +158,6 @@ public class TestKerberosConnection extends TestBase {
         .setDelegationToken(token1).connect(HOST, PLANNER_PORT);
 
     // Should only be able to get tokens if the connection is kerberized.
-    exceptionThrown = false;
     try {
       tokenPlanner.getDelegationToken(null);
     } catch (RecordServiceException e) {
@@ -209,6 +208,7 @@ public class TestKerberosConnection extends TestBase {
     tokenPlanner.close();
 
     // Shouldn't be able to connect with it anymore.
+    exceptionThrown = false;
     try {
       new RecordServiceWorkerClient.Builder().setDelegationToken(token1)
           .connect(HOST, WORKER_PORT);
@@ -271,6 +271,7 @@ public class TestKerberosConnection extends TestBase {
 
     // Set the identifier but no password
     testToken = new DelegationToken(token1.identifier, "", new byte[10]);
+    exceptionThrown = false;
     try {
       new RecordServicePlannerClient.Builder().setDelegationToken(testToken)
           .connect(HOST, PLANNER_PORT).close();
@@ -281,6 +282,7 @@ public class TestKerberosConnection extends TestBase {
 
     // Set it to the other (wrong password);
     testToken = new DelegationToken(token1.identifier, token2.password, new byte[10]);
+    exceptionThrown = false;
     try {
       new RecordServicePlannerClient.Builder().setDelegationToken(testToken)
           .connect(HOST, PLANNER_PORT).close();
@@ -352,7 +354,6 @@ public class TestKerberosConnection extends TestBase {
     boolean exceptionThrown = false;
 
     // Try to connect to a unsecure server with a principal. This should fail.
-    exceptionThrown = false;
     try {
       new RecordServicePlannerClient.Builder()
           .setKerberosPrincipal(PRINCIPAL)

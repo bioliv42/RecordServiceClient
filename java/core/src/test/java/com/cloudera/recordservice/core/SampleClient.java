@@ -96,7 +96,7 @@ public class SampleClient {
       /* Start executing the task */
       RecordServiceWorker.Client worker = new RecordServiceWorker.Client(
           createConnection(WORKER_PORT, "Worker"));
-      TExecTaskResult taskResult = null;
+      TExecTaskResult taskResult;
       try {
         TExecTaskParams taskParams = new TExecTaskParams(task.task);
         taskResult = worker.ExecTask(taskParams);
@@ -111,7 +111,7 @@ public class SampleClient {
       long start = System.currentTimeMillis();
       /* Fetch results until we're done */
       try {
-        TFetchResult fetchResult = null;
+        TFetchResult fetchResult;
         do {
           TFetchParams fetchParams = new TFetchParams(taskResult.handle);
           fetchResult = worker.Fetch(fetchParams);
