@@ -40,7 +40,7 @@ public class RecordServiceConfig {
 
   public static final String DEFAULT_PLANNER_HOST =
     System.getenv("RECORD_SERVICE_PLANNER_HOST") != null ?
-        System.getenv("DEFAULT_PLANNER_HOST") : "localhost";
+        System.getenv("RECORD_SERVICE_PLANNER_HOST") : "localhost";
   public static final int DEFAULT_PLANNER_PORT =
     System.getenv("RECORD_SERVICE_PLANNER_PORT") != null ?
         Integer.parseInt(System.getenv("RECORD_SERVICE_PLANNER_PORT")) : 40000;

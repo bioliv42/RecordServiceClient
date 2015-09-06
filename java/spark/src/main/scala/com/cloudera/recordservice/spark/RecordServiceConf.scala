@@ -22,7 +22,12 @@ object RecordServiceConf {
   val RECORD_SERVICE_PLANNER_HOST_KEY: String = "recordservice.planner.host"
   val RECORD_SERVICE_PLANNER_PORT_KEY: String = "recordservice.planner.port"
   val RECORD_SERVICE_KERBEROS_PRINCIPAL_KEY: String = "recordservice.kerberos.principal"
-  val DEFAULT_PLANNER_HOST: String = "localhost"
+  val DEFAULT_PLANNER_HOST: String =
+  if (System.getenv("RECORD_SERVICE_PLANNER_HOST") == null) {
+    "localhost"
+  } else {
+    System.getenv("RECORD_SERVICE_PLANNER_HOST")
+  }
   val DEFAULT_PLANNER_PORT: Int = 40000
 
   /**

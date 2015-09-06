@@ -23,7 +23,22 @@ The thirdparty steps only need to be done once initially.
 On OSX:
 The above steps will work but the C++ artifacts will not be built.
 
+## Repo structure:
+- api/: Thrift file(s) containing the RecordService API definition
+- cpp/: cpp sample and client code
+- java/: java sample and client code
+- tests/: Scripts to load test data, run tests and run benchmarks.
+- jenkins/: Scripts intended to be run from jenkins builds.
+
+
 ## Running tests.
+To run the tests against a running server with the data loaded, you can do:
+export RECORD_SERVICE_PLANNER_HOST=<server name>
+cd java
+mvn package
+
+
+To run the server:
 After this step, you will want to build the daemons which are based on the Impala repo.
 
 Follow the Impala instructions there. The scripts below generally require 
@@ -53,9 +68,3 @@ the script, run
 which will start catalogd, statestored and impalad (which implements the
 RecordService APIs).
 
-## Repo structure:
-- api/: Thrift file(s) containing the RecordService API definition
-- cpp/: cpp sample and client code
-- java/: java sample and client code
-- tests/: Scripts to load test data, run tests and run benchmarks.
-- jenkins/: Scripts intended to be run from jenkins builds.
