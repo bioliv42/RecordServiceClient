@@ -24,11 +24,16 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.TimeZone;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -39,6 +44,10 @@ import com.google.common.collect.Lists;
 // TODO: add more stats tests.
 // TODO: add testes to verify that we don't retry when the error is not retryable.
 public class TestBasicClient extends TestBase {
+  // The number of iterations to run the multithreaded test.
+  static private final int MULTITHREADED_TEST_NUM_ITERATIONS = 5;
+  static private final int MULTITHREADED_TEST_NUM_THREADS = 5;
+
   void fetchAndVerifyCount(Records records, int expectedCount)
       throws RecordServiceException, IOException {
     int count = 0;
@@ -1116,5 +1125,69 @@ public class TestBasicClient extends TestBase {
       assertTrue(e.getMessage(), e.getMessage().contains("Invalid task id."));
     }
     assertTrue(exceptionThrown);
+  }
+
+  private final static class MultithreadedTestState {
+    public volatile boolean failed = false;
+    public Throwable firstException = null;
+    public int numSuccess = 0;
+
+    public void fail(Throwable e) {
+      synchronized (this) {
+        failed = true;
+        if (firstException == null) {
+          firstException = e;
+        }
+      }
+    }
+  }
+
+  @Test
+  // Collects all the tests and runs them multithreaded.
+  // TODO: can this just be done with JUnit?
+  public void testAllMultithreaded() throws InterruptedException {
+    List<Method> methods = new ArrayList<Method>();
+    for (Method m: getClass().getMethods()) {
+      if (m.getAnnotation(org.junit.Test.class) != null) {
+        if (m.getName() == "testAllMultithreaded") continue;
+        for (int i = 0; i < MULTITHREADED_TEST_NUM_ITERATIONS; ++i) {
+          methods.add(m);
+        }
+      }
+    }
+
+    // Randomize the method list.
+    Collections.shuffle(methods);
+
+    ExecutorService executor = Executors.newFixedThreadPool(
+        MULTITHREADED_TEST_NUM_THREADS);
+    final MultithreadedTestState state = new MultithreadedTestState();
+    for (final Method m: methods) {
+      executor.execute(new Runnable() {
+        @Override
+        public void run() {
+          if (state.failed) return;
+          try {
+            m.invoke(TestBasicClient.this);
+            synchronized (state) {
+              ++state.numSuccess;
+            }
+          } catch (IllegalAccessException e) {
+            state.fail(e);
+          } catch (IllegalArgumentException e) {
+            state.fail(e);
+          } catch (InvocationTargetException e) {
+            state.fail(e.getCause() != null ? e.getCause() : e);
+          }
+        }
+      });
+    }
+    executor.shutdown();
+    while (!executor.isTerminated()) {
+      Thread.sleep(1000);
+    }
+    assertFalse(state.firstException == null ? "Test failed " :
+        state.firstException.toString(), state.failed);
+    assertEquals(methods.size(), state.numSuccess);
   }
 }
