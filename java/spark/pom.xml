@@ -36,16 +36,6 @@
   <packaging>jar</packaging>
   <url>.</url>
 
- <repositories>
-    <repository>
-      <id>Codehaus repository</id>
-      <url>http://repository.codehaus.org/</url>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-    </repository>
-  </repositories>
-
   <dependencies>
     <dependency>
       <groupId>com.cloudera.recordservice</groupId>
