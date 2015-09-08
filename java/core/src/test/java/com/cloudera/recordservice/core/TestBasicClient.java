@@ -1149,7 +1149,12 @@ public class TestBasicClient extends TestBase {
     List<Method> methods = new ArrayList<Method>();
     for (Method m: getClass().getMethods()) {
       if (m.getAnnotation(org.junit.Test.class) != null) {
-        if (m.getName() == "testAllMultithreaded") continue;
+        if (m.getName().equals("testAllMultithreaded")) continue;
+        // These two are flaky - it seems the timeout we set (1ms) is still
+        // too large sometimes, and the tests will fail sometimes.
+        // TODO: improve these two tests and re-enable them.
+        if (m.getName().equals("testPlannerTimeout")) continue;
+        if (m.getName().equals("testWorkerTimeout")) continue;
         for (int i = 0; i < MULTITHREADED_TEST_NUM_ITERATIONS; ++i) {
           methods.add(m);
         }
@@ -1177,7 +1182,7 @@ public class TestBasicClient extends TestBase {
           } catch (IllegalArgumentException e) {
             state.fail(e);
           } catch (InvocationTargetException e) {
-            state.fail(e.getCause() != null ? e.getCause() : e);
+            state.fail(e.getTargetException() != null ? e.getTargetException() : e);
           }
         }
       });
