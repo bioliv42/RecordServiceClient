@@ -2,3 +2,5 @@ This repo contains examples of applications built using RecordService client API
   RSCat: output tabular data for any data set readable by RecordService
   SumQueryBenchmark: This is an example of running a simple sum over a column,
     pushing the scan to RecordService.
+  Terasort: terasort ported to RecordService. See README in package for more
+    details.

@@ -38,5 +38,10 @@ public class UniqueId implements Serializable {
     this.lo = lo;
   }
 
+  @Override
+  public String toString() {
+    return String.format("%x:%x", hi, lo);
+  }
+
   TUniqueId toThrift() { return new TUniqueId(hi, lo); }
 }
