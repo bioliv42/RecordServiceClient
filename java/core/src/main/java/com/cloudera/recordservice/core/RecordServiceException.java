@@ -63,4 +63,11 @@ public class RecordServiceException extends Exception {
     message = e.message;
     detail = e.detail;
   }
+
+  RecordServiceException(String msg, TRecordServiceException e) {
+    super(msg, e);
+    code = ErrorCode.fromThrift(e.code);
+    message = msg + e.message;
+    detail = e.detail;
+  }
 }

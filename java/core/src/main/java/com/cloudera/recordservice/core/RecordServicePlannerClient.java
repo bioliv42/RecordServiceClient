@@ -169,17 +169,20 @@ public class RecordServicePlannerClient {
       close();
       LOG.warn("Connection is rejected because RecordServicePlanner has reached the " +
           "maximum number of connections it is able to handle.");
-      throw new RecordServiceException(e);
+      throw new RecordServiceException("Connection to RecordServicePlanner at "
+          + hostname + ":" + port + " is rejected. ", e);
     } catch (TTransportException e) {
       LOG.warn("Could not connect to RecordServicePlanner. " + e);
       if (e.getType() == TTransportException.END_OF_FILE) {
         TRecordServiceException ex = new TRecordServiceException();
         ex.code = TErrorCode.SERVICE_BUSY;
-        ex.message = "Connection to RecordServicePlanner has failed. Please check if " +
-            "the client has the same security setting as the server.";
+        ex.message = "Connection to RecordServicePlanner at " + hostname + ":" + port +
+            " has failed. Please check if the client has the same security setting as " +
+            "the server.";
         throw new RecordServiceException(ex);
       }
-      throw new IOException("Could not get service protocol version.", e);
+      throw new IOException("Could not get service protocol version from " +
+          "RecordServicePlanner at " + hostname + ":" + port, e);
     } catch (TException e) {
       LOG.warn("Could not connection to RecordServicePlanner. " + e);
       throw new IOException("Could not get service protocol version. It's likely " +
