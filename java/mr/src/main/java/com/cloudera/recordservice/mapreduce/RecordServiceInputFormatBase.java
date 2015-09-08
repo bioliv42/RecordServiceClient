@@ -17,6 +17,7 @@ package com.cloudera.recordservice.mapreduce;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.apache.hadoop.conf.Configuration;
@@ -124,6 +125,9 @@ public abstract class RecordServiceInputFormatBase<K, V> extends InputFormat<K, 
       splits.add(new RecordServiceInputSplit(schema, new TaskInfo(t)));
     }
     LOG.debug(String.format("Generated %d splits.", splits.size()));
+
+    // Randomize the order of the splits to mitigate skew.
+    Collections.shuffle(splits);
     return new SplitsInfo(splits, schema);
   }
 

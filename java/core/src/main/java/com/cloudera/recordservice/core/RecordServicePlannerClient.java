@@ -55,7 +55,7 @@ public class RecordServicePlannerClient {
   private int retrySleepMs_ = 1000;
 
   // Millisecond timeout for TSocket, 0 means infinite timeout.
-  private int timeoutMs_ = 20000;
+  private int timeoutMs_ = 60000;
 
   private final String USER = System.getProperty("user.name");
 

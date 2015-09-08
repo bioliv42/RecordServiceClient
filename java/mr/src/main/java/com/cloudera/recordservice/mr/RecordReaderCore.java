@@ -87,26 +87,29 @@ public class RecordReaderCore {
       if (enableLogging) builder.setLoggingLevel(LOG);
       if (token != null) builder.setDelegationToken(TokenUtils.toDelegationToken(token));
 
-      NetworkAddress task = null;
+      NetworkAddress address = null;
       String localHost = InetAddress.getLocalHost().getHostAddress();
       NetworkAddress[] locations = taskInfo.getLocations();
 
       for (NetworkAddress loc : locations) {
         if (localHost.equals(loc.hostname)) {
-          task = loc;
+          address = loc;
           break;
         }
       }
       // We can't schedule the task locally. Now randomly pick a host for it to
       // distribute the tasks more evenly.
-      if (task == null) {
+      // TODO: revisit this. We have a choice here of picking a remote
+      // RecordServiceWorker with a local DN (what we do now) or picking the local
+      // RecordServiceWorker with a remote DN.
+      if (address == null) {
         Random rand = new Random();
-        task = locations[rand.nextInt(locations.length)];
-        LOG.debug("Cannot schedule task {} locally. Randomly selected host {} " +
-            "to execute it", taskInfo.getTask().taskId, task.hostname);
+        address = locations[rand.nextInt(locations.length)];
+        LOG.info("Cannot schedule task {} locally. Randomly selected host {} " +
+            "to execute it", taskInfo.getTask().taskId, address.hostname);
       }
 
-      worker_ = builder.connect(task.hostname, task.port);
+      worker_ = builder.connect(address.hostname, address.port);
       records_ = worker_.execAndFetch(taskInfo.getTask());
     } finally {
       if (records_ == null) close();
