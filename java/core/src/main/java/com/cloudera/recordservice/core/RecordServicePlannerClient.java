@@ -153,42 +153,65 @@ public class RecordServicePlannerClient implements Closeable {
 
   /**
    * Opens a connection to the RecordServicePlanner.
+   * Will retry maxAttempts_ if it got SERVICE_BUSY error.
    */
   private void connect(String hostname, int port)
       throws IOException, RecordServiceException {
-    TTransport transport = ThriftUtils.createTransport("RecordServicePlanner", hostname,
-        port, kerberosPrincipal_, delegationToken_, timeoutMs_);
-    protocol_ = new TBinaryProtocol(transport);
-    plannerClient_ = new RecordServicePlanner.Client(protocol_);
-    try {
-      protocolVersion_ = ThriftUtils.fromThrift(plannerClient_.GetProtocolVersion());
-      LOG.debug("Connected to RecordServicePlanner with version: " + protocolVersion_);
-    } catch (TRecordServiceException e) {
-      // For 'GetProtocolVersion' call, the server side will first establish
-      // the connection, and then throws the exception when it's processing the call.
-      // The client is responsible to close the connection after seeing the exception.
-      close();
-      LOG.warn("Connection is rejected because RecordServicePlanner has reached the " +
-          "maximum number of connections it is able to handle.");
-      throw new RecordServiceException("Connection to RecordServicePlanner at "
-          + hostname + ":" + port + " is rejected. ", e);
-    } catch (TTransportException e) {
-      LOG.warn("Could not connect to RecordServicePlanner. " + e);
-      if (e.getType() == TTransportException.END_OF_FILE) {
-        TRecordServiceException ex = new TRecordServiceException();
-        ex.code = TErrorCode.SERVICE_BUSY;
-        ex.message = "Connection to RecordServicePlanner at " + hostname + ":" + port +
-            " has failed. Please check if the client has the same security setting as " +
-            "the server.";
-        throw new RecordServiceException(ex);
+    connect(hostname, port, maxAttempts_);
+  }
+
+  /**
+   * Opens a connection to the RecordServicePlanner.
+   * Will retry maxAttempts if it got SERVICE_BUSY error.
+   */
+  private void connect(String hostname, int port, int maxAttempts)
+      throws IOException, RecordServiceException{
+    for (int i = 0; i < maxAttempts; ++i) {
+      if (i > 0) {
+        LOG.info("Connect to RecordServicePlanner at {}:{} with attempt {}/{}",
+            hostname, port, i + 1, maxAttempts);
       }
-      throw new IOException("Could not get service protocol version from " +
-          "RecordServicePlanner at " + hostname + ":" + port, e);
-    } catch (TException e) {
-      LOG.warn("Could not connection to RecordServicePlanner. " + e);
-      throw new IOException("Could not get service protocol version. It's likely " +
-          "the service at " + hostname + ":" + port + " is not running the " +
-          "RecordServicePlanner.", e);
+      TTransport transport = ThriftUtils.createTransport("RecordServicePlanner",
+          hostname, port, kerberosPrincipal_, delegationToken_, timeoutMs_);
+      protocol_ = new TBinaryProtocol(transport);
+      plannerClient_ = new RecordServicePlanner.Client(protocol_);
+      try {
+        protocolVersion_ = ThriftUtils.fromThrift(plannerClient_.GetProtocolVersion());
+        LOG.debug("Connected to RecordServicePlanner with version: " + protocolVersion_);
+        return;
+      } catch (TRecordServiceException e) {
+        // For 'GetProtocolVersion' call, the server side will first establish
+        // the connection, and then throws the exception when it's processing the call.
+        // The client is responsible to close the connection after seeing the exception.
+        close();
+        if (i + 1 < maxAttempts && e.code == TErrorCode.SERVICE_BUSY) {
+          // Only retry when service is busy.
+          LOG.warn("Failed to connect: ", e);
+          sleepForRetry();
+          continue;
+        }
+        LOG.warn("Connection is rejected because RecordServicePlanner has reached " +
+            "the maximum number of connections it is able to handle.");
+        throw new RecordServiceException("Connection to RecordServicePlanner at "
+            + hostname + ":" + port + " is rejected. ", e);
+      } catch (TTransportException e) {
+        LOG.warn("Could not connect to RecordServicePlanner. " + e);
+        if (e.getType() == TTransportException.END_OF_FILE) {
+          TRecordServiceException ex = new TRecordServiceException();
+          ex.code = TErrorCode.SERVICE_BUSY;
+          ex.message = "Connection to RecordServicePlanner at " + hostname + ":" + port +
+              " has failed. Please check if the client has the same security setting " +
+              "as the server.";
+          throw new RecordServiceException(ex);
+        }
+        throw new IOException("Could not get service protocol version from " +
+            "RecordServicePlanner at " + hostname + ":" + port, e);
+      } catch (TException e) {
+        LOG.warn("Could not connection to RecordServicePlanner. " + e);
+        throw new IOException("Could not get service protocol version. It's likely " +
+            "the service at " + hostname + ":" + port + " is not running the " +
+            "RecordServicePlanner.", e);
+      }
     }
   }
 
@@ -400,7 +423,7 @@ public class RecordServicePlannerClient implements Closeable {
       if (socket.isClosed()) {
         LOG.debug("Socket is closed, will reconnect to {}:{}",
             socket.getInetAddress().getHostAddress(), socket.getPort());
-        connect(socket.getInetAddress().getHostAddress(), socket.getPort());
+        connect(socket.getInetAddress().getHostAddress(), socket.getPort(), 1);
       }
       if (!protocol_.getTransport().isOpen()) {
         LOG.debug("TTransport is closed, will reopen");

@@ -393,6 +393,7 @@ public class RecordServiceWorkerClient implements Closeable {
 
   /**
    * Connects to the RecordServiceWorker running on hostname/port.
+   * Will retry maxAttempts_ if it got SERVICE_BUSY error.
    */
   private void connect(String hostname, int port)
       throws IOException, RecordServiceException {
@@ -400,38 +401,51 @@ public class RecordServiceWorkerClient implements Closeable {
       throw new RuntimeException("Already connected. Must call close() first.");
     }
 
-    TTransport transport = ThriftUtils.createTransport("RecordServiceWorker",
-        hostname, port, kerberosPrincipal_, delegationToken_, timeoutMs_);
-    protocol_ = new TBinaryProtocol(transport);
-    workerClient_ = new RecordServiceWorker.Client(protocol_);
-    try {
-      protocolVersion_ = ThriftUtils.fromThrift(workerClient_.GetProtocolVersion());
-      LOG.debug("Connected to RecordServiceWorker with version: " + protocolVersion_);
-    } catch (TRecordServiceException e) {
-      // For 'GetProtocolVersion' call, the server side will first establish
-      // the connection, and then throws the exception when it's processing the call.
-      // The client is responsible to close the connection after seeing the exception.
-      close();
-      LOG.warn("Connection is rejected because RecordServiceWorker has reached the " +
-          "maximum number of connections it is able to handle.");
-      throw new RecordServiceException("Connection to RecordServiceWorker at " +
-          hostname + ":" + port + " is rejected. ", e);
-    } catch (TTransportException e) {
-      LOG.warn("Could not connect to RecordServiceWorker. " + e);
-      if (e.getType() == TTransportException.END_OF_FILE) {
-        TRecordServiceException ex = new TRecordServiceException();
-        ex.code = TErrorCode.SERVICE_BUSY;
-        ex.message = "Connection to RecordServiceWorker at " + hostname + ":" + port +
-            " has failed. Please check if the client has the same security setting " +
-            "as the server.";
-        throw new RecordServiceException(ex);
+    for (int i = 0; i < maxAttempts_; ++i) {
+      if (i > 0) {
+        LOG.info("Connect to RecordServiceWorker at {}:{} with attempt {}/{}",
+            hostname, port, i + 1,  maxAttempts_);
       }
-      throw new IOException("Could not get service protocol version from " +
-          "RecordServiceWorker at " + hostname + ":" + port, e);
-    } catch (TException e) {
-      throw new IOException("Could not get service protocol version. It's likely " +
-          "the service at " + hostname + ":" + port + " is not running the " +
-          "RecordServiceWorker.", e);
+      TTransport transport = ThriftUtils.createTransport("RecordServiceWorker",
+          hostname, port, kerberosPrincipal_, delegationToken_, timeoutMs_);
+      protocol_ = new TBinaryProtocol(transport);
+      workerClient_ = new RecordServiceWorker.Client(protocol_);
+      try {
+        protocolVersion_ = ThriftUtils.fromThrift(workerClient_.GetProtocolVersion());
+        LOG.debug("Connected to RecordServiceWorker with version: " + protocolVersion_);
+        return;
+      } catch (TRecordServiceException e) {
+        // For 'GetProtocolVersion' call, the server side will first establish
+        // the connection, and then throws the exception when it's processing the call.
+        // The client is responsible to close the connection after seeing the exception.
+        close();
+        if (i + 1 <  maxAttempts_ && e.getCode() == TErrorCode.SERVICE_BUSY) {
+          // Only retry when service is busy.
+          LOG.warn("Failed to connect: ", e);
+          sleepForRetry();
+          continue;
+        }
+        LOG.warn("Connection is rejected because RecordServiceWorker has reached the " +
+            "maximum number of connections it is able to handle.");
+        throw new RecordServiceException("Connection to RecordServiceWorker at " +
+            hostname + ":" + port + " is rejected. ", e);
+      } catch (TTransportException e) {
+        LOG.warn("Could not connect to RecordServiceWorker. " + e);
+        if (e.getType() == TTransportException.END_OF_FILE) {
+          TRecordServiceException ex = new TRecordServiceException();
+          ex.code = TErrorCode.SERVICE_BUSY;
+          ex.message = "Connection to RecordServiceWorker at " + hostname + ":" + port +
+              " has failed. Please check if the client has the same security setting " +
+              "as the server.";
+          throw new RecordServiceException(ex);
+        }
+        throw new IOException("Could not get service protocol version from " +
+            "RecordServiceWorker at " + hostname + ":" + port, e);
+      } catch (TException e) {
+        throw new IOException("Could not get service protocol version. It's likely " +
+            "the service at " + hostname + ":" + port + " is not running the " +
+            "RecordServiceWorker.", e);
+      }
     }
   }
 
