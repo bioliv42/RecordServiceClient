@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>RecordService FAQ</title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="An abstraction layer between storage managers (for example, HDFS, HBase, Kudu) and compute frameworks (for example, MapReduce, Spark, Hive).">
+    <link rel="canonical" href="http://github.mtv.cloudera.com/CDH/RecordServiceClient/docs//faq.html">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/docs//css/main.css">
+    <link href='http://fonts.googleapis.com/css?family=Raleway:200,400,500,600,700' rel='stylesheet' type='text/css'>
+    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
+
+</head>
+
+
+    <body>
+
+    <header class="site-header">
+
+  <div class="wrap">
+
+    <a class="site-title" href="/docs//">RecordService</a>
+
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+           viewBox="0 0 18 15" enable-background="new 0 0 18 15" xml:space="preserve">
+          <path fill="#505050" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0
+            h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#505050" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484
+            h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#505050" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0
+            c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      
+      <div class="sidebar">
+      
+        <h4>Orientation</h4>
+        <ul>
+          
+        </ul>
+      
+        <h4></h4>
+        <ul>
+          
+          
+          <li><a href="/docs//index.html">Overview</a></li>
+          
+          
+        </ul>
+      
+        <h4>Installation</h4>
+        <ul>
+          
+        </ul>
+      
+        <h4></h4>
+        <ul>
+          
+          
+          <li><a href="/docs//install.html">Download RecordService</a></li>
+          
+          
+          
+          <li><a href="/docs//vm.html">Download VM</a></li>
+          
+          
+        </ul>
+      
+        <h4>Demonstration</h4>
+        <ul>
+          
+        </ul>
+      
+        <h4></h4>
+        <ul>
+          
+          
+          <li><a href="/docs//examples.html">Run Examples</a></li>
+          
+          
+        </ul>
+      
+        <h4>Interrogation</h4>
+        <ul>
+          
+        </ul>
+      
+        <h4></h4>
+        <ul>
+          
+          
+          <li><b>FAQ</b></li>
+          
+          
+        </ul>
+      
+      </div>
+      
+
+      <div class="wrap">
+      <div class="post">
+
+  <header class="post-header">
+    <h1>RecordService FAQ</h1>
+  </header>
+
+  <article class="post-content">
+  <p><strong>Q: Where and how are permissions managed?</strong></p>
+
+<p><strong>A:</strong> Sentry handles permissions in general, but there need to be additional queries for setting finer grained access.</p>
+
+<p>In the current version of Sentry, permissions on views allow for fine-grained access control — restricting access by column and row. In a future release, we  will likely add explicit column-level permissions are likely to be added. Impala/Hive/Hue.</p>
+
+<p><strong>Q: What kind of data can we use RecordService for?</strong></p>
+
+<p><strong>A:</strong> Hive(/Impala) tables only. Support might be added in the future for other schema sources, depending on customer demand.</p>
+
+<p><strong>Q: What happens if you try to access data controlled by RecordService</strong> without using RecordService?</p>
+
+<p><strong>A:</strong> Sentry’s HDFS Sync feature ensures that the files are locked down such that only users with full access to all of the values in a file (with Sentry permissions for the entire table) are allowed to read the files directly.</p>
+
+<p><strong>Q: Is there any API to discover the permissions that are set?</strong> </p>
+
+<p><strong>A:</strong> Hue can show this, as well as SHOW commands in Hive or Impala CLI.</p>
+
+<p><strong>Q: What is the RecordService security model? Is it possible to purposely restrict my view into the data?</strong></p>
+
+<p><strong>A:</strong> Yes it is possible to control permissions per view. With respect to setting the active role(s), that’s not something currently supported but might be supported in the future.</p>
+
+<p><strong>Q: Why does RecordService implement its own schema (which seems to be a copy of Hive’s schema)?</strong></p>
+
+<p><strong>A:</strong> The client API is layered so that it doesn’t have to pull in all dependencies. As you move higher in the client API, you get access to more standard Hadoop objects. In this case, you get a recordservice-hive JAR that  returns Hive Schema objects. </p>
+
+<p><strong>Q: Is there a way to list tables through RecordService, or do we go through the Hive metastore to get tables, then ask RecordService for the schema?</strong></p>
+
+<p><strong>A:</strong> Currently, you can’t list tables through RecordService. You have to go through the Hive metastore. </p>
+
+<p>Also note that the only thing needed to read from a table is the fully qualified table name, so the client does not need to pass the table metadata to RS.</p>
+
+<p><strong>Q: How does accessing a path directly versus querying the Hive metastore work?</strong></p>
+
+<p><strong>A:</strong> RecordService infers the schema to the best of its ability. If the path contains a self-describing file, such as Avro or Parquet, it will use that. For files like CSV, RecordService defaults to a STRING schema. The security rules for paths are still under consideration. For now, RecordServices does not infer schema — it only deals with tables defined in the Hive metastore.</p>
+
+  </article>
+
+</div>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrap columns">
+
+    <div class="left">
+      <h2 class="footer-heading">RecordService, Beta</h2>
+
+      <ul>
+        <li>RecordService is licensed under</li>
+        <li><a href="http://www.apache.org/licenses/LICENSE-2.0.html">The Apache License, Version 2.0</a></li>
+        <li>&nbsp;</li>
+        <li>Generated on 09 September 2015</li>
+      </ul>
+
+    </div>
+
+    <div class="middle">
+    </div>
+
+    <div class="right"> 
+      <p class="text">An abstraction layer between storage managers (for example, HDFS, HBase, Kudu) and compute frameworks (for example, MapReduce, Spark, Hive).
+        <div class="columns">
+          <div class="left">
+            <ul>
+              <li><a href="http://github.mtv.cloudera.com/CDH/RecordServiceClient"><i class="fa fa-github fa-lg"></i>&nbsp; Source</a></li>
+              <li><a href="https://jira.cloudera.com/browse/CDH/component/12921/"><i class="fa fa-bug fa-lg"></i>&nbsp; Issue tracking</a></li>
+              <li><a href="http://github.mtv.cloudera.com/CDH/RecordServiceClient"><i class="fa fa-comments-o fa-lg"></i>&nbsp; Mailing list</a></li>
+              <li><a href="http://github.mtv.cloudera.com/CDH/RecordServiceClient"><i class="fa fa-cogs fa-lg"></i>&nbsp; How to contribute</a></li>
+            </ul>
+          </div>
+          <div class="right">
+            <ul>
+              <li><a href="http://github.mtv.cloudera.com/CDH/RecordServiceClient"><i class="fa fa-play"></i>&nbsp; Examples</a></li>
+              <li><a href="/docs/apidocs/index.html"><i class="fa fa-file-text-o"></i>&nbsp; API Javadoc</a></li>
+              <li><a href="/docs/jdiff/changes.html"><i class="fa fa-bolt fs-lg"></i>&nbsp; API Changes</a></li>
+              <li><a href="/docs//release-notes"><i class="fa fa-info fa-lg"></i>&nbsp; Release Notes</a></li>
+            </ul>
+          </div>
+        </div>
+      </p>
+    </div>
+
+  </div>
+
+</footer>
+
+
+    </body>
+</html>
