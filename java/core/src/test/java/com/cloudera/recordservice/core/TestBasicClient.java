@@ -45,7 +45,7 @@ import com.google.common.collect.Lists;
 // TODO: add testes to verify that we don't retry when the error is not retryable.
 public class TestBasicClient extends TestBase {
   // The number of iterations to run the multithreaded test.
-  static private final int MULTITHREADED_TEST_NUM_ITERATIONS = 5;
+  static private final int MULTITHREADED_TEST_NUM_ITERATIONS = 20;
   static private final int MULTITHREADED_TEST_NUM_THREADS = 5;
 
   void fetchAndVerifyCount(Records records, int expectedCount)

@@ -228,6 +228,9 @@ public class Records implements Closeable {
   private final RecordServiceWorkerClient worker_;
   private RecordServiceWorkerClient.TaskState handle_;
 
+  // Whether to close the worker after we've closed the task
+  private boolean closeWorker_;
+
   // The current fetchResult from the RecordServiceWorker. Never null.
   private FetchResult fetchResult_;
 
@@ -275,6 +278,7 @@ public class Records implements Closeable {
     if (handle_ == null) return;
     worker_.closeTask(handle_);
     handle_ = null;
+    if (closeWorker_) worker_.close();
   }
 
   /**
@@ -292,6 +296,13 @@ public class Records implements Closeable {
   public Schema getSchema() { return record_.getSchema(); }
 
   /**
+   * Set whether to close the worker after the task is done.
+   */
+  public void setCloseWorker(boolean closeWorker) {
+    this.closeWorker_ = closeWorker;
+  }
+
+  /**
    * Returns the progress. [0, 1]
    */
   public float progress() { return progress_; }
@@ -301,6 +312,7 @@ public class Records implements Closeable {
       throws IOException, RecordServiceException {
     worker_ = worker;
     handle_ = handle;
+    closeWorker_ = false;
 
     record_ = new Record(handle.getSchema());
     nextBatch();

@@ -42,7 +42,9 @@ public class WorkerClientUtil {
       host = task.localHosts.get(0);
     }
 
-    return new RecordServiceWorkerClient.Builder()
+    Records records = new RecordServiceWorkerClient.Builder()
         .connect(host.hostname, host.port).execAndFetch(task);
+    records.setCloseWorker(true);
+    return records;
   }
 }
