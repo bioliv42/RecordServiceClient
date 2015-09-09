@@ -91,7 +91,7 @@ public class MapReduceAgeCount extends Configured implements Tool {
       return -1;
     }
 
-    Job job = new Job(getConf());
+    Job job = Job.getInstance(getConf());
     job.setJarByClass(MapReduceAgeCount.class);
     job.setJobName("Age Count");
 

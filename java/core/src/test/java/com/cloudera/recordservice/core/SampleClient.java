@@ -54,6 +54,7 @@ public class SampleClient extends TestBase {
       transport.open();
     } catch (TTransportException e) {
       System.err.println("Could not connect to service: " + serviceName);
+      transport.close();
       throw e;
     }
     return new TBinaryProtocol(transport);

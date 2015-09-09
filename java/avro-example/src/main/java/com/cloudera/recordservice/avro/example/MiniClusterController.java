@@ -177,7 +177,7 @@ public class MiniClusterController {
    * This method returns a JobConf object that allows a map reduce job to be run
    * on the minicluster
    */
-  public JobConf getJobConf(Class mrClass) {
+  public JobConf getJobConf(Class<?> mrClass) {
     if (clusterList_.size() == 0) {
       System.err.println("Cannot run MR job because the cluster has no active nodes");
       return null;

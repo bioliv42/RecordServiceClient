@@ -30,7 +30,7 @@ import com.cloudera.recordservice.core.RecordServiceException;
  *
  * TODO: reuse records?
  */
-public class SpecificRecords<T extends SpecificRecordBase> implements RecordIterator {
+public class SpecificRecords<T extends SpecificRecordBase> implements RecordIterator<T> {
   private Records records_;
   private org.apache.avro.Schema avroSchema_;
   private com.cloudera.recordservice.core.Schema schema_;
@@ -67,7 +67,6 @@ public class SpecificRecords<T extends SpecificRecordBase> implements RecordIter
    * Returns and advances to the next record. Throws exception if
    * there are no more records.
    */
-  @SuppressWarnings("unchecked")
   public T next() throws IOException, RecordServiceException {
     T record;
 

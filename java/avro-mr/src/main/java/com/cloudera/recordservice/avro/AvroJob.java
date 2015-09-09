@@ -30,8 +30,9 @@ public class AvroJob {
 
   private static final Logger LOG = LoggerFactory.getLogger(AvroJob.class);
 
+  @SuppressWarnings("rawtypes")
   public static void setInputFormatClass(org.apache.hadoop.mapreduce.Job job,
-      Class c) {
+      Class<? extends org.apache.hadoop.mapreduce.InputFormat> c) {
     if (job.getConfiguration().getBoolean(
         USE_RECORD_SERVICE_INPUT_FORMAT_CONF_KEY, false)) {
       if (c.getName().equals(
@@ -50,8 +51,9 @@ public class AvroJob {
     job.setInputFormatClass(c);
   }
 
+  @SuppressWarnings("rawtypes")
   public static void setInputFormat(org.apache.hadoop.mapred.JobConf job,
-      Class c) {
+      Class<? extends org.apache.hadoop.mapred.InputFormat> c) {
     if (job.getBoolean(USE_RECORD_SERVICE_INPUT_FORMAT_CONF_KEY, false)) {
       if (c.getName().equals(org.apache.avro.mapred.AvroInputFormat.class.getName())) {
         c = com.cloudera.recordservice.avro.mapred.AvroInputFormat.class;

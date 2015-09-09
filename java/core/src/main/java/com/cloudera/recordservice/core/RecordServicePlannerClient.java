@@ -15,6 +15,7 @@
 
 package com.cloudera.recordservice.core;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.net.Socket;
 
@@ -37,7 +38,7 @@ import com.cloudera.recordservice.thrift.TRecordServiceException;
 /**
  * Java client for the RecordServicePlanner. This class is not thread safe.
  */
-public class RecordServicePlannerClient {
+public class RecordServicePlannerClient implements Closeable {
   private final static Logger LOG =
       LoggerFactory.getLogger(RecordServicePlannerClient.class);
 

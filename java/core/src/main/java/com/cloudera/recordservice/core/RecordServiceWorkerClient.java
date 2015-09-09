@@ -15,6 +15,7 @@
 
 package com.cloudera.recordservice.core;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
@@ -40,7 +41,7 @@ import com.cloudera.recordservice.thrift.TUniqueId;
 /**
  * Java client for the RecordServiceWorker. This class is not thread safe.
  */
-public class RecordServiceWorkerClient {
+public class RecordServiceWorkerClient implements Closeable {
   private final static Logger LOG =
     LoggerFactory.getLogger(RecordServiceWorkerClient.class);
 

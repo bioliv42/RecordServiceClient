@@ -72,8 +72,8 @@ public class ColorCount {
 
   public static class Reduce extends
       Reducer<Text, IntWritable, AvroKey<CharSequence>, AvroValue<Integer>> {
-    private final static AvroKey<CharSequence> KEY = new AvroKey();
-    private final static AvroValue<Integer> VALUE = new AvroValue();
+    private final static AvroKey<CharSequence> KEY = new AvroKey<CharSequence>();
+    private final static AvroValue<Integer> VALUE = new AvroValue<Integer>();
 
     @Override
     public void reduce(Text key, Iterable<IntWritable> values, Context context)
@@ -99,7 +99,7 @@ public class ColorCount {
     JobConf conf = new JobConf(ColorCount.class);
     conf.setInt("mapreduce.job.reduces", 1);
 
-    Job job = new Job(conf);
+    Job job = Job.getInstance(conf);
     job.setJarByClass(ColorCount.class);
     job.setJobName("MR2 Color Count With Generic Records");
 

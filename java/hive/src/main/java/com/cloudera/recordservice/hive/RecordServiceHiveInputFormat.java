@@ -148,6 +148,7 @@ public class RecordServiceHiveInputFormat<K extends WritableComparable,
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public boolean doNext(K key, V value) throws IOException {
       if (ExecMapper.getDone()) {
         return false;

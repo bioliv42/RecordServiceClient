@@ -100,8 +100,8 @@ public class AvroKeyInputFormat<T> extends
       return NullWritable.get();
     }
 
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     @Override
-    @SuppressWarnings("unchecked")
     public void initialize(InputSplit inputSplit, TaskAttemptContext context)
         throws IOException, InterruptedException {
       super.initialize(inputSplit, context);
@@ -109,7 +109,7 @@ public class AvroKeyInputFormat<T> extends
         records_ = new SpecificRecords(avroSchema_, reader_.records(),
             RecordUtil.ResolveBy.NAME);
       } else {
-        records_ = new GenericRecords(reader_.records());
+        records_ = (RecordIterator<T>)new GenericRecords(reader_.records());
       }
     }
   }

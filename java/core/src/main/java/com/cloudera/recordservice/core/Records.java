@@ -15,6 +15,7 @@
 
 package com.cloudera.recordservice.core;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
@@ -25,7 +26,7 @@ import sun.misc.Unsafe;
  * Abstraction over records returned from the RecordService. This class is
  * extremely performance sensitive. Not thread-safe.
  */
-public class Records {
+public class Records implements Closeable {
   private static final Unsafe unsafe;
   static {
     try {
@@ -269,6 +270,7 @@ public class Records {
   /**
    * Closes the task. Idempotent.
    */
+  @Override
   public void close() {
     if (handle_ == null) return;
     worker_.closeTask(handle_);

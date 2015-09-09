@@ -19,6 +19,7 @@
 
 package com.cloudera.recordservice.avro;
 
+import java.io.Closeable;
 import java.io.IOException;
 
 import com.cloudera.recordservice.core.RecordServiceException;
@@ -26,7 +27,7 @@ import com.cloudera.recordservice.core.RecordServiceException;
 /**
  * Provide an iterator interface and return generic or specific records.
  */
-public interface RecordIterator<T> {
+public interface RecordIterator<T> extends Closeable {
   /**
    * Return true if there are more records, false otherwise.
    */

@@ -51,8 +51,8 @@ public class TestKeyValueRecords extends TestBase {
 
     for (int i = plan.tasks.size() - 1; i >= 0; --i) {
       try {
-        records = new KeyValueRecords(UserKey.SCHEMA$, UserValue.SCHEMA$,
-            WorkerClientUtil.execTask(plan, i));
+        records = new KeyValueRecords<UserKey, UserValue>(UserKey.SCHEMA$,
+            UserValue.SCHEMA$, WorkerClientUtil.execTask(plan, i));
         if (records.hasNext()) {
           KeyValueRecords.KeyValuePair<UserKey, UserValue> record = records.next();
           int age = record.KEY.getAge().intValue();
@@ -108,8 +108,8 @@ public class TestKeyValueRecords extends TestBase {
             Request.createSqlRequest("select * from rs.nullUsers"));
     assertEquals(1, plan.tasks.size());
 
-    KeyValueRecords<UserKey, UserValue> records =  new KeyValueRecords(UserKey.SCHEMA$,
-        UserValue.SCHEMA$, WorkerClientUtil.execTask(plan, 0));
+    KeyValueRecords<UserKey, UserValue> records = new KeyValueRecords<UserKey, UserValue>(
+        UserKey.SCHEMA$, UserValue.SCHEMA$, WorkerClientUtil.execTask(plan, 0));
     if (records.hasNext()) {
       boolean exceptionThrown = false;
       try {

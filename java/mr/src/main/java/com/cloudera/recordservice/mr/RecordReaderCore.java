@@ -15,6 +15,7 @@
 
 package com.cloudera.recordservice.mr;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.Random;
@@ -40,7 +41,7 @@ import com.cloudera.recordservice.mr.security.TokenUtils;
  * try to authenticate using kerberos (the planner should have created the delegation
  * token) to avoid causing issues with the KDC.
  */
-public class RecordReaderCore {
+public class RecordReaderCore implements Closeable {
   private final static Logger LOG = LoggerFactory.getLogger(RecordReaderCore.class);
   // Underlying worker connection.
   private RecordServiceWorkerClient worker_;

@@ -58,6 +58,7 @@ public class AvroInputFormat<T> extends
       extends RecordReaderBase<AvroWrapper<T>, NullWritable> {
     private RecordIterator<T> records_;
 
+    @SuppressWarnings("rawtypes")
     public AvroRecordReader(JobConf config, Reporter reporter,
         RecordServiceInputSplit split) throws IOException {
       super(split, config, reporter);
@@ -66,7 +67,7 @@ public class AvroInputFormat<T> extends
         records_ = new SpecificRecords(schema, reader_.records(),
             RecordUtil.ResolveBy.NAME);
       } else {
-        records_ = new GenericRecords(reader_.records());
+        records_ = (RecordIterator<T>)new GenericRecords(reader_.records());
         AvroJob.setInputSchema(config, records_.getSchema());
       }
     }

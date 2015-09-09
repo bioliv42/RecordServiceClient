@@ -47,7 +47,8 @@ public class MapredColorCount extends Configured implements Tool {
 
   public static class ColorCountMapper extends AvroMapper<GenericData.Record,
       Pair<CharSequence, Integer>> {
-    private final static Pair<CharSequence, Integer> PAIR = new Pair("", 1);
+    private final static Pair<CharSequence, Integer> PAIR = 
+        new Pair<CharSequence, Integer>("", 1);
 
     @Override
     public void map(GenericData.Record user,
@@ -67,7 +68,8 @@ public class MapredColorCount extends Configured implements Tool {
 
   public static class ColorCountReducer extends AvroReducer<CharSequence, Integer,
       Pair<CharSequence, Integer>> {
-    private final static Pair<CharSequence, Integer> PAIR = new Pair("", 1);
+    private final static Pair<CharSequence, Integer> PAIR = 
+        new Pair<CharSequence, Integer>("", 1);
 
     @Override
     public void reduce(CharSequence key, Iterable<Integer> values,

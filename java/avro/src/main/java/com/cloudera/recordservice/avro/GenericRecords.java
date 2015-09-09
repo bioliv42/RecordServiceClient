@@ -29,7 +29,7 @@ import com.cloudera.recordservice.core.Records;
  * TODO: reuse records?
  * TODO: map STRING to BYTES?
  */
-public class GenericRecords implements RecordIterator {
+public class GenericRecords implements RecordIterator<Record> {
   private Records records_;
   private org.apache.avro.Schema avroSchema_;
   private com.cloudera.recordservice.core.Schema schema_;

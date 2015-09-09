@@ -61,8 +61,8 @@ public class MapReduceColorCount extends Configured implements Tool {
 
   public static class ColorCountReducer extends
       Reducer<Text, IntWritable, AvroKey<CharSequence>, AvroValue<Integer>> {
-    private final static AvroKey<CharSequence> KEY = new AvroKey();
-    private final static AvroValue<Integer> VALUE = new AvroValue();
+    private final static AvroKey<CharSequence> KEY = new AvroKey<CharSequence>();
+    private final static AvroValue<Integer> VALUE = new AvroValue<Integer>();
 
     @Override
     public void reduce(Text key, Iterable<IntWritable> values,
@@ -86,7 +86,7 @@ public class MapReduceColorCount extends Configured implements Tool {
       return -1;
     }
 
-    Job job = new Job(getConf());
+    Job job = Job.getInstance(getConf());
     job.setJarByClass(MapReduceColorCount.class);
     job.setJobName("Color Count");
 

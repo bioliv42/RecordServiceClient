@@ -56,6 +56,11 @@ public class Schema implements Writable {
   }
 
   @Override
+  public String toString() {
+    return schema_.toString();
+  }
+
+  @Override
   public void readFields(DataInput in) throws IOException {
     schema_ = com.cloudera.recordservice.core.Schema.deserialize(in);
   }

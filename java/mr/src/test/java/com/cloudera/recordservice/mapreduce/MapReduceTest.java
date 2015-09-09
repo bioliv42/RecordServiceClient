@@ -309,7 +309,7 @@ public class MapReduceTest extends TestBase {
   @Test
   public void testConfigs() throws IOException, InterruptedException {
     Configuration config = new Configuration();
-    RecordServiceConfig.setInputTable(config, "tpch", "nation", null);
+    RecordServiceConfig.setInputTable(config, "tpch", "nation", (String[])null);
     verifyInputSplits(1, 4, config);
     verifyException("Could not resolve table reference", "", "nation", "n_comment");
     verifyException("'tbl' must be non-empty", "tpch", null, "n_comment");
