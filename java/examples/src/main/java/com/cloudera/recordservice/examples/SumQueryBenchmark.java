@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.cloudera.recordservice.sample;
+package com.cloudera.recordservice.examples;
 
 import java.io.IOException;
 
@@ -23,12 +23,18 @@ import com.cloudera.recordservice.core.RecordServicePlannerClient;
 import com.cloudera.recordservice.core.Records;
 import com.cloudera.recordservice.core.Records.Record;
 import com.cloudera.recordservice.core.Request;
+import com.cloudera.recordservice.core.Schema;
 import com.cloudera.recordservice.core.WorkerClientUtil;
 
 /**
- * This is similar to SampleClient except built using the client APIs.
+ * This benchmarks a query of the form "select sum(first_col) from table". The request
+ * pushed to RecordService is "select <cols> from table" and the sum is done in this
+ * application.
+ *
+ * The intent of this application is to measure the server and client library record
+ * reading performance.
  */
-public class SampleClientLib {
+public class SumQueryBenchmark {
   static final String PLANNER_HOST =
     System.getenv("RECORD_SERVICE_PLANNER_HOST") != null ?
         System.getenv("RECORD_SERVICE_PLANNER_HOST") : "localhost";
@@ -36,7 +42,7 @@ public class SampleClientLib {
     System.getenv("RECORD_SERVICE_PLANNER_PORT") != null ?
         Integer.parseInt(System.getenv("RECORD_SERVICE_PLANNER_PORT")) : 40000;
 
-  static final String DEFAULT_QUERY = "select n_nationkey from tpch.nation";
+  static final String DEFAULT_QUERY = "select bigint_col from rs.alltypes";
 
   private static void runQuery(String query) throws RecordServiceException, IOException {
     /**
@@ -46,6 +52,11 @@ public class SampleClientLib {
 
     PlanRequestResult planResult = new RecordServicePlannerClient.Builder()
         .planRequest(PLANNER_HOST, PLANNER_PORT, Request.createSqlRequest(query));
+    if (planResult.schema.cols.size() < 1 ||
+        planResult.schema.cols.get(0).type.typeId != Schema.Type.BIGINT) {
+      throw new RuntimeException(
+          "First column must be a BIGINT. Schema=" + planResult.schema);
+    }
 
     long totalTimeMs = 0;
 

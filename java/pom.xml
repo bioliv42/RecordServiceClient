@@ -33,13 +33,13 @@
   <modules>
     <module>core</module>
     <module>hive</module>
-    <module>sample</module>
     <module>mr</module>
     <module>spark</module>
     <module>spark-benchmark</module>
     <module>avro</module>
     <module>avro-mr</module>
     <module>avro-example</module>
+    <module>examples</module>
   </modules>
 
   <properties>

@@ -31,9 +31,9 @@
     <relativePath>../pom.xml</relativePath>
   </parent>
 
-  <artifactId>recordservice-sample</artifactId>
-  <name>Record Service Sample</name>
-  <description>Record Service Sample</description>
+  <artifactId>recordservice-examples</artifactId>
+  <name>Record Service Examples</name>
+  <description>Contains a few examples and utilities to demonstrate how to use Record Service</description>
   <packaging>jar</packaging>
   <url>.</url>
 

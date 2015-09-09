@@ -1,5 +1,5 @@
 // Confidential Cloudera Information: Covered by NDA.
-package com.cloudera.recordservice.sample;
+package com.cloudera.recordservice.examples;
 
 import java.io.IOException;
 import java.util.ArrayList;

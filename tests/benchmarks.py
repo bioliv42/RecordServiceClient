@@ -45,8 +45,8 @@ def native_client_cmd(query):
 
 def java_client_cmd(query):
   return "java -classpath " + os.environ['RECORD_SERVICE_HOME'] +\
-      "/java/sample/target/recordservice-sample-0.1.jar " +\
-      "com.cloudera.recordservice.sample.SampleClientLib " +\
+      "/java/examples/target/recordservice-examples-0.1.jar " +\
+      "com.cloudera.recordservice.examples.SumQueryBenchmark " +\
       "\"" + query + "\""
 
 def mr_record_count(query, outpath):
