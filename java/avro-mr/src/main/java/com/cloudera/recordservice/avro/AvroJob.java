@@ -25,7 +25,7 @@ import org.slf4j.LoggerFactory;
  * equivalents.
  */
 public class AvroJob {
-  public static String USE_RECORD_SERVICE_INPUT_FORMAT_CONF_KEY =
+  public final static String USE_RECORD_SERVICE_INPUT_FORMAT_CONF_KEY =
       "recordservice.enable.avro";
 
   private static final Logger LOG = LoggerFactory.getLogger(AvroJob.class);
@@ -34,11 +34,11 @@ public class AvroJob {
       Class c) {
     if (job.getConfiguration().getBoolean(
         USE_RECORD_SERVICE_INPUT_FORMAT_CONF_KEY, false)) {
-      if (c.getName() ==
-          org.apache.avro.mapreduce.AvroKeyInputFormat.class.getName()) {
+      if (c.getName().equals(
+          org.apache.avro.mapreduce.AvroKeyInputFormat.class.getName())) {
         c = com.cloudera.recordservice.avro.mapreduce.AvroKeyInputFormat.class;
-      } else if (c.getName() ==
-          org.apache.avro.mapreduce.AvroKeyValueInputFormat.class.getName()) {
+      } else if (c.getName().equals(
+          org.apache.avro.mapreduce.AvroKeyValueInputFormat.class.getName())) {
         c = com.cloudera.recordservice.avro.mapreduce.AvroKeyValueInputFormat.class;
       } else {
         throw new RuntimeException("Class '" + c.getName() + "' is not supported by " +
@@ -53,7 +53,7 @@ public class AvroJob {
   public static void setInputFormat(org.apache.hadoop.mapred.JobConf job,
       Class c) {
     if (job.getBoolean(USE_RECORD_SERVICE_INPUT_FORMAT_CONF_KEY, false)) {
-      if (c.getName() == org.apache.avro.mapred.AvroInputFormat.class.getName()) {
+      if (c.getName().equals(org.apache.avro.mapred.AvroInputFormat.class.getName())) {
         c = com.cloudera.recordservice.avro.mapred.AvroInputFormat.class;
       } else {
         throw new RuntimeException("Class '" + c.getName() + "' is not supported "
