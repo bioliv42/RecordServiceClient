@@ -21,7 +21,7 @@ package com.cloudera.recordservice.spark
 import org.apache.commons.lang.StringEscapeUtils.escapeSql
 
 import com.cloudera.recordservice.core.{Request, RecordServicePlannerClient, Schema}
-import com.cloudera.recordservice.mr.PlanUtil
+import com.cloudera.recordservice.mr.{RecordServiceConfig, PlanUtil}
 import org.apache.hadoop.io._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.expressions.SpecificMutableRow
@@ -52,10 +52,21 @@ case class RecordServiceRelation(table:String, size:Option[Long])(
     extends BaseRelation with PrunedFilteredScan with Logging {
 
   override def schema: StructType = {
+    val timeoutMs =
+        sqlContext.getConf(RecordServiceConfig.PLANNER_SOCKET_TIMEOUT_MS_CONF,
+            RecordServiceConfig.DEFAULT_PLANNER_SOCKET_TIMEOUT_MS.toString).toInt
+    val maxAttempts = sqlContext.getConf(RecordServiceConfig.PLANNER_RETRY_ATTEMPTS_CONF,
+        RecordServiceConfig.DEFAULT_PLANNER_RETRY_ATTEMPTS.toString).toInt
+    val sleepDurationMs =
+        sqlContext.getConf(RecordServiceConfig.PLANNER_RETRY_SLEEP_MS_CONF,
+            RecordServiceConfig.DEFAULT_PLANNER_RETRY_SLEEP_MS.toString).toInt
     val planner = PlanUtil.getPlanner(
-      RecordServiceConf.getPlannerHostPort(sqlContext.sparkContext),
-      RecordServiceConf.getKerberosPrincipal(sqlContext.sparkContext),
-      null)
+        RecordServiceConf.getPlannerHostPort(sqlContext.sparkContext),
+        RecordServiceConf.getKerberosPrincipal(sqlContext.sparkContext),
+        null,
+        timeoutMs,
+        maxAttempts,
+        sleepDurationMs)
     try {
       convertSchema(planner.getSchema(Request.createTableScanRequest(table)).schema)
     } finally {

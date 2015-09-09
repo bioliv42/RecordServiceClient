@@ -91,13 +91,19 @@ public abstract class RecordServiceInputFormatBase<K, V> extends InputFormat<K, 
     Request request = PlanUtil.getRequest(jobConf);
     List<NetworkAddress> plannerHostPorts = RecordServiceConfig.getPlannerHostPort(
         jobConf.get(RecordServiceConfig.PLANNER_HOSTPORTS_CONF,
-                    RecordServiceConfig.DEFAULT_PLANNER_HOSTPORTS));
+            RecordServiceConfig.DEFAULT_PLANNER_HOSTPORTS));
     String kerberosPrincipal =
         jobConf.get(RecordServiceConfig.KERBEROS_PRINCIPAL_CONF);
+    int timeoutMs = jobConf.getInt(RecordServiceConfig.PLANNER_SOCKET_TIMEOUT_MS_CONF,
+        RecordServiceConfig.DEFAULT_PLANNER_SOCKET_TIMEOUT_MS);
+    int maxAttempts = jobConf.getInt(RecordServiceConfig.PLANNER_RETRY_ATTEMPTS_CONF,
+        RecordServiceConfig.DEFAULT_PLANNER_RETRY_ATTEMPTS);
+    int sleepDurationMs = jobConf.getInt(RecordServiceConfig.PLANNER_RETRY_SLEEP_MS_CONF,
+        RecordServiceConfig.DEFAULT_PLANNER_RETRY_SLEEP_MS);
 
     PlanRequestResult result = null;
-    RecordServicePlannerClient planner =
-        PlanUtil.getPlanner(plannerHostPorts, kerberosPrincipal, credentials);
+    RecordServicePlannerClient planner = PlanUtil.getPlanner(plannerHostPorts,
+        kerberosPrincipal, credentials, timeoutMs, maxAttempts, sleepDurationMs);
     try {
       result = planner.planRequest(request);
       if (planner.isKerberosAuthenticated()) {

@@ -66,11 +66,12 @@ public class RecordReaderCore implements Closeable {
         DEFAULT_FETCH_SIZE);
     long memLimit = config.getLong(RecordServiceConfig.MEM_LIMIT_CONF, -1);
     long limit = config.getLong(RecordServiceConfig.RECORDS_LIMIT_CONF, -1);
-    int maxAttempts =
-        config.getInt(RecordServiceConfig.TASK_RETRY_ATTEMPTS_CONF, -1);
-    int taskSleepMs = config.getInt(RecordServiceConfig.TASK_RETRY_SLEEP_MS_CONF, -1);
-    int socketTimeoutMs =
-        config.getInt(RecordServiceConfig.TASK_SOCKET_TIMEOUT_MS_CONF, -1);
+    int maxAttempts = config.getInt(RecordServiceConfig.TASK_RETRY_ATTEMPTS_CONF,
+        RecordServiceConfig.DEFAULT_TASK_RETRY_ATTEMPTS);
+    int taskSleepMs = config.getInt(RecordServiceConfig.TASK_RETRY_SLEEP_MS_CONF,
+        RecordServiceConfig.DEFAULT_TASK_RETRY_SLEEP_MS);
+    int socketTimeoutMs = config.getInt(RecordServiceConfig.TASK_SOCKET_TIMEOUT_MS_CONF,
+        RecordServiceConfig.DEFAULT_TASK_SOCKET_TIMEOUT_MS);
     boolean enableLogging =
         config.getBoolean(RecordServiceConfig.TASK_ENABLE_SERVER_LOGGING_CONF, false);
 
@@ -84,9 +85,9 @@ public class RecordReaderCore implements Closeable {
     if (fetchSize != -1) builder.setFetchSize(fetchSize);
     if (memLimit != -1) builder.setMemLimit(memLimit);
     if (limit != -1) builder.setLimit(limit);
-    if (maxAttempts != -1) builder.setMaxAttempts(maxAttempts);
-    if (taskSleepMs != -1) builder.setSleepDurationMs(taskSleepMs);
-    if (socketTimeoutMs != -1) builder.setTimeoutMs(socketTimeoutMs);
+    builder.setMaxAttempts(maxAttempts);
+    builder.setSleepDurationMs(taskSleepMs);
+    builder.setTimeoutMs(socketTimeoutMs);
     if (enableLogging) builder.setLoggingLevel(LOG);
     if (token != null) builder.setDelegationToken(TokenUtils.toDelegationToken(token));
 

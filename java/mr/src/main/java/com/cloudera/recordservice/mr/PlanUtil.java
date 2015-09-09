@@ -120,7 +120,10 @@ public class PlanUtil {
   public static RecordServicePlannerClient getPlanner(
       List<NetworkAddress> plannerHostPorts,
       String kerberosPrincipal,
-      Credentials credentials) throws IOException {
+      Credentials credentials,
+      int timeoutMs,
+      int maxAttempts,
+      int sleepDurationMs) throws IOException {
     RecordServicePlannerClient.Builder builder =
         new RecordServicePlannerClient.Builder();
     // Try to get the delegation token from the credentials. If it is there, use it.
@@ -135,6 +138,10 @@ public class PlanUtil {
     } else if (kerberosPrincipal != null) {
       builder.setKerberosPrincipal(kerberosPrincipal);
     }
+
+    builder.setTimeoutMs(timeoutMs);
+    builder.setMaxAttempts(maxAttempts);
+    builder.setSleepDurationMs(sleepDurationMs);
 
     // Try all the host ports in order.
     // TODO: we can randomize the list for load balancing but it might be more

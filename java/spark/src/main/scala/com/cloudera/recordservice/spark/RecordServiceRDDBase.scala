@@ -19,7 +19,7 @@
 package com.cloudera.recordservice.spark
 
 import com.cloudera.recordservice.core._
-import com.cloudera.recordservice.mr.PlanUtil
+import com.cloudera.recordservice.mr.{RecordServiceConfig, PlanUtil}
 import org.apache.spark._
 import org.apache.spark.rdd.RDD
 
@@ -205,7 +205,17 @@ abstract class RecordServiceRDDBase[T:ClassTag](@transient sc: SparkContext)
       // delegationToken as well. How is this done for spark? How do we get at the
       // credentials object.
       val principal = RecordServiceConf.getKerberosPrincipal(sc)
-      planner = PlanUtil.getPlanner(plannerHostPorts, principal, null)
+      val timeoutMs =
+          sc.getConf.getInt(RecordServiceConfig.PLANNER_SOCKET_TIMEOUT_MS_CONF,
+              RecordServiceConfig.DEFAULT_PLANNER_SOCKET_TIMEOUT_MS)
+      val maxAttempts =
+          sc.getConf.getInt(RecordServiceConfig.PLANNER_RETRY_ATTEMPTS_CONF,
+              RecordServiceConfig.DEFAULT_PLANNER_RETRY_ATTEMPTS)
+      val sleepDurationMs =
+          sc.getConf.getInt(RecordServiceConfig.PLANNER_RETRY_SLEEP_MS_CONF,
+              RecordServiceConfig.DEFAULT_PLANNER_RETRY_SLEEP_MS)
+      planner = PlanUtil.getPlanner(plannerHostPorts, principal, null, timeoutMs,
+          maxAttempts, sleepDurationMs)
       val result = planner.planRequest(request)
       if (principal != null) {
         (result, planner.getDelegationToken(""))
