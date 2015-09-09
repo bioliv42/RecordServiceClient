@@ -33,12 +33,14 @@ public class Task implements Serializable {
   public final byte[] task;
   public final UniqueId taskId;
   public final boolean resultsOrdered;
+  public final long taskSize;
 
   Task(TTask t) {
     localHosts = NetworkAddress.fromThrift(t.local_hosts);
     task = t.task.array();
     taskId = new UniqueId(t.task_id);
     resultsOrdered = t.results_ordered;
+    taskSize = t.task_size;
   }
 
   /**
@@ -56,6 +58,7 @@ public class Task implements Serializable {
     out.writeLong(taskId.hi);
     out.writeLong(taskId.lo);
     out.writeBoolean(resultsOrdered);
+    out.writeLong(taskSize);
   }
 
   /**
@@ -76,15 +79,17 @@ public class Task implements Serializable {
     in.readFully(taskBuffer);
     UniqueId id = new UniqueId(in.readLong(), in.readLong());
     boolean resultsOrdered = in.readBoolean();
-    return new Task(localHosts, taskBuffer, id, resultsOrdered);
+    long taskSize = in.readLong();
+    return new Task(localHosts, taskBuffer, id, resultsOrdered, taskSize);
   }
 
   Task(List<NetworkAddress> localHosts, byte[] task,
-      UniqueId id, boolean resultsOrdered) {
+      UniqueId id, boolean resultsOrdered, long taskSize) {
     this.localHosts = localHosts;
     this.task = task;
     this.taskId = id;
     this.resultsOrdered = resultsOrdered;
+    this.taskSize = taskSize;
   }
 
   /**

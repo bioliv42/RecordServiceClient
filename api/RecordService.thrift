@@ -239,6 +239,12 @@ struct TPlanRequestParams {
   // Username for this plan request. On a secure cluster, this is ignored and
   // instead the authenticated user used.
   6: optional string user
+
+  // A hint for the maximum number of tasks this request will generate. If not
+  // set, the server will pick a default. If this value is smaller than the
+  // number ofnatural task splits (e.g. HDFS blocks), the server will combine tasks.
+  // The combined tasks will have multiple blocks, for example.
+  7: optional i32 max_tasks
 }
 
 struct TTask {
@@ -257,6 +263,13 @@ struct TTask {
   // of failures, the client can continue from the current record. If false, the
   // client needs to recompute from the beginning.
   4: required bool results_ordered
+
+  // A unit-less estimate of the computation required to execute the task. This
+  // should only be used to compare task sizes returned from a single PlanRequest()
+  // to give an estimate of how large tasks are. Within a single request if the
+  // size of one task is 3x bigger than another task, we expect it to take 3 times
+  // as long.
+  5: required i64 task_size = 1
 }
 
 struct TPlanRequestResult {

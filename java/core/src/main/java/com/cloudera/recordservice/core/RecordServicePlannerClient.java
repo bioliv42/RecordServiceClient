@@ -57,6 +57,10 @@ public class RecordServicePlannerClient implements Closeable {
   // Millisecond timeout for TSocket, 0 means infinite timeout.
   private int timeoutMs_ = 60000;
 
+  // Maximum number of tasks we'd like the planner service to generate per PlanRequest.
+  // -1 indicates to use the server default.
+  private int maxTasks_ = -1;
+
   private final String USER = System.getProperty("user.name");
 
   /**
@@ -110,6 +114,13 @@ public class RecordServicePlannerClient implements Closeable {
       }
       LOG.debug("Setting timeoutMs to " + timeoutMs);
       client_.timeoutMs_ = timeoutMs;
+      return this;
+    }
+
+    public Builder setMaxTasks(int maxTasks) {
+      if (maxTasks <= 0) return this;
+      LOG.debug("Setting maxTasks to " + maxTasks);
+      client_.maxTasks_ = maxTasks;
       return this;
     }
 
@@ -259,6 +270,7 @@ public class RecordServicePlannerClient implements Closeable {
         TPlanRequestParams planParams = request.request_;
         planParams.client_version = TProtocolVersion.V1;
         planParams.setUser(USER);
+        if (maxTasks_ > 0) planParams.setMax_tasks(maxTasks_);
         planResult = plannerClient_.PlanRequest(planParams);
         LOG.debug("PlanRequest generated {} tasks.", planResult.tasks.size());
         return new PlanRequestResult(planResult);

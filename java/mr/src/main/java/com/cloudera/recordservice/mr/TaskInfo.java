@@ -41,10 +41,11 @@ public class TaskInfo implements Writable {
     workerAddresses_ = workerAddresses;
   }
 
-  // TODO : Some representation of the size of output
-  public long getLength() {
-    return 100;
-  }
+  /**
+   * Returns an estimate of the task size. If one task returns a value
+   * that is 3x higher, it should take 3x as long. Unit-less.
+   */
+  public long getLength() { return task_.taskSize; }
 
   public List<NetworkAddress> getLocations() {
     return task_.localHosts;

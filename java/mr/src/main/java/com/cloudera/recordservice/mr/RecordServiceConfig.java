@@ -60,6 +60,11 @@ public class RecordServiceConfig {
   // Optional configuration for the maximum number of records returned per task.
   public final static String RECORDS_LIMIT_CONF = "recordservice.task.records.limit";
 
+  // Optional configuration for the hinted maximum number of tasks to generate per
+  // PlanRequest.
+  public final static String PLANNER_REQUEST_MAX_TASKS =
+      "recordservice.task.plan.maxTasks";
+
   // Optional configuration for the maximum number of attempts to retry RecordService
   // RPCs with planner.
   public final static String PLANNER_RETRY_ATTEMPTS_CONF =

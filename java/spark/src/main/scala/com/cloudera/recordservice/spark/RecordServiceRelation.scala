@@ -59,13 +59,19 @@ case class RecordServiceRelation(table:String, size:Option[Long])(
     val sleepDurationMs =
         sqlContext.getConf(RecordServiceConfig.PLANNER_RETRY_SLEEP_MS_CONF,
             RecordServiceConfig.DEFAULT_PLANNER_RETRY_SLEEP_MS.toString).toInt
-    val planner = PlanUtil.getPlanner(
+    val maxTasks =
+        sqlContext.getConf(RecordServiceConfig.PLANNER_REQUEST_MAX_TASKS, "-1").toInt
+
+    val builder = new RecordServicePlannerClient.Builder()
+    builder.setTimeoutMs(timeoutMs);
+    builder.setMaxAttempts(maxAttempts);
+    builder.setSleepDurationMs(sleepDurationMs);
+    builder.setMaxTasks(maxTasks);
+
+    val planner = PlanUtil.getPlanner(builder,
         RecordServiceConf.getPlannerHostPort(sqlContext.sparkContext),
         RecordServiceConf.getKerberosPrincipal(sqlContext.sparkContext),
-        null,
-        timeoutMs,
-        maxAttempts,
-        sleepDurationMs)
+        null)
     try {
       convertSchema(planner.getSchema(Request.createTableScanRequest(table)).schema)
     } finally {

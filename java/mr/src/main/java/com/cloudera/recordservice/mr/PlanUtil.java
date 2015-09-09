@@ -133,14 +133,10 @@ public class PlanUtil {
    */
   @SuppressWarnings("unchecked")
   public static RecordServicePlannerClient getPlanner(
+      RecordServicePlannerClient.Builder builder,
       List<NetworkAddress> plannerHostPorts,
       String kerberosPrincipal,
-      Credentials credentials,
-      int timeoutMs,
-      int maxAttempts,
-      int sleepDurationMs) throws IOException {
-    RecordServicePlannerClient.Builder builder =
-        new RecordServicePlannerClient.Builder();
+      Credentials credentials) throws IOException {
     // Try to get the delegation token from the credentials. If it is there, use it.
     Token<DelegationTokenIdentifier> delegationToken = null;
     if (credentials != null) {
@@ -153,10 +149,6 @@ public class PlanUtil {
     } else if (kerberosPrincipal != null) {
       builder.setKerberosPrincipal(kerberosPrincipal);
     }
-
-    builder.setTimeoutMs(timeoutMs);
-    builder.setMaxAttempts(maxAttempts);
-    builder.setSleepDurationMs(sleepDurationMs);
 
     // Try all the host ports in order.
     // TODO: we can randomize the list for load balancing but it might be more
@@ -204,10 +196,20 @@ public class PlanUtil {
         RecordServiceConfig.DEFAULT_PLANNER_RETRY_ATTEMPTS);
     int sleepDurationMs = jobConf.getInt(RecordServiceConfig.PLANNER_RETRY_SLEEP_MS_CONF,
         RecordServiceConfig.DEFAULT_PLANNER_RETRY_SLEEP_MS);
+    int maxTasks = jobConf.getInt(RecordServiceConfig.PLANNER_REQUEST_MAX_TASKS, -1);
+
+    RecordServicePlannerClient.Builder builder =
+        new RecordServicePlannerClient.Builder();
+
+    builder.setTimeoutMs(timeoutMs);
+    builder.setMaxAttempts(maxAttempts);
+    builder.setSleepDurationMs(sleepDurationMs);
+    builder.setMaxTasks(maxTasks);
 
     PlanRequestResult result = null;
-    RecordServicePlannerClient planner = PlanUtil.getPlanner(plannerHostPorts,
-        kerberosPrincipal, credentials, timeoutMs, maxAttempts, sleepDurationMs);
+    RecordServicePlannerClient planner = PlanUtil.getPlanner(builder, plannerHostPorts,
+        kerberosPrincipal, credentials);
+
     try {
       result = planner.planRequest(request);
       if (planner.isKerberosAuthenticated()) {
