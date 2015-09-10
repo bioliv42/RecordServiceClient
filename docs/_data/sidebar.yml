@@ -6,6 +6,9 @@
       file: index.html
 - topic: Installation
 - pages:
+    - title: Beta Release Notes
+      alias: Release Notes
+      file: ReleaseNotes.html
     - title: Download RecordService
       alias: Download and Install RecordService
       file: install.html
