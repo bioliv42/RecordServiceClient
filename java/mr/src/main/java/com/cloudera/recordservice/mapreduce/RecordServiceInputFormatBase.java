@@ -122,7 +122,7 @@ public abstract class RecordServiceInputFormatBase<K, V> extends InputFormat<K, 
     Schema schema = new Schema(result.schema);
     List<InputSplit> splits = new ArrayList<InputSplit>();
     for (Task t : result.tasks) {
-      splits.add(new RecordServiceInputSplit(schema, new TaskInfo(t)));
+      splits.add(new RecordServiceInputSplit(schema, new TaskInfo(t, result.hosts)));
     }
     LOG.debug(String.format("Generated %d splits.", splits.size()));
 

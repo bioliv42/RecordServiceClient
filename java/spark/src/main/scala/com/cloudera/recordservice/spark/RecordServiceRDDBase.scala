@@ -27,9 +27,12 @@ import java.net.InetAddress
 
 import scala.collection.mutable.ListBuffer
 import scala.reflect.ClassTag
+import scala.collection.JavaConversions.asScalaBuffer
+import scala.util.Random
 
 private class RecordServicePartition(rddId: Int, idx: Int,
-                                     h:Seq[String], p:Seq[Int], t: Task, s: Schema,
+                                     h:Seq[String], p:Seq[Int],
+                                     w: Seq[NetworkAddress], t: Task, s: Schema,
                                      token: DelegationToken)
     extends Partition {
   override def hashCode(): Int = 41 * (41 + rddId) + idx
@@ -38,6 +41,7 @@ private class RecordServicePartition(rddId: Int, idx: Int,
   val schema: Schema = s
   val hosts: Seq[String] = h
   val ports: Seq[Int] = p
+  val globalHosts: Seq[NetworkAddress] = w
   val delegationToken: DelegationToken = token
 }
 
@@ -123,14 +127,32 @@ abstract class RecordServiceRDDBase[T:ClassTag](@transient sc: SparkContext)
    * any of the hosts matches this hosts address, use that host. Otherwise connect
    * to a host at random.
    */
-  def getWorkerToConnectTo(hosts: Seq[String]): Int = {
+  def getWorkerToConnectTo(partition: RecordServicePartition): (String, Int) = {
+    val tid = partition.task.taskId
     val hostAddress = InetAddress.getLocalHost.getHostName()
-    for (i <- 0 until hosts.size) {
-      if (hosts(i) == hostAddress) {
-        return i
+    for (i <- 0 until partition.hosts.size) {
+      if (partition.hosts(i) == hostAddress) {
+        logInfo(s"Both data and RecordServiceWorker are availablelocally for task $tid")
+        return (partition.hosts(i), partition.ports(i))
       }
     }
-    scala.util.Random.nextInt(hosts.size)
+
+    // Check if the current host is running a RecordServiceWorker. If so, schedule the
+    // task locally. Otherwise, choose a random host from the global membership
+    // for the task.
+    val addr = partition.globalHosts.find((_.hostname == hostAddress)) match {
+      case Some(addr) => {
+        logInfo(s"RecordServiceWorker is available locally for task $tid")
+        addr
+      }
+      case None => {
+        val addr = partition.globalHosts(Random.nextInt(partition.globalHosts.size))
+        logInfo(s"Neither RecordServiceWorker nor data is available locally " +
+          s"for task $tid. Randomly selected host ${addr.hostname} to execute it")
+        addr
+      }
+    }
+    (addr.hostname, addr.port)
   }
 
   /**
@@ -138,10 +160,10 @@ abstract class RecordServiceRDDBase[T:ClassTag](@transient sc: SparkContext)
    */
   protected def execTask(partition: RecordServicePartition) = {
     try {
-      val hostIdx = getWorkerToConnectTo(partition.hosts)
+      val (hostname, port) = getWorkerToConnectTo(partition)
       val worker = new RecordServiceWorkerClient.Builder()
           .setDelegationToken(partition.delegationToken)
-          .connect(partition.hosts(hostIdx), partition.ports(hostIdx))
+          .connect(hostname, port)
       val records = worker.execAndFetch(partition.task)
       (worker, records)
     } catch {
@@ -236,8 +258,9 @@ abstract class RecordServiceRDDBase[T:ClassTag](@transient sc: SparkContext)
         hosts += planResult.tasks.get(i).localHosts.get(j).hostname
         ports += planResult.tasks.get(i).localHosts.get(j).port
       }
+      val globalHosts = asScalaBuffer(planResult.hosts).toList
       partitions(i) = new RecordServicePartition(id, i, hosts.seq, ports.seq,
-        planResult.tasks.get(i), planResult.schema, delegationToken)
+        globalHosts, planResult.tasks.get(i), planResult.schema, delegationToken)
     }
     schema = planResult.schema
     (planResult, partitions)

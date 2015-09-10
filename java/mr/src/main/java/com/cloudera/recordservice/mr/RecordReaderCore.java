@@ -18,6 +18,7 @@ package com.cloudera.recordservice.mr;
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.util.List;
 import java.util.Random;
 
 import org.apache.hadoop.conf.Configuration;
@@ -94,24 +95,43 @@ public class RecordReaderCore implements Closeable {
     NetworkAddress address = null;
     // Important! We match locality on host names, not ips.
     String localHost = InetAddress.getLocalHost().getHostName();
-    NetworkAddress[] locations = taskInfo.getLocations();
 
-    for (NetworkAddress loc : locations) {
+    // 'localLocations' are the addresses where the data we want to read is
+    // available locally, and 'globalLocations' are all worker addresses currently
+    // available in the global membership.
+    List<NetworkAddress> localLocations = taskInfo.getLocations();
+    List<NetworkAddress> globalLocations = taskInfo.getAllWorkerAddresses();
+
+    // 1. If the data is available on this node, schedule the task locally.
+    for (NetworkAddress loc : localLocations) {
       if (localHost.equals(loc.hostname)) {
+        LOG.info("Both data and RecordServiceWorker are available locally for task {}",
+            taskInfo.getTask().taskId);
         address = loc;
         break;
       }
     }
-    // We can't schedule the task locally. Now randomly pick a host for it to
-    // distribute the tasks more evenly.
-    // TODO: revisit this. We have a choice here of picking a remote
-    // RecordServiceWorker with a local DN (what we do now) or picking the local
-    // RecordServiceWorker with a remote DN.
+
+    // 2. Check if there's a RecordServiceWorker running locally. If so, pick that node.
+    if (address == null) {
+      for (NetworkAddress loc : globalLocations) {
+        if (localHost.equals(loc.hostname)) {
+          address = loc;
+          LOG.info("RecordServiceWorker is available locally for task {}.",
+              taskInfo.getTask().taskId);
+          break;
+        }
+      }
+    }
+
+    // 3. Finally, we don't have RecordServiceWorker running locally. Randomly pick
+    // a node from the global membership.
     if (address == null) {
       Random rand = new Random();
-      address = locations[rand.nextInt(locations.length)];
-      LOG.info("Cannot schedule task {} locally. Randomly selected host {} " +
-          "to execute it", taskInfo.getTask().taskId, address.hostname);
+      address = globalLocations.get(rand.nextInt(globalLocations.size()));
+      LOG.info("Neither RecordServiceWorker nor data is available locally for task {}." +
+          " Randomly selected host {} to execute it",
+          taskInfo.getTask().taskId, address.hostname);
     }
 
     try {
