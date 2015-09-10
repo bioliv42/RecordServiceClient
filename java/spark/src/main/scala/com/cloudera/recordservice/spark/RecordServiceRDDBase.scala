@@ -122,10 +122,9 @@ abstract class RecordServiceRDDBase[T:ClassTag](@transient sc: SparkContext)
    * Returns the worker host to connect to, attempting to schedule for locality. If
    * any of the hosts matches this hosts address, use that host. Otherwise connect
    * to a host at random.
-   * TODO: double check this. This is critical for performance but not correctness.
    */
   def getWorkerToConnectTo(hosts: Seq[String]): Int = {
-    val hostAddress = InetAddress.getLocalHost.getHostAddress()
+    val hostAddress = InetAddress.getLocalHost.getHostName()
     for (i <- 0 until hosts.size) {
       if (hosts(i) == hostAddress) {
         return i

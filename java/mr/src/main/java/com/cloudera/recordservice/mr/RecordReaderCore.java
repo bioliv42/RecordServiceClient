@@ -92,7 +92,8 @@ public class RecordReaderCore implements Closeable {
     if (token != null) builder.setDelegationToken(TokenUtils.toDelegationToken(token));
 
     NetworkAddress address = null;
-    String localHost = InetAddress.getLocalHost().getHostAddress();
+    // Important! We match locality on host names, not ips.
+    String localHost = InetAddress.getLocalHost().getHostName();
     NetworkAddress[] locations = taskInfo.getLocations();
 
     for (NetworkAddress loc : locations) {
