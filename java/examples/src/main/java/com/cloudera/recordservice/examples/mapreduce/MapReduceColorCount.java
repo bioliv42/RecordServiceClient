@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-package com.cloudera.recordservice.avro.example;
+package com.cloudera.recordservice.examples.mapreduce;
 
 import java.io.IOException;
 
@@ -29,6 +29,7 @@ import org.apache.avro.mapreduce.AvroKeyValueOutputFormat;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
@@ -37,49 +38,45 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
+import com.cloudera.recordservice.examples.User;
+
 import com.cloudera.recordservice.mr.RecordServiceConfig;
 
-/**
- * Count the sum of age for users with same favorite_color.
- */
-public class MapReduceAgeCount extends Configured implements Tool {
+public class MapReduceColorCount extends Configured implements Tool {
 
-  public static class AgeCountMapper extends
-      Mapper<AvroKey<UserKey>, AvroValue<UserValue>, Text, IntWritable> {
-    private static final Text COLOR = new Text();
-    private static final IntWritable AGE = new IntWritable();
+  public static class ColorCountMapper extends
+      Mapper<AvroKey<User>, NullWritable, Text, IntWritable> {
+    private final static IntWritable ONE = new IntWritable(1);
+    private final static Text COLOR = new Text();
 
     @Override
-    public void map(AvroKey<UserKey> key, AvroValue<UserValue> value, Context context)
+    public void map(AvroKey<User> key, NullWritable value, Context context)
         throws IOException, InterruptedException {
-      // The record with Null age is invalid and will not be counted.
-      if (value.datum().getAge() != null) {
-        AGE.set(value.datum().getAge());
-        if (key.datum().getFavoriteColor() == null) {
-          COLOR.set("none");
-        } else {
-          COLOR.set(key.datum().getFavoriteColor().toString());
-        }
-        context.write(COLOR, AGE);
+      CharSequence color = key.datum().getFavoriteColor();
+      if (color == null) {
+        color = "none";
       }
+      COLOR.set(color.toString());
+      context.write(COLOR, ONE);
     }
   }
 
-  public static class AgeCountReducer extends
+  public static class ColorCountReducer extends
       Reducer<Text, IntWritable, AvroKey<CharSequence>, AvroValue<Integer>> {
-    private static final AvroKey<CharSequence> COLOR = new AvroKey<CharSequence>();
-    private static final AvroValue<Integer> SUM_OF_AGE = new AvroValue<Integer>();
+    private final static AvroKey<CharSequence> KEY = new AvroKey<CharSequence>();
+    private final static AvroValue<Integer> VALUE = new AvroValue<Integer>();
 
     @Override
     public void reduce(Text key, Iterable<IntWritable> values,
         Context context) throws IOException, InterruptedException {
+
       int sum = 0;
       for (IntWritable value : values) {
         sum += value.get();
       }
-      COLOR.datum(key.toString());
-      SUM_OF_AGE.datum(sum);
-      context.write(COLOR, SUM_OF_AGE);
+      KEY.datum(key.toString());
+      VALUE.datum(sum);
+      context.write(KEY, VALUE);
     }
   }
 
@@ -87,13 +84,13 @@ public class MapReduceAgeCount extends Configured implements Tool {
     org.apache.log4j.BasicConfigurator.configure();
 
     if (args.length != 2) {
-      System.err.println("Usage: MapReduceAgeCount <input path> <output path>");
+      System.err.println("Usage: MapReduceColorCount <input path> <output path>");
       return -1;
     }
 
     Job job = Job.getInstance(getConf());
-    job.setJarByClass(MapReduceAgeCount.class);
-    job.setJobName("Age Count");
+    job.setJarByClass(MapReduceColorCount.class);
+    job.setJobName("Color Count");
 
     // RECORDSERVICE:
     // To read from a table instead of a path, comment out
@@ -102,21 +99,20 @@ public class MapReduceAgeCount extends Configured implements Tool {
     RecordServiceConfig.setInputTable(job.getConfiguration(), "rs", "users");
 
     // RECORDSERVICE:
-    // Use the RecordService version of the AvroKeyValueInputFormat
+    // Use the RecordService version of the AvroKeyInputFormat
     job.setInputFormatClass(
-        com.cloudera.recordservice.avro.mapreduce.AvroKeyValueInputFormat.class);
+        com.cloudera.recordservice.avro.mapreduce.AvroKeyInputFormat.class);
+    //job.setInputFormatClass(AvroKeyInputFormat.class);
+
     FileOutputFormat.setOutputPath(job, new Path(args[1]));
 
-    job.setMapperClass(AgeCountMapper.class);
-    // Set schema for input key and value.
-    AvroJob.setInputKeySchema(job, UserKey.getClassSchema());
-    AvroJob.setInputValueSchema(job, UserValue.getClassSchema());
-
+    job.setMapperClass(ColorCountMapper.class);
+    AvroJob.setInputKeySchema(job, User.getClassSchema());
     job.setMapOutputKeyClass(Text.class);
     job.setMapOutputValueClass(IntWritable.class);
 
     job.setOutputFormatClass(AvroKeyValueOutputFormat.class);
-    job.setReducerClass(AgeCountReducer.class);
+    job.setReducerClass(ColorCountReducer.class);
     AvroJob.setOutputKeySchema(job, Schema.create(Schema.Type.STRING));
     AvroJob.setOutputValueSchema(job, Schema.create(Schema.Type.INT));
 
@@ -124,7 +120,7 @@ public class MapReduceAgeCount extends Configured implements Tool {
   }
 
   public static void main(String[] args) throws Exception {
-    int res = ToolRunner.run(new MapReduceAgeCount(), args);
+    int res = ToolRunner.run(new MapReduceColorCount(), args);
     System.exit(res);
   }
 }

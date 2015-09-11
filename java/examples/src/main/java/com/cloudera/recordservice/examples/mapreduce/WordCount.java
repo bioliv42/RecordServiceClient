@@ -1,5 +1,5 @@
 // Confidential Cloudera Information: Covered by NDA.
-package com.cloudera.recordservice.avro.example;
+package com.cloudera.recordservice.examples.mapreduce;
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -22,7 +22,6 @@ import org.apache.hadoop.mapred.TextOutputFormat;
 
 import com.cloudera.recordservice.mr.RecordServiceConfig;
 
-// TODO: rename this package to mr-example.
 public class WordCount {
   public static class Map extends MapReduceBase
       implements Mapper<LongWritable, Text, Text, IntWritable> {
@@ -54,16 +53,13 @@ public class WordCount {
     }
   }
 
-  public static void main(String[] args) throws Exception {
-    String input = "";
-    String outputPath = "";
+  public void run(String[] args) throws Exception {
     if (args.length != 2) {
       System.err.println("Usage: WordCount <input path> <output path>");
       System.exit(-1);
     }
-    input = args[0];
-    outputPath = args[1];
-    input = input.trim();
+    String input = args[0].trim();
+    String outputPath = args[1];
 
     JobConf conf = new JobConf(WordCount.class);
     conf.setJobName("wordcount");
@@ -94,5 +90,9 @@ public class WordCount {
 
     JobClient.runJob(conf);
     System.out.println("Done");
+  }
+
+  public static void main(String[] args) throws Exception {
+    new WordCount().run(args);
   }
 }

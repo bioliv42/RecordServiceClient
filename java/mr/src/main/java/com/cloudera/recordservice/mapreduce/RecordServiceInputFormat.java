@@ -63,9 +63,6 @@ public class RecordServiceInputFormat extends
     // The record that is returned. Updated in-place when nextKeyValue() is called.
     private RecordServiceRecord record_;
 
-    // True after initialize() has fully completed.
-    private boolean isInitialized_ = false;
-
     /**
      * The general contract of the RecordReader is that the client (Mapper) calls
      * this method to load the next Key and Value.. before calling getCurrentKey()
@@ -75,10 +72,6 @@ public class RecordServiceInputFormat extends
      */
     @Override
     public boolean nextKeyValue() throws IOException, InterruptedException {
-      if (!isInitialized_) {
-        throw new RuntimeException("Record Reader not initialized !!");
-      }
-
       if (!nextRecord()) return false;
       record_.reset(currentRSRecord_);
       return true;
@@ -99,9 +92,6 @@ public class RecordServiceInputFormat extends
      * Advances to the next record. Return false if there are no more records.
      */
     public boolean nextRecord() throws IOException {
-      if (!isInitialized_) {
-        throw new RuntimeException("Record Reader not initialized !!");
-      }
       try {
         if (!reader_.records().hasNext()) return false;
       } catch (RecordServiceException e) {
@@ -114,7 +104,13 @@ public class RecordServiceInputFormat extends
 
     public Schema schema() { return reader_.schema(); }
     public Record currentRecord() { return currentRSRecord_; }
-    public boolean isInitialized() { return isInitialized_; }
+
+    @Override
+    public void initialize(InputSplit split, TaskAttemptContext context)
+        throws IOException, InterruptedException {
+      super.initialize(split, context);
+      record_ = new RecordServiceRecord(schema());
+    }
 
     //@VisibleForTesting
     void initialize(RecordServiceInputSplit split, Configuration config)
@@ -125,7 +121,6 @@ public class RecordServiceInputFormat extends
         throw new IOException("Failed to execute task.", e);
       }
       record_ = new RecordServiceRecord(schema());
-      isInitialized_ = true;
     }
   }
 }

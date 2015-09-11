@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-package com.cloudera.recordservice.avro.example;
+package com.cloudera.recordservice.examples.mapreduce;
 
 import java.io.IOException;
 

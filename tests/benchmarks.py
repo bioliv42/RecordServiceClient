@@ -51,8 +51,8 @@ def java_client_cmd(query):
 
 def mr_record_count(query, outpath):
   return "hadoop jar " + os.environ['RECORD_SERVICE_HOME'] +\
-      "/java/avro-example/target/recordservice-avro-example-0.1.jar " +\
-      "com.cloudera.recordservice.avro.example.RecordCount " +\
+      "/java/examples/target/recordservice-examples-0.1.jar " +\
+      "com.cloudera.recordservice.examples.mapreduce.RecordCount " +\
       "\"" + query + "\"" + " \"" + outpath + "\""
 
 def hive_rs_cmd(query, tbl_name, fetch_size):
