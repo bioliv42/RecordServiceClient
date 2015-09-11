@@ -14,6 +14,8 @@ This is a modification of terasort from the hadoop examples. There are two modif
 
 Steps:
 1. > hadoop jar recordservice-avro-example-0.1.jar com.cloudera.recordservice.examples.teraasort.TeraGen <num_records> <out_dir>
+     Note: the parallelism is determined by "mapreduce.job.maps" which defaults to a low value. This should be set much higher,
+     ~1 per core per node.
 2. > impala-shell -q "create external table <table>(record STRING) location 'out_dir'"
 3. > impala-shell -q "select count(*) from <table>". 
      Make sure this equals num_records
