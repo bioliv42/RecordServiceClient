@@ -100,6 +100,7 @@ struct TColumnDesc {
 // Representation of a RecordServiceSchema.
 struct TSchema {
   1: required list<TColumnDesc> cols
+  2: required bool is_count_star = false
 }
 
 // Record serialization formats.
@@ -121,14 +122,11 @@ enum TRecordFormat {
 //        by INT(4 byte) nanoseconds offset.
 struct TColumnData {
   // One byte for each value.
-  // TODO: turn this into a bitmap.
+  // FIXME: turn this into a bitmap.
   1: required binary is_null
 
   // Serialized data excluding NULLs. Values are serialized back to back.
   2: required binary data
-
-  // TODO: this is useful if reading remotely.
-  // 3: optional CompressionCodec
 }
 
 // List of column data for the Columnar record format. This is 1:1 with the
@@ -150,7 +148,6 @@ struct TPathRequest {
 
   // Optional query (for predicate push down). The query must be valid SQL with
   // __PATH__ used instead of the table.
-  // TODO: revisit.
   2: optional string query
 
   // The schema for the files at 'path'. The client can set this if it wants the
@@ -161,12 +158,6 @@ struct TPathRequest {
   // Only valid if schema is set. Specifies the field delimiter to use for the files
   // in 'path'. Only applicable to some file formats.
   4: optional byte field_delimiter
-
-  // The file format of the file at this path.
-  // TODO: is this a good idea? How hard should we have the service try to figure
-  // it out? What do you do if the path is a directory with different file formats or
-  // different schemas?
-  //3: optional TFileFormat file_format
 }
 
 enum TLoggingLevel {
@@ -442,11 +433,10 @@ exception TRecordServiceException {
   3: optional string detail
 }
 
-// FIXME: remove this before releasing or make sure this is something we want to
-// support. Add type, description.
+// TODO: argument this response with the description, units, etc.
 struct TMetricResponse {
-  // Set if the metric is defined.
-  1: optional string metric
+  // Set if the metric is defined. This is the human readable string of the value.
+  1: optional string metric_string
 }
 
 // Serialized delegation token.
@@ -469,11 +459,6 @@ service RecordServicePlanner {
 
   // Plans the request. This generates the tasks and the list of machines
   // that each task can run on.
-  // FIXME: the number of tasks generated could be very large which can make
-  // TPlanRequestResult very large. Scanning 1M blocks will result in 100+MB
-  // of tasks in the response which seems bad for one RPC. Instead make this
-  // return tasks in batches? Another option is for the service to not generate
-  // so many tasks which solves this and other problems.
   TPlanRequestResult PlanRequest(1:TPlanRequestParams params)
       throws(1:TRecordServiceException ex);
 

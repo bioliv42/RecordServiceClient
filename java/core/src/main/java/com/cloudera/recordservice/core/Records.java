@@ -21,10 +21,13 @@ import java.nio.ByteBuffer;
 
 import sun.misc.Unsafe;
 
+import com.cloudera.recordservice.core.Schema.Type;
+
 /**
  * Abstraction over records returned from the RecordService. This class is
  * extremely performance sensitive. Not thread-safe.
  */
+@SuppressWarnings("restriction")
 public class Records implements Closeable {
   private static final Unsafe unsafe;
   static {
@@ -61,6 +64,9 @@ public class Records implements Closeable {
     // Current record idx (in the current batch) being returned
     private int recordIdx_;
 
+    // Total number of records in the current batch.
+    private long numRecords_;
+
     // If the type is a CHAR or DECIMAL, this contains the length of the value.
     // -1 otherwise.
     private final int[] byteArrayLen_;
@@ -70,6 +76,7 @@ public class Records implements Closeable {
 
     // Returns if the col at 'colIdx' is NULL.
     public boolean isNull(int colIdx) {
+      if (schema_.isCountStar) return true;
       return nulls_[colIdx].get(recordIdx_) != 0;
     }
 
@@ -194,28 +201,29 @@ public class Records implements Closeable {
     // Resets the state of the row to return the next batch.
     protected void reset(FetchResult result) throws RuntimeException {
       recordIdx_ = -1;
+      numRecords_ = result.numRecords;
       for (int i = 0; i < colOffsets_.length; ++i) {
         nulls_[i] = result.records.cols.get(i).is_null;
         colOffsets_[i] = byteArrayOffset;
         Schema.TypeDesc type = schema_.cols.get(i).type;
         switch (type.typeId) {
-        case BOOLEAN:
-        case TINYINT:
-        case SMALLINT:
-        case INT:
-        case BIGINT:
-        case FLOAT:
-        case DOUBLE:
-        case STRING:
-        case VARCHAR:
-        case CHAR:
-        case TIMESTAMP_NANOS:
-        case DECIMAL:
-          colData_[i] = result.records.cols.get(i).data;
-          break;
-        default:
-          throw new RuntimeException(
-              "Service returned type that is not supported. Type = " + type);
+          case BOOLEAN:
+          case TINYINT:
+          case SMALLINT:
+          case INT:
+          case BIGINT:
+          case FLOAT:
+          case DOUBLE:
+          case STRING:
+          case VARCHAR:
+          case CHAR:
+          case TIMESTAMP_NANOS:
+          case DECIMAL:
+            colData_[i] = result.records.cols.get(i).data;
+            break;
+          default:
+            throw new RuntimeException(
+                "Service returned type that is not supported. Type = " + type);
         }
       }
     }
@@ -248,7 +256,7 @@ public class Records implements Closeable {
    */
   public boolean hasNext() throws IOException, RecordServiceException {
     assert(fetchResult_ != null);
-    while (record_.recordIdx_ == fetchResult_.numRecords - 1) {
+    while (record_.recordIdx_ == record_.numRecords_ - 1) {
       if (fetchResult_.done) {
         hasNext_ = false;
         return false;
@@ -315,6 +323,14 @@ public class Records implements Closeable {
 
     record_ = new Record(handle.getSchema());
     nextBatch();
+    if (record_.schema_.isCountStar) {
+      // This is a count(*). We will read the one and only value that is the number of
+      // records. The iterator interface will return count(*) number of NULLs.
+      assert(record_.schema_.cols.size() == 1);
+      assert(record_.schema_.cols.get(0).type.typeId == Type.BIGINT);
+      assert(record_.numRecords_ == 1);
+      record_.numRecords_ = record_.nextLong(0);
+    }
     hasNext_ = hasNext();
   }
 

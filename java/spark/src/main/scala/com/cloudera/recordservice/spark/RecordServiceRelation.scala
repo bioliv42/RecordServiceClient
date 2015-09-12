@@ -197,20 +197,8 @@ case class RecordServiceRelation(table:String, size:Option[Long])(
       // We have an empty projection so we've mapped this to a count(*) in the
       // RecordService. (For NULLs, we need to do this for correctness). Here we
       // are going to expand it to return a NULL for each row.
-      baseRDD.mapPartitions(input => {
-        val record = input.next()
-        assert(record.getSchema().cols.size() == 1)
-        assert(record.getSchema().cols.get(0).`type`.typeId == Schema.Type.BIGINT)
-        var numRows = record.nextLong(0)
-        new Iterator[Row] {
-          override def next(): Row = {
-            numRows -= 1
-            null
-          }
-          override def hasNext: Boolean = {
-            numRows > 0
-          }
-        }
+      baseRDD.map(input => {
+        null
       })
     } else {
       val fieldMap = Map(schema.fields map { x => x.metadata.getString("name") -> x }: _*)

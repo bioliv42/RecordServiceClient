@@ -26,6 +26,7 @@ import org.apache.hadoop.mapred.Reporter;
 
 import com.cloudera.recordservice.core.ByteArray;
 import com.cloudera.recordservice.core.RecordServiceException;
+import com.cloudera.recordservice.core.Records;
 
 /**
  * Input format that implements the mr TextInputFormat.
@@ -47,23 +48,29 @@ public class TextInputFormat extends RecordServiceInputFormatBase<LongWritable, 
 
   private static final class TextRecordReader
       extends RecordReaderBase<LongWritable, Text> {
+    // Value returned for when there is no data. i.e. NULLs and count(*)
+    private final static Text EMPTY = new Text();
+
     private long recordNum_ = 0;
 
     public TextRecordReader(RecordServiceInputSplit split, JobConf config,
         Reporter reporter) throws IOException {
       super(split, config, reporter);
-      // TODO: reimplement guava's Preconditions instead of assert.
-      assert(reader_.schema().getNumColumns() == 1);
-      assert(reader_.schema().getColumnInfo(0).type.typeId ==
-          com.cloudera.recordservice.core.Schema.Type.STRING);
+      com.cloudera.recordservice.mapreduce.TextInputFormat.verifyTextSchema(
+          split.getBackingSplit().getSchema());
     }
 
     @Override
     public boolean next(LongWritable key, Text value) throws IOException {
       try {
         if (!reader_.records().hasNext()) return false;
-        ByteArray data = reader_.records().next().nextByteArray(0);
-        value.set(data.byteBuffer().array(), data.offset(), data.len());
+        Records.Record record = reader_.records().next();
+        if (record.isNull(0)) {
+          value.set(EMPTY);
+        } else {
+          ByteArray data = record.nextByteArray(0);
+          value.set(data.byteBuffer().array(), data.offset(), data.len());
+        }
         key.set(recordNum_++);
         return true;
       } catch (RecordServiceException e) {

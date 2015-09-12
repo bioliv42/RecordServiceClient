@@ -24,11 +24,6 @@ import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.TimeZone;
 
-import com.cloudera.recordservice.mr.DecimalWritable;
-import com.cloudera.recordservice.mr.PlanUtil;
-import com.cloudera.recordservice.mr.RecordServiceConfig;
-import com.cloudera.recordservice.mr.RecordServiceRecord;
-import com.cloudera.recordservice.mr.TimestampNanosWritable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.BooleanWritable;
 import org.apache.hadoop.io.ByteWritable;
@@ -37,8 +32,11 @@ import org.apache.hadoop.io.FloatWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.ShortWritable;
+import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapreduce.InputSplit;
+import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
 import org.apache.hadoop.security.Credentials;
 import org.junit.Test;
 
@@ -46,6 +44,11 @@ import com.cloudera.recordservice.core.NetworkAddress;
 import com.cloudera.recordservice.core.RecordServiceException;
 import com.cloudera.recordservice.core.TestBase;
 import com.cloudera.recordservice.mapreduce.testapps.RecordCount;
+import com.cloudera.recordservice.mr.DecimalWritable;
+import com.cloudera.recordservice.mr.PlanUtil;
+import com.cloudera.recordservice.mr.RecordServiceConfig;
+import com.cloudera.recordservice.mr.RecordServiceRecord;
+import com.cloudera.recordservice.mr.TimestampNanosWritable;
 
 public class MapReduceTest extends TestBase {
 
@@ -296,6 +299,29 @@ public class MapReduceTest extends TestBase {
         }
       }
       assertEquals(1, numRows);
+    } finally {
+      reader.close();
+    }
+  }
+
+  @Test
+  public void testCountStar() throws IOException, InterruptedException {
+    Configuration config = new Configuration();
+    TextInputFormat.TextRecordReader reader =
+        new TextInputFormat.TextRecordReader();
+
+    try {
+      RecordServiceConfig.setInputQuery(config, "select count(*) from tpch.nation");
+      List<InputSplit> splits = PlanUtil.getSplits(config, new Credentials()).splits;
+      int numRows = 0;
+      for (InputSplit split: splits) {
+        reader.initialize(split,
+            new TaskAttemptContextImpl(new JobConf(config), new TaskAttemptID()));
+        while (reader.nextKeyValue()) {
+          ++numRows;
+        }
+      }
+      assertEquals(25, numRows);
     } finally {
       reader.close();
     }

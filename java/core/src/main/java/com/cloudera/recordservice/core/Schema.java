@@ -170,13 +170,16 @@ public class Schema implements Serializable {
   }
 
   public final List<ColumnDesc> cols;
+  public final boolean isCountStar;
 
   public Schema() {
     cols = new ArrayList<ColumnDesc>();
+    isCountStar = false;
   }
 
-  Schema(List<ColumnDesc> c) {
+  Schema(List<ColumnDesc> c, boolean isCountStar) {
     cols = c;
+    this.isCountStar = isCountStar;
   }
 
   /**
@@ -192,6 +195,7 @@ public class Schema implements Serializable {
       out.writeInt(d.type.scale);
       out.writeInt(d.type.len);
     }
+    out.writeBoolean(isCountStar);
   }
 
   /**
@@ -211,7 +215,8 @@ public class Schema implements Serializable {
       TypeDesc t = new TypeDesc(typeId, len, precision, scale);
       cols.add(new ColumnDesc(new String(nameBuffer), t));
     }
-    return new Schema(cols);
+    boolean isCountStart = in.readBoolean();
+    return new Schema(cols, isCountStart);
   }
 
   @Override
@@ -228,6 +233,7 @@ public class Schema implements Serializable {
     for (int i = 0; i < schema.cols.size(); ++i) {
       cols.add(new ColumnDesc(schema.cols.get(i)));
     }
+    isCountStar = schema.is_count_star;
   }
 
   TSchema toThrift() {
@@ -236,6 +242,7 @@ public class Schema implements Serializable {
     for (int i = 0; i < cols.size(); ++i) {
       schema.addToCols(new TColumnDesc(cols.get(i).type.toThrift(), cols.get(i).name));
     }
+    schema.is_count_star = isCountStar;
     return schema;
   }
 }

@@ -27,6 +27,7 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 
 import com.cloudera.recordservice.core.ByteArray;
 import com.cloudera.recordservice.core.RecordServiceException;
+import com.cloudera.recordservice.core.Records;
 import com.cloudera.recordservice.mr.Schema;
 
 /**
@@ -60,6 +61,7 @@ public class TextInputFormat extends
    * non-matching.
    */
   public static void verifyTextSchema(Schema schema) {
+    if (schema.schema().isCountStar) return;
     if (schema.getNumColumns() != 1 ||
         schema.getColumnInfo(0).type.typeId !=
             com.cloudera.recordservice.core.Schema.Type.STRING) {
@@ -70,6 +72,9 @@ public class TextInputFormat extends
   }
 
   public static class TextRecordReader extends RecordReaderBase<LongWritable, Text> {
+    // Value returned for when there is no data. i.e. NULLs and count(*)
+    private final static Text EMPTY = new Text();
+
     // The key corresponding to the record.
     private final LongWritable currentKey_ = new LongWritable();
 
@@ -92,8 +97,13 @@ public class TextInputFormat extends
         // TODO: is this the most proper way to deal with this in MR?
         throw new IOException("Could not fetch record.", e);
       }
-      ByteArray data = reader_.records().next().nextByteArray(0);
-      record_.set(data.byteBuffer().array(), data.offset(), data.len());
+      Records.Record record = reader_.records().next();
+      if (record.isNull(0)) {
+        record_.set(EMPTY);
+      } else {
+        ByteArray data = record.nextByteArray(0);
+        record_.set(data.byteBuffer().array(), data.offset(), data.len());
+      }
       currentKey_.set(recordNum_++);
       return true;
     }

@@ -982,10 +982,12 @@ public class TestBasicClient extends TestBase {
 
     // Verify count(*) result.
     Records records = WorkerClientUtil.execTask(plan, 0);
-    assertTrue(records.hasNext());
-    Records.Record result = records.next();
-    assertEquals(25, result.nextLong(0));
-    assertFalse(records.hasNext());
+    int count = 0;
+    while (records.hasNext()) {
+      records.next();
+      ++count;
+    }
+    assertEquals(25, count);
     records.close();
 
     // Empty column list should do the same

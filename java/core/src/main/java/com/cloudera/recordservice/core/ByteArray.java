@@ -61,6 +61,7 @@ public class ByteArray {
    * Returns the ByteArray as a java String using ASCII encoding. This should
    * not be called in the hot path if possible.
    */
+  @Override
   public String toString() {
     return new String(buffer_.array(), offset_, len_, Charset.defaultCharset());
   }
