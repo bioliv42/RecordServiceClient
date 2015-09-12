@@ -67,14 +67,14 @@ public class RecordServiceWorkerClient implements Closeable {
   private int maxAttempts_ = 3;
 
   // Duration to sleep between retry attempts.
-  private int retrySleepMs_ = 1000;
+  private int retrySleepMs_ = 5000;
 
   // Millisecond timeout for TSocket, 0 means infinite timeout.
   // TODO: revisit this timeout. A request could take arbitrary time if it has
   // very selective filters. For example, if all records are filtered out, fetch
   // will wait until all the data is read. It might make more sense to have the
   // server return empty result sets in this case to "keep the connection alive".
-  private int timeoutMs_ = 10000;
+  private int timeoutMs_ = 60000;
 
   // Server side logging level. null indicates to use server default.
   private LoggingLevel loggingLevel_ = null;

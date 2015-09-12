@@ -580,8 +580,6 @@ public class TestBasicClient extends TestBase {
             record.nextDecimal(11).toBigDecimal());
       }
 
-      // TODO: the Records API needs to be renamed or carefully documented.
-      // Calling hasNext()/get*() mutate the objects.
       assertFalse(records.hasNext());
       records.close();
     }
@@ -825,9 +823,7 @@ public class TestBasicClient extends TestBase {
   void testNationPathGlobbing(String path, boolean expectMatch)
       throws IOException, RecordServiceException {
     try {
-      // TODO: figure out why it timeout with the default timeout - 20 secs
       PlanRequestResult plan = new RecordServicePlannerClient.Builder()
-          .setTimeoutMs(0)
           .planRequest(PLANNER_HOST, PLANNER_PORT, Request.createPathRequest(path));
       assertEquals(expectMatch ? 1 : 0, plan.tasks.size());
     } catch (RecordServiceException e) {

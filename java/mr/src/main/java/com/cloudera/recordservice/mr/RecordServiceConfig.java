@@ -95,26 +95,6 @@ public class RecordServiceConfig {
   public final static String TASK_ENABLE_SERVER_LOGGING_CONF =
       "recordservice.task.server.enableLogging";
 
-  // Default value for the maximum number of attempts to retry RecordService RPCs
-  // with planner.
-  public final static int DEFAULT_PLANNER_RETRY_ATTEMPTS = 3;
-
-  // Default value for sleep between retry attempts with planner.
-  public final static int DEFAULT_PLANNER_RETRY_SLEEP_MS = 1000;
-
-  // Default value for timeout on the planner service socket.
-  public final static int DEFAULT_PLANNER_SOCKET_TIMEOUT_MS = 60000;
-
-  // Default value for the maximum number of attempts to retry RecordService RPCs
-  // with worker.
-  public final static int DEFAULT_TASK_RETRY_ATTEMPTS = 3;
-
-  // Default value for sleep between retry attempts with worker.
-  public final static int DEFAULT_TASK_RETRY_SLEEP_MS = 1000;
-
-  // Default value for timeout on the worker service socket.
-  public final static int DEFAULT_TASK_SOCKET_TIMEOUT_MS = 10000;
-
   /**
    * Sets the input configuration to read 'cols' from 'db.tbl'. If the tbl is fully
    * qualified, db should be null.

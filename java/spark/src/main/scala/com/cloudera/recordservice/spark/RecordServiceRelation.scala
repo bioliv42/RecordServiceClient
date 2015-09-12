@@ -51,22 +51,22 @@ case class RecordServiceRelation(table:String, size:Option[Long])(
     extends BaseRelation with PrunedFilteredScan with Logging {
 
   override def schema: StructType = {
-    val timeoutMs =
-        sqlContext.getConf(RecordServiceConfig.PLANNER_SOCKET_TIMEOUT_MS_CONF,
-            RecordServiceConfig.DEFAULT_PLANNER_SOCKET_TIMEOUT_MS.toString).toInt
-    val maxAttempts = sqlContext.getConf(RecordServiceConfig.PLANNER_RETRY_ATTEMPTS_CONF,
-        RecordServiceConfig.DEFAULT_PLANNER_RETRY_ATTEMPTS.toString).toInt
-    val sleepDurationMs =
-        sqlContext.getConf(RecordServiceConfig.PLANNER_RETRY_SLEEP_MS_CONF,
-            RecordServiceConfig.DEFAULT_PLANNER_RETRY_SLEEP_MS.toString).toInt
-    val maxTasks =
-        sqlContext.getConf(RecordServiceConfig.PLANNER_REQUEST_MAX_TASKS, "-1").toInt
+    val timeoutMs = sqlContext.getConf(
+        RecordServiceConfig.PLANNER_SOCKET_TIMEOUT_MS_CONF, "-1").toInt
+    val maxAttempts = sqlContext.getConf(
+        RecordServiceConfig.PLANNER_RETRY_ATTEMPTS_CONF, "-1").toInt
+    val sleepDurationMs = sqlContext.getConf(
+        RecordServiceConfig.PLANNER_RETRY_SLEEP_MS_CONF, "-1").toInt
+    val maxTasks = sqlContext.getConf(
+        RecordServiceConfig.PLANNER_REQUEST_MAX_TASKS, "-1").toInt
 
     val builder = new RecordServicePlannerClient.Builder()
-    builder.setTimeoutMs(timeoutMs);
-    builder.setMaxAttempts(maxAttempts);
-    builder.setSleepDurationMs(sleepDurationMs);
-    builder.setMaxTasks(maxTasks);
+    // TODO: this code is replicated in a few places because of where the
+    // configs come from. We have hadoop Configuration, SparkContext and SQLContext.
+    if (timeoutMs != -1) builder.setTimeoutMs(timeoutMs);
+    if (maxTasks != -1) builder.setMaxAttempts(maxAttempts);
+    if (sleepDurationMs != -1) builder.setSleepDurationMs(sleepDurationMs);
+    if (maxAttempts != -1) builder.setMaxTasks(maxTasks);
 
     val planner = PlanUtil.getPlanner(builder,
         RecordServiceConf.getPlannerHostPort(sqlContext.sparkContext),

@@ -42,6 +42,7 @@ public class TestStress extends TestBase {
       ++i;
       try {
         RecordServicePlannerClient planner = new RecordServicePlannerClient.Builder()
+            .setSleepDurationMs(10)
             .connect(PLANNER_HOST, PLANNER_PORT);
         clients.add(planner);
       } catch(RecordServiceException ex) {
@@ -84,6 +85,7 @@ public class TestStress extends TestBase {
     for (int i = 0; i < numConnections; ++i) {
       try {
         RecordServiceWorkerClient worker = new RecordServiceWorkerClient.Builder()
+            .setSleepDurationMs(10)
             .connect(PLANNER_HOST, DEFAULT_WORKER_PORT);
         clients.add(worker);
       } catch(RecordServiceException ex) {

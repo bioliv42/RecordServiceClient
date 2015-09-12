@@ -52,7 +52,7 @@ public class RecordServicePlannerClient implements Closeable {
   private int maxAttempts_ = 3;
 
   // Duration to sleep between retry attempts.
-  private int retrySleepMs_ = 1000;
+  private int retrySleepMs_ = 5000;
 
   // Millisecond timeout for TSocket, 0 means infinite timeout.
   private int timeoutMs_ = 60000;

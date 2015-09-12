@@ -66,6 +66,18 @@ abstract class RecordServiceRDDBase[T:ClassTag](@transient sc: SparkContext)
   val bytesReadAccum = sc.accumulator(0L, "BytesRead")
   val bytesReadLocalAccum = sc.accumulator(0L, "BytesReadLocal")
 
+  // Configs that we use when we execute the task. These come from SparkContext
+  // but we do not serialize the entire context. Instead these are populated in
+  // the client (i.e. planning phase).
+  val memLimit = sc.getConf.getLong(RecordServiceConfig.MEM_LIMIT_CONF, -1);
+  val limit = sc.getConf.getLong(RecordServiceConfig.RECORDS_LIMIT_CONF, -1);
+  val maxAttempts = sc.getConf.getInt(
+      RecordServiceConfig.TASK_RETRY_ATTEMPTS_CONF, -1);
+  val taskSleepMs = sc.getConf.getInt(
+      RecordServiceConfig.TASK_RETRY_SLEEP_MS_CONF, -1);
+  val socketTimeoutMs = sc.getConf.getInt(
+      RecordServiceConfig.TASK_SOCKET_TIMEOUT_MS_CONF, -1);
+
   // Request to make
   @transient var request:Request = null
 
@@ -158,16 +170,27 @@ abstract class RecordServiceRDDBase[T:ClassTag](@transient sc: SparkContext)
    * Executes 'stmt' and returns the worker and Records object associated with it.
    */
   protected def execTask(partition: RecordServicePartition) = {
+    var worker:RecordServiceWorkerClient = null
+    var records:Records = null
     try {
+      val builder = new RecordServiceWorkerClient.Builder()
+      builder.setDelegationToken(partition.delegationToken)
+
+      if (memLimit != -1) builder.setMemLimit(memLimit);
+      if (limit != -1) builder.setLimit(limit);
+      if (maxAttempts != -1) builder.setMaxAttempts(maxAttempts);
+      if (taskSleepMs != -1 ) builder.setSleepDurationMs(taskSleepMs);
+      if (socketTimeoutMs != -1) builder.setTimeoutMs(socketTimeoutMs);
+
       val (hostname, port) = getWorkerToConnectTo(partition)
-      val worker = new RecordServiceWorkerClient.Builder()
-          .setDelegationToken(partition.delegationToken)
-          .connect(hostname, port)
-      val records = worker.execAndFetch(partition.task)
+      worker = builder.connect(hostname, port)
+      records = worker.execAndFetch(partition.task)
       (worker, records)
     } catch {
       case e:RecordServiceException => logError("Could not exec request: " + e.message)
         throw new SparkException("RecordServiceRDD failed", e)
+    } finally {
+      if (records == null && worker != null) worker.close()
     }
   }
 
@@ -226,22 +249,19 @@ abstract class RecordServiceRDDBase[T:ClassTag](@transient sc: SparkContext)
       // credentials object.
       val principal = RecordServiceConf.getKerberosPrincipal(sc)
       val timeoutMs =
-          sc.getConf.getInt(RecordServiceConfig.PLANNER_SOCKET_TIMEOUT_MS_CONF,
-              RecordServiceConfig.DEFAULT_PLANNER_SOCKET_TIMEOUT_MS)
+          sc.getConf.getInt(RecordServiceConfig.PLANNER_SOCKET_TIMEOUT_MS_CONF, -1)
       val maxAttempts =
-          sc.getConf.getInt(RecordServiceConfig.PLANNER_RETRY_ATTEMPTS_CONF,
-              RecordServiceConfig.DEFAULT_PLANNER_RETRY_ATTEMPTS)
+          sc.getConf.getInt(RecordServiceConfig.PLANNER_RETRY_ATTEMPTS_CONF, -1)
       val sleepDurationMs =
-          sc.getConf.getInt(RecordServiceConfig.PLANNER_RETRY_SLEEP_MS_CONF,
-              RecordServiceConfig.DEFAULT_PLANNER_RETRY_SLEEP_MS)
+          sc.getConf.getInt(RecordServiceConfig.PLANNER_RETRY_SLEEP_MS_CONF, -1)
       val maxTasks =
           sc.getConf.getInt(RecordServiceConfig.PLANNER_REQUEST_MAX_TASKS, -1)
 
       val builder = new RecordServicePlannerClient.Builder()
-      builder.setTimeoutMs(timeoutMs);
-      builder.setMaxAttempts(maxAttempts);
-      builder.setSleepDurationMs(sleepDurationMs);
-      builder.setMaxTasks(maxTasks);
+      if (timeoutMs != -1) builder.setTimeoutMs(timeoutMs);
+      if (maxTasks != -1) builder.setMaxAttempts(maxAttempts);
+      if (sleepDurationMs != -1) builder.setSleepDurationMs(sleepDurationMs);
+      if (maxAttempts != -1) builder.setMaxTasks(maxTasks);
       planner = PlanUtil.getPlanner(builder, plannerHostPorts, principal, null)
       val result = planner.planRequest(request)
       if (principal != null) {

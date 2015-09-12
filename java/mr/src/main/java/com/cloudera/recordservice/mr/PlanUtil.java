@@ -19,13 +19,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import com.cloudera.recordservice.core.NetworkAddress;
-import com.cloudera.recordservice.core.PlanRequestResult;
-import com.cloudera.recordservice.core.RecordServiceException;
-import com.cloudera.recordservice.core.RecordServicePlannerClient;
-import com.cloudera.recordservice.core.Request;
-import com.cloudera.recordservice.core.Task;
-import com.cloudera.recordservice.mapreduce.RecordServiceInputSplit;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
@@ -34,6 +27,13 @@ import org.apache.hadoop.security.token.Token;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.cloudera.recordservice.core.NetworkAddress;
+import com.cloudera.recordservice.core.PlanRequestResult;
+import com.cloudera.recordservice.core.RecordServiceException;
+import com.cloudera.recordservice.core.RecordServicePlannerClient;
+import com.cloudera.recordservice.core.Request;
+import com.cloudera.recordservice.core.Task;
+import com.cloudera.recordservice.mapreduce.RecordServiceInputSplit;
 import com.cloudera.recordservice.mr.security.DelegationTokenIdentifier;
 import com.cloudera.recordservice.mr.security.TokenUtils;
 
@@ -190,21 +190,21 @@ public class PlanUtil {
             RecordServiceConfig.DEFAULT_PLANNER_HOSTPORTS));
     String kerberosPrincipal =
         jobConf.get(RecordServiceConfig.KERBEROS_PRINCIPAL_CONF);
-    int timeoutMs = jobConf.getInt(RecordServiceConfig.PLANNER_SOCKET_TIMEOUT_MS_CONF,
-        RecordServiceConfig.DEFAULT_PLANNER_SOCKET_TIMEOUT_MS);
-    int maxAttempts = jobConf.getInt(RecordServiceConfig.PLANNER_RETRY_ATTEMPTS_CONF,
-        RecordServiceConfig.DEFAULT_PLANNER_RETRY_ATTEMPTS);
-    int sleepDurationMs = jobConf.getInt(RecordServiceConfig.PLANNER_RETRY_SLEEP_MS_CONF,
-        RecordServiceConfig.DEFAULT_PLANNER_RETRY_SLEEP_MS);
+    int timeoutMs =
+        jobConf.getInt(RecordServiceConfig.PLANNER_SOCKET_TIMEOUT_MS_CONF, -1);
+    int maxAttempts =
+        jobConf.getInt(RecordServiceConfig.PLANNER_RETRY_ATTEMPTS_CONF, -1);
+    int sleepDurationMs =
+        jobConf.getInt(RecordServiceConfig.PLANNER_RETRY_SLEEP_MS_CONF, -1);
     int maxTasks = jobConf.getInt(RecordServiceConfig.PLANNER_REQUEST_MAX_TASKS, -1);
 
     RecordServicePlannerClient.Builder builder =
         new RecordServicePlannerClient.Builder();
 
-    builder.setTimeoutMs(timeoutMs);
-    builder.setMaxAttempts(maxAttempts);
-    builder.setSleepDurationMs(sleepDurationMs);
-    builder.setMaxTasks(maxTasks);
+    if (timeoutMs != -1) builder.setTimeoutMs(timeoutMs);
+    if (maxAttempts != -1) builder.setMaxAttempts(maxAttempts);
+    if (sleepDurationMs != -1) builder.setSleepDurationMs(sleepDurationMs);
+    if (maxTasks != -1) builder.setMaxTasks(maxTasks);
 
     PlanRequestResult result = null;
     RecordServicePlannerClient planner = PlanUtil.getPlanner(builder, plannerHostPorts,
