@@ -1,7 +1,0 @@
-{"namespace": "com.cloudera.recordservice.avro.example",
- "type": "record",
- "name": "UserKey",
- "fields": [
-     {"name": "favorite_color", "type": ["string", "null"]}
- ]
-}

@@ -1,7 +1,0 @@
-{"namespace": "com.cloudera.recordservice.avro.example",
- "type": "record",
- "name": "UserValue",
- "fields": [
-     {"name": "age",  "type": "int"}
- ]
-}

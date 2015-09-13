@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-package com.cloudera.recordservice.avro.example;
+package com.cloudera.recordservice.examples.avro;
 
 import java.io.File;
 import java.io.IOException;
@@ -26,6 +26,8 @@ import java.util.Random;
 import org.apache.avro.file.DataFileWriter;
 import org.apache.avro.io.DatumWriter;
 import org.apache.avro.specific.SpecificDatumWriter;
+
+import com.cloudera.recordservice.examples.User;
 
 public class GenerateData {
   public static final String[] COLORS =

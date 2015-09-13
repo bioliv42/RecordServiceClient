@@ -15,3 +15,6 @@ This repo contains examples of applications built using RecordService client API
 
   - RecordCount/Wordcount: More simple MapReduce applications that demonstrate some
     of the other InputFormats that are included in the client library.
+
+  - com.cloudera.recordservice.examples.avro: Unmodified from the Apache Avro examples.
+    We've included these to simplify sample data generation.

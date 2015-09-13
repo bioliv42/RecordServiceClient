@@ -1,5 +1,5 @@
 // Confidential Cloudera Information: Covered by NDA.
-package com.cloudera.recordservice.avro.example;
+package com.cloudera.recordservice.examples.avro;
 
 import java.io.File;
 import java.io.IOException;
@@ -10,6 +10,8 @@ import org.apache.avro.io.DatumReader;
 import org.apache.avro.io.DatumWriter;
 import org.apache.avro.specific.SpecificDatumReader;
 import org.apache.avro.specific.SpecificDatumWriter;
+
+import com.cloudera.recordservice.examples.User;
 
 /**
  *  This is copied from the Avro project examples.
