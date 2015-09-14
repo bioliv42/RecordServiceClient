@@ -25,6 +25,11 @@ import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.TimeZone;
 
+import com.cloudera.recordservice.mr.DecimalWritable;
+import com.cloudera.recordservice.mr.PlanUtil;
+import com.cloudera.recordservice.mr.RecordServiceConfig;
+import com.cloudera.recordservice.mr.RecordServiceRecord;
+import com.cloudera.recordservice.mr.TimestampNanosWritable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.BooleanWritable;
 import org.apache.hadoop.io.ByteWritable;
@@ -33,7 +38,6 @@ import org.apache.hadoop.io.FloatWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.ShortWritable;
-import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.security.Credentials;
@@ -43,17 +47,12 @@ import com.cloudera.recordservice.core.NetworkAddress;
 import com.cloudera.recordservice.core.RecordServiceException;
 import com.cloudera.recordservice.core.TestBase;
 import com.cloudera.recordservice.mapreduce.testapps.RecordCount;
-import com.cloudera.recordservice.mr.DecimalWritable;
-import com.cloudera.recordservice.mr.RecordServiceConfig;
-import com.cloudera.recordservice.mr.RecordServiceRecord;
-import com.cloudera.recordservice.mr.TimestampNanosWritable;
 
 public class MapReduceTest extends TestBase {
 
   private void verifyInputSplits(int numSplits, int numCols, Configuration config)
       throws IOException {
-    List<InputSplit> splits = RecordServiceInputFormat.getSplits(
-        config, new Credentials()).splits;
+    List<InputSplit> splits = PlanUtil.getSplits(config, new Credentials()).splits;
     assertEquals(numSplits, splits.size());
     RecordServiceInputSplit split = (RecordServiceInputSplit)splits.get(0);
     assertEquals(numCols, split.getSchema().getNumColumns());
@@ -65,7 +64,7 @@ public class MapReduceTest extends TestBase {
     boolean exceptionThrown = false;
     try {
       RecordServiceConfig.setInputTable(config, db, tbl, columns);
-      RecordServiceInputFormat.getSplits(config, new Credentials());
+      PlanUtil.getSplits(config, new Credentials());
     } catch (IOException e) {
       exceptionThrown = true;
       assertTrue(e.getMessage(), e.getMessage().contains(msg));
@@ -99,7 +98,7 @@ public class MapReduceTest extends TestBase {
 
     boolean exceptionThrown = false;
     try {
-      RecordServiceInputFormat.getSplits(config, new Credentials());
+      PlanUtil.getSplits(config, new Credentials());
     } catch (IllegalArgumentException e) {
       exceptionThrown = true;
       assertTrue(e.getMessage().contains("No input specified"));
@@ -108,13 +107,13 @@ public class MapReduceTest extends TestBase {
 
     // Set db/table and make sure it works.
     config.set(RecordServiceConfig.TBL_NAME_CONF, "tpch.nation");
-    RecordServiceInputFormat.getSplits(config, new Credentials());
+    PlanUtil.getSplits(config, new Credentials());
 
     // Also set input. This should fail.
     config.set(FileInputFormat.INPUT_DIR, "/test");
     exceptionThrown = false;
     try {
-      RecordServiceInputFormat.getSplits(config, new Credentials());
+      PlanUtil.getSplits(config, new Credentials());
     } catch (IllegalArgumentException e) {
       exceptionThrown = true;
       assertTrue(e.getMessage(), e.getMessage().contains(
@@ -127,7 +126,7 @@ public class MapReduceTest extends TestBase {
     config.setStrings(RecordServiceConfig.COL_NAMES_CONF, "a");
     exceptionThrown = false;
     try {
-      RecordServiceInputFormat.getSplits(config, new Credentials());
+      PlanUtil.getSplits(config, new Credentials());
     } catch (IllegalArgumentException e) {
       exceptionThrown = true;
       assertTrue(e.getMessage().contains(
@@ -181,8 +180,7 @@ public class MapReduceTest extends TestBase {
 
     try {
       RecordServiceConfig.setInputTable(config, null, "tpch.nation");
-      List<InputSplit> splits = RecordServiceInputFormat.getSplits(
-          config, new Credentials()).splits;
+      List<InputSplit> splits = PlanUtil.getSplits(config, new Credentials()).splits;
       reader.initialize((RecordServiceInputSplit)splits.get(0), config);
 
       int numRows = 0;
@@ -200,7 +198,7 @@ public class MapReduceTest extends TestBase {
 
       config.clear();
       RecordServiceConfig.setInputTable(config, "tpch", "nation", "n_comment");
-      splits = RecordServiceInputFormat.getSplits(config, new Credentials()).splits;
+      splits = PlanUtil.getSplits(config, new Credentials()).splits;
       reader.initialize((RecordServiceInputSplit)splits.get(0), config);
       numRows = 0;
       while (reader.nextKeyValue()) {
@@ -228,8 +226,7 @@ public class MapReduceTest extends TestBase {
 
     try {
       RecordServiceConfig.setInputTable(config, null, "rs.alltypes");
-      List<InputSplit> splits =
-          RecordServiceInputFormat.getSplits(config, new Credentials()).splits;
+      List<InputSplit> splits = PlanUtil.getSplits(config, new Credentials()).splits;
 
       int numRows = 0;
       for (InputSplit split: splits) {
@@ -243,9 +240,9 @@ public class MapReduceTest extends TestBase {
             assertEquals(3, ((LongWritable)value.getColumnValue(4)).get());
             assertEquals(4.0, ((FloatWritable)value.getColumnValue(5)).get(), 0.1);
             assertEquals(5.0, ((DoubleWritable)value.getColumnValue(6)).get(), 0.1);
-            assertEquals("hello", ((Text)value.getColumnValue(7)).toString());
-            assertEquals("vchar1", ((Text)value.getColumnValue(8)).toString());
-            assertEquals("char1", ((Text)value.getColumnValue(9)).toString());
+            assertEquals("hello", value.getColumnValue(7).toString());
+            assertEquals("vchar1", value.getColumnValue(8).toString());
+            assertEquals("char1", value.getColumnValue(9).toString());
             assertEquals("2015-01-01", format.format(
                 ((TimestampNanosWritable)value.getColumnValue(10)).get().toTimeStamp()));
             assertEquals(
@@ -258,9 +255,9 @@ public class MapReduceTest extends TestBase {
             assertEquals(9, ((LongWritable)value.getColumnValue(4)).get());
             assertEquals(10.0, ((FloatWritable)value.getColumnValue(5)).get(), 0.1);
             assertEquals(11.0, ((DoubleWritable)value.getColumnValue(6)).get(), 0.1);
-            assertEquals("world", ((Text)value.getColumnValue(7)).toString());
-            assertEquals("vchar2", ((Text)value.getColumnValue(8)).toString());
-            assertEquals("char2", ((Text)value.getColumnValue(9)).toString());
+            assertEquals("world", value.getColumnValue(7).toString());
+            assertEquals("vchar2", value.getColumnValue(8).toString());
+            assertEquals("char2", value.getColumnValue(9).toString());
             assertEquals("2016-01-01",
                 format.format(
                     ((TimestampNanosWritable)value.getColumnValue(10))
@@ -286,8 +283,7 @@ public class MapReduceTest extends TestBase {
 
     try {
       RecordServiceConfig.setInputTable(config, null, "rs.alltypes_null");
-      List<InputSplit> splits =
-          RecordServiceInputFormat.getSplits(config, new Credentials()).splits;
+      List<InputSplit> splits = PlanUtil.getSplits(config, new Credentials()).splits;
 
       int numRows = 0;
       for (InputSplit split: splits) {

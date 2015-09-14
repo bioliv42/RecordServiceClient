@@ -3,6 +3,7 @@ package com.cloudera.recordservice.mapred;
 
 import java.io.IOException;
 
+import com.cloudera.recordservice.mr.PlanUtil;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.InputSplit;
@@ -20,9 +21,7 @@ import com.cloudera.recordservice.core.RecordServiceException;
 public class TextInputFormat extends RecordServiceInputFormatBase<LongWritable, Text> {
   @Override
   public InputSplit[] getSplits(JobConf job, int numSplits) throws IOException {
-    com.cloudera.recordservice.mapreduce.RecordServiceInputFormatBase.SplitsInfo splits =
-        com.cloudera.recordservice.mapreduce.RecordServiceInputFormatBase.getSplits(
-            job, job.getCredentials());
+    PlanUtil.SplitsInfo splits = PlanUtil.getSplits(job, job.getCredentials());
     com.cloudera.recordservice.mapreduce.TextInputFormat.verifyTextSchema(splits.schema);
     return convertSplits(splits.splits);
   }

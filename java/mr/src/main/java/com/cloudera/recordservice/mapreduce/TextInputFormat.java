@@ -18,6 +18,7 @@ package com.cloudera.recordservice.mapreduce;
 import java.io.IOException;
 import java.util.List;
 
+import com.cloudera.recordservice.mr.PlanUtil;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.InputSplit;
@@ -39,7 +40,8 @@ public class TextInputFormat extends
   @Override
   public List<InputSplit> getSplits(JobContext context) throws IOException,
       InterruptedException {
-    SplitsInfo splits = getSplits(context.getConfiguration(), context.getCredentials());
+    PlanUtil.SplitsInfo splits =
+        PlanUtil.getSplits(context.getConfiguration(), context.getCredentials());
     verifyTextSchema(splits.schema);
     return splits.splits;
   }

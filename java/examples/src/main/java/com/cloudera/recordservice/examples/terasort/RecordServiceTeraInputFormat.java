@@ -17,6 +17,7 @@ package com.cloudera.recordservice.examples.terasort;
 import java.io.IOException;
 import java.util.List;
 
+import com.cloudera.recordservice.mr.PlanUtil;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.JobContext;
@@ -38,7 +39,7 @@ public class RecordServiceTeraInputFormat
   @Override
   public List<InputSplit> getSplits(JobContext context) throws IOException,
       InterruptedException {
-    SplitsInfo info = super.getSplits(context.getConfiguration(),
+    PlanUtil.SplitsInfo info = PlanUtil.getSplits(context.getConfiguration(),
         context.getCredentials());
     if (info.schema.getNumColumns() != 1 ||
         info.schema.getColumnInfo(0).type.typeId != Schema.Type.STRING) {

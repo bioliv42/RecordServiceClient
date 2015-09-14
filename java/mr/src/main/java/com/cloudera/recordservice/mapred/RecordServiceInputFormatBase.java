@@ -18,6 +18,8 @@ package com.cloudera.recordservice.mapred;
 import java.io.IOException;
 import java.util.List;
 
+import com.cloudera.recordservice.core.TaskStatus;
+import com.cloudera.recordservice.mr.PlanUtil;
 import org.apache.hadoop.mapred.InputFormat;
 import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
@@ -30,12 +32,12 @@ import com.cloudera.recordservice.core.RecordServiceException;
 import com.cloudera.recordservice.mr.RecordReaderCore;
 
 public abstract class RecordServiceInputFormatBase<K, V> implements InputFormat<K, V> {
+  // Name of record service counters group.
+  public final static String COUNTERS_GROUP_NAME = "Record Service Counters";
 
   @Override
   public InputSplit[] getSplits(JobConf job, int numSplits) throws IOException {
-    com.cloudera.recordservice.mapreduce.RecordServiceInputFormatBase.SplitsInfo splits =
-        com.cloudera.recordservice.mapreduce.RecordServiceInputFormatBase.getSplits(
-            job, job.getCredentials());
+    PlanUtil.SplitsInfo splits = PlanUtil.getSplits(job, job.getCredentials());
     return convertSplits(splits.splits);
   }
 
@@ -50,6 +52,32 @@ public abstract class RecordServiceInputFormatBase<K, V> implements InputFormat<
           (com.cloudera.recordservice.mapreduce.RecordServiceInputSplit) splits.get(i));
     }
     return retSplits;
+  }
+
+  /**
+   * Populates RecordService counters in ctx from counters.
+   */
+  public static void setCounters(Reporter ctx, TaskStatus.Stats counters) {
+    if (ctx == null) return;
+    ctx.getCounter(COUNTERS_GROUP_NAME, "Records Read").setValue(
+        counters.numRecordsRead);
+    ctx.getCounter(COUNTERS_GROUP_NAME, "Records Returned").setValue(
+        counters.numRecordsReturned);
+    ctx.getCounter(COUNTERS_GROUP_NAME, "Record Serialization Time(ms)").setValue(
+        counters.serializeTimeMs);
+    ctx.getCounter(COUNTERS_GROUP_NAME, "Client Time(ms)").setValue(
+        counters.clientTimeMs);
+
+    if (counters.hdfsCountersSet) {
+      ctx.getCounter(COUNTERS_GROUP_NAME, "Bytes Read").setValue(
+          counters.bytesRead);
+      ctx.getCounter(COUNTERS_GROUP_NAME, "Decompression Time(ms)").setValue(
+          counters.decompressTimeMs);
+      ctx.getCounter(COUNTERS_GROUP_NAME, "Bytes Read Local").setValue(
+          counters.bytesReadLocal);
+      ctx.getCounter(COUNTERS_GROUP_NAME, "HDFS Throughput(MB/s)").setValue(
+          (long)(counters.hdfsThroughput / (1024 * 1024)));
+    }
   }
 
   /**
@@ -83,8 +111,7 @@ public abstract class RecordServiceInputFormatBase<K, V> implements InputFormat<
       if (reader_ != null) {
         assert(reporter_ != null);
         try {
-          com.cloudera.recordservice.mapreduce.RecordServiceInputFormatBase.setCounters(
-              reporter_, reader_.records().getStatus().stats);
+          setCounters(reporter_, reader_.records().getStatus().stats);
         } catch (RecordServiceException e) {
           LOG.debug("Could not populate counters: " + e);
         }
