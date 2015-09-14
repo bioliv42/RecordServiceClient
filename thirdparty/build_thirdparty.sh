@@ -1,6 +1,5 @@
 #!/bin/bash
 # Copyright (c) 2015, Cloudera, inc.
-# Confidential Cloudera Information: Covered by NDA.
 
 set -x
 set -e

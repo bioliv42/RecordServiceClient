@@ -1,4 +1,3 @@
-// Confidential Cloudera Information: Covered by NDA.
 // Copyright (c) 2014, Cloudera, inc.
 
 #include "subprocess.h"

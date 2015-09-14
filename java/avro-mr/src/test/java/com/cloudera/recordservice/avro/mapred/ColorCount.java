@@ -1,4 +1,3 @@
-// Confidential Cloudera Information: Covered by NDA.
 /**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -30,7 +29,12 @@ import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericDatumReader;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.io.DatumReader;
-import org.apache.avro.mapred.*;
+import org.apache.avro.mapred.AvroCollector;
+import org.apache.avro.mapred.AvroJob;
+import org.apache.avro.mapred.AvroMapper;
+import org.apache.avro.mapred.AvroReducer;
+import org.apache.avro.mapred.FsInput;
+import org.apache.avro.mapred.Pair;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.JobClient;
@@ -47,7 +51,7 @@ import com.cloudera.recordservice.mr.RecordServiceConfig;
 public class ColorCount {
   public static class Map extends AvroMapper<GenericData.Record,
       Pair<CharSequence, Integer>> {
-    private final static Pair<CharSequence, Integer> PAIR = 
+    private final static Pair<CharSequence, Integer> PAIR =
         new Pair<CharSequence, Integer>("", 1);
 
     @Override
@@ -66,7 +70,7 @@ public class ColorCount {
 
   public static class Reduce extends AvroReducer<CharSequence, Integer,
       Pair<CharSequence, Integer>> {
-    private final static Pair<CharSequence, Integer> PAIR = 
+    private final static Pair<CharSequence, Integer> PAIR =
         new Pair<CharSequence, Integer>("", 0);
 
     @Override

@@ -1,4 +1,3 @@
-# Confidential Cloudera Information: Covered by NDA.
 # - Find Thrift (a cross platform RPC lib/tool)
 # This module defines
 #  THRIFT_VERSION, version string of ant if found

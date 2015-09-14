@@ -1,4 +1,3 @@
-// Confidential Cloudera Information: Covered by NDA.
 # With RS
 import com.cloudera.recordservice.spark._
 val data = sc.recordServiceRecords("select l_partkey from tpch10gb_parquet.lineitem").

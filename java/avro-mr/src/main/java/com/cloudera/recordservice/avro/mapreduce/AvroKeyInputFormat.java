@@ -1,4 +1,3 @@
-// Confidential Cloudera Information: Covered by NDA.
 // Copyright 2012 Cloudera Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,10 +27,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.cloudera.recordservice.avro.GenericRecords;
-import com.cloudera.recordservice.avro.SchemaUtils;
-import com.cloudera.recordservice.avro.SpecificRecords;
 import com.cloudera.recordservice.avro.RecordIterator;
 import com.cloudera.recordservice.avro.RecordUtil;
+import com.cloudera.recordservice.avro.SchemaUtils;
+import com.cloudera.recordservice.avro.SpecificRecords;
 import com.cloudera.recordservice.core.RecordServiceException;
 import com.cloudera.recordservice.mapreduce.RecordServiceInputFormatBase;
 

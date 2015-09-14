@@ -1,5 +1,4 @@
 Copyright (c) 2015, Cloudera, inc.
-Confidential Cloudera Information: Covered by NDA.
 
 This builds to a jar which contains the RecordServiceRDD. To use,
 start spark shell and pass the record service spark jar.

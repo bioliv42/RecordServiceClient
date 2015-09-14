@@ -1,6 +1,4 @@
-// Confidential Cloudera Information: Covered by NDA.
 // Copyright (c) 2014, Cloudera, inc.
-// Confidential Cloudera Information: Covered by NDA.
 
 #ifndef RECORD_SERVICE_SUBPROCESS_H
 #define RECORD_SERVICE_SUBPROCESS_H

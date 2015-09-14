@@ -1,4 +1,3 @@
--- Confidential Cloudera Information: Covered by NDA.
 -- Create databases
 -- functional is needed for Hive serde test
 -- on the server side. The test itself assumes the existence

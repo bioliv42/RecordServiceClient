@@ -1,4 +1,3 @@
-// Confidential Cloudera Information: Covered by NDA.
 // Copyright 2015 Cloudera Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -45,7 +44,7 @@ public class JobQueue {
   public static final int DEFAULT_PER_JOB_TIMEOUT_VALUE_IN_SECONDS = 20;
 
   private static final Logger LOGGER = LoggerFactory.getLogger(JobQueue.class);
-  
+
   // The queue's thread pool
   private ThreadPoolExecutor threadPoolExecutor_;
   // Jobs started by the threadPoolExecutor

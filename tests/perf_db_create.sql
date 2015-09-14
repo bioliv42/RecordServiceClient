@@ -1,4 +1,3 @@
--- Confidential Cloudera Information: Covered by NDA.
 -- Schema for mysql performance database
 create table perf_db(
   date datetime,

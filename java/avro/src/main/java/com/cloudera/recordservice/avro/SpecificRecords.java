@@ -1,4 +1,3 @@
-// Confidential Cloudera Information: Covered by NDA.
 // Copyright 2014 Cloudera Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,8 +20,8 @@ import org.apache.avro.Schema;
 import org.apache.avro.specific.SpecificData;
 import org.apache.avro.specific.SpecificRecordBase;
 
-import com.cloudera.recordservice.core.Records;
 import com.cloudera.recordservice.core.RecordServiceException;
+import com.cloudera.recordservice.core.Records;
 
 /**
  * This class takes a Rows object and provides an iterator interface to

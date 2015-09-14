@@ -1,7 +1,6 @@
 #!/bin/bash -xe
 ########################################################################
 # Copyright (c) 2014 Cloudera, Inc.
-# Confidential Cloudera Information: Covered by NDA.
 
 # This script pulls data from the perf database and uses R to generate
 # the results plot.

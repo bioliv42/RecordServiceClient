@@ -1,4 +1,3 @@
-// Confidential Cloudera Information: Covered by NDA.
 /**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -47,7 +46,7 @@ public class MapredColorCount extends Configured implements Tool {
 
   public static class ColorCountMapper extends AvroMapper<GenericData.Record,
       Pair<CharSequence, Integer>> {
-    private final static Pair<CharSequence, Integer> PAIR = 
+    private final static Pair<CharSequence, Integer> PAIR =
         new Pair<CharSequence, Integer>("", 1);
 
     @Override
@@ -68,7 +67,7 @@ public class MapredColorCount extends Configured implements Tool {
 
   public static class ColorCountReducer extends AvroReducer<CharSequence, Integer,
       Pair<CharSequence, Integer>> {
-    private final static Pair<CharSequence, Integer> PAIR = 
+    private final static Pair<CharSequence, Integer> PAIR =
         new Pair<CharSequence, Integer>("", 1);
 
     @Override

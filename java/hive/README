@@ -1,5 +1,4 @@
 Copyright (c) 2015, Cloudera, inc.
-Confidential Cloudera Information: Covered by NDA.
 
 To use Hive + RecordService the user must run queries using a custom HiveInputFormat and
 use a RecordServiceSerDe for processing results. Some changes are required in Hive to make
