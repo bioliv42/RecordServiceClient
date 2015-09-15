@@ -33,8 +33,8 @@ import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.ShortWritable;
 import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.mapred.TaskAttemptID;
 import org.apache.hadoop.mapreduce.InputSplit;
-import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
 import org.apache.hadoop.security.Credentials;
@@ -183,7 +183,8 @@ public class MapReduceTest extends TestBase {
     try {
       RecordServiceConfig.setInputTable(config, null, "tpch.nation");
       List<InputSplit> splits = PlanUtil.getSplits(config, new Credentials()).splits;
-      reader.initialize((RecordServiceInputSplit)splits.get(0), config);
+      reader.initialize(splits.get(0),
+          new TaskAttemptContextImpl(new JobConf(config), new TaskAttemptID()));
 
       int numRows = 0;
       while (reader.nextKeyValue()) {
@@ -201,7 +202,8 @@ public class MapReduceTest extends TestBase {
       config.clear();
       RecordServiceConfig.setInputTable(config, "tpch", "nation", "n_comment");
       splits = PlanUtil.getSplits(config, new Credentials()).splits;
-      reader.initialize((RecordServiceInputSplit)splits.get(0), config);
+      reader.initialize(splits.get(0),
+          new TaskAttemptContextImpl(new JobConf(config), new TaskAttemptID()));
       numRows = 0;
       while (reader.nextKeyValue()) {
         RecordServiceRecord value = reader.getCurrentValue();
@@ -232,7 +234,8 @@ public class MapReduceTest extends TestBase {
 
       int numRows = 0;
       for (InputSplit split: splits) {
-        reader.initialize((RecordServiceInputSplit)split, config);
+        reader.initialize(split,
+            new TaskAttemptContextImpl(new JobConf(config), new TaskAttemptID()));
         while (reader.nextKeyValue()) {
           RecordServiceRecord value = reader.getCurrentValue();
           if (((BooleanWritable)value.getColumnValue(0)).get()) {
@@ -289,7 +292,8 @@ public class MapReduceTest extends TestBase {
 
       int numRows = 0;
       for (InputSplit split: splits) {
-        reader.initialize((RecordServiceInputSplit)split, config);
+        reader.initialize(split,
+            new TaskAttemptContextImpl(new JobConf(config), new TaskAttemptID()));
         while (reader.nextKeyValue()) {
           RecordServiceRecord value = reader.getCurrentValue();
           for (int i = 0; i < value.getSchema().getNumColumns(); ++i) {

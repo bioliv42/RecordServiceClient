@@ -16,17 +16,14 @@ package com.cloudera.recordservice.mapreduce;
 
 import java.io.IOException;
 
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
-import org.apache.hadoop.security.Credentials;
 
 import com.cloudera.recordservice.core.RecordServiceException;
 import com.cloudera.recordservice.core.Records;
 import com.cloudera.recordservice.core.Records.Record;
-import com.cloudera.recordservice.mr.RecordReaderCore;
 import com.cloudera.recordservice.mr.RecordServiceRecord;
 import com.cloudera.recordservice.mr.Schema;
 
@@ -108,17 +105,6 @@ public class RecordServiceInputFormat extends
     public void initialize(InputSplit split, TaskAttemptContext context)
         throws IOException, InterruptedException {
       super.initialize(split, context);
-      record_ = new RecordServiceRecord(schema());
-    }
-
-    //@VisibleForTesting
-    void initialize(RecordServiceInputSplit split, Configuration config)
-        throws IOException {
-      try {
-        reader_ = new RecordReaderCore(config, new Credentials(), split.getTaskInfo());
-      } catch (RecordServiceException e) {
-        throw new IOException("Failed to execute task.", e);
-      }
       record_ = new RecordServiceRecord(schema());
     }
   }
