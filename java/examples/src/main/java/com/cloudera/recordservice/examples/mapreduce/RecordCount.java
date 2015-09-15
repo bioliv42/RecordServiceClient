@@ -69,6 +69,7 @@ public class RecordCount extends Configured implements Tool {
     }
   }
 
+  @Override
   public int run(String[] args) throws Exception {
     if (args.length != 2) {
       System.err.println("Usage: RecordCount <input_query> <output_path>");

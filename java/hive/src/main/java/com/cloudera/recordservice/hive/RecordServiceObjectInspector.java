@@ -199,9 +199,16 @@ public class RecordServiceObjectInspector extends StructObjectInspector {
       return !isProjectedColIdxSet_ || projectedColIdx_ >= 0;
     }
 
+    @Override
     public String getFieldComment() { return ""; }
+
+    @Override
     public String getFieldName() { return fieldName_; }
+
+    @Override
     public ObjectInspector getFieldObjectInspector() { return inspector_; }
+
+    @Override
     public int getFieldID() { return fieldIdx_; }
   }
 

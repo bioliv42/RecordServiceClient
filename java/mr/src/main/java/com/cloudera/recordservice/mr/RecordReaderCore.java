@@ -143,6 +143,7 @@ public class RecordReaderCore implements Closeable {
   /**
    * Closes the task and worker connection.
    */
+  @Override
   public void close() {
     if (records_ != null) records_.close();
     if (worker_ != null) worker_.close();

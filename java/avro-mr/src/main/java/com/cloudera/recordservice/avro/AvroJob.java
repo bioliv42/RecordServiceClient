@@ -29,7 +29,6 @@ public class AvroJob {
 
   private static final Logger LOG = LoggerFactory.getLogger(AvroJob.class);
 
-  @SuppressWarnings("rawtypes")
   public static void setInputFormatClass(org.apache.hadoop.mapreduce.Job job,
       Class<? extends org.apache.hadoop.mapreduce.InputFormat> c) {
     if (job.getConfiguration().getBoolean(
@@ -50,7 +49,6 @@ public class AvroJob {
     job.setInputFormatClass(c);
   }
 
-  @SuppressWarnings("rawtypes")
   public static void setInputFormat(org.apache.hadoop.mapred.JobConf job,
       Class<? extends org.apache.hadoop.mapred.InputFormat> c) {
     if (job.getBoolean(USE_RECORD_SERVICE_INPUT_FORMAT_CONF_KEY, false)) {

@@ -224,6 +224,7 @@ public class RecordServiceWorkerClient implements Closeable {
    * Close the connection to the RecordServiceWorker. All open tasks will also be
    * closed.
    */
+  @Override
   public void close() {
     if (workerClient_ != null) {
       LOG.info("Closing RecordServiceWorker connection.");

@@ -84,6 +84,7 @@ public class MapredColorCount extends Configured implements Tool {
     }
   }
 
+  @Override
   public int run(String[] args) throws Exception {
     org.apache.log4j.BasicConfigurator.configure();
 

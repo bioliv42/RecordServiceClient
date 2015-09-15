@@ -18,6 +18,7 @@
 
 package com.cloudera.recordservice.avro;
 
+import java.io.Closeable;
 import java.io.IOException;
 
 import org.apache.avro.Schema;
@@ -31,7 +32,8 @@ import com.cloudera.recordservice.core.Records;
  * This class takes a Records object and provides an iterator interface to
  * return key / value records.
  */
-public class KeyValueRecords<K extends SpecificRecordBase, V extends SpecificRecordBase> {
+public class KeyValueRecords<K extends SpecificRecordBase, V extends SpecificRecordBase>
+    implements Closeable {
   private Records records_;
   private org.apache.avro.Schema keySchema_;
   private org.apache.avro.Schema valueSchema_;
@@ -109,6 +111,7 @@ public class KeyValueRecords<K extends SpecificRecordBase, V extends SpecificRec
    * Closes the underlying task. Must be called for every GenericRecords object
    * created. Invalid to call other APIs after this. Idempotent.
    */
+  @Override
   public void close() {
     records_.close();
   }

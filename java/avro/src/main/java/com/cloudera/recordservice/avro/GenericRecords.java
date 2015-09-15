@@ -42,11 +42,13 @@ public class GenericRecords implements RecordIterator<Record> {
   /**
    * Returns the generated avro schema.
    */
+  @Override
   public org.apache.avro.Schema getSchema() { return avroSchema_; }
 
   /**
    * Returns true if there are more records, false otherwise.
    */
+  @Override
   public boolean hasNext() throws IOException, RecordServiceException {
     return records_.hasNext();
   }
@@ -55,6 +57,7 @@ public class GenericRecords implements RecordIterator<Record> {
    * Returns and advances to the next record. Throws exception if
    * there are no more records.
    */
+  @Override
   public Record next() throws IOException, RecordServiceException {
     Records.Record rsRecord = records_.next();
     Record record = new Record(avroSchema_);
@@ -87,6 +90,7 @@ public class GenericRecords implements RecordIterator<Record> {
    * Closes the underlying task. Must be called for every GenericRecords object
    * created. Invalid to call other APIs after this. Idempotent.
    */
+  @Override
   public void close() {
     records_.close();
   }

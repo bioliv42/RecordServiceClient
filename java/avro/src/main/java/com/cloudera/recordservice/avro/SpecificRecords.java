@@ -53,11 +53,13 @@ public class SpecificRecords<T extends SpecificRecordBase> implements RecordIter
   /**
    * Returns the generated avro schema.
    */
+  @Override
   public org.apache.avro.Schema getSchema() { return avroSchema_; }
 
   /**
    * Returns true if there are more records, false otherwise.
    */
+  @Override
   public boolean hasNext() throws IOException, RecordServiceException {
     return records_.hasNext();
   }
@@ -66,6 +68,7 @@ public class SpecificRecords<T extends SpecificRecordBase> implements RecordIter
    * Returns and advances to the next record. Throws exception if
    * there are no more records.
    */
+  @Override
   public T next() throws IOException, RecordServiceException {
     T record;
 
@@ -88,6 +91,7 @@ public class SpecificRecords<T extends SpecificRecordBase> implements RecordIter
    * Closes the underlying task. Must be called for every GenericRecords object
    * created. Invalid to call other APIs after this. Idempotent.
    */
+  @Override
   public void close() {
     records_.close();
   }

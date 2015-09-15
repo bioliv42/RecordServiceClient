@@ -29,7 +29,7 @@ public class SchemaUtils {
       com.cloudera.recordservice.core.Schema schema) {
     List<Schema.Field> fields = new ArrayList<Schema.Field>();
     for (int i = 0; i < schema.cols.size(); ++i) {
-      Schema fieldSchema = null;
+      Schema fieldSchema;
       switch (schema.cols.get(i).type.typeId) {
         case BOOLEAN: fieldSchema = Schema.create(Type.BOOLEAN); break;
         case TINYINT:

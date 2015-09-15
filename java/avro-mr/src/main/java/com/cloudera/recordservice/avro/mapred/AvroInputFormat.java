@@ -71,12 +71,15 @@ public class AvroInputFormat<T> extends
       }
     }
 
+    @Override
     public AvroWrapper<T> createKey() {
       return new AvroWrapper<T>(null);
     }
 
+    @Override
     public NullWritable createValue() { return NullWritable.get(); }
 
+    @Override
     public boolean next(AvroWrapper<T> wrapper, NullWritable ignore)
         throws IOException {
       try {
