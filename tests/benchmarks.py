@@ -69,14 +69,14 @@ def hive_cmd(query):
 #TODO: I think this spends a lot of time just starting up spark.
 def spark_cmd(cl, query):
   return "java -classpath " + os.environ['RECORD_SERVICE_HOME'] +\
-      "/java/spark-benchmark/target/recordservice-spark-benchmark-0.1.jar " + cl +\
+      "/java/examples-spark/target/recordservice-examples-spark-0.1.jar " + cl +\
       " \"" + query + "\""
 
 def spark_q1(query):
-  return spark_cmd("com.cloudera.recordservice.benchmark.Query1", query)
+  return spark_cmd("com.cloudera.recordservice.examples.spark.Query1", query)
 
 def spark_q2(query):
-  return spark_cmd("com.cloudera.recordservice.benchmark.Query2", query)
+  return spark_cmd("com.cloudera.recordservice.examples.spark.Query2", query)
 
 def impala_tpcds(query_name, record_service):
   path = os.environ['RECORD_SERVICE_HOME'] +\

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.cloudera.recordservice.benchmark
+package com.cloudera.recordservice.examples.spark
 
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.Text
@@ -30,9 +30,9 @@ import com.cloudera.recordservice.examples.terasort._
  * <pre>
  * {@code
  *   spark-submit \
- *     --class com.cloudera.recordservice.benchmark.TeraChecksum \
+ *     --class com.cloudera.recordservice.examples.spark.TeraChecksum \
  *     --master <master-url> \
- *     /path/to/recordservice-spark-benchmark-<version>.jar \
+ *     /path/to/recordservice-examples-spark-<version>.jar \
  *     <arguments>
  * }
  * </pre>

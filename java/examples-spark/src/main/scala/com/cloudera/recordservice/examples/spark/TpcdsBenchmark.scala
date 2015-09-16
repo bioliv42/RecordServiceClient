@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.cloudera.recordservice.example
+package com.cloudera.recordservice.examples.spark
 
 import com.cloudera.recordservice.mr.RecordServiceConfig
 import com.cloudera.recordservice.spark.RecordServiceConf
@@ -26,7 +26,7 @@ object TpcdsBenchmark {
   def printUsage(): Unit = {
     System.err.println(
         "Usage:\n" +
-        " spark-submit --class com.cloudera.recordservice.example.TpcdsBenchmark\n" +
+        " spark-submit --class com.cloudera.recordservice.examples.spark.TpcdsBenchmark\n" +
         "              -- master <spark master>\n" +
         "              recordservice-spark-<version>.jar\n" +
         "              <RecordServicePlanner host> [Query] [Database]")

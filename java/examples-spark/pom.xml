@@ -29,9 +29,9 @@
     <version>0.1</version>
   </parent>
 
- <artifactId>recordservice-spark-benchmark</artifactId>
-  <name>Record Service Spark Benchmarks</name>
-  <description>Record Service Spark Benchmarks</description>
+ <artifactId>recordservice-examples-spark</artifactId>
+  <name>Record Service Spark Examples</name>
+  <description>Record Service Spark Examples</description>
   <packaging>jar</packaging>
   <url>.</url>
 

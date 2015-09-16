@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.cloudera.recordservice.example
+package com.cloudera.recordservice.examples.spark
 
 import com.cloudera.recordservice.spark.SchemaRecordServiceRDD
 import org.apache.spark.{SparkConf, SparkContext}
