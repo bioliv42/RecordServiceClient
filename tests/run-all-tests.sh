@@ -56,3 +56,4 @@ mvn -Dtest=HiveSerDeExecutorTest test
 
 cd $IMPALA_HOME/tests
 ./run-tests.py query_test/test_hive_serde.py
+./run-tests.py query_test/test_recordservice.py
