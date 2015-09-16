@@ -47,6 +47,11 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
+      <groupId>com.cloudera.recordservice</groupId>
+      <artifactId>recordservice-examples</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
       <groupId>org.apache.spark</groupId>
       <artifactId>spark-core_${sparkcore.version}</artifactId>
       <version>${spark.version}</version>

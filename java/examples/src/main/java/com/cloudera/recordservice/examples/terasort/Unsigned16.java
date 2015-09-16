@@ -21,6 +21,7 @@ package com.cloudera.recordservice.examples.terasort;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.io.Serializable;
 
 import org.apache.hadoop.io.Writable;
 
@@ -30,7 +31,7 @@ import org.apache.hadoop.io.Writable;
  *
  * Copied from hadoop example.
  */
-class Unsigned16 implements Writable {
+public class Unsigned16 implements Writable, Serializable {
   private long hi8;
   private long lo8;
 
