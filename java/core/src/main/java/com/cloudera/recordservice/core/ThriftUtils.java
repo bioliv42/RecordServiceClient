@@ -37,6 +37,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.cloudera.recordservice.thrift.TProtocolVersion;
+import com.cloudera.recordservice.util.Preconditions;
 
 /**
  * Utility class to convert from thrift classes to client classes. We should
@@ -74,7 +75,7 @@ public class ThriftUtils {
     private final DelegationToken token_;
 
     public DigestHandler(DelegationToken token) {
-      assert token != null;
+      Preconditions.checkNotNull(token);
       token_ = token;
     }
 

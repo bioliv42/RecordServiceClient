@@ -19,6 +19,7 @@ import java.util.List;
 
 import com.cloudera.recordservice.core.TaskStatus;
 import com.cloudera.recordservice.mr.PlanUtil;
+
 import org.apache.hadoop.mapred.InputFormat;
 import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
@@ -29,6 +30,7 @@ import org.slf4j.LoggerFactory;
 
 import com.cloudera.recordservice.core.RecordServiceException;
 import com.cloudera.recordservice.mr.RecordReaderCore;
+import com.google.common.base.Preconditions;
 
 public abstract class RecordServiceInputFormatBase<K, V> implements InputFormat<K, V> {
   // Name of record service counters group.
@@ -108,7 +110,7 @@ public abstract class RecordServiceInputFormatBase<K, V> implements InputFormat<
     @Override
     public void close() throws IOException {
       if (reader_ != null) {
-        assert(reporter_ != null);
+        Preconditions.checkNotNull(reporter_);
         try {
           setCounters(reporter_, reader_.records().getStatus().stats);
         } catch (RecordServiceException e) {

@@ -32,6 +32,7 @@ import org.apache.hadoop.io.Writable;
 
 import com.cloudera.recordservice.core.ByteArray;
 import com.cloudera.recordservice.core.Records.Record;
+import com.google.common.base.Preconditions;
 
 public class RecordServiceRecord implements Writable {
   // Array of Writable objects. This is created once and reused.
@@ -81,7 +82,7 @@ public class RecordServiceRecord implements Writable {
       }
       columnVals_[i] = columnValObjects_[i];
       com.cloudera.recordservice.core.Schema.ColumnDesc cInfo = schema_.getColumnInfo(i);
-      assert cInfo != null;
+      Preconditions.checkNotNull(cInfo);
       switch (cInfo.type.typeId) {
         case BOOLEAN:
           ((BooleanWritable) columnValObjects_[i]).set(record.nextBoolean(i));

@@ -22,6 +22,7 @@ import java.nio.ByteBuffer;
 import sun.misc.Unsafe;
 
 import com.cloudera.recordservice.core.Schema.Type;
+import com.cloudera.recordservice.util.Preconditions;
 
 /**
  * Abstraction over records returned from the RecordService. This class is
@@ -255,7 +256,7 @@ public class Records implements Closeable {
    * Returns true if there are more records.
    */
   public boolean hasNext() throws IOException, RecordServiceException {
-    assert(fetchResult_ != null);
+    Preconditions.checkNotNull(fetchResult_);
     while (record_.recordIdx_ == record_.numRecords_ - 1) {
       if (fetchResult_.done) {
         hasNext_ = false;
@@ -326,9 +327,9 @@ public class Records implements Closeable {
     if (record_.schema_.isCountStar) {
       // This is a count(*). We will read the one and only value that is the number of
       // records. The iterator interface will return count(*) number of NULLs.
-      assert(record_.schema_.cols.size() == 1);
-      assert(record_.schema_.cols.get(0).type.typeId == Type.BIGINT);
-      assert(record_.numRecords_ == 1);
+      Preconditions.checkState(record_.schema_.cols.size() == 1);
+      Preconditions.checkState(record_.schema_.cols.get(0).type.typeId == Type.BIGINT);
+      Preconditions.checkState(record_.numRecords_ == 1);
       record_.numRecords_ = record_.nextLong(0);
     }
     hasNext_ = hasNext();

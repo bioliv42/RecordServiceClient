@@ -34,6 +34,8 @@ import com.cloudera.recordservice.thrift.TPlanRequestParams;
 import com.cloudera.recordservice.thrift.TPlanRequestResult;
 import com.cloudera.recordservice.thrift.TProtocolVersion;
 import com.cloudera.recordservice.thrift.TRecordServiceException;
+import com.cloudera.recordservice.util.Preconditions;
+
 /**
  * Java client for the RecordServicePlanner. This class is not thread safe.
  */
@@ -392,7 +394,7 @@ public class RecordServicePlannerClient implements Closeable {
    */
   void closeConnectionForTesting() {
     protocol_.getTransport().close();
-    assert (!protocol_.getTransport().isOpen());
+    Preconditions.checkState(!protocol_.getTransport().isOpen());
   }
 
   /**

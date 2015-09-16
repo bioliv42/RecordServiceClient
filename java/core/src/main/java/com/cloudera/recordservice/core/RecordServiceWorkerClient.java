@@ -36,6 +36,7 @@ import com.cloudera.recordservice.thrift.TFetchParams;
 import com.cloudera.recordservice.thrift.TFetchResult;
 import com.cloudera.recordservice.thrift.TRecordServiceException;
 import com.cloudera.recordservice.thrift.TUniqueId;
+import com.cloudera.recordservice.util.Preconditions;
 
 /**
  * Java client for the RecordServiceWorker. This class is not thread safe.
@@ -384,7 +385,7 @@ public class RecordServiceWorkerClient implements Closeable {
    */
   void closeConnectionForTesting() {
     protocol_.getTransport().close();
-    assert(!protocol_.getTransport().isOpen());
+    Preconditions.checkState(!protocol_.getTransport().isOpen());
   }
 
   // Private ctor, use builder.
@@ -453,8 +454,8 @@ public class RecordServiceWorkerClient implements Closeable {
    */
   private TaskState execTaskInternal(Task task, long offset)
           throws RecordServiceException, IOException {
-    assert(task != null);
-    assert(offset >= 0);
+    Preconditions.checkNotNull(task);
+    Preconditions.checkState(offset >= 0);
     TExecTaskParams taskParams = new TExecTaskParams(ByteBuffer.wrap(task.task));
     taskParams.setOffset(offset);
     if (fetchSize_ != null) taskParams.setFetch_size(fetchSize_);
@@ -473,7 +474,7 @@ public class RecordServiceWorkerClient implements Closeable {
         LOG.debug("Executing task attempt " + (i + 1) + " out of " + maxAttempts_ +
             ". Offset=" + offset);
         TExecTaskResult result = workerClient_.ExecTask(taskParams);
-        assert(!activeTasks_.containsKey(result.handle));
+        Preconditions.checkState(!activeTasks_.containsKey(result.handle));
         TaskState state = new TaskState(task, result);
         activeTasks_.put(result.handle, state);
         LOG.info("Got task handle: " + result.handle);

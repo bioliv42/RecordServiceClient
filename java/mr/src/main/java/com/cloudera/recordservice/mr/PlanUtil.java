@@ -36,6 +36,7 @@ import com.cloudera.recordservice.core.Task;
 import com.cloudera.recordservice.mapreduce.RecordServiceInputSplit;
 import com.cloudera.recordservice.mr.security.DelegationTokenIdentifier;
 import com.cloudera.recordservice.mr.security.TokenUtils;
+import com.google.common.base.Preconditions;
 
 /**
  * Utilities to communicate with the planner.
@@ -122,7 +123,7 @@ public class PlanUtil {
     } else if (sqlQuery != null) {
       request = Request.createSqlRequest(sqlQuery);
     } else {
-      assert false;
+      Preconditions.checkState(false);
     }
     return request;
   }

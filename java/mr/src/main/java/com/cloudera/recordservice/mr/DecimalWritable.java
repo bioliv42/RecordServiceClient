@@ -54,7 +54,8 @@ public class DecimalWritable implements WritableComparable<DecimalWritable> {
   @Override
   public int compareTo(DecimalWritable o) {
     // Comparing the integer values is correct (fixed scale) and cheaper.
-    assert decimal_.getScale() == o.get().getScale();
+    // FIXME: This is not correct if the scale for the decimals is different.
+    //assert decimal_.getScale() == o.get().getScale();
     return decimal_.toBigInteger().compareTo(o.get().toBigInteger());
   }
 }
