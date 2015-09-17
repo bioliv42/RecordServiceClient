@@ -54,9 +54,13 @@ public class TestUnsupportedFunctionality extends TestBase {
     testUnsupported("SELECT * from tpch.nation LIMIT 1");
     testUnsupported("use default");
     testUnsupported("set num_nodes=1");
-    testUnsupported("insert into tpch.nation select * from tpch.nation");
     testUnsupported("explain select * from tpch.nation");
     testUnsupported("create table rs.not_exists(i int)");
+
+    // VM doesn't support write path access
+    if (!TestBasicClient.RECORD_SERVICE_QUICKSTART_VM) {
+      testUnsupported("insert into tpch.nation select * from tpch.nation");
+    }
 
     // Test getSchema
     boolean exceptionThrown = false;

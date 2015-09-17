@@ -14,6 +14,7 @@
 
 package com.cloudera.recordservice.core;
 
+import static org.junit.Assume.assumeFalse;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -43,6 +44,13 @@ import com.google.common.collect.Lists;
 // TODO: add more stats tests.
 // TODO: add testes to verify that we don't retry when the error is not retryable.
 public class TestBasicClient extends TestBase {
+
+  // If true, RecordService is being run on the quickstart vm. There are a few
+  // tests that we need to skip in this mode.
+  public static final boolean RECORD_SERVICE_QUICKSTART_VM =
+      System.getenv("RECORD_SERVICE_QUICKSTART_VM") != null &&
+      System.getenv("RECORD_SERVICE_QUICKSTART_VM").equalsIgnoreCase("true");
+
   // The number of iterations to run the multithreaded test.
   static private final int MULTITHREADED_TEST_NUM_ITERATIONS = 20;
   static private final int MULTITHREADED_TEST_NUM_THREADS = 5;
@@ -382,7 +390,7 @@ public class TestBasicClient extends TestBase {
     // Verify schema
     verifyNationSchema(plan.schema, false);
     assertEquals(1, plan.tasks.size());
-    assertEquals(3, plan.tasks.get(0).localHosts.size());
+    assertTrue(plan.tasks.get(0).localHosts.size() >= 1);
 
     // Execute the task
     NetworkAddress addr = plan.tasks.get(0).localHosts.get(0);
@@ -545,7 +553,7 @@ public class TestBasicClient extends TestBase {
     // Execute the task
     assertEquals(2, plan.tasks.size());
     for (int t = 0; t < 2; ++t) {
-      assertEquals(3, plan.tasks.get(t).localHosts.size());
+      assertTrue(plan.tasks.get(t).localHosts.size() >= 1);
       Records records = worker.execAndFetch(plan.tasks.get(t));
       verifyAllTypesSchema(records.getSchema());
       assertTrue(records.hasNext());
@@ -749,6 +757,8 @@ public class TestBasicClient extends TestBase {
 
   @Test
   public void testAllTypesPathWithSchema() throws IOException, RecordServiceException {
+    assumeFalse(RECORD_SERVICE_QUICKSTART_VM);
+
     // Create the exact all types schema.
     Schema schema = new Schema();
     schema.cols.add(
@@ -1153,6 +1163,12 @@ public class TestBasicClient extends TestBase {
         // TODO: improve these two tests and re-enable them.
         if (m.getName().equals("testPlannerTimeout")) continue;
         if (m.getName().equals("testWorkerTimeout")) continue;
+        // This one fails for the VM and the assumption that we use to skip
+        // it causes this entire test to fail. This is another reason that
+        // we should try to use junit to run these multithreaded instead
+        // of this homegrown solution.
+        if (m.getName().equals("testAllTypesPathWithSchema")
+            && RECORD_SERVICE_QUICKSTART_VM) continue;
         for (int i = 0; i < MULTITHREADED_TEST_NUM_ITERATIONS; ++i) {
           methods.add(m);
         }
