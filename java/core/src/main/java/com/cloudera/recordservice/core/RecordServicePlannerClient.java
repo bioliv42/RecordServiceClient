@@ -210,7 +210,7 @@ public class RecordServicePlannerClient implements Closeable {
         LOG.warn("Could not connect to RecordServicePlanner. " + e);
         if (e.getType() == TTransportException.END_OF_FILE) {
           TRecordServiceException ex = new TRecordServiceException();
-          ex.code = TErrorCode.SERVICE_BUSY;
+          ex.code = TErrorCode.AUTHENTICATION_ERROR;
           ex.message = "Connection to RecordServicePlanner at " + hostname + ":" + port +
               " has failed. Please check if the client has the same security setting " +
               "as the server.";
@@ -230,6 +230,7 @@ public class RecordServicePlannerClient implements Closeable {
   /**
    * Closes a connection to the RecordServicePlanner.
    */
+  @Override
   public void close() {
     if (plannerClient_ != null) {
       LOG.info("Closing RecordServicePlanner connection.");
