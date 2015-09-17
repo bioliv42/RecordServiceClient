@@ -72,11 +72,13 @@ abstract class RecordServiceRDDBase[T:ClassTag](@transient sc: SparkContext)
   val memLimit = sc.getConf.getLong(RecordServiceConfig.MEM_LIMIT_CONF, -1);
   val limit = sc.getConf.getLong(RecordServiceConfig.RECORDS_LIMIT_CONF, -1);
   val maxAttempts = sc.getConf.getInt(
-      RecordServiceConfig.TASK_RETRY_ATTEMPTS_CONF, -1);
+      RecordServiceConfig.WORKER_RETRY_ATTEMPTS_CONF, -1);
   val taskSleepMs = sc.getConf.getInt(
-      RecordServiceConfig.TASK_RETRY_SLEEP_MS_CONF, -1);
-  val socketTimeoutMs = sc.getConf.getInt(
-      RecordServiceConfig.TASK_SOCKET_TIMEOUT_MS_CONF, -1);
+      RecordServiceConfig.WORKER_RETRY_SLEEP_MS_CONF, -1);
+  val connectionTimeoutMs = sc.getConf.getInt(
+      RecordServiceConfig.WORKER_CONNECTION_TIMEOUT_MS_CONF, -1);
+  val rpcTimeoutMs = sc.getConf.getInt(
+      RecordServiceConfig.WORKER_RPC_TIMEOUT_MS_CONF, -1);
 
   // Request to make
   @transient var request:Request = null
@@ -180,7 +182,8 @@ abstract class RecordServiceRDDBase[T:ClassTag](@transient sc: SparkContext)
       if (limit != -1) builder.setLimit(limit);
       if (maxAttempts != -1) builder.setMaxAttempts(maxAttempts);
       if (taskSleepMs != -1 ) builder.setSleepDurationMs(taskSleepMs);
-      if (socketTimeoutMs != -1) builder.setTimeoutMs(socketTimeoutMs);
+      if (connectionTimeoutMs != -1) builder.setConnectionTimeoutMs(connectionTimeoutMs);
+      if (rpcTimeoutMs != -1) builder.setRpcTimeoutMs(rpcTimeoutMs);
 
       val (hostname, port) = getWorkerToConnectTo(partition)
       worker = builder.connect(hostname, port)
@@ -248,8 +251,10 @@ abstract class RecordServiceRDDBase[T:ClassTag](@transient sc: SparkContext)
       // delegationToken as well. How is this done for spark? How do we get at the
       // credentials object.
       val principal = RecordServiceConf.getKerberosPrincipal(sc)
-      val timeoutMs =
-          sc.getConf.getInt(RecordServiceConfig.PLANNER_SOCKET_TIMEOUT_MS_CONF, -1)
+      val connectionTimeoutMs =
+          sc.getConf.getInt(RecordServiceConfig.PLANNER_CONNECTION_TIMEOUT_MS_CONF, -1)
+      val rpcTimeoutMs =
+          sc.getConf.getInt(RecordServiceConfig.PLANNER_RPC_TIMEOUT_MS_CONF, -1)
       val maxAttempts =
           sc.getConf.getInt(RecordServiceConfig.PLANNER_RETRY_ATTEMPTS_CONF, -1)
       val sleepDurationMs =
@@ -258,7 +263,8 @@ abstract class RecordServiceRDDBase[T:ClassTag](@transient sc: SparkContext)
           sc.getConf.getInt(RecordServiceConfig.PLANNER_REQUEST_MAX_TASKS, -1)
 
       val builder = new RecordServicePlannerClient.Builder()
-      if (timeoutMs != -1) builder.setTimeoutMs(timeoutMs);
+      if (connectionTimeoutMs != -1) builder.setConnectionTimeoutMs(connectionTimeoutMs);
+      if (rpcTimeoutMs != -1) builder.setRpcTimeoutMs(rpcTimeoutMs);
       if (maxTasks != -1) builder.setMaxAttempts(maxAttempts);
       if (sleepDurationMs != -1) builder.setSleepDurationMs(sleepDurationMs);
       if (maxAttempts != -1) builder.setMaxTasks(maxTasks);

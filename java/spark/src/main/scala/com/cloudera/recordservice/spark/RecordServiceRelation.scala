@@ -51,8 +51,10 @@ case class RecordServiceRelation(table:String, size:Option[Long])(
     extends BaseRelation with PrunedFilteredScan with Logging {
 
   override def schema: StructType = {
-    val timeoutMs = sqlContext.getConf(
-        RecordServiceConfig.PLANNER_SOCKET_TIMEOUT_MS_CONF, "-1").toInt
+    val connectionTimeoutMs = sqlContext.getConf(
+        RecordServiceConfig.PLANNER_CONNECTION_TIMEOUT_MS_CONF, "-1").toInt
+    val rpcTimeoutMs = sqlContext.getConf(
+        RecordServiceConfig.PLANNER_RPC_TIMEOUT_MS_CONF, "-1").toInt
     val maxAttempts = sqlContext.getConf(
         RecordServiceConfig.PLANNER_RETRY_ATTEMPTS_CONF, "-1").toInt
     val sleepDurationMs = sqlContext.getConf(
@@ -63,7 +65,8 @@ case class RecordServiceRelation(table:String, size:Option[Long])(
     val builder = new RecordServicePlannerClient.Builder()
     // TODO: this code is replicated in a few places because of where the
     // configs come from. We have hadoop Configuration, SparkContext and SQLContext.
-    if (timeoutMs != -1) builder.setTimeoutMs(timeoutMs);
+    if (connectionTimeoutMs != -1) builder.setConnectionTimeoutMs(connectionTimeoutMs);
+    if (rpcTimeoutMs != -1) builder.setRpcTimeoutMs(rpcTimeoutMs);
     if (maxTasks != -1) builder.setMaxAttempts(maxAttempts);
     if (sleepDurationMs != -1) builder.setSleepDurationMs(sleepDurationMs);
     if (maxAttempts != -1) builder.setMaxTasks(maxTasks);

@@ -78,26 +78,34 @@ public class RecordServiceConfig {
   public final static String PLANNER_RETRY_SLEEP_MS_CONF =
       "recordservice.planner.retry.sleepMs";
 
-  // Optional configuration for timeout on the planner service socket.
-  public final static String PLANNER_SOCKET_TIMEOUT_MS_CONF =
-      "recordservice.planner.socket.timeoutMs";
+  // Optional configuration for timeout when connecting to the planner service.
+  public final static String PLANNER_CONNECTION_TIMEOUT_MS_CONF =
+      "recordservice.planner.connection.timeoutMs";
+
+  // Optional configuration for timeout for planner RPCs.
+  public final static String PLANNER_RPC_TIMEOUT_MS_CONF =
+      "recordservice.planner.rpc.timeoutMs";
 
   // Optional configuration for the maximum number of attempts to retry RecordService
   // RPCs with worker.
-  public final static String TASK_RETRY_ATTEMPTS_CONF =
-      "recordservice.task.retry.attempts";
+  public final static String WORKER_RETRY_ATTEMPTS_CONF =
+      "recordservice.worker.retry.attempts";
 
   // Optional configuration for sleep between retry attempts with worker.
-  public final static String TASK_RETRY_SLEEP_MS_CONF =
-      "recordservice.task.retry.sleepMs";
+  public final static String WORKER_RETRY_SLEEP_MS_CONF =
+      "recordservice.worker.retry.sleepMs";
 
-  // Optional configuration for timeout on the worker service socket.
-  public final static String TASK_SOCKET_TIMEOUT_MS_CONF =
-      "recordservice.task.socket.timeoutMs";
+  // Optional configuration for timeout when connecting to the worker service.
+  public final static String WORKER_CONNECTION_TIMEOUT_MS_CONF =
+      "recordservice.worker.connection.timeoutMs";
+
+  // Optional configuration for timeout for worker RPCs
+  public final static String WORKER_RPC_TIMEOUT_MS_CONF =
+      "recordservice.worker.rpc.timeoutMs";
 
   // Optional configuration to enable server logging (logging level from log4j)
-  public final static String TASK_ENABLE_SERVER_LOGGING_CONF =
-      "recordservice.task.server.enableLogging";
+  public final static String WORKER_ENABLE_SERVER_LOGGING_CONF =
+      "recordservice.worker.server.enableLogging";
 
   /**
    * Sets the input configuration to read 'cols' from 'db.tbl'. If the tbl is fully

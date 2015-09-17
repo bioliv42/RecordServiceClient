@@ -270,7 +270,8 @@ public class TestBasicClient extends TestBase {
     boolean exceptionThrown = false;
     try {
       new RecordServicePlannerClient.Builder()
-          .setMaxAttempts(1).setSleepDurationMs(0).setTimeoutMs(1)
+          .setMaxAttempts(1).setSleepDurationMs(0)
+          .setRpcTimeoutMs(1)
           .planRequest(PLANNER_HOST, PLANNER_PORT,
               Request.createTableScanRequest("tpch.nation"));
     } catch (IOException e) {
@@ -283,7 +284,7 @@ public class TestBasicClient extends TestBase {
     exceptionThrown = false;
     try {
       new RecordServicePlannerClient.Builder()
-          .setMaxAttempts(1).setSleepDurationMs(0).setTimeoutMs(1)
+          .setMaxAttempts(1).setSleepDurationMs(0).setRpcTimeoutMs(1)
           .getSchema(PLANNER_HOST, PLANNER_PORT,
               Request.createTableScanRequest("tpch.nation"));
     } catch (IOException e) {
@@ -305,7 +306,7 @@ public class TestBasicClient extends TestBase {
 
     try {
       RecordServiceWorkerClient worker = new RecordServiceWorkerClient.Builder()
-          .setMaxAttempts(1).setSleepDurationMs(0).setTimeoutMs(1)
+          .setMaxAttempts(1).setSleepDurationMs(0).setRpcTimeoutMs(1)
           .connect(PLANNER_HOST, DEFAULT_WORKER_PORT);
       worker.execAndFetch(task);
       worker.close();
@@ -797,7 +798,7 @@ public class TestBasicClient extends TestBase {
     boolean exceptionThrown = false;
     try {
       new RecordServicePlannerClient.Builder()
-          .setTimeoutMs(2).setMaxAttempts(1)
+          .setRpcTimeoutMs(2).setMaxAttempts(1)
           .planRequest(PLANNER_HOST, PLANNER_PORT,
               Request.createPathRequest("/test-warehouse/tpch.nation/"));
     } catch (IOException e) {
@@ -809,7 +810,7 @@ public class TestBasicClient extends TestBase {
     exceptionThrown = false;
     try {
       new RecordServicePlannerClient.Builder()
-          .setTimeoutMs(2).setMaxAttempts(1)
+          .setRpcTimeoutMs(2).setMaxAttempts(1)
           .planRequest(PLANNER_HOST, PLANNER_PORT,
               Request.createPathRequest(
                   "/test-warehouse/tpch_nation_parquet/nation.parq"));

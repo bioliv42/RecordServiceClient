@@ -191,8 +191,10 @@ public class PlanUtil {
             RecordServiceConfig.DEFAULT_PLANNER_HOSTPORTS));
     String kerberosPrincipal =
         jobConf.get(RecordServiceConfig.KERBEROS_PRINCIPAL_CONF);
-    int timeoutMs =
-        jobConf.getInt(RecordServiceConfig.PLANNER_SOCKET_TIMEOUT_MS_CONF, -1);
+    int connectionTimeoutMs =
+        jobConf.getInt(RecordServiceConfig.PLANNER_CONNECTION_TIMEOUT_MS_CONF, -1);
+    int rpcTimeoutMs =
+            jobConf.getInt(RecordServiceConfig.PLANNER_RPC_TIMEOUT_MS_CONF, -1);
     int maxAttempts =
         jobConf.getInt(RecordServiceConfig.PLANNER_RETRY_ATTEMPTS_CONF, -1);
     int sleepDurationMs =
@@ -202,7 +204,8 @@ public class PlanUtil {
     RecordServicePlannerClient.Builder builder =
         new RecordServicePlannerClient.Builder();
 
-    if (timeoutMs != -1) builder.setTimeoutMs(timeoutMs);
+    if (connectionTimeoutMs != -1) builder.setConnectionTimeoutMs(connectionTimeoutMs);
+    if (rpcTimeoutMs != -1) builder.setRpcTimeoutMs(rpcTimeoutMs);
     if (maxAttempts != -1) builder.setMaxAttempts(maxAttempts);
     if (sleepDurationMs != -1) builder.setSleepDurationMs(sleepDurationMs);
     if (maxTasks != -1) builder.setMaxTasks(maxTasks);
@@ -220,7 +223,7 @@ public class PlanUtil {
             TokenUtils.fromTDelegationToken(planner.getDelegationToken(""));
         credentials.addToken(DelegationTokenIdentifier.DELEGATION_KIND, delegationToken);
       }
-    } catch (Exception e) {
+    } catch (RecordServiceException e) {
       throw new IOException(e);
     } finally {
       if (planner != null) planner.close();

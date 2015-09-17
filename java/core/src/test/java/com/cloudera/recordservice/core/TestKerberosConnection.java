@@ -354,7 +354,7 @@ public class TestKerberosConnection extends TestBase {
     try {
       new RecordServicePlannerClient.Builder()
           .setKerberosPrincipal(PRINCIPAL)
-          .setTimeoutMs(1000)
+          .setConnectionTimeoutMs(1000)
           .connect(PLANNER_HOST, PLANNER_PORT);
     } catch (IOException e) {
       assertTrue(e.getMessage(), e.getMessage().contains(
@@ -368,7 +368,7 @@ public class TestKerberosConnection extends TestBase {
     try {
       new RecordServiceWorkerClient.Builder()
           .setKerberosPrincipal(PRINCIPAL)
-          .setTimeoutMs(1000)
+          .setConnectionTimeoutMs(1000)
           .connect(PLANNER_HOST, DEFAULT_WORKER_PORT);
     } catch (IOException e) {
       assertTrue(e.getMessage().contains(

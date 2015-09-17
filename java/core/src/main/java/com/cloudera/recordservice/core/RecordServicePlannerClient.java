@@ -56,8 +56,15 @@ public class RecordServicePlannerClient implements Closeable {
   // Duration to sleep between retry attempts.
   private int retrySleepMs_ = 5000;
 
-  // Millisecond timeout for TSocket, 0 means infinite timeout.
-  private int timeoutMs_ = 60000;
+  // Millisecond timeout when establishing the connection to the server.
+  private int connectionTimeoutMs_ = 5000;
+
+  // Millisecond timeout for TSocket for each RPC to the server,
+  // 0 means infinite timeout.
+  // This is much longer than connectionTimeoutMs_ typically as the server
+  // could be just busy handling the request (e.g. loading metadata for the
+  // plan request).
+  private int rpcTimeoutMs_ = 120000;
 
   // Maximum number of tasks we'd like the planner service to generate per PlanRequest.
   // -1 indicates to use the server default.
@@ -109,13 +116,24 @@ public class RecordServicePlannerClient implements Closeable {
       return this;
     }
 
-    public Builder setTimeoutMs(int timeoutMs) {
+    public Builder setConnectionTimeoutMs(int timeoutMs) {
       if (timeoutMs < 0) {
         throw new IllegalArgumentException(
             "Timeout must not be less than 0. Timeout=" + timeoutMs);
       }
-      LOG.debug("Setting timeoutMs to " + timeoutMs);
-      client_.timeoutMs_ = timeoutMs;
+      LOG.debug("Setting connection timeout to " + timeoutMs + "ms");
+      client_.connectionTimeoutMs_ = timeoutMs;
+      return this;
+    }
+
+
+    public Builder setRpcTimeoutMs(int timeoutMs) {
+      if (timeoutMs < 0) {
+        throw new IllegalArgumentException(
+            "Timeout must not be less than 0. Timeout=" + timeoutMs);
+      }
+      LOG.debug("Setting RPC timeout to " + timeoutMs + "ms");
+      client_.rpcTimeoutMs_ = timeoutMs;
       return this;
     }
 
@@ -184,12 +202,16 @@ public class RecordServicePlannerClient implements Closeable {
             hostname, port, i + 1, maxAttempts);
       }
       TTransport transport = ThriftUtils.createTransport("RecordServicePlanner",
-          hostname, port, kerberosPrincipal_, delegationToken_, timeoutMs_);
+          hostname, port, kerberosPrincipal_, delegationToken_, connectionTimeoutMs_);
       protocol_ = new TBinaryProtocol(transport);
       plannerClient_ = new RecordServicePlanner.Client(protocol_);
       try {
         protocolVersion_ = ThriftUtils.fromThrift(plannerClient_.GetProtocolVersion());
         LOG.debug("Connected to RecordServicePlanner with version: " + protocolVersion_);
+        // Now that we've connected, set a larger timeout as RPCs that do work can take
+        // much longer.
+        Preconditions.checkState(transport instanceof TSocket);
+        ((TSocket)transport).setTimeout(rpcTimeoutMs_);
         return;
       } catch (TRecordServiceException e) {
         // For 'GetProtocolVersion' call, the server side will first establish
@@ -269,7 +291,8 @@ public class RecordServicePlannerClient implements Closeable {
           connected = waitAndReconnect();
           if (!connected) continue;
         }
-        LOG.info("Planning request: {} with attempt {}/{}", request, i + 1, maxAttempts_);
+        LOG.info("Planning request: {} with attempt {}/{}. timeout= {}ms",
+            request, i + 1, maxAttempts_, rpcTimeoutMs_);
         TPlanRequestParams planParams = request.request_;
         planParams.client_version = TProtocolVersion.V1;
         planParams.setUser(USER);

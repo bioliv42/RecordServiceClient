@@ -23,6 +23,7 @@ import java.util.Map;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TProtocol;
+import org.apache.thrift.transport.TSocket;
 import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
@@ -70,12 +71,14 @@ public class RecordServiceWorkerClient implements Closeable {
   // Duration to sleep between retry attempts.
   private int retrySleepMs_ = 5000;
 
-  // Millisecond timeout for TSocket, 0 means infinite timeout.
-  // TODO: revisit this timeout. A request could take arbitrary time if it has
-  // very selective filters. For example, if all records are filtered out, fetch
-  // will wait until all the data is read. It might make more sense to have the
-  // server return empty result sets in this case to "keep the connection alive".
-  private int timeoutMs_ = 60000;
+  // Millisecond timeout when establishing the connection to the server.
+  private int connectionTimeoutMs_ = 5000;
+
+  // Millisecond timeout for TSocket for each RPC to the server, 0 means infinite
+  // timeout.
+  // This is much longer than connectionTimeoutMs_ typically as the server could be
+  // just busy handling the request (e.g. evaluating expensive predicates).
+  private int rpcTimeoutMs_ = 120000;
 
   // Server side logging level. null indicates to use server default.
   private LoggingLevel loggingLevel_ = null;
@@ -102,6 +105,8 @@ public class RecordServiceWorkerClient implements Closeable {
 
   /**
    * Builder to create worker client with various configs.
+   * TODO: this has a tone of duplication with RecordServicePlannerClient.Builder().
+   * Fix this.
    */
   public final static class Builder {
     RecordServiceWorkerClient client_ = new RecordServiceWorkerClient();
@@ -170,13 +175,24 @@ public class RecordServiceWorkerClient implements Closeable {
       return this;
     }
 
-    public Builder setTimeoutMs(int timeoutMs) {
+    public Builder setConnectionTimeoutMs(int timeoutMs) {
       if (timeoutMs < 0) {
         throw new IllegalArgumentException(
-          "Timeout must not be less than 0. Timeout=" + timeoutMs);
+            "Timeout must not be less than 0. Timeout=" + timeoutMs);
       }
-      LOG.debug("Setting timeoutMs to " + timeoutMs);
-      client_.timeoutMs_ = timeoutMs;
+      LOG.debug("Setting connection timeout to " + timeoutMs + "ms");
+      client_.connectionTimeoutMs_ = timeoutMs;
+      return this;
+    }
+
+
+    public Builder setRpcTimeoutMs(int timeoutMs) {
+      if (timeoutMs < 0) {
+        throw new IllegalArgumentException(
+            "Timeout must not be less than 0. Timeout=" + timeoutMs);
+      }
+      LOG.debug("Setting RPC timeout to " + timeoutMs + "ms");
+      client_.rpcTimeoutMs_ = timeoutMs;
       return this;
     }
 
@@ -408,12 +424,16 @@ public class RecordServiceWorkerClient implements Closeable {
             hostname, port, i + 1,  maxAttempts_);
       }
       TTransport transport = ThriftUtils.createTransport("RecordServiceWorker",
-          hostname, port, kerberosPrincipal_, delegationToken_, timeoutMs_);
+          hostname, port, kerberosPrincipal_, delegationToken_, connectionTimeoutMs_);
       protocol_ = new TBinaryProtocol(transport);
       workerClient_ = new RecordServiceWorker.Client(protocol_);
       try {
         protocolVersion_ = ThriftUtils.fromThrift(workerClient_.GetProtocolVersion());
         LOG.debug("Connected to RecordServiceWorker with version: " + protocolVersion_);
+        // Now that we've connected, set a larger timeout as RPCs that do work can take
+        // much longer.
+        Preconditions.checkState(transport instanceof TSocket);
+        ((TSocket)transport).setTimeout(rpcTimeoutMs_);
         return;
       } catch (TRecordServiceException e) {
         // For 'GetProtocolVersion' call, the server side will first establish
@@ -500,12 +520,17 @@ public class RecordServiceWorkerClient implements Closeable {
   /**
    * Sleeps for retrySleepMs_ and reconnects to the worker. Returns
    * true if the connection was established.
+   * TODO: why does this behave so differently than the Planner implementation.
    */
   private boolean waitAndReconnect() {
     sleepForRetry();
     try {
       protocol_.getTransport().open();
+      Preconditions.checkState(protocol_.getTransport() instanceof TSocket);
+      TSocket socket = (TSocket)protocol_.getTransport();
+      socket.setTimeout(connectionTimeoutMs_);
       workerClient_ = new RecordServiceWorker.Client(protocol_);
+      socket.setTimeout(rpcTimeoutMs_);
       return true;
     } catch (TTransportException e) {
       return false;
