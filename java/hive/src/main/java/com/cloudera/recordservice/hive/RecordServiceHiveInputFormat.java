@@ -316,12 +316,11 @@ public class RecordServiceHiveInputFormat<K extends WritableComparable,
 
     // Pass the RecordService as the target InputFormat (this will override
     // the actual input format).
-    String inputFormatClassName = null;
-    Class cl = null;
+    String inputFormatClassName = RecordServiceInputFormat.class.getName();
+    Class cl;
     try {
-      inputFormatClassName = RecordServiceInputFormat.class.getName();
       cl = job.getClassByName(inputFormatClassName);
-    } catch (Exception e) {
+    } catch (ClassNotFoundException e) {
       throw new IOException("cannot find class " + inputFormatClassName, e);
     }
     HiveRecordReaderShim<K,V> rr = new HiveRecordReaderShim<K, V>(rsRr, job);

@@ -445,8 +445,13 @@ public class RecordServicePlannerClient implements Closeable {
         plannerClient_ = new RecordServicePlanner.Client(protocol_);
       }
       return true;
-    } catch (Exception e) {
-      // TRecordServiceException | TTransportException | IOException e
+    } catch (RecordServiceException e) {
+      LOG.warn("Failed to reconnect: ", e);
+      return false;
+    } catch (TTransportException e) {
+      LOG.warn("Failed to reconnect: ", e);
+      return false;
+    } catch (IOException e) {
       LOG.warn("Failed to reconnect: ", e);
       return false;
     }

@@ -61,7 +61,7 @@ public class TestFaultTolerance extends TestBase {
     boolean exceptionThrown = false;
     try {
       planner.planRequest(Request.createTableScanRequest("tpch.nation"));
-    } catch (Exception e) {
+    } catch (RecordServiceException e) {
       exceptionThrown = true;
     }
     assertFalse(exceptionThrown);
@@ -70,7 +70,7 @@ public class TestFaultTolerance extends TestBase {
     exceptionThrown = false;
     try {
       planner.getSchema(Request.createTableScanRequest("tpch.nation"));
-    } catch (Exception e) {
+    } catch (RecordServiceException e) {
       exceptionThrown = true;
     }
     assertFalse(exceptionThrown);

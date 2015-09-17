@@ -157,12 +157,8 @@ public class RecordServiceRecord implements Writable {
     schema_.readFields(in);
     columnValObjects_ = new Writable[schema_.getNumColumns()];
     for (int i = 0; i < columnValObjects_.length; i++) {
-      try {
-        columnValObjects_[i] = getWritableInstance(schema_.getColumnInfo(i).type.typeId);
-        columnValObjects_[i].readFields(in);
-      } catch (Exception e) {
-        throw new IOException(e);
-      }
+      columnValObjects_[i] = getWritableInstance(schema_.getColumnInfo(i).type.typeId);
+      columnValObjects_[i].readFields(in);
     }
   }
 

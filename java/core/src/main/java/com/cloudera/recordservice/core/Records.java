@@ -19,10 +19,10 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 
-import sun.misc.Unsafe;
-
 import com.cloudera.recordservice.core.Schema.Type;
 import com.cloudera.recordservice.util.Preconditions;
+
+import sun.misc.Unsafe;
 
 /**
  * Abstraction over records returned from the RecordService. This class is
@@ -36,7 +36,9 @@ public class Records implements Closeable {
       Field field = Unsafe.class.getDeclaredField("theUnsafe");
       field.setAccessible(true);
       unsafe = (Unsafe) field.get(null);
-    } catch (Exception e) {
+    } catch (NoSuchFieldException e) {
+      throw new RuntimeException(e);
+    } catch (IllegalAccessException e) {
       throw new RuntimeException(e);
     }
   }
