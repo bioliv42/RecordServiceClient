@@ -28,6 +28,10 @@ import com.cloudera.recordservice.core.NetworkAddress;
  * Config keys and values for the RecordService and utilities to set them.
  */
 public class RecordServiceConfig {
+  static {
+    Configuration.addDefaultResource("recordservice-site.xml");
+  }
+
   // The query to generate records from.
   public final static String QUERY_NAME_CONF = "recordservice.query";
 
