@@ -19,6 +19,8 @@ This repo contains Spark examples of applications built using RecordService clie
 - `DataFrameExample`: a simple example demonstrate how to use DataFrame with RecordService by
   setting the data source.
 
+- `RecordCount`: a simple Spark app that is similar to the MapReduce version of `RecordCount`.
+
 
 ## How to use RecordService with Spark shell
 
@@ -30,7 +32,7 @@ spark-shell --jars /path/to/recordservice-spark.jar
 ```
 
 Then follow the examples to use Spark shell with RecordService in different ways.
-F clarity most of the log outputs are omitted from the output, also the output may
+For clarity most of the log outputs are omitted from the output, also the output may
 vary depending on your environment, Spark version, etc.
 
 - Example on using `RecordServiceRDD`

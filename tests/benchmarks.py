@@ -54,6 +54,19 @@ def mr_record_count(query, outpath):
       "com.cloudera.recordservice.examples.mapreduce.RecordCount " +\
       "\"" + query + "\"" + " \"" + outpath + "\""
 
+def spark_record_count(query):
+  return "spark-submit " +\
+    "--class com.cloudera.recordservice.examples.spark.RecordCount " +\
+    "--master yarn-client " +\
+    "--num-executors 16 " +\
+    "--executor-memory 28g " +\
+    "--executor-cores 6 " +\
+    "--driver-memory 20g " +\
+    "--conf \"spark.driver.maxResultSize=15g\" " +\
+    os.environ['RECORD_SERVICE_HOME'] +\
+    "/java/examples-spark/target/recordservice-examples-spark-0.1.jar " +\
+    "\"" + query + "\""
+
 def hive_rs_cmd(query, tbl_name, fetch_size):
   # Builds a query string that will run using the RecordService
   rs_query = """
@@ -189,6 +202,7 @@ benchmarks = [
       ["impala-rs", impala_on_rs_cmd(
           "set num_scanner_threads=32;" +
           "select count(ss_item_sk) from tpcds500gb_parquet.store_sales")],
+      ["spark", spark_record_count("select ss_item_sk from tpcds500gb_parquet.store_sales")],
       ["mr", mr_record_count("select ss_item_sk from tpcds500gb_parquet.store_sales",
                              "/tmp/jenkins/recordcount_output")],
     ]
