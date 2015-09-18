@@ -20,40 +20,53 @@
 set -u
 set -e
 
-# Kill the cluster to run the external cluster tests.
+
+export RECORD_SERVICE_QUICKSTART_VM="${RECORD_SERVICE_QUICKSTART_VM:-"False"}"
+
 cd $IMPALA_HOME
-bin/start-impala-cluster.py --kill
 source bin/set-classpath.sh
 
-cd $RECORD_SERVICE_HOME
-echo "Running mini cluster tests."
-export RUN_MINI_CLUSTER_TESTS=true
-make test
-
-echo "Running non-mini cluster tests."
-
-# Start up a recordserviced and run the client tests. Note that at this point
-# there is no impala cluster running
-cd $IMPALA_HOME
-bin/start-impala-cluster.py -s 1 --catalogd_args="-load_catalog_in_background=false"
-# TODO: update bin/start-impala-cluster.py
-killall -9 impalad
-killall -9 statestored
-killall -9 catalogd
+if [ $RECORD_SERVICE_QUICKSTART_VM != "True" ] && [ $RECORD_SERVICE_QUICKSTART_VM != "true" ] ; then
+  bin/start-impala-cluster.py --kill
+fi
 
 cd $RECORD_SERVICE_HOME
-unset RUN_MINI_CLUSTER_TESTS
-make test
+
+if [ $RECORD_SERVICE_QUICKSTART_VM != "True" ] && [ $RECORD_SERVICE_QUICKSTART_VM != "true" ] ; then
+
+  echo "Running mini cluster tests."
+  export RUN_MINI_CLUSTER_TESTS=true
+  make test
+
+  echo "Running non-mini cluster tests."
+
+  # Start up a recordserviced and run the client tests. Note that at this point
+  # there is no impala cluster running
+  cd $IMPALA_HOME
+  bin/start-impala-cluster.py -s 1 --catalogd_args="-load_catalog_in_background=false"
+  # TODO: update bin/start-impala-cluster.py
+  killall -9 impalad
+  killall -9 statestored
+  killall -9 catalogd
+
+  cd $RECORD_SERVICE_HOME
+  unset RUN_MINI_CLUSTER_TESTS
+  make test
+fi
+
 mvn clean package -f $RECORD_SERVICE_HOME/java/pom.xml
 
-# Start up the cluster for the tests that need an Impala cluster already running.
-cd $IMPALA_HOME
-bin/start-impala-cluster.py -s 1 --catalogd_args="-load_catalog_in_background=false"
+if [ $RECORD_SERVICE_QUICKSTART_VM != "True" ] && [ $RECORD_SERVICE_QUICKSTART_VM != "true" ] ; then
 
-# Run Hive SerDe test
-cd $IMPALA_HOME/fe
-mvn -Dtest=HiveSerDeExecutorTest test
+  # Start up the cluster for the tests that need an Impala cluster already running.
+  cd $IMPALA_HOME
+  bin/start-impala-cluster.py -s 1 --catalogd_args="-load_catalog_in_background=false"
 
-cd $IMPALA_HOME/tests
-./run-tests.py query_test/test_hive_serde.py
-./run-tests.py query_test/test_recordservice.py
+  # Run Hive SerDe test
+  cd $IMPALA_HOME/fe
+  mvn -Dtest=HiveSerDeExecutorTest test
+
+  cd $IMPALA_HOME/tests
+  ./run-tests.py query_test/test_hive_serde.py
+  ./run-tests.py query_test/test_recordservice.py
+fi
