@@ -25,7 +25,7 @@ class SparkSqlTest extends FunSuite with SharedSparkSQLContext {
         |CREATE TEMPORARY TABLE nationTbl
         |USING com.cloudera.recordservice.spark.DefaultSource
         |OPTIONS (
-        |  record_service_table 'tpch.nation'
+        |  RecordServiceTable 'tpch.nation'
         |)
       """.stripMargin)
 
@@ -52,7 +52,7 @@ class SparkSqlTest extends FunSuite with SharedSparkSQLContext {
       |CREATE TEMPORARY TABLE nationTbl
       |USING com.cloudera.recordservice.spark.DefaultSource
       |OPTIONS (
-      |  record_service_table 'tpch.nation'
+      |  RecordServiceTable 'tpch.nation'
       |)
     """.stripMargin)
 

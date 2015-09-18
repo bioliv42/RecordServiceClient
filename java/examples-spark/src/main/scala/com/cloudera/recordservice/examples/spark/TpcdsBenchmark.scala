@@ -41,8 +41,8 @@ object TpcdsBenchmark {
          |CREATE TEMPORARY TABLE $tbl
          |USING com.cloudera.recordservice.spark.DefaultSource
          |OPTIONS (
-         |  record_service_table '$db.$tbl',
-         |  record_service_table_size '$size'
+         |  RecordServiceTable '$db.$tbl',
+         |  RecordServiceTableSize '$size'
          |)
        """.stripMargin)
   }

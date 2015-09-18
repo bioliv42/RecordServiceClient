@@ -37,7 +37,7 @@ import org.apache.spark.{Logging, SparkException}
         |CREATE TEMPORARY TABLE nationTbl
         |USING com.cloudera.recordservice.spark.DefaultSource
         |OPTIONS (
-        |  record_service_table 'tpch.nation'
+        |  RecordServiceTable 'tpch.nation'
         |)
       """.stripMargin)
  * sc.sql("select * from nationTbl")
@@ -244,21 +244,21 @@ case class RecordServiceRelation(table:String, size:Option[Long])(
 }
 
 class DefaultSource extends RelationProvider {
-  val TABLE_KEY:String = "record_service_table"
-  val TABLE_SIZE_KEY:String = "record_service_table_size"
+  val TABLE_KEY:String = "RecordServiceTable"
+  val TABLE_SIZE_KEY:String = "RecordServiceTableSize"
 
   override def createRelation(
       sqlContext: SQLContext, parameters: Map[String, String]): BaseRelation = {
-    // TODO: we currently just map record_service_table and path to the same thing.
+    // TODO: we currently just map RecordServiceTable and path to the same thing.
     // A lot of the nice machinery in sparkSQL uses 'path'.
     // TODO: support path correctly (the actual path).
     var table = parameters.get(TABLE_KEY)
     val path = parameters.get("path")
     if (table.isEmpty && path.isEmpty) {
-      throw new SparkException("Must specify 'record_service_table' or 'path'")
+      throw new SparkException("Must specify 'RecordServiceTable' or 'path'")
     }
     if (table.isDefined && path.isDefined) {
-      throw new SparkException("Cannot specify both 'record_service_table' and 'path'")
+      throw new SparkException("Cannot specify both 'RecordServiceTable' and 'path'")
     }
 
     val sizeVal = parameters.get(TABLE_SIZE_KEY)
