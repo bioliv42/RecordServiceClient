@@ -1,69 +1,70 @@
 Copyright (c) 2015, Cloudera, inc.
 
-This repro contains the service API and the client integration.
+## Overview
+RecordService is new service provides a common API for frameworks such as MR and Spark to read data from Hadoop storage managers and return them as canonical records. This eliminates the need for applications and Hadoop components to support individual file formats, handle data security, perform auditing, implement sophisticated IO scheduling and other common processing that is at the bottom of any computation. 
 
-## Building
-Prereqs:
-- Thrift. The thrift compiler needs to be on the path. Any 0.9.* version will work.
+This repo contains the RecordService service definition, the client libraries to use the RecordService, tests and some automation scripts.
 
-To build this repo the first time:
+## Getting Started
+### Prereqs
+We require a thrift 0.9+ compiler and java 7.
 
-    source $RECORD_SERVICE_HOME/config.sh
+Increase your maven heap size:
+
+    export MAVEN_OPTS="-Xmx2g -XX:MaxPermSize=512M -XX:ReservedCodeCacheSize=512m"
+
+On Ubuntu:
+
+    TODO
+
+On OSX:
+
+    brew install thrift
+
+### Setup
+After cloning the repo for the first time you will need to run:
+
+    cd <Project root directory>
+    source ./config.sh
     thirdparty/download_thirdparty.sh
     thirdparty/build_thirdparty.sh
-    cd $RECORD_SERVICE_HOME
+
+### Building the client repo
+
+    cd <Project root directory>
+    source ./config.sh
     cmake .
     make
     cd $RECORD_SERVICE_HOME/java
     mvn package -DskipTests
 
-The thirdparty steps only need to be done once initially.
+This will build all the client artifacts and tests. Note that on OSX, the c++ client libraries are currently not supported and not built.
 
-On OSX:
-The above steps will work but the C++ artifacts will not be built.
+### Running the tests
+The tests require a running RecordService server running with the test data loaded. If this server already exists, you can direct the tests to that server by setting RECORD_SERVICE_PLANNER_HOST in your environment. This defaults to localhost if not set.
 
-## Repo structure:
-- api/: Thrift file(s) containing the RecordService API definition
-- cpp/: cpp sample and client code
-- java/: java sample and client code
-- tests/: Scripts to load test data, run tests and run benchmarks.
-- jenkins/: Scripts intended to be run from jenkins builds.
+    export RECORD_SERVICE_PLANNER_HOST=<>
+    cd $RECORD_SERVICE_HOME/java
+    mvn test
 
+This will run all of the java client tests.
 
-## Running tests.
-To run the tests against a running server with the data loaded, you can do:
-export RECORD_SERVICE_PLANNER_HOST=<server name>
-cd java
-mvn package
+### Setting up eclipse
+The client is a mvn project and can be simply imported from eclipse. If running against a remote server, be sure to set RECORD_SERVICE_PLANNER_HOST before starting up eclipse. 
 
+On OSX this can be done by opening a terminal and doing
 
-To run the server:
-After this step, you will want to build the daemons which are based on the Impala repo.
+     export RECORD_SERVICE_PLANNER_HOST=<>
+     open -a Eclipse
 
-Follow the Impala instructions there. The scripts below generally require 
-RECORD_SERVICE_HOME and IMPALA_HOME to be set.
+### First steps
+The repo comes with a few samples that demonstrate how to use the RecordService client APIs, as well as examples of how to integrate with MapReduce and Spark. The examples can be found in
+* java/examples
+* java/examples-spark
 
-First start up the local CDH cluster. This is done with
-
-    $IMPALA_HOME/testdata/bin/run-all.sh
-
-If you've never started HDFS before, you will need to pass -format to run-all.sh.
-
-Then,
-Loading the test tables:
-
-    $RECORD_SERVICE_HOME/tests/load-test-data.sh
-
-Running the tests:
-
-    $RECORD_SERVICE_HOME/tests/run-all-tests.sh
-
-## Running the cluster
-The above scripts run the services that the record service needs. To start without
-the script, run
-
-    $IMPALA_HOME/bin/start-impala-cluster.py -s 1
-
-which will start catalogd, statestored and impalad (which implements the
-RecordService APIs).
-
+### Repo structure
+* api/: Thrift file(s) containing the RecordService API definition
+* cpp/: cpp sample and client code
+* java/: java sample and client code
+* tests/: Scripts to load test data, run tests and run benchmarks.
+* jenkins/: Scripts intended to be run from jenkins builds.
