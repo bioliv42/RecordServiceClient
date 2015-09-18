@@ -72,7 +72,7 @@ public class RecordServiceWorkerClient implements Closeable {
   private int retrySleepMs_ = 5000;
 
   // Millisecond timeout when establishing the connection to the server.
-  private int connectionTimeoutMs_ = 5000;
+  private int connectionTimeoutMs_ = 10000;
 
   // Millisecond timeout for TSocket for each RPC to the server, 0 means infinite
   // timeout.
@@ -432,8 +432,7 @@ public class RecordServiceWorkerClient implements Closeable {
         LOG.debug("Connected to RecordServiceWorker with version: " + protocolVersion_);
         // Now that we've connected, set a larger timeout as RPCs that do work can take
         // much longer.
-        Preconditions.checkState(transport instanceof TSocket);
-        ((TSocket)transport).setTimeout(rpcTimeoutMs_);
+        ThriftUtils.getSocketTransport(transport).setTimeout(rpcTimeoutMs_);
         return;
       } catch (TRecordServiceException e) {
         // For 'GetProtocolVersion' call, the server side will first establish
@@ -526,8 +525,7 @@ public class RecordServiceWorkerClient implements Closeable {
     sleepForRetry();
     try {
       protocol_.getTransport().open();
-      Preconditions.checkState(protocol_.getTransport() instanceof TSocket);
-      TSocket socket = (TSocket)protocol_.getTransport();
+      TSocket socket = ThriftUtils.getSocketTransport(protocol_.getTransport());
       socket.setTimeout(connectionTimeoutMs_);
       workerClient_ = new RecordServiceWorker.Client(protocol_);
       socket.setTimeout(rpcTimeoutMs_);

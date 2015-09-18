@@ -172,6 +172,17 @@ public class ThriftUtils {
     return transport;
   }
 
+  /**
+   * Returns the socket transport backing transport.
+   */
+  static TSocket getSocketTransport(TTransport transport) {
+    if (transport instanceof TSaslClientTransport) {
+      transport = ((TSaslClientTransport)transport).getUnderlyingTransport();
+    }
+    Preconditions.checkState(transport instanceof TSocket);
+    return (TSocket)transport;
+  }
+
   static ProtocolVersion fromThrift(TProtocolVersion v) {
     switch (v) {
     case V1: return ProtocolVersion.V1;

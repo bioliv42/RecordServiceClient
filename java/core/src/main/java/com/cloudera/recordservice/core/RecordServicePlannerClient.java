@@ -21,7 +21,6 @@ import java.net.Socket;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TProtocol;
-import org.apache.thrift.transport.TSocket;
 import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
@@ -57,7 +56,7 @@ public class RecordServicePlannerClient implements Closeable {
   private int retrySleepMs_ = 5000;
 
   // Millisecond timeout when establishing the connection to the server.
-  private int connectionTimeoutMs_ = 5000;
+  private int connectionTimeoutMs_ = 30000;
 
   // Millisecond timeout for TSocket for each RPC to the server,
   // 0 means infinite timeout.
@@ -210,8 +209,7 @@ public class RecordServicePlannerClient implements Closeable {
         LOG.debug("Connected to RecordServicePlanner with version: " + protocolVersion_);
         // Now that we've connected, set a larger timeout as RPCs that do work can take
         // much longer.
-        Preconditions.checkState(transport instanceof TSocket);
-        ((TSocket)transport).setTimeout(rpcTimeoutMs_);
+        ThriftUtils.getSocketTransport(transport).setTimeout(rpcTimeoutMs_);
         return;
       } catch (TRecordServiceException e) {
         // For 'GetProtocolVersion' call, the server side will first establish
@@ -456,7 +454,8 @@ public class RecordServicePlannerClient implements Closeable {
   private boolean waitAndReconnect() {
     sleepForRetry();
     try {
-      Socket socket = ((TSocket) protocol_.getTransport()).getSocket();
+      Socket socket =
+          ThriftUtils.getSocketTransport(protocol_.getTransport()).getSocket();
       if (socket.isClosed()) {
         LOG.debug("Socket is closed, will reconnect to {}:{}",
             socket.getInetAddress().getHostAddress(), socket.getPort());

@@ -389,23 +389,27 @@ public class TestKerberosConnection extends TestBase {
         .connect(HOST, PLANNER_PORT);
     for (String hostToCancel: SECURE_CLUSTER) {
       DelegationToken token = planner.getDelegationToken("impala");
+      // Wait for the token to go through the cluster.
+      Thread.sleep(10000);
 
       // Try all the connections, they should all work.
       for (String host: SECURE_CLUSTER) {
         new RecordServicePlannerClient.Builder().setDelegationToken(token)
-            .setSleepDurationMs(30000)
+            .setConnectionTimeoutMs(60000)
             .connect(host, PLANNER_PORT).close();
         new RecordServiceWorkerClient.Builder().setDelegationToken(token)
-            .setSleepDurationMs(30000)
+            .setConnectionTimeoutMs(60000)
             .connect(host, DEFAULT_WORKER_PORT).close();
       }
 
       // Cancel the token.
       RecordServicePlannerClient client = new RecordServicePlannerClient.Builder()
           .setDelegationToken(token)
+          .setConnectionTimeoutMs(60000)
           .connect(hostToCancel, PLANNER_PORT);
       client.cancelDelegationToken(token);
       client.close();
+      Thread.sleep(10000);
 
       // Try all the connections, they should all fail now.
       for (String host: SECURE_CLUSTER) {
