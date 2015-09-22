@@ -71,10 +71,10 @@ case class RecordServiceRelation(table:String, size:Option[Long])(
     if (sleepDurationMs != -1) builder.setSleepDurationMs(sleepDurationMs);
     if (maxAttempts != -1) builder.setMaxTasks(maxTasks);
 
-    val planner = PlanUtil.getPlanner(builder,
-        RecordServiceConf.getPlannerHostPort(sqlContext.sparkContext),
-        RecordServiceConf.getKerberosPrincipal(sqlContext.sparkContext),
-        null)
+    val planner = PlanUtil.getPlanner(sqlContext.sparkContext.hadoopConfiguration,
+      builder, RecordServiceConf.getPlannerHostPort(sqlContext.sparkContext),
+      RecordServiceConf.getKerberosPrincipal(sqlContext.sparkContext),
+      null)
     try {
       convertSchema(planner.getSchema(Request.createTableScanRequest(table)).schema)
     } finally {
