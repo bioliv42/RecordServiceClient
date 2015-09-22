@@ -1,0 +1,144 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Record Service Client by cloudera</title>
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/github-dark.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script src="javascripts/respond.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <!--[if lt IE 8]>
+    <link rel="stylesheet" href="stylesheets/ie.css">
+    <![endif]-->
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
+  </head>
+  <body>
+      <div id="header">
+        <nav>
+          <li class="fork"><a href="https://github.com/cloudera/RecordServiceClient">View On GitHub</a></li>
+          <li class="downloads"><a href="https://github.com/cloudera/RecordServiceClient/zipball/master">ZIP</a></li>
+          <li class="downloads"><a href="https://github.com/cloudera/RecordServiceClient/tarball/master">TAR</a></li>
+          <li class="title">DOWNLOADS</li>
+        </nav>
+      </div><!-- end header -->
+
+    <div class="wrapper">
+
+      <section>
+        <div id="title">
+          <h1>Record Service Client</h1>
+          <p></p>
+          <hr>
+          <span class="credits left">Project maintained by <a href="https://github.com/cloudera">cloudera</a></span>
+          <span class="credits right">Hosted on GitHub Pages &mdash; Theme by <a href="https://twitter.com/michigangraham">mattgraham</a></span>
+        </div>
+
+        <h2>
+<a id="overview" class="anchor" href="#overview" aria-hidden="true"><span class="octicon octicon-link"></span></a>Overview</h2>
+
+<p>RecordService is new service provides a common API for frameworks such as MR and Spark to read data from Hadoop storage managers and return them as canonical records. This eliminates the need for applications and Hadoop components to support individual file formats, handle data security, perform auditing, implement sophisticated IO scheduling and other common processing that is at the bottom of any computation. </p>
+
+<p>This repo contains the RecordService service definition, the client libraries to use the RecordService, tests and some automation scripts.</p>
+
+<h2>
+<a id="getting-started" class="anchor" href="#getting-started" aria-hidden="true"><span class="octicon octicon-link"></span></a>Getting Started</h2>
+
+<h3>
+<a id="prereqs" class="anchor" href="#prereqs" aria-hidden="true"><span class="octicon octicon-link"></span></a>Prereqs</h3>
+
+<p>We require a thrift 0.9+ compiler and java 7.</p>
+
+<p>Increase your maven heap size:</p>
+
+<pre><code>export MAVEN_OPTS="-Xmx2g -XX:MaxPermSize=512M -XX:ReservedCodeCacheSize=512m"
+</code></pre>
+
+<p>On Ubuntu:</p>
+
+<pre><code>TODO
+</code></pre>
+
+<p>On OSX:</p>
+
+<pre><code>brew install thrift
+</code></pre>
+
+<h3>
+<a id="setup" class="anchor" href="#setup" aria-hidden="true"><span class="octicon octicon-link"></span></a>Setup</h3>
+
+<p>After cloning the repo for the first time you will need to run:</p>
+
+<pre><code>cd &lt;Project root directory&gt;
+source ./config.sh
+thirdparty/download_thirdparty.sh
+thirdparty/build_thirdparty.sh
+</code></pre>
+
+<h3>
+<a id="building-the-client-repo" class="anchor" href="#building-the-client-repo" aria-hidden="true"><span class="octicon octicon-link"></span></a>Building the client repo</h3>
+
+<pre><code>cd &lt;Project root directory&gt;
+source ./config.sh
+cmake .
+make
+cd $RECORD_SERVICE_HOME/java
+mvn package -DskipTests
+</code></pre>
+
+<p>This will build all the client artifacts and tests. Note that on OSX, the c++ client libraries are currently not supported and not built.</p>
+
+<h3>
+<a id="running-the-tests" class="anchor" href="#running-the-tests" aria-hidden="true"><span class="octicon octicon-link"></span></a>Running the tests</h3>
+
+<p>The tests require a running RecordService server running with the test data loaded. If this server already exists, you can direct the tests to that server by setting RECORD_SERVICE_PLANNER_HOST in your environment. This defaults to localhost if not set.</p>
+
+<pre><code>export RECORD_SERVICE_PLANNER_HOST=&lt;&gt;
+cd $RECORD_SERVICE_HOME/java
+mvn test
+</code></pre>
+
+<p>This will run all of the java client tests.</p>
+
+<h3>
+<a id="setting-up-eclipse" class="anchor" href="#setting-up-eclipse" aria-hidden="true"><span class="octicon octicon-link"></span></a>Setting up eclipse</h3>
+
+<p>The client is a mvn project and can be simply imported from eclipse. If running against a remote server, be sure to set RECORD_SERVICE_PLANNER_HOST before starting up eclipse. </p>
+
+<p>On OSX this can be done by opening a terminal and doing</p>
+
+<pre><code> export RECORD_SERVICE_PLANNER_HOST=&lt;&gt;
+ open -a Eclipse
+</code></pre>
+
+<h3>
+<a id="first-steps" class="anchor" href="#first-steps" aria-hidden="true"><span class="octicon octicon-link"></span></a>First steps</h3>
+
+<p>The repo comes with a few samples that demonstrate how to use the RecordService client APIs, as well as examples of how to integrate with MapReduce and Spark. The examples can be found in</p>
+
+<ul>
+<li>java/examples</li>
+<li>java/examples-spark</li>
+</ul>
+
+<h3>
+<a id="repo-structure" class="anchor" href="#repo-structure" aria-hidden="true"><span class="octicon octicon-link"></span></a>Repo structure</h3>
+
+<ul>
+<li>api/: Thrift file(s) containing the RecordService API definition</li>
+<li>cpp/: cpp sample and client code</li>
+<li>java/: java sample and client code</li>
+<li>tests/: Scripts to load test data, run tests and run benchmarks.</li>
+<li>jenkins/: Scripts intended to be run from jenkins builds.</li>
+</ul>
+      </section>
+
+    </div>
+    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+    
+  </body>
+</html>
