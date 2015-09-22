@@ -268,7 +268,8 @@ abstract class RecordServiceRDDBase[T:ClassTag](@transient sc: SparkContext)
       if (maxTasks != -1) builder.setMaxAttempts(maxAttempts);
       if (sleepDurationMs != -1) builder.setSleepDurationMs(sleepDurationMs);
       if (maxAttempts != -1) builder.setMaxTasks(maxTasks);
-      planner = PlanUtil.getPlanner(builder, plannerHostPorts, principal, null)
+      planner = PlanUtil.getPlanner(sc.hadoopConfiguration,
+        builder, plannerHostPorts, principal, null)
       val result = planner.planRequest(request)
       if (principal != null) {
         (result, planner.getDelegationToken(""))

@@ -15,9 +15,11 @@
 package com.cloudera.recordservice.mr;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.InputSplit;
@@ -134,10 +136,18 @@ public class PlanUtil {
    */
   @SuppressWarnings("unchecked")
   public static RecordServicePlannerClient getPlanner(
+      Configuration jobConf,
       RecordServicePlannerClient.Builder builder,
       List<NetworkAddress> plannerHostPorts,
       String kerberosPrincipal,
       Credentials credentials) throws IOException {
+
+    // If debug mode is enabled, dump all the configuration properties and their
+    // sources to the log.
+    if (LOG.isDebugEnabled()) {
+      LOG.debug(dumpConfiguration(jobConf, LOG.isTraceEnabled()));
+    }
+
     // Try to get the delegation token from the credentials. If it is there, use it.
     Token<DelegationTokenIdentifier> delegationToken = null;
     if (credentials != null) {
@@ -211,8 +221,8 @@ public class PlanUtil {
     if (maxTasks != -1) builder.setMaxTasks(maxTasks);
 
     PlanRequestResult result = null;
-    RecordServicePlannerClient planner = PlanUtil.getPlanner(builder, plannerHostPorts,
-        kerberosPrincipal, credentials);
+    RecordServicePlannerClient planner = PlanUtil.getPlanner(
+        jobConf, builder, plannerHostPorts, kerberosPrincipal, credentials);
 
     try {
       result = planner.planRequest(request);
@@ -239,5 +249,40 @@ public class PlanUtil {
     // Randomize the order of the splits to mitigate skew.
     Collections.shuffle(splits);
     return new SplitsInfo(splits, schema);
+  }
+
+  /**
+   * Return all configuration properties info (name, value, and source).
+   * This is useful for debugging.
+   * If `dumpAll` is false, only dump properties that start with 'recordservice'.
+   * Otherwise, it dumps all properties in the `conf`.
+   */
+  public static String dumpConfiguration(Configuration conf, boolean dumpAll) {
+    // TODO: how do we handle SparkConf and SQLConf? Seems like they didn't offer
+    // facility to track a property to its source.
+    StringBuilder sb = new StringBuilder();
+    sb.append('\n');
+    sb.append("=============== Begin of Configuration Properties Info ===============");
+    for (Map.Entry<String, String> e : conf) {
+      if (!dumpAll && !e.getKey().startsWith("recordservice")) continue;
+      String[] sources = conf.getPropertySources(e.getKey());
+      String source;
+      if (sources == null || sources.length == 0) {
+        source = "Not Found";
+      } else {
+        // Only get the newest source that this property comes from.
+        source = sources[sources.length - 1];
+        URL url = conf.getResource(source);
+        // If there's a URL with this resource, use that.
+        if (url != null) source = url.toString();
+      }
+      sb.append('\n');
+      sb.append(String.format(
+          "Property Name: %s\tValue: %s\tSource: %s",
+          e.getKey(), e.getValue(), source));
+    }
+    sb.append('\n');
+    sb.append("================ End of Configuration Properties Info ================");
+    return sb.toString();
   }
 }
