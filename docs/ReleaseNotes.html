@@ -4,13 +4,13 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>RecordService Overview</title>
+    <title>RecordService Beta Release Notes</title>
     <meta name="viewport" content="width=device-width">
     <meta name="description" content="An abstraction layer between storage managers (for example, HDFS, HBase, Kudu) and compute frameworks (for example, MapReduce, Spark, Hive).">
-    <link rel="canonical" href="http://github.mtv.cloudera.com/CDH/RecordServiceClient/docs//">
+    <link rel="canonical" href="http://github.mtv.cloudera.com/CDH/RecordServiceClient/docs/ReleaseNotes.html">
 
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="/docs//css/main.css">
+    <link rel="stylesheet" href="/docs/css/main.css">
     <link href='http://fonts.googleapis.com/css?family=Raleway:200,400,500,600,700' rel='stylesheet' type='text/css'>
     <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
 
@@ -23,7 +23,7 @@
 
   <div class="wrap">
 
-    <a class="site-title" href="/docs//"><img src="../img/rs.png" height="25%" width="25%" align="left"></a>
+    <a class="site-title" href="/docs/"><img src="img/rs.png" height="25%" width="25%" align="left"></a>
 <br/><br/>An abstraction layer between storage managers (for example, HDFS, HBase, Kudu) and compute frameworks (for example, MapReduce, Spark, Hive).
     <nav class="site-nav">
       <a href="#" class="menu-icon">
@@ -59,7 +59,7 @@
         <ul>
           
           
-          <li><b>Overview</b></li>
+          <li><a href="/docs/index.html">Overview</a></li>
           
           
         </ul>
@@ -73,19 +73,19 @@
         <ul>
           
           
-          <li><a href="/docs//ReleaseNotes.html">Beta Release Notes</a></li>
+          <li><a href="/docs/ReleaseNotes.html">Beta Release Notes</a></li>
           
           
           
-          <li><a href="/docs//install.html">Download RecordService</a></li>
+          <li><a href="/docs/install.html">Download RecordService</a></li>
           
           
           
-          <li><a href="/docs//configure.html">Configure RecordService</a></li>
+          <li><a href="/docs/configure.html">Configure RecordService</a></li>
           
           
           
-          <li><a href="/docs//vm.html">Download VM</a></li>
+          <li><a href="/docs/vm.html">Download VM</a></li>
           
           
         </ul>
@@ -99,11 +99,11 @@
         <ul>
           
           
-          <li><a href="/docs//appint.html">Application Integration</a></li>
+          <li><a href="/docs/appint.html">Application Integration</a></li>
           
           
           
-          <li><a href="/docs//examples.html">Run Examples</a></li>
+          <li><a href="/docs/examples.html">Run Examples</a></li>
           
           
         </ul>
@@ -117,7 +117,7 @@
         <ul>
           
           
-          <li><a href="/docs//faq.html">FAQ</a></li>
+          <li><a href="/docs/faq.html">FAQ</a></li>
           
           
         </ul>
@@ -129,49 +129,100 @@
       <div class="post">
 
   <header class="post-header">
-    <h1>RecordService Overview</h1>
+    <h1>RecordService Beta Release Notes</h1>
   </header>
 
   <article class="post-content">
   <p>RecordService provides an abstraction layer between compute frameworks and data storage. It provides row- and column-level security, and other advantages as well.</p>
 
-<h2 id="the-motivation">The Motivation</h2>
+<h2 id="platformhardware-support">Platform/Hardware Support</h2>
 
-<p>The Sentry community considered how to enforce a common set of column-level authorization permissions across Hadoop. Building Sentry support into each Hadoop component as well as various applications that interact with Hadoop would require massive effort and continual maintenance.</p>
+<p>RecordService supports the following software and hardware configurations:<br />
+* CDH 5.4<br />
+* Server support: RHEL5-7, Ubuntu LTS, SLES, Debian<br />
+* Intel Nehalem (or later) or AMD  Bulldozer (or later) processor<br />
+* 64GB memory<br />
+* For optimal performance, run with 12 or more disks, or use SSD.</p>
 
-<p>Instead, the community conceived the idea of a common API for accessing tabular data as <em>records</em> — a unified data access path that can be used by multiple Hadoop components and applications with minimal code changes.</p>
+<h2 id="storagefile-format-support">Storage/File Format Support</h2>
 
-<p><img src="img/unifiedDataAccessPath.png" alt="Unified Data Access Path" height="85%" width="85%" /></p>
+<p>RecordService supports reading HDFS or S3 of file format:<br />
+* Parquet<br />
+* Text<br />
+* Sequence File<br />
+* RC<br />
+* Avro</p>
 
-<h2 id="the-benefits">The Benefits</h2>
+<h2 id="data-type-support">Data Type Support</h2>
+<p>RecordService supports the following data types:<br />
+* INT (8-64 bits)<br />
+* CHAR/VARCHAR<br />
+* BOOL<br />
+* FLOAT<br />
+* DOUBLE<br />
+* DECIMAL<br />
+* STRING<br />
+* TIMESTAMP</p>
+
+<p>RecordService does not support the following data types:<br />
+* BLOB/CLOB<br />
+* Nested Types</p>
+
+<h2 id="known-issues">Known Issues</h2>
+
+<h3 id="digest-md5-library-not-installed-on-cluster-breaking-delegation-tokens">digest-md5 library not installed on cluster, breaking delegation tokens</h3>
+
+<p>The digest-md5 library is not installed by default.</p>
+
+<h4 id="workaround">Workaround</h4>
+<p>To install the library on RHEL6 use the following command line instruction:</p>
+
+<pre><code>sudo yum install cyrus-sasl-md5
+</code></pre>
+
+<h3 id="short-circuit-reads-not-enabled">Short circuit reads not enabled</h3>
+
+<h4 id="workaround-1">Workaround</h4>
+
+<p>In Cloudera Manager, open the HDFS configuration page and search for <em>shortcircuit</em>. There are two configurations named <strong>Enable HDFS Short Circuit Read</strong>. One defaults to <em>true</em> and one to <em>false</em>. Set both values to <em>true</em>.</p>
+
+<h3 id="path-requests-do-not-work-with-multiple-planners">Path requests do not work with multiple planners</h3>
+
+<p>The RecordService planner creates a temporary table. The name of the table collides between RecordService planners. On a single planner, it is properly protected by a lock. On the Hive Metastore Server, collisions are likely to occur.</p>
+
+<h4 id="workaround-2">Workaround</h4>
+
+<p>For the beta release, run only one instance of the RecordService planner.</p>
+
+<h2 id="limitations">Limitations</h2>
+
+<h3 id="security-limitations">Security Limitations</h3>
 
 <ul>
-  <li>RecordService provides fine-grained data permissions and enforcement across Hadoop.</li>
-  <li>Clients work independent of on-disk storage format.</li>
-  <li>The unified data access path provides a single place to implement and test file format-related changes.</li>
-  <li>Components swap transparently above or below RecordService.</li>
-  <li>Performance is boosted via Impala’s optimized scanner, dynamic code generation, and Parquet implementation.</li>
-  <li>Existing MapReduce and Spark jobs gain Impala-quality performance.</li>
-  <li>RecordService can make projections over original source datasets instead of making copies or subsets.</li>
+  <li>Only supports simple single-table views (no joins or aggregations).</li>
+  <li>SSL support has not been tested.</li>
+  <li>Oozie integration has not been tested.</li>
 </ul>
 
-<h2 id="the-design">The Design</h2>
-
-<p>RecordService provides the following services.</p>
+<h3 id="storagefile-format-limitations">Storage/File Format Limitations</h3>
 
 <ul>
-  <li>RecordServicePlanner — Generates tasks, performs authorization checks, handles metadata access. Called during input split generation. </li>
-  <li>RecordServiceWorker — Executes tasks, reads and writes to the storage layer.
-    <ul>
-      <li>Builds on Impala’s highly optimized I/O scheduler and file parsers.</li>
-      <li>Returns rows in a canonical format.</li>
-    </ul>
-  </li>
-  <li>Thrift APIs.</li>
-  <li>Client Integration Libraries — Allow easy migration to RecordService.</li>
+  <li>No support for write path.</li>
+  <li>Unable to read from Kudu or HBase.</li>
 </ul>
 
-<p><img src="img/RecordServiceArchitectureOverview.png" alt="Record Service Architecture Overview " height="85%" width="85%" /></p>
+<h3 id="operation-and-administration-limitations">Operation and Administration Limitations</h3>
+
+<ul>
+  <li>No diagnostic bundle support.</li>
+  <li>No metrics available in CM.</li>
+</ul>
+
+<h3 id="application-integration-limitations">Application Integration Limitations</h3>
+
+<ul>
+  <li>Spark DataFrame not well tested.</li>
+</ul>
 
 
   </article>
@@ -192,7 +243,7 @@
         <li>RecordService is licensed under</li>
         <li><a href="http://www.apache.org/licenses/LICENSE-2.0.html">The Apache License, Version 2.0</a></li>
         <li>&nbsp;</li>
-        <li>Generated on 22 September 2015</li>
+        <li>Generated on 23 September 2015</li>
       </ul>
 
     </div>
@@ -221,7 +272,7 @@
               <li><a href="/docs/apidocs/index.html"><i class="fa fa-file-text-o"></i>&nbsp; API Javadoc</a></li>
               <li><a href="/docs/jdiff/changes.html"><i class="fa fa-bolt fs-lg"></i>&nbsp; API Changes</a></li>
               -->
-              <li><a href="/docs//ReleaseNotes.html"><i class="fa fa-info fa-lg"></i>&nbsp; Release Notes</a></li>
+              <li><a href="/docs/ReleaseNotes.html"><i class="fa fa-info fa-lg"></i>&nbsp; Release Notes</a></li>
             </ul>
           </div>
         </div>

@@ -4,13 +4,13 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>Download and Install RecordService VM</title>
+    <title>RecordService Examples</title>
     <meta name="viewport" content="width=device-width">
     <meta name="description" content="An abstraction layer between storage managers (for example, HDFS, HBase, Kudu) and compute frameworks (for example, MapReduce, Spark, Hive).">
-    <link rel="canonical" href="http://github.mtv.cloudera.com/CDH/RecordServiceClient/docs//vm.html">
+    <link rel="canonical" href="http://github.mtv.cloudera.com/CDH/RecordServiceClient/docs/examples.html">
 
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="/docs//css/main.css">
+    <link rel="stylesheet" href="/docs/css/main.css">
     <link href='http://fonts.googleapis.com/css?family=Raleway:200,400,500,600,700' rel='stylesheet' type='text/css'>
     <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
 
@@ -23,7 +23,7 @@
 
   <div class="wrap">
 
-    <a class="site-title" href="/docs//"><img src="../img/rs.png" height="25%" width="25%" align="left"></a>
+    <a class="site-title" href="/docs/"><img src="img/rs.png" height="25%" width="25%" align="left"></a>
 <br/><br/>An abstraction layer between storage managers (for example, HDFS, HBase, Kudu) and compute frameworks (for example, MapReduce, Spark, Hive).
     <nav class="site-nav">
       <a href="#" class="menu-icon">
@@ -59,7 +59,7 @@
         <ul>
           
           
-          <li><a href="/docs//index.html">Overview</a></li>
+          <li><a href="/docs/index.html">Overview</a></li>
           
           
         </ul>
@@ -73,19 +73,19 @@
         <ul>
           
           
-          <li><a href="/docs//ReleaseNotes.html">Beta Release Notes</a></li>
+          <li><a href="/docs/ReleaseNotes.html">Beta Release Notes</a></li>
           
           
           
-          <li><a href="/docs//install.html">Download RecordService</a></li>
+          <li><a href="/docs/install.html">Download RecordService</a></li>
           
           
           
-          <li><a href="/docs//configure.html">Configure RecordService</a></li>
+          <li><a href="/docs/configure.html">Configure RecordService</a></li>
           
           
           
-          <li><a href="/docs//vm.html">Download VM</a></li>
+          <li><a href="/docs/vm.html">Download VM</a></li>
           
           
         </ul>
@@ -99,11 +99,11 @@
         <ul>
           
           
-          <li><a href="/docs//appint.html">Application Integration</a></li>
+          <li><a href="/docs/appint.html">Application Integration</a></li>
           
           
           
-          <li><a href="/docs//examples.html">Run Examples</a></li>
+          <li><a href="/docs/examples.html">Run Examples</a></li>
           
           
         </ul>
@@ -117,7 +117,7 @@
         <ul>
           
           
-          <li><a href="/docs//faq.html">FAQ</a></li>
+          <li><a href="/docs/faq.html">FAQ</a></li>
           
           
         </ul>
@@ -129,58 +129,66 @@
       <div class="post">
 
   <header class="post-header">
-    <h1>Download and Install RecordService VM</h1>
+    <h1>RecordService Examples</h1>
   </header>
 
   <article class="post-content">
-  <h2 id="download-recordservice-vm">Download RecordService VM</h2>
+  <h2 id="recordservice-examples">RecordService Examples</h2>
 
-<p>These are the steps to download the RecordService VM.</p>
+<p>You can find the source code for RecordService examples in the RecordService Client GitHub repository.</p>
 
-<ol>
-  <li>Install VirtualBox. The VM has been tested to work with VirtualBox version 4.3 on Ubuntu 14.04 and VirtualBox version 5 on OSX 10.9. Download VirtualBox for free at <a href="https://www.virtualbox.org/wiki/Downloads">https://www.virtualbox.org/wiki/Downloads</a>.</li>
-  <li>Download the VM from <strong>NEED CORRECT URL</strong>.	 </li>
-  <li>Untar/zip the bundle. It should contain two scripts, <code>install.sh</code> and <code>vmEnv.sh</code>.</li>
-</ol>
+<p><a href="https://github.com/cloudera/RecordServiceClient/tree/master/java/examples">https://github.com/cloudera/RecordServiceClient/tree/master/java/examples</a> </p>
 
-<h2 id="install-recordservice-vm">Install RecordService VM</h2>
-<p>These are the steps to install the RecordService VM.</p>
+<p>Instructions for running the examples are stored in the repository with the source code.</p>
 
-<ol>
-  <li>In a terminal window, run the script install.sh.<br /><br /><br />
-This script downloads an <code>ova</code> file and load it into VirtualBox. The script might ask you to enter a password because it edits your /etc/hosts file to give the vm a stable ip address, quickstart.cloudera. When the script completes, you  have a running virtual machine that functions as a RecordService server. To test that the VM is running and IP forwarding has been successfully configured, try ssh-ing to the machine with the command <code>ssh cloudera@quickstart.cloudera</code>. The password is <code>cloudera</code>. If you are unable to ssh to the VM, refer to  <a href="#troubleshooting-the-vm-configuration">Troubleshooting the VM Configuration</a>.</li>
-  <li>Navigate to the root of your RecordServiceClient repository, $RECORD_SERVICE_HOME.</li>
-  <li>Run <code>source config.sh</code>.</li>
-  <li>Run <code>source vm_env.sh</code>.<br />
-If your client code is compiled, your environment is not configured to run the tests on the VM. Use the following command line instructions to run all JUnit tests.</li>
-</ol>
+<h3 id="rscat">RSCat</h3>
 
-<pre><code>cd $RECORD_SERVICE_HOME/java`
-mvn test
-</code></pre>
+<p>This example shows how you can output tabular data for any dataset readable by RecordService. This example does not use any computation framework (MR/Spark). It demonstrates a standalone Java application built on the core libraries.</p>
 
-<h2 id="troubleshooting-the-vm-configuration">Troubleshooting the VM configuration</h2>
+<h3 id="sumquerybenchmark">SumQueryBenchmark</h3>
 
-<h3 id="unable-to-ssh-to-the-vm">Unable to ssh to the VM</h3>
-<ul>
-  <li>Ensure that the ssh daemon is running on your machine.</li>
-  <li>Ensure that the RecordService VM is running. In your terminal, enter the command: 
-<code>
-VBoxManage list runningvms
-</code><br />
-You should see “rs-demo” listed as a running VM.</li>
-</ul>
+<p>This demonstrates running a sum over a column and pushing the scan to RecordService.</p>
 
-<h2 id="verify-vm-is-properly-listed-in-etchosts">Verify VM is properly listed in /etc/hosts</h2>
+<h3 id="terasort">Terasort</h3>
 
-<p>Check that the VM is properly listed in your /etc/hosts file. If you open that file you should see a line that lists an IP followed by quickstart.cloudera. You can check the VM’s IP with the following command:
-<code>
-VBoxManage guestproperty get rs-demo /VirtualBox/GuestInfo/Net/0/V4/IP
-</code></p>
+<p>This is a port of the Hadoop Terasort benchmark test ported to RecordService. See README in package for more details. This also demonstrates how to implement a custom InputFormat using the RecordService APIs.</p>
 
-<h2 id="verify-known-hosts">Verify Known Hosts</h2>
+<h3 id="mapredcolorcountmapreduceagecountmapreducecolorcount">MapredColorCount/MapreduceAgeCount/MapReduceColorCount</h3>
 
-<p>If you’ve used a Cloudera QuickStart VM before, it’s possible that your known hosts file already has an entry for quickstart.cloudera registered to a different key. Delete any reference to quickstart.cloudera from your known hosts file, usually found in ~/.ssh/known_hosts.</p>
+<p>These examples are ported from Apache Avro. They demonstrate the steps required to port an existing Avro-based MapReduce job to use RecordService.</p>
+
+<h3 id="recordcountwordcount">RecordCount/WordCount</h3>
+
+<p>More MapReduce applications that demonstrate some other InputFormats included in the client library.</p>
+
+<h3 id="comclouderarecordserviceexamplesavro">com.cloudera.recordservice.examples.avro</h3>
+
+<p>Unmodified from the Apache Avro examples, these examples help with sample data generation.</p>
+
+<h2 id="recordservice-spark-examples">RecordService Spark Examples</h2>
+
+<h3 id="query1query2">Query1/Query2</h3>
+<p>Examples that demonstrate RecordService native RDD integration using RecordServiceRDD.</p>
+
+<h3 id="wordcount">WordCount</h3>
+
+<p>The Hadoop WordCount example built on top of the RecordService equivalent of textFile().</p>
+
+<h3 id="schemarddexample">SchemaRDDExample</h3>
+
+<p>Another example of the native RDD integration, this time using SchemaRecordServiceRDD.</p>
+
+<h3 id="terachecksum">TeraChecksum</h3>
+
+<p>This example uses hadoopFile() with the RecordService InputFormats. This is a port of the TeraChecksum MapReduce job, written in Spark.</p>
+
+<h3 id="tpcdsbenchmark">TpcdsBenchmark</h3>
+
+<p>This demonstrates the SparkSQL integration running a portion of the tpcds benchmark.</p>
+
+<h3 id="dataframeexample">DataFrameExample</h3>
+
+<p>A simple example that demonstrates DataFrames and RecordService together.</p>
 
   </article>
 
@@ -200,7 +208,7 @@ VBoxManage guestproperty get rs-demo /VirtualBox/GuestInfo/Net/0/V4/IP
         <li>RecordService is licensed under</li>
         <li><a href="http://www.apache.org/licenses/LICENSE-2.0.html">The Apache License, Version 2.0</a></li>
         <li>&nbsp;</li>
-        <li>Generated on 22 September 2015</li>
+        <li>Generated on 23 September 2015</li>
       </ul>
 
     </div>
@@ -229,7 +237,7 @@ VBoxManage guestproperty get rs-demo /VirtualBox/GuestInfo/Net/0/V4/IP
               <li><a href="/docs/apidocs/index.html"><i class="fa fa-file-text-o"></i>&nbsp; API Javadoc</a></li>
               <li><a href="/docs/jdiff/changes.html"><i class="fa fa-bolt fs-lg"></i>&nbsp; API Changes</a></li>
               -->
-              <li><a href="/docs//ReleaseNotes.html"><i class="fa fa-info fa-lg"></i>&nbsp; Release Notes</a></li>
+              <li><a href="/docs/ReleaseNotes.html"><i class="fa fa-info fa-lg"></i>&nbsp; Release Notes</a></li>
             </ul>
           </div>
         </div>
