@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Download and Install RecordService</title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="An abstraction layer between storage managers (for example, HDFS, HBase, Kudu) and compute frameworks (for example, MapReduce, Spark, Hive).">
+    <link rel="canonical" href="http://github.mtv.cloudera.com/CDH/RecordServiceClient/docs//install.html">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/docs//css/main.css">
+    <link href='http://fonts.googleapis.com/css?family=Raleway:200,400,500,600,700' rel='stylesheet' type='text/css'>
+    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
+
+</head>
+
+
+    <body>
+
+    <header class="site-header">
+
+  <div class="wrap">
+
+    <a class="site-title" href="/docs//"><img src="../img/rs.png" height="25%" width="25%" align="left"></a>
+<br/><br/>An abstraction layer between storage managers (for example, HDFS, HBase, Kudu) and compute frameworks (for example, MapReduce, Spark, Hive).
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+           viewBox="0 0 18 15" enable-background="new 0 0 18 15" xml:space="preserve">
+          <path fill="#505050" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0
+            h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#505050" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484
+            h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#505050" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0
+            c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+    </nav>
+
+  </div>
+<div>
+
+</div>
+</header>
+
+
+    <div class="page-content">
+      
+      <div class="sidebar">
+      
+        <h4>Orientation</h4>
+        <ul>
+          
+        </ul>
+      
+        <h4></h4>
+        <ul>
+          
+          
+          <li><a href="/docs//index.html">Overview</a></li>
+          
+          
+        </ul>
+      
+        <h4>Installation</h4>
+        <ul>
+          
+        </ul>
+      
+        <h4></h4>
+        <ul>
+          
+          
+          <li><a href="/docs//ReleaseNotes.html">Beta Release Notes</a></li>
+          
+          
+          
+          <li><b>Download RecordService</b></li>
+          
+          
+          
+          <li><a href="/docs//configure.html">Configure RecordService</a></li>
+          
+          
+          
+          <li><a href="/docs//vm.html">Download VM</a></li>
+          
+          
+        </ul>
+      
+        <h4>Demonstration</h4>
+        <ul>
+          
+        </ul>
+      
+        <h4></h4>
+        <ul>
+          
+          
+          <li><a href="/docs//appint.html">Application Integration</a></li>
+          
+          
+          
+          <li><a href="/docs//examples.html">Run Examples</a></li>
+          
+          
+        </ul>
+      
+        <h4>Interrogation</h4>
+        <ul>
+          
+        </ul>
+      
+        <h4></h4>
+        <ul>
+          
+          
+          <li><a href="/docs//faq.html">FAQ</a></li>
+          
+          
+        </ul>
+      
+      </div>
+      
+
+      <div class="wrap">
+      <div class="post">
+
+  <header class="post-header">
+    <h1>Download and Install RecordService</h1>
+  </header>
+
+  <article class="post-content">
+  <h2 id="download-recordservice">Download RecordService</h2>
+
+<p>These are the ways you can install RecordService. Cloudera recommends that you install Cloudera Manager (CM) on your cluster, so that you can install RecordService as an add-on service in CM.</p>
+
+<h2 id="installing-recordservice-as-an-add-on-service-in-cm">Installing RecordService as an Add-on Service in CM</h2>
+
+<p>You can install RecordService as an <a href="http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topics/cm_mc_addon_services.html">Add-on Service</a> in CM. First, install both the CSD and the Parcel in CM; then, add RecordService as an add-on service from the home page in CM.</p>
+
+<h3 id="installing-the-recordservice-csd">Installing the RecordService CSD</h3>
+
+<p>These are the steps to install the RecordService CSD.</p>
+
+<ol>
+  <li>Download the CSD from <strong>NEED CORRECT URL</strong>.</li>
+  <li>Upload the CSD to <code>/opt/cloudera/csd</code> in the CM server.</li>
+  <li>Change the owner and group for the JAR using the following comamand line instruction:<br />
+<code>
+chown cloudera-scm:cloudera-scm /opt/clouder/csd/RECORD_SERVICE-1.0.jar
+</code></li>
+  <li>Update the permissions on the file using the following command line instruction:<br />
+<code>
+chmod 644 /opt/cloudera/csd/RECORD_SERVICE-1.0.jar
+</code></li>
+  <li>Restart the CM server
+    <ol>
+      <li>As the root user in the CM server, then run <code>service cloudera-scm-server restart</code>.</li>
+      <li>Log in to the CM Admin Console and restart the CM Service.</li>
+    </ol>
+  </li>
+  <li>Check whether the CSD successfully installed in <code>http://{cm-server}:7180/cmf/csd/refresh</code>. Search for the following entry:</li>
+</ol>
+
+<pre><code>{
+csdName: "RECORD_SERVICE-1.0",
+serviceType: "RECORD_SERVICE",
+source: "/opt/cloudera/csd/RECORD_SERVICE-1.0.jar",
+isInstalled: true
+}
+</code></pre>
+
+<p>See <a href="http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topics/cm_mc_addon_services.html">http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topics/cm_mc_addon_services.html</a>.</p>
+
+<h3 id="parcel-installation">Parcel Installation</h3>
+
+<p>These are the steps to install the RecordService Parcel.</p>
+
+<ol>
+  <li>Add the Remote Parcel Repository URL to the CM Parcel Settings page. <strong>NEED CORRECT URL.</strong></li>
+  <li>Go to <code>http://{cm-server}::7180/cmf/parcel/status</code>.</li>
+  <li>Click <strong>Edit Settings</strong>.</li>
+  <li>Add the RecordService parcel URL.</li>
+  <li>Open the CM Parcel status page, <code>http://{cm-server}::7180/cmf/parcel/status</code>. </li>
+  <li><strong>Download</strong> the RecordService parcel.</li>
+  <li><strong>Distribute</strong> the parcel.</li>
+  <li><strong>Activate</strong> the parcel. CM asks you to restart the entire cluster, but you only need to start/restart RecordService.</li>
+</ol>
+
+<p>See <a href="http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topics/cm_ig_parcels.html">http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topics/cm_ig_parcels.html</a></p>
+
+<h3 id="start-up-recordservice-in-a-cluster-from-cm">Start up RecordService in a Cluster from CM</h3>
+
+<p>There are the steps to start up RecordService for a cluster from CM.</p>
+
+<ol>
+  <li>Add a service from CM home page.</li>
+  <li>Run a RecordService Worker on each DataNode (DN) and one RecordService Planner. 
+    <ul>
+      <li>If the cluster is so small that every node is running the DN, run a RecordService Planner and Worker role.</li>
+      <li>If the cluster has 1 dedicated NN, <em>N</em> DNs, run: 1 Planner, <em>N</em> Workers.</li>
+      <li>If the cluster has <em>N</em> nodes, with 1 node having the NN and DN, run 1 Planner and Worker, and <em>N</em>-1 Workers.</li>
+    </ul>
+  </li>
+  <li>Customize Role: 
+    <ul>
+      <li>RecordService Planner and Worker: Select nodes with both role of DN and NN.</li>
+      <li>RecordService Planner: Select nodes with role of NN.</li>
+      <li>RecordService Worker: Select nodes with role of DN.</li>
+    </ul>
+  </li>
+  <li>Review and modify configuration settings, such as log dir and planner port.</li>
+  <li>Start the service.</li>
+  <li>Visit the debug page hostname:35000 to verify it started properly. </li>
+  <li>Go to the RecordService cluster page in CM.</li>
+  <li>Choose <strong>Deploy Client Configuration</strong> from <em>Actions</em>.</li>
+</ol>
+
+<p>See <a href="http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topics/cm_mc_add_service.html?scroll=cmug_topic_5_1">http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topics/cm_mc_add_service.html?scroll=cmug_topic_5_1</a>.</p>
+
+<h3 id="experiment-with-client-jars">Experiment with Client JARs</h3>
+<p>You can verify the RecordService server installation by running examples from the client JAR.</p>
+
+<ol>
+  <li>Download the client JAR. 
+    <ul>
+      <li>You can also build client JAR by yourself from the client repo.</li>
+      <li>You can import it as a lib in your project, or run it directly from Hadoop, Spark-shell, and so on.</li>
+    </ul>
+  </li>
+  <li>To verify the server installation, you can run our client examples in your clusters.
+    <ul>
+      <li>Log in to one of the nodes in your cluster, and load test data:</li>
+    </ul>
+  </li>
+</ol>
+
+<pre><code>    # wget -q --no-clobber \ 
+      http://util-1.ent.cloudera.com/impala-test-data/tpch.tar.gz 
+    # tar -xzf tpch.tar.gz
+    # hadoop fs -mkdir -p /test-warehouse/tpch.nation
+    # hadoop fs -put -f tpch/nation/* /test-warehouse/tpch.nation/ 
+    # impala-shell -f create-tbls.sql
+</code></pre>
+
+<pre><code>* Start up spark-shell with the RecordService JAR: 
+</code></pre>
+
+<pre><code>    # path/to/spark/bin/spark-shell --jars \
+         /path/to/recordservice-examples-spark-0.1.jar
+    # scala&gt; import com.cloudera.recordservice.spark._
+    import com.cloudera.recordservice.spark._
+    # scala&gt; val data = sc.recordServiceRecords("select * from tpch.nation") \
+         data: org.apache.spark.rdd.RDD[Array[org.apache.hadoop.io.Writable]] = \
+         RecordServiceRDD[0] at RDD at RecordServiceRDDBase.scala:57
+    # scala&gt; data.count()
+    res0: Long = 25
+</code></pre>
+
+<p>See <a href="http://github.mtv.cloudera.com/CDH/RecordServiceClient/blob/master/java/examples-spark/README.md">http://github.mtv.cloudera.com/CDH/RecordServiceClient/blob/master/java/examples-spark/README.md</a></p>
+
+<h3 id="package-installation-not-recommended">Package Installation (Not Recommended)</h3>
+
+<p>These are the steps to install RecordService from a package.</p>
+
+<ol>
+<li>Download package from <b>NEED CORRECT URL</b></li>
+<li>Install Hadoop, Hive, Impala, Sentry, ZooKeeper and any other application you want to use.</li>
+<li>Install the RecordServicePlanner using the following command line instruction:<br /><br />
+<pre>
+./recordserviced -hostname=hostname -recordservice_planner_port=40000 \ 
+-recordservice_worker_port=0 -recordservice_webserver_port=35000 \ 
+-webserver_doc_root=path/to/package/lib/recordservice \
+-log_dir=path/to/log/dir -abort_on_config_error=false \ 
+-lineage_event_log_dir=path/to/log/dir \ 
+-audit_event_log_dir=path/to/log/dir -profile_log_dir=path/to/log/dir \ 
+-v=1 -mem_limit=8G
+</pre>
+</li>
+<br />
+<li>Install the worker using the following command line instruction.
+<br /><br />
+<pre>
+./recordserviced  -hostname=hostname -recordservice_planner_port=0 \
+-recordservice_worker_port=40100 -recordservice_webserver_port=35000 \
+-webserver_doc_root=path/to/package/lib/recordservice \ 
+-log_dir=path/to/log/dir -abort_on_config_error=false \ 
+-lineage_event_log_dir=path/to/log/dir \ 
+-audit_event_log_dir=path/to/log/dir -profile_log_dir=path/to/log/dir \ 
+-v=1 -mem_limit=8G
+</pre>
+</li>
+<br />
+<li>Install both planner and worker in one node:
+<br /><br />
+<pre>
+./recordserviced  -hostname=hostname -recordservice_planner_port=40000 \ 
+-recordservice_worker_port=40100 -recordservice_webserver_port=35000 \ 
+-webserver_doc_root=path/to/package/lib/recordservice \ 
+-log_dir=path/to/log/dir -abort_on_config_error=false \ 
+-lineage_event_log_dir=path/to/log/dir \ 
+-audit_event_log_dir=path/to/log/dir -profile_log_dir=path/to/log/dir \
+-v=1 -mem_limit=8G
+</pre>
+</li>
+<br />
+<li>Set additional parameters:
+<ul>
+<li>Add the following params if the cluster is kerberized:
+<pre>
+-principal=kerberos_principle -keytab_file=the/path/to/record_service.keytab
+</pre></li>
+<li>Add the Sentry configuration file, if applicable:
+<br /><br /><pre>
+-sentry_config=path/to/sentry-site.xml/
+</pre></li></ul>
+    
+</li></ol>
+
+  </article>
+
+</div>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrap columns">
+
+    <div class="left">
+      <h2 class="footer-heading">RecordService, Beta</h2>
+
+      <ul>
+        <li>RecordService is licensed under</li>
+        <li><a href="http://www.apache.org/licenses/LICENSE-2.0.html">The Apache License, Version 2.0</a></li>
+        <li>&nbsp;</li>
+        <li>Generated on 22 September 2015</li>
+      </ul>
+
+    </div>
+
+    <div class="middle">
+    </div>
+
+    <div class="right"> 
+      <p class="text">
+        <div class="columns">
+          <div class="left">
+            <ul>
+              <li><a href="http://github.mtv.cloudera.com/CDH/RecordServiceClient"><i class="fa fa-github fa-lg"></i>&nbsp; Source</a></li>
+              <li><a href="https://jira.cloudera.com/browse/CDH/component/12921/"><i class="fa fa-bug fa-lg"></i>&nbsp; Issue tracking</a></li>
+              
+              <!-- Info not available 
+              <li><a href="http://github.mtv.cloudera.com/CDH/RecordServiceClient"><i class="fa fa-comments-o fa-lg"></i>&nbsp; Mailing list</a></li>
+              <li><a href="http://github.mtv.cloudera.com/CDH/RecordServiceClient"><i class="fa fa-cogs fa-lg"></i>&nbsp; How to contribute</a></li>
+              -->
+            </ul>
+          </div>
+          <div class="right">
+            <ul>
+              <li><a href="http://github.mtv.cloudera.com/CDH/RecordServiceClient/tree/master/java/examples"><i class="fa fa-play"></i>&nbsp; Examples</a></li>
+              <!-- Info not available
+              <li><a href="/docs/apidocs/index.html"><i class="fa fa-file-text-o"></i>&nbsp; API Javadoc</a></li>
+              <li><a href="/docs/jdiff/changes.html"><i class="fa fa-bolt fs-lg"></i>&nbsp; API Changes</a></li>
+              -->
+              <li><a href="/docs//ReleaseNotes.html"><i class="fa fa-info fa-lg"></i>&nbsp; Release Notes</a></li>
+            </ul>
+          </div>
+        </div>
+      </p>
+    </div>
+
+  </div>
+
+</footer>
+
+
+    </body>
+</html>

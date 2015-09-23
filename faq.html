@@ -4,10 +4,10 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>RecordService Overview</title>
+    <title>RecordService FAQ</title>
     <meta name="viewport" content="width=device-width">
     <meta name="description" content="An abstraction layer between storage managers (for example, HDFS, HBase, Kudu) and compute frameworks (for example, MapReduce, Spark, Hive).">
-    <link rel="canonical" href="http://github.mtv.cloudera.com/CDH/RecordServiceClient/docs//">
+    <link rel="canonical" href="http://github.mtv.cloudera.com/CDH/RecordServiceClient/docs//faq.html">
 
     <!-- Custom CSS -->
     <link rel="stylesheet" href="/docs//css/main.css">
@@ -59,7 +59,7 @@
         <ul>
           
           
-          <li><b>Overview</b></li>
+          <li><a href="/docs//index.html">Overview</a></li>
           
           
         </ul>
@@ -117,7 +117,7 @@
         <ul>
           
           
-          <li><a href="/docs//faq.html">FAQ</a></li>
+          <li><b>FAQ</b></li>
           
           
         </ul>
@@ -129,50 +129,45 @@
       <div class="post">
 
   <header class="post-header">
-    <h1>RecordService Overview</h1>
+    <h1>RecordService FAQ</h1>
   </header>
 
   <article class="post-content">
-  <p>RecordService provides an abstraction layer between compute frameworks and data storage. It provides row- and column-level security, and other advantages as well.</p>
+  <p><strong>Q: Where and how are permissions managed?</strong></p>
 
-<h2 id="the-motivation">The Motivation</h2>
+<p><strong>A:</strong> Sentry handles permissions in general, but there need to be additional queries for setting finer grained access.</p>
 
-<p>The Sentry community considered how to enforce a common set of column-level authorization permissions across Hadoop. Building Sentry support into each Hadoop component as well as various applications that interact with Hadoop would require massive effort and continual maintenance.</p>
+<p>In the current version of Sentry, permissions on views allow for fine-grained access control — restricting access by column and row. In a future release, we  will likely add explicit column-level permissions are likely to be added. Impala/Hive/Hue.</p>
 
-<p>Instead, the community conceived the idea of a common API for accessing tabular data as <em>records</em> — a unified data access path that can be used by multiple Hadoop components and applications with minimal code changes.</p>
+<p><strong>Q: What kind of data can we use RecordService for?</strong></p>
 
-<p><img src="img/unifiedDataAccessPath.png" alt="Unified Data Access Path" height="85%" width="85%" /></p>
+<p><strong>A:</strong> Hive(/Impala) tables only. Support might be added in the future for other schema sources, depending on customer demand.</p>
 
-<h2 id="the-benefits">The Benefits</h2>
+<p><strong>Q: What happens if you try to access data controlled by RecordService</strong> without using RecordService?</p>
 
-<ul>
-  <li>RecordService provides fine-grained data permissions and enforcement across Hadoop.</li>
-  <li>Clients work independent of on-disk storage format.</li>
-  <li>The unified data access path provides a single place to implement and test file format-related changes.</li>
-  <li>Components swap transparently above or below RecordService.</li>
-  <li>Performance is boosted via Impala’s optimized scanner, dynamic code generation, and Parquet implementation.</li>
-  <li>Existing MapReduce and Spark jobs gain Impala-quality performance.</li>
-  <li>RecordService can make projections over original source datasets instead of making copies or subsets.</li>
-</ul>
+<p><strong>A:</strong> Sentry’s HDFS Sync feature ensures that the files are locked down such that only users with full access to all of the values in a file (with Sentry permissions for the entire table) are allowed to read the files directly.</p>
 
-<h2 id="the-design">The Design</h2>
+<p><strong>Q: Is there any API to discover the permissions that are set?</strong> </p>
 
-<p>RecordService provides the following services.</p>
+<p><strong>A:</strong> Hue can show this, as well as SHOW commands in Hive or Impala CLI.</p>
 
-<ul>
-  <li>RecordServicePlanner — Generates tasks, performs authorization checks, handles metadata access. Called during input split generation. </li>
-  <li>RecordServiceWorker — Executes tasks, reads and writes to the storage layer.
-    <ul>
-      <li>Builds on Impala’s highly optimized I/O scheduler and file parsers.</li>
-      <li>Returns rows in a canonical format.</li>
-    </ul>
-  </li>
-  <li>Thrift APIs.</li>
-  <li>Client Integration Libraries — Allow easy migration to RecordService.</li>
-</ul>
+<p><strong>Q: What is the RecordService security model? Is it possible to purposely restrict my view into the data?</strong></p>
 
-<p><img src="img/RecordServiceArchitectureOverview.png" alt="Record Service Architecture Overview " height="85%" width="85%" /></p>
+<p><strong>A:</strong> Yes it is possible to control permissions per view. With respect to setting the active role(s), that’s not something currently supported but might be supported in the future.</p>
 
+<p><strong>Q: Why does RecordService implement its own schema (which seems to be a copy of Hive’s schema)?</strong></p>
+
+<p><strong>A:</strong> The client API is layered so that it doesn’t have to pull in all dependencies. As you move higher in the client API, you get access to more standard Hadoop objects. In this case, you get a recordservice-hive JAR that  returns Hive Schema objects. </p>
+
+<p><strong>Q: Is there a way to list tables through RecordService, or do we go through the Hive metastore to get tables, then ask RecordService for the schema?</strong></p>
+
+<p><strong>A:</strong> Currently, you can’t list tables through RecordService. You have to go through the Hive metastore. </p>
+
+<p>Also note that the only thing needed to read from a table is the fully qualified table name, so the client does not need to pass the table metadata to RS.</p>
+
+<p><strong>Q: How does accessing a path directly versus querying the Hive metastore work?</strong></p>
+
+<p><strong>A:</strong> RecordService infers the schema to the best of its ability. If the path contains a self-describing file, such as Avro or Parquet, it will use that. For files like CSV, RecordService defaults to a STRING schema. The security rules for paths are still under consideration. For now, RecordServices does not infer schema — it only deals with tables defined in the Hive metastore.</p>
 
   </article>
 

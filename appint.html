@@ -4,10 +4,10 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>RecordService Overview</title>
+    <title>Application Integration</title>
     <meta name="viewport" content="width=device-width">
     <meta name="description" content="An abstraction layer between storage managers (for example, HDFS, HBase, Kudu) and compute frameworks (for example, MapReduce, Spark, Hive).">
-    <link rel="canonical" href="http://github.mtv.cloudera.com/CDH/RecordServiceClient/docs//">
+    <link rel="canonical" href="http://github.mtv.cloudera.com/CDH/RecordServiceClient/docs//appint.html">
 
     <!-- Custom CSS -->
     <link rel="stylesheet" href="/docs//css/main.css">
@@ -59,7 +59,7 @@
         <ul>
           
           
-          <li><b>Overview</b></li>
+          <li><a href="/docs//index.html">Overview</a></li>
           
           
         </ul>
@@ -99,7 +99,7 @@
         <ul>
           
           
-          <li><a href="/docs//appint.html">Application Integration</a></li>
+          <li><b>Application Integration</b></li>
           
           
           
@@ -129,50 +129,26 @@
       <div class="post">
 
   <header class="post-header">
-    <h1>RecordService Overview</h1>
+    <h1>Application Integration</h1>
   </header>
 
   <article class="post-content">
-  <p>RecordService provides an abstraction layer between compute frameworks and data storage. It provides row- and column-level security, and other advantages as well.</p>
+  <h2 id="mapreduce-input-formats">MapReduce Input Formats</h2>
 
-<h2 id="the-motivation">The Motivation</h2>
+<p>RecordService is designed to integrate well with existing MapReduce InputFormats. The RecordService client contains InputFormats that are common for most applications. They implement the standard MR1 and MR2 InputFormat API, and should be usable by any existing application or library that expects InputFormats. The examples also contain cases of custom InputFormats that can be easily built on top of the lower level RecordService client APIs.<br />
+Unlike many standard Hadoop InputFormats, the RecordService format is independent of the underlying storage format. For example, you can use the AvroInputFormat even if the underlying data is a CSV file. The InputFormat specifies the Java object model used by the application (for example, Avro objects when using AvroInputFormat, hadoop.io.Text when using TextInputFormat, and so on). </p>
 
-<p>The Sentry community considered how to enforce a common set of column-level authorization permissions across Hadoop. Building Sentry support into each Hadoop component as well as various applications that interact with Hadoop would require massive effort and continual maintenance.</p>
+<h2 id="drop-in-replacements-for-textinputformat-and-avroinputformat">Drop-in Replacements for TextInputFormat and AvroInputFormat</h2>
 
-<p>Instead, the community conceived the idea of a common API for accessing tabular data as <em>records</em> — a unified data access path that can be used by multiple Hadoop components and applications with minimal code changes.</p>
+<p>To assist with application migration, RecordService provides two InputFormats that closely mimic the API of their existing counterparts. There is an implementation of TextInputFormat (identical class name but in our package as Hadoop’s TextInputFormat) and also variants of the Avro InputFormats (again, identical class name but in the RecordService package). These are drop-in replacements. As demonstrated in some of the examples, you can migrate applications by changing the package names for those classes.</p>
 
-<p><img src="img/unifiedDataAccessPath.png" alt="Unified Data Access Path" height="85%" width="85%" /></p>
+<h2 id="spark-rdd">Spark RDD</h2>
 
-<h2 id="the-benefits">The Benefits</h2>
+<p>RecordService integrates with Spark in several ways. You can use the InputFormats discussed above through the Spark APIs (SparkContext.hadoopFile()). In some cases, RecordService achieves native Spark integration by implementing the RDD interface directly (as opposed to the InputFormat approach which implements a MapReduce API that Spark knows how to use). The SchemaRDDExample in examples-spark demonstrates this.</p>
 
-<ul>
-  <li>RecordService provides fine-grained data permissions and enforcement across Hadoop.</li>
-  <li>Clients work independent of on-disk storage format.</li>
-  <li>The unified data access path provides a single place to implement and test file format-related changes.</li>
-  <li>Components swap transparently above or below RecordService.</li>
-  <li>Performance is boosted via Impala’s optimized scanner, dynamic code generation, and Parquet implementation.</li>
-  <li>Existing MapReduce and Spark jobs gain Impala-quality performance.</li>
-  <li>RecordService can make projections over original source datasets instead of making copies or subsets.</li>
-</ul>
+<h2 id="spark-sql-support-and-dataframes">Spark SQL Support and DataFrames</h2>
 
-<h2 id="the-design">The Design</h2>
-
-<p>RecordService provides the following services.</p>
-
-<ul>
-  <li>RecordServicePlanner — Generates tasks, performs authorization checks, handles metadata access. Called during input split generation. </li>
-  <li>RecordServiceWorker — Executes tasks, reads and writes to the storage layer.
-    <ul>
-      <li>Builds on Impala’s highly optimized I/O scheduler and file parsers.</li>
-      <li>Returns rows in a canonical format.</li>
-    </ul>
-  </li>
-  <li>Thrift APIs.</li>
-  <li>Client Integration Libraries — Allow easy migration to RecordService.</li>
-</ul>
-
-<p><img src="img/RecordServiceArchitectureOverview.png" alt="Record Service Architecture Overview " height="85%" width="85%" /></p>
-
+<p>RecordService integrates with SparkSQL (and by extension DataFrames) by implementing the SparkSQL DataSources API. RecordService supports projection and predicate push down.</p>
 
   </article>
 

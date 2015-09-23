@@ -4,10 +4,10 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>RecordService Overview</title>
+    <title>Configure RecordService</title>
     <meta name="viewport" content="width=device-width">
     <meta name="description" content="An abstraction layer between storage managers (for example, HDFS, HBase, Kudu) and compute frameworks (for example, MapReduce, Spark, Hive).">
-    <link rel="canonical" href="http://github.mtv.cloudera.com/CDH/RecordServiceClient/docs//">
+    <link rel="canonical" href="http://github.mtv.cloudera.com/CDH/RecordServiceClient/docs//configure.html">
 
     <!-- Custom CSS -->
     <link rel="stylesheet" href="/docs//css/main.css">
@@ -59,7 +59,7 @@
         <ul>
           
           
-          <li><b>Overview</b></li>
+          <li><a href="/docs//index.html">Overview</a></li>
           
           
         </ul>
@@ -129,50 +129,48 @@
       <div class="post">
 
   <header class="post-header">
-    <h1>RecordService Overview</h1>
+    <h1>Configure RecordService</h1>
   </header>
 
   <article class="post-content">
-  <p>RecordService provides an abstraction layer between compute frameworks and data storage. It provides row- and column-level security, and other advantages as well.</p>
+  <h2 id="client-configurations">Client Configurations</h2>
 
-<h2 id="the-motivation">The Motivation</h2>
+<p>While it should not be necessary to change the default configuration, you have the option of modifying any of these settings.</p>
 
-<p>The Sentry community considered how to enforce a common set of column-level authorization permissions across Hadoop. Building Sentry support into each Hadoop component as well as various applications that interact with Hadoop would require massive effort and continual maintenance.</p>
+<table border="1">          
+<tr align="left" valign="top"><th> PROPERTY </th><th> DESCRIPTION </th><th> PARAMETER </th><th> VALUE </th><th> SIGNIFICANCE </th></tr>
+<tr align="left" valign="top"><td> FETCH_SIZE_CONF </td><td> Option for performance tuning that configures the max number of records returned when fetching results from the RecordService. If not set, server default will be used. </td><td> recordservice.task.fetch.size </td><td>  </td><td>  </td></tr>
+<tr align="left" valign="top"><td> MEM_LIMIT_CONF </td><td> Maximum memory the server uses per task </td><td> recordservice.task.memlimit.bytes </td><td>  </td><td>  </td></tr>
+<tr align="left" valign="top"><td> RECORDS_LIMIT_CONF </td><td> Maximum number of records returned per task </td><td> recordservice.task.records.limit </td><td>  </td><td>  </td></tr>
+<tr align="left" valign="top"><td> PLANNER_REQUEST_MAX_TASKS </td><td> Maximum number of tasks to generate per PlanRequest </td><td> recordservice.task.plan.maxTasks </td><td>  </td><td>  </td></tr>
+<tr align="left" valign="top"><td> PLANNER_RETRY_ATTEMPTS_CONF </td><td> Maximum number of attempts to retry RecordService RPCs with Planner </td><td> recordservice.planner.retry.attempts </td><td>  </td><td>  </td></tr>
+<tr align="left" valign="top"><td> PLANNER_RETRY_SLEEP_MS_CONF </td><td> Sleep between retry attempts with Planner in milliseconds </td><td> recordservice.planner.retry.sleepMs </td><td>  </td><td>  </td></tr>
+<tr align="left" valign="top"><td> PLANNER_CONNECTION_TIMEOUT_MS_CONF </td><td> Timeout when connecting to the Planner service </td><td> recordservice.planner.connection.timeoutMs </td><td>  </td><td>  </td></tr>
+<tr align="left" valign="top"><td> PLANNER_RPC_TIMEOUT_MS_CONF </td><td> Timeout for Planner RPCs </td><td> recordservice.planner.rpc.timeoutMs </td><td>  </td><td>  </td></tr>
+<tr align="left" valign="top"><td> WORKER_RETRY_ATTEMPTS_CONF </td><td> Maximum number of attempts to retry RecordService RPCs with Worker </td><td> recordservice.worker.retry.attempts </td><td>  </td><td>  </td></tr>
+<tr align="left" valign="top"><td> WORKER_RETRY_SLEEP_MS_CONF </td><td> Sleep in milliseconds between retry attempts with Worker </td><td> recordservice.worker.retry.sleepMs </td><td>  </td><td>  </td></tr>
+<tr align="left" valign="top"><td> WORKER_CONNECTION_TIMEOUT_MS_CONF </td><td> Timeout when connecting to the Worker service </td><td> recordservice.worker.connection.timeoutMs </td><td>  </td><td>  </td></tr>
+<tr align="left" valign="top"><td> WORKER_RPC_TIMEOUT_MS_CONF </td><td> Timeout for Worker RPCs   </td><td> recordservice.worker.rpc.timeoutMs </td><td>  </td><td>  </td></tr>
+<tr align="left" valign="top"><td> WORKER_ENABLE_SERVER_LOGGING_CONF </td><td> Enable server logging (logging level from Log4j)   </td><td> recordservice.worker.server.enableLogging </td><td>  </td><td>  </td></tr>
+</table>
 
-<p>Instead, the community conceived the idea of a common API for accessing tabular data as <em>records</em> — a unified data access path that can be used by multiple Hadoop components and applications with minimal code changes.</p>
+<h2 id="server-configurations">Server Configurations</h2>
 
-<p><img src="img/unifiedDataAccessPath.png" alt="Unified Data Access Path" height="85%" width="85%" /></p>
+<p>The properties listed on the CM RecordService Configuration page are the ones Cloudera considers the most reasonable to change. However, adjusting these values should not be necessary. Very advanced administrators might consider making minor adjustments.</p>
 
-<h2 id="the-benefits">The Benefits</h2>
+<h3 id="kerberos-configuration">Kerberos Configuration</h3>
 
-<ul>
-  <li>RecordService provides fine-grained data permissions and enforcement across Hadoop.</li>
-  <li>Clients work independent of on-disk storage format.</li>
-  <li>The unified data access path provides a single place to implement and test file format-related changes.</li>
-  <li>Components swap transparently above or below RecordService.</li>
-  <li>Performance is boosted via Impala’s optimized scanner, dynamic code generation, and Parquet implementation.</li>
-  <li>Existing MapReduce and Spark jobs gain Impala-quality performance.</li>
-  <li>RecordService can make projections over original source datasets instead of making copies or subsets.</li>
-</ul>
+<p>No special configuration is required via CM. Enabling Kerberos on the cluster configures everything.</p>
 
-<h2 id="the-design">The Design</h2>
+<h2 id="sentry-table-configuration">Sentry Table Configuration</h2>
 
-<p>RecordService provides the following services.</p>
+<p>Sentry is configured with standard installation. No special configuration is required.</p>
 
-<ul>
-  <li>RecordServicePlanner — Generates tasks, performs authorization checks, handles metadata access. Called during input split generation. </li>
-  <li>RecordServiceWorker — Executes tasks, reads and writes to the storage layer.
-    <ul>
-      <li>Builds on Impala’s highly optimized I/O scheduler and file parsers.</li>
-      <li>Returns rows in a canonical format.</li>
-    </ul>
-  </li>
-  <li>Thrift APIs.</li>
-  <li>Client Integration Libraries — Allow easy migration to RecordService.</li>
-</ul>
+<h2 id="delegation-token-configuration">Delegation Token Configuration</h2>
 
-<p><img src="img/RecordServiceArchitectureOverview.png" alt="Record Service Architecture Overview " height="85%" width="85%" /></p>
+<p>No special configuration is required with CM. This is enabled automatically if the cluster is kerberized.</p>
 
+<p>RecordService persists state in Zookeeper, by default, under the /recordservice Zookeeper directory. If this directory is already in use, you can configure the directory with <code>recordservice.zookeeper.znode</code>. This is a Hadoop style XML configuration that you can add to the advanced service configuration snippet.</p>
 
   </article>
 
