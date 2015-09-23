@@ -143,15 +143,15 @@
 
 <h3 id="rscat">RSCat</h3>
 
-<p>This example shows how you can output tabular data for any dataset readable by RecordService. This example does not use any computation framework (MR/Spark). It demonstrates a standalone Java application built on the core libraries.</p>
+<p>This example shows how you can output tabular data for any dataset readable by RecordService. It demonstrates a standalone Java application built on the core libraries without using a computation framework such as MapReduce or Spark.</p>
 
 <h3 id="sumquerybenchmark">SumQueryBenchmark</h3>
 
-<p>This demonstrates running a sum over a column and pushing the scan to RecordService.</p>
+<p>This demonstrates running a sum over a column and pushing the scan to RecordService. It shows how you can use RecordService to accelerate scan-intensive operations.</p>
 
 <h3 id="terasort">Terasort</h3>
 
-<p>This is a port of the Hadoop Terasort benchmark test ported to RecordService. See README in package for more details. This also demonstrates how to implement a custom InputFormat using the RecordService APIs.</p>
+<p>This is a port of the Hadoop <a href="https://hadoop.apache.org/docs/current/api/org/apache/hadoop/examples/terasort/package-summary.html">Terasort</a> benchmark test ported to RecordService. See README in the Terasort package for more details. This also demonstrates how to implement a custom InputFormat using the RecordService APIs.</p>
 
 <h3 id="mapredcolorcountmapreduceagecountmapreducecolorcount">MapredColorCount/MapreduceAgeCount/MapReduceColorCount</h3>
 
@@ -159,15 +159,16 @@
 
 <h3 id="recordcountwordcount">RecordCount/WordCount</h3>
 
-<p>More MapReduce applications that demonstrate some other InputFormats included in the client library.</p>
+<p>More MapReduce applications that demonstrate some other InputFormats included in the client library, including TextInputFormat and RecordServiceInputformat. Useful for existing MapReduce jobs already using TextInputFormat.</p>
 
 <h3 id="comclouderarecordserviceexamplesavro">com.cloudera.recordservice.examples.avro</h3>
 
-<p>Unmodified from the Apache Avro examples, these examples help with sample data generation.</p>
+<p>Unmodified from the Apache Avro examples, these utilities help you generate sample data.</p>
 
 <h2 id="recordservice-spark-examples">RecordService Spark Examples</h2>
 
 <h3 id="query1query2">Query1/Query2</h3>
+
 <p>Examples that demonstrate RecordService native RDD integration using RecordServiceRDD.</p>
 
 <h3 id="wordcount">WordCount</h3>
@@ -188,7 +189,7 @@
 
 <h3 id="dataframeexample">DataFrameExample</h3>
 
-<p>A simple example that demonstrates DataFrames and RecordService together.</p>
+<p>An example that demonstrates DataFrames and RecordService working together.</p>
 
   </article>
 

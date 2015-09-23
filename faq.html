@@ -135,17 +135,17 @@
   <article class="post-content">
   <p><strong>Q: Where and how are permissions managed?</strong></p>
 
-<p><strong>A:</strong> Sentry handles permissions in general, but there need to be additional queries for setting finer grained access.</p>
+<p><strong>A:</strong> Sentry handles policy metadata. See <a href="http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topics/sg_sentry_service_config.html">Sentry Configuration</a>.</p>
 
-<p>In the current version of Sentry, permissions on views allow for fine-grained access control — restricting access by column and row. In a future release, we  will likely add explicit column-level permissions are likely to be added. Impala/Hive/Hue.</p>
+<p>In the current version of Sentry, permissions on views allow for fine-grained access control — restricting access by column and row. In a future release, Record Service will allow explicit column-level permissions for Impala/Hive/Hue.</p>
 
 <p><strong>Q: What kind of data can we use RecordService for?</strong></p>
 
-<p><strong>A:</strong> Hive(/Impala) tables only. Support might be added in the future for other schema sources, depending on customer demand.</p>
+<p><strong>A:</strong> Hive Metastore Tables only. Support might be added in the future for other schema sources, depending on customer demand.</p>
 
-<p><strong>Q: What happens if you try to access data controlled by RecordService</strong> without using RecordService?</p>
+<p><strong>Q: What happens if you try to access data controlled by RecordService without using RecordService?</strong> </p>
 
-<p><strong>A:</strong> Sentry’s HDFS Sync feature ensures that the files are locked down such that only users with full access to all of the values in a file (with Sentry permissions for the entire table) are allowed to read the files directly.</p>
+<p><strong>A:</strong> Sentry’s HDFS Sync feature ensures that the files are locked down such that only users with full access to all of the values in a file (with Sentry permissions for the entire table) are allowed to read the files directly. See <a href="http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topics/sg_sentry_service_config.html">Configuring the Sentry Service</a>.</p>
 
 <p><strong>Q: Is there any API to discover the permissions that are set?</strong> </p>
 
@@ -157,17 +157,18 @@
 
 <p><strong>Q: Why does RecordService implement its own schema (which seems to be a copy of Hive’s schema)?</strong></p>
 
-<p><strong>A:</strong> The client API is layered so that it doesn’t have to pull in all dependencies. As you move higher in the client API, you get access to more standard Hadoop objects. In this case, you get a recordservice-hive JAR that  returns Hive Schema objects. </p>
+<p><strong>A:</strong> The client API is layered so that it doesn’t have to pull in all dependencies. As you move higher in the client API, you get access to more standard Hadoop objects. In this case, you get a recordservice-hive JAR that returns Hive Schema objects.</p>
 
 <p><strong>Q: Is there a way to list tables through RecordService, or do we go through the Hive metastore to get tables, then ask RecordService for the schema?</strong></p>
 
-<p><strong>A:</strong> Currently, you can’t list tables through RecordService. You have to go through the Hive metastore. </p>
+<p><strong>A:</strong> You cannot list tables through RecordService. You have to go through the Hive Metastore, or use a tool such as Hue.</p>
 
 <p>Also note that the only thing needed to read from a table is the fully qualified table name, so the client does not need to pass the table metadata to RS.</p>
 
 <p><strong>Q: How does accessing a path directly versus querying the Hive metastore work?</strong></p>
 
-<p><strong>A:</strong> RecordService infers the schema to the best of its ability. If the path contains a self-describing file, such as Avro or Parquet, it will use that. For files like CSV, RecordService defaults to a STRING schema. The security rules for paths are still under consideration. For now, RecordServices does not infer schema — it only deals with tables defined in the Hive metastore.</p>
+<p><strong>A:</strong> RecordService infers the schema to the best of its ability. If the path contains a self-describing file, such as Avro or Parquet, it will use that. For files like CSV, RecordService defaults to a STRING schema.<br />
+In a future release RecordService may infer schema from files, but the security rules for paths are still under consideration. For now, RecordService only supports reading from tables defined in the Hive Metastore.</p>
 
   </article>
 
