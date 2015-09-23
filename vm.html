@@ -140,7 +140,7 @@
 <ol>
   <li>Install VirtualBox. The VM has been tested to work with VirtualBox version 4.3 on Ubuntu 14.04 and VirtualBox version 5 on OSX 10.9. Download VirtualBox for free at <a href="https://www.virtualbox.org/wiki/Downloads">https://www.virtualbox.org/wiki/Downloads</a>.</li>
   <li>Download the VM from <strong>NEED CORRECT URL</strong>.	 </li>
-  <li>Untar/zip the bundle. It should contain two scripts, <code>install.sh</code> and <code>vmEnv.sh</code>.</li>
+  <li>Untar/zip the bundle. It should contain two scripts, <code>install.sh</code> and <code>vm_Env.sh</code>.</li>
 </ol>
 
 <h2 id="install-recordservice-vm">Install RecordService VM</h2>
@@ -173,10 +173,10 @@ You should see “rs-demo” listed as a running VM.</li>
 
 <h2 id="verify-vm-is-properly-listed-in-etchosts">Verify VM is properly listed in /etc/hosts</h2>
 
-<p>Check that the VM is properly listed in your /etc/hosts file. If you open that file you should see a line that lists an IP followed by <code>quickstart.cloudera</code>. You can check the VM’s IP with the following command:
-<code>
-VBoxManage guestproperty get rs-demo /VirtualBox/GuestInfo/Net/0/V4/IP
-</code></p>
+<p>Check that the VM is properly listed in your /etc/hosts file. If you open that file you should see a line that lists an IP followed by <code>quickstart.cloudera</code>. You can check the VM’s IP with the following command:</p>
+
+<pre><code>VBoxManage guestproperty get rs-demo /VirtualBox/GuestInfo/Net/0/V4/IP
+</code></pre>
 
 <h2 id="verify-known-hosts">Verify Known Hosts</h2>
 
