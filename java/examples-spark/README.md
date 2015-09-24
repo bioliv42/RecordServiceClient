@@ -82,3 +82,37 @@ res0: org.apache.spark.sql.DataFrame = []
 scala> val result = context.sql("SELECT count(*) FROM nationTbl").collect()(0).getLong(0)
 result: Long = 25
 ```
+
+## How to enforce Sentry permissions with Spark
+
+With RecordService, Spark users can now enforce restrictions on data with **views**.
+For details on how to create and set up access to views, please check out the [MapReduce example](../examples/README.md#how-to-enforce-sentry-permissions-with-mapreduce).
+
+With access to the view set up, now if we launch a Spark job for [RecordCount](src/main/scala/com/cloudera/recordservice/examples/spark/RecordCount.scala)
+on the `tpch.nation` table mentioned in the MapReduce example:
+
+```
+spark-submit \
+  --class com.cloudera.recordservice.examples.spark.RecordCount \
+  --master <master-url> \
+  /path/to/recordservice-examples-spark-0.1.jar
+  "SELECT * FROM tpch.nation"
+```
+
+The job will fail with this exception:
+
+```
+TRecordServiceException(code:INVALID_REQUEST, message:Could not plan request.,
+detail:AuthorizationException: User 'cloudera' does not have privileges to execute 'SELECT' on:
+tpch.nation)
+```
+
+However, accessing the `tpch.nation_names` view is OK:
+
+```
+spark-submit \
+  --class com.cloudera.recordservice.examples.spark.RecordCount \
+  --master <master-url> \
+  /path/to/recordservice-examples-spark-0.1.jar
+  "SELECT * FROM tpch.nation_names"
+```
