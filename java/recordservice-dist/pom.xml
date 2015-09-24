@@ -26,12 +26,14 @@
   <parent>
     <groupId>com.cloudera.recordservice</groupId>
     <artifactId>recordservice</artifactId>
-    <version>${project.version}</version>
+    <version>0.1</version>
+    <relativePath>../pom.xml</relativePath>
   </parent>
 
   <artifactId>recordservice-dist</artifactId>
+  <packaging>pom</packaging>
   <name>RecordService Client Integration Distribution</name>
-  <description>RecordService Integration Distribution</description>
+
   <dependencies>
     <dependency>
       <groupId>com.cloudera.recordservice</groupId>
@@ -55,11 +57,6 @@
     </dependency>
     <dependency>
       <groupId>com.cloudera.recordservice</groupId>
-      <artifactId>recordservice-spark-benchmark</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.cloudera.recordservice</groupId>
       <artifactId>recordservice-avro</artifactId>
       <version>${project.version}</version>
     </dependency>
@@ -76,6 +73,11 @@
     <dependency>
       <groupId>com.cloudera.recordservice</groupId>
       <artifactId>recordservice-examples</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.cloudera.recordservice</groupId>
+      <artifactId>recordservice-examples-spark</artifactId>
       <version>${project.version}</version>
     </dependency>
   </dependencies>

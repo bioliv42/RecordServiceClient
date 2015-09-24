@@ -50,11 +50,12 @@
         <include>hive/**</include>
         <include>mr/**</include>
         <include>spark/**</include>
-        <include>spark-benchmark/**</include>
         <include>avro/**</include>
         <include>avro-mr/**</include>
         <include>avro-example/**</include>
         <include>examples/**</include>
+        <include>examples-spark/**</include>
+        <include>recordservice-dist/**</include>
       </includes>
       <outputDirectory>/</outputDirectory>
     </fileSet>

@@ -39,6 +39,7 @@
     <module>avro-example</module>
     <module>examples</module>
     <module>examples-spark</module>
+    <module>recordservice-dist</module>
   </modules>
 
   <properties>
