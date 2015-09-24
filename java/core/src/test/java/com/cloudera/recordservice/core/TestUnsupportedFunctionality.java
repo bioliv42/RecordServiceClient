@@ -56,6 +56,11 @@ public class TestUnsupportedFunctionality extends TestBase {
     testUnsupported("set num_nodes=1");
     testUnsupported("explain select * from tpch.nation");
     testUnsupported("create table rs.not_exists(i int)");
+    testUnsupported("invalidate metadata");
+    testUnsupported("invalidate metadata tpch.nation");
+    testUnsupported("drop table tpch.nation");
+    testUnsupported("create view rs.test_vs as select * from tpch.nation");
+
 
     // VM doesn't support write path access
     if (!TestBasicClient.RECORD_SERVICE_QUICKSTART_VM) {
