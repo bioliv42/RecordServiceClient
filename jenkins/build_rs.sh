@@ -26,4 +26,3 @@ if [[ -z $RECORD_SERVICE_SKIP_JAVA_CLIENT ]]; then
 fi
 
 popd
-

@@ -31,16 +31,18 @@ export PATH=/usr/lib/ccache:$PATH
 export BOOST_ROOT=/opt/toolchain/boost-pic-1.55.0/
 export ASAN_OPTIONS="handle_segv=0"
 
+# We always need to clean on the ec2 machines because they are provisioned on demand
+# and don't have a metastore db
+${EC2_HOST_PREFIX:="impala-boost-static-burst-slave"}
+current-host=`hostname`
+if [[ $current-host == *$EC2_HOST_PREFIX* ]]; then
+  export CLEAN=true;
+fi
+
 echo ">>> Shell environment"
 env
 java -version
 ulimit -a
-
-if [ -n "$JENKINS_USE_TOOLCHAIN" ]; then
-  echo ">>> Bootstrapping toolchain."
-  cd $RECORD_SERVICE_HOME
-  python jenkins/bootstrap_toolchain.py || { echo "toolchain bootstrap failed"; exit 1; }
-fi
 
 echo "********************************************************************************"
 echo " Environment setup for impala complete, build proper follows"

@@ -22,6 +22,12 @@ then
   popd
 fi
 
+if [ -n "$JENKINS_USE_TOOLCHAIN" ]; then
+  echo ">>> Bootstrapping toolchain."
+  cd $RECORD_SERVICE_HOME
+  impala-python jenkins/bootstrap_toolchain.py || { echo "toolchain bootstrap failed"; exit 1; }
+fi
+
 # Version for CDH5.4 is -60
 if [ $HDFS_VERSION -ne -60 ]
 then
