@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import com.cloudera.recordservice.core.NetworkAddress;
 import com.cloudera.recordservice.core.PlanRequestResult;
 import com.cloudera.recordservice.core.RecordServiceException;
 import com.cloudera.recordservice.core.RecordServicePlannerClient;
@@ -98,30 +99,35 @@ public class RSCat {
     RecordServicePlannerClient rspc = new RecordServicePlannerClient.Builder()
         .connect(hostname, port);
     Request planRequest;
-    PlanRequestResult plannerRequest;
+    PlanRequestResult planResult;
     try {
       planRequest = Request.createPathRequest(path);
-      plannerRequest = rspc.planRequest(planRequest);
+      planResult = rspc.planRequest(planRequest);
     } catch (RecordServiceException rse) {
       // This try catch is used to detect the request type. If the path request
       // fails, we know that path is either a table scan request or doesn't
       // exist
       planRequest = Request.createTableScanRequest(path);
-      plannerRequest = rspc.planRequest(planRequest);
+      planResult = rspc.planRequest(planRequest);
     } finally {
       rspc.close();
     }
 
     Random randGen = new Random();
     RecordServiceWorkerClient rswc;
-    for (int i = 0; i < plannerRequest.tasks.size(); ++i) {
+    for (int i = 0; i < planResult.tasks.size(); ++i) {
       Records rds = null;
       try {
-        Task task = plannerRequest.tasks.get(i);
-        int hostChoice = randGen.nextInt(task.localHosts.size());
-        rswc = new RecordServiceWorkerClient.Builder().connect(
-            task.localHosts.get(hostChoice).hostname,
-            task.localHosts.get(hostChoice).port);
+        Task task = planResult.tasks.get(i);
+        NetworkAddress addr;
+        if (task.localHosts.size() > 0) {
+          int hostChoice = randGen.nextInt(task.localHosts.size());
+          addr = task.localHosts.get(hostChoice);
+        } else {
+          int hostChoice = randGen.nextInt(planResult.hosts.size());
+          addr = planResult.hosts.get(hostChoice);
+        }
+        rswc = new RecordServiceWorkerClient.Builder().connect(addr.hostname, addr.port);
         rds = rswc.execAndFetch(task);
         Schema taskSchema = rds.getSchema();
         Record record;

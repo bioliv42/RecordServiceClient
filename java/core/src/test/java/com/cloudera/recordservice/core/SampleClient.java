@@ -30,6 +30,7 @@ import com.cloudera.recordservice.thrift.TExecTaskParams;
 import com.cloudera.recordservice.thrift.TExecTaskResult;
 import com.cloudera.recordservice.thrift.TFetchParams;
 import com.cloudera.recordservice.thrift.TFetchResult;
+import com.cloudera.recordservice.thrift.TNetworkAddress;
 import com.cloudera.recordservice.thrift.TPlanRequestParams;
 import com.cloudera.recordservice.thrift.TPlanRequestResult;
 import com.cloudera.recordservice.thrift.TProtocolVersion;
@@ -92,8 +93,14 @@ public class SampleClient extends TestBase {
     long sum = 0;
     for (TTask task: planResult.tasks) {
       /* Start executing the task */
+      TNetworkAddress addr;
+      if (task.local_hosts.size() > 0) {
+        addr = task.local_hosts.get(0);
+      } else {
+        addr = planResult.hosts.get(0);
+      }
       RecordServiceWorker.Client worker = new RecordServiceWorker.Client(
-          createConnection(task.local_hosts.get(0).port, "Worker"));
+          createConnection(addr.port, "Worker"));
       TExecTaskResult taskResult;
       try {
         TExecTaskParams taskParams = new TExecTaskParams(task.task);
