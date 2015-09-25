@@ -120,6 +120,8 @@ public class ThriftUtils {
     TTransport transport = new TSocket(hostname, port, timeoutMs);
 
     if (kerberosPrincipal != null) {
+      // Replace _HOST to hostname in kerberosPrincipal
+      kerberosPrincipal = kerberosPrincipal.replace("_HOST", hostname);
       LOG.info(String.format(
           "Connecting to %s at %s:%d with kerberos principal: %s, with timeout: %sms",
           service, hostname, port, kerberosPrincipal, timeoutMs));
