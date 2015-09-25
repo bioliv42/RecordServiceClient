@@ -33,7 +33,7 @@ using namespace apache::thrift::transport;
 using namespace recordservice;
 
 const char* PLANNER_HOST = "localhost";
-const int RECORD_SERVICE_PLANNER_PORT = 40000;
+const int RECORD_SERVICE_PLANNER_PORT = 12050;
 
 // If true, runs the aggregation portion of "select sum(l_orderkey)" logic.
 #define QUERY_1 1

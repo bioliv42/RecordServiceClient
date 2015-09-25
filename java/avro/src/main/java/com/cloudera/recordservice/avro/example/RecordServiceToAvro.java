@@ -35,7 +35,7 @@ public class RecordServiceToAvro {
   static final String PLANNER_HOST = System.getenv("RECORD_SERVICE_PLANNER_HOST") != null ?
       System.getenv("RECORD_SERVICE_PLANNER_HOST") : "localhost";
   static final int PLANNER_PORT = System.getenv("RECORD_SERVICE_PLANNER_PORT") != null ?
-      Integer.parseInt(System.getenv("RECORD_SERVICE_PLANNER_PORT")) : 40000;
+      Integer.parseInt(System.getenv("RECORD_SERVICE_PLANNER_PORT")) : 12050;
 
   public static void main(String[] args) throws RecordServiceException, IOException {
     String query = "select * from tpch.nation";

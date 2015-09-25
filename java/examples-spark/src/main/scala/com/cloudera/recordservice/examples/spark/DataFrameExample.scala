@@ -37,7 +37,7 @@ object DataFrameExample {
 
     // Set up the RecordService planner to use. Although in this case it isn't
     // necessary since it's the default value.
-    sparkConf.set(RecordServiceConfig.PLANNER_HOSTPORTS_CONF, "localhost:40000")
+    sparkConf.set(RecordServiceConfig.PLANNER_HOSTPORTS_CONF, "localhost:12050")
 
     // Initialize SQLContext
     val ctx = new SparkContext(sparkConf)

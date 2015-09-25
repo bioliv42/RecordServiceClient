@@ -150,7 +150,7 @@ public class RSCat {
     }
 
     Integer numRecords = Integer.MAX_VALUE;
-    int port = 40000;
+    int port = 12050;
     String hostname = "localhost";
     String filename = "";
     try {

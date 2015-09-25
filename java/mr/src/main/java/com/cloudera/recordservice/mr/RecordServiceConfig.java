@@ -46,7 +46,7 @@ public class RecordServiceConfig {
 
   public static final String DEFAULT_PLANNER_HOSTPORTS =
     System.getenv("RECORD_SERVICE_PLANNER_HOST") != null ?
-        System.getenv("RECORD_SERVICE_PLANNER_HOST") + ":40000" : "localhost:40000";
+        System.getenv("RECORD_SERVICE_PLANNER_HOST") + ":12050" : "localhost:12050";
 
   // Kerberos principal.
   public final static String KERBEROS_PRINCIPAL_CONF = "recordservice.kerberos.principal";

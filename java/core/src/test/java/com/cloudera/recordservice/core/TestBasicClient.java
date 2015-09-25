@@ -131,7 +131,7 @@ public class TestBasicClient extends TestBase {
     RecordServicePlannerClient client = null;
     try {
       client = new RecordServicePlannerClient.Builder().
-          setMaxAttempts(1).connect(PLANNER_HOST, 40100);
+          setMaxAttempts(1).connect(PLANNER_HOST, DEFAULT_WORKER_PORT);
       client.getSchema(Request.createTableScanRequest("tpch.nation"));
     } catch (IOException e) {
       exceptionThrown = true;

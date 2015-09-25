@@ -141,7 +141,7 @@ object TpcdsBenchmark {
           "hdfs://vd0214.halxg.cloudera.com:8020/user/impala/")
     } else {
       sqlContext.setConf(RecordServiceConfig.PLANNER_HOSTPORTS_CONF,
-          plannerHost + ":40000")
+          plannerHost + ":12050")
       registerRecordServiceTables(sqlContext, db)
     }
 

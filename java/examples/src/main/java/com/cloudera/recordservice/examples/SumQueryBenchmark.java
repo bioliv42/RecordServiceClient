@@ -39,7 +39,7 @@ public class SumQueryBenchmark {
         System.getenv("RECORD_SERVICE_PLANNER_HOST") : "localhost";
   static final int PLANNER_PORT =
     System.getenv("RECORD_SERVICE_PLANNER_PORT") != null ?
-        Integer.parseInt(System.getenv("RECORD_SERVICE_PLANNER_PORT")) : 40000;
+        Integer.parseInt(System.getenv("RECORD_SERVICE_PLANNER_PORT")) : 12050;
 
   static final String DEFAULT_QUERY = "select bigint_col from rs.alltypes";
 

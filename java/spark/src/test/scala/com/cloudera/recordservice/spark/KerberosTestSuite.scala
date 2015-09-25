@@ -30,7 +30,7 @@ class KerberosTestSuite extends FunSuite with BeforeAndAfterAll {
       System.getenv("HAS_KERBEROS_CREDENTIALS").equalsIgnoreCase("true")
 
   val conf = new SparkConf(false)
-    .set(RecordServiceConfig.PLANNER_HOSTPORTS_CONF, "vd0224.halxg.cloudera.com:40000")
+    .set(RecordServiceConfig.PLANNER_HOSTPORTS_CONF, "vd0224.halxg.cloudera.com:12050")
     .set(RecordServiceConfig.KERBEROS_PRINCIPAL_CONF,
         "impala/vd0224.halxg.cloudera.com@HALXG.CLOUDERA.COM")
 

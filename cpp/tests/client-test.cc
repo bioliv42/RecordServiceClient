@@ -27,8 +27,8 @@ using namespace apache::thrift::transport;
 using namespace recordservice;
 
 const char* PLANNER_HOST = "localhost";
-const int RECORD_SERVICE_PLANNER_PORT = 40000;
-const int RECORD_SERVICE_WORKER_PORT = 40100;
+const int RECORD_SERVICE_PLANNER_PORT = 12050;
+const int RECORD_SERVICE_WORKER_PORT = 13050;
 
 static struct {
   int16_t c0;

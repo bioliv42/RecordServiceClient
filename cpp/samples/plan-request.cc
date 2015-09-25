@@ -36,7 +36,7 @@ DEFINE_string(planner_host, "localhost", "The host running the planner service."
 DEFINE_int32(max_tasks, -1,
     "Maximum number of tasks to ask the planner to generate."
     " -1 indicates server default.");
-const int RECORD_SERVICE_PLANNER_PORT = 40000;
+const int RECORD_SERVICE_PLANNER_PORT = 12050;
 
 void PlanRequest(const char* request) {
   printf("Planning request: %s\n", request);
