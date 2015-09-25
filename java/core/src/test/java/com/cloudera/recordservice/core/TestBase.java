@@ -21,11 +21,11 @@ public class TestBase {
           System.getenv("RECORD_SERVICE_PLANNER_HOST") : "localhost";
   protected static final int PLANNER_PORT =
       System.getenv("RECORD_SERVICE_PLANNER_PORT") != null ?
-          Integer.parseInt(System.getenv("RECORD_SERVICE_PLANNER_PORT")) : 40000;
+          Integer.parseInt(System.getenv("RECORD_SERVICE_PLANNER_PORT")) : 12050;
 
   // Most tests should use the worker port returned from the plan. Only use this
   // for tests that are testing worker connections specifically.
-  protected static final int DEFAULT_WORKER_PORT = 40100;
+  protected static final int DEFAULT_WORKER_PORT = 13050;
 
   @BeforeClass
   public static void setUpBeforeClass() throws Exception {

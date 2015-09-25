@@ -35,7 +35,7 @@ using namespace apache::thrift::transport;
 using namespace recordservice;
 
 DEFINE_string(planner_host, "localhost", "The host running the planner service.");
-DEFINE_int32(planner_port, 40000, "The port of the planner service.");
+DEFINE_int32(planner_port, 12050, "The port of the planner service.");
 
 // Implementation of some standard grep options.
 DEFINE_bool(invert_match, false, "select non-matching lines");
