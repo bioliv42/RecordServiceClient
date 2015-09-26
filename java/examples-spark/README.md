@@ -28,8 +28,21 @@ To use Spark shell with RecordService, first you'll need to start up `spark-shel
 with RecordService jar:
 
 ```bash
-spark-shell --jars /path/to/recordservice-spark.jar
+spark-shell --properties_file=/path/to/properties_file --jars /path/to/recordservice-spark.jar
 ```
+
+where the parameter `properties_file` should include all the necessary properties. For instance:
+
+```
+spark.recordservice.planner.rpc.timeoutMs=-1
+spark.recordservice.worker.rpc.timeoutMs=-1
+spark.recordservice.worker.server.enableLogging=false
+spark.recordservice.kerberos.principal= primary/instance@REALM
+spark.recordservice.planner.hostports=plannerHost:port
+```
+
+If the cluster is deployed with Cloudera Manager, then you'll need to deploy client configuration
+first. After this you can use the generated `spark.conf` under `/etc/recordservice/conf`.
 
 Then follow the examples to use Spark shell with RecordService in different ways.
 For clarity most of the log outputs are omitted from the output, also the output may
@@ -88,7 +101,12 @@ result: Long = 25
 With RecordService, Spark users can now enforce restrictions on data with **views**.
 For details on how to create and set up access to views, please check out the [MapReduce example](../examples/README.md#how-to-enforce-sentry-permissions-with-mapreduce).
 
-With access to the view set up, now if we launch a Spark job for [RecordCount](src/main/scala/com/cloudera/recordservice/examples/spark/RecordCount.scala)
+### Reading data through SQL query
+
+Similarly to MapReduce, if the data is a table in Hive MetaStore, one can get
+fine-grained access to it through **views**. Following the MapReduce example,
+suppose the view is already set up, now if we launch a Spark job for
+[RecordCount](src/main/scala/com/cloudera/recordservice/examples/spark/RecordCount.scala)
 on the `tpch.nation` table mentioned in the MapReduce example:
 
 ```
@@ -115,4 +133,19 @@ spark-submit \
   --master <master-url> \
   /path/to/recordservice-examples-spark-0.1.jar \
   "SELECT * FROM tpch.nation_names"
+
+```
+
+### Reading data through path request
+
+Like the MapReduce example, one can also use path request to read data
+that is not registered in Hive MetaStore. Here we use
+[WordCount](src/main/scala/com/cloudera/recordservice/examples/spark/WordCount.scala)
+as example:
+
+```
+spark-submit \
+  --class com.cloudera.recordservice.examples.spark.WordCount \
+  --master <master-url> \
+  /path/to/recordservice-examples-spark-0.1.jar
 ```
