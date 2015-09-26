@@ -41,7 +41,7 @@ First, create a group and add the current user to that group:
 
 ```bash
 sudo groupadd demogroup
-sudo useradd -g $USER demogroup
+sudo usermod -a -G demogroup $USER
 ```
 
 Then, start up Impala or Hive (we use Impala here, but one can also use Beeline in Hive to do the same thing) and 
@@ -64,6 +64,7 @@ Suppose we want some users with a particular role to only be able to read the
 sudo -u impala impala-shell
 [quickstart.cloudera:21000] > CREATE ROLE demorole;
 [quickstart.cloudera:21000] > GRANT ROLE demorole to GROUP demogroup;
+[quickstart.cloudera:21000] > USE tpch;
 [quickstart.cloudera:21000] > CREATE VIEW nation_names AS SELECT n_nationkey, n_name FROM tpch.nation;
 [quickstart.cloudera:21000] > GRANT SELECT ON TABLE tpch.nation_names TO ROLE demorole;
 ```
