@@ -170,6 +170,7 @@ public class PlanUtil {
       NetworkAddress hostPort = plannerHostPorts.get(i);
       try {
         planner = builder.connect(hostPort.hostname, hostPort.port);
+        if (planner != null) return planner;
       } catch (RecordServiceException e) {
         // Ignore, try next host. The errors in builder should be sufficient.
         lastException = e;
@@ -178,11 +179,8 @@ public class PlanUtil {
         lastException = e;
       }
     }
-    if (planner == null) {
-      throw new IOException(
-          "Could not connect to any of the configured planners.", lastException);
-    }
-    return planner;
+    throw new IOException(
+        "Could not connect to any of the configured planners.", lastException);
   }
 
   /**
