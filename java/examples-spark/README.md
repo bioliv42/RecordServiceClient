@@ -95,7 +95,7 @@ on the `tpch.nation` table mentioned in the MapReduce example:
 spark-submit \
   --class com.cloudera.recordservice.examples.spark.RecordCount \
   --master <master-url> \
-  /path/to/recordservice-examples-spark-0.1.jar
+  /path/to/recordservice-examples-spark-0.1.jar \
   "SELECT * FROM tpch.nation"
 ```
 
@@ -113,6 +113,6 @@ However, accessing the `tpch.nation_names` view is OK:
 spark-submit \
   --class com.cloudera.recordservice.examples.spark.RecordCount \
   --master <master-url> \
-  /path/to/recordservice-examples-spark-0.1.jar
+  /path/to/recordservice-examples-spark-0.1.jar \
   "SELECT * FROM tpch.nation_names"
 ```
