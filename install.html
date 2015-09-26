@@ -218,6 +218,22 @@ isInstalled: true
   </li>
   <li>Review and modify configuration settings, such as log dir and planner port.</li>
   <li>Start the service.</li>
+  <li>To enable Kerberos:
+    <ol>
+      <li>Go to the <strong>Configuration</strong> page for RecordService Gateway in CM.</li>
+      <li>Set <strong>Alternatives Priority</strong> to a number larger than the current highest priority for <code>hadoop-conf</code>.</li>
+      <li>Deploy client configuration for RecordService in CM. After that you can see <code>hadoop-conf</code> is linked to <code>/etc/hadoop/conf.cloudera.record_service</code>.</li>
+      <li>Restart NodeManager if YARN is installed in your cluster. That will create <code>container-executor.cfg</code> in <code>/etc/hadoop/conf</code>.</li>
+      <li>If you want to use your original <code>hadoop-conf</code>:
+        <ol>
+          <li>Set the <strong>Alternatives Priority</strong> back to a lower number.</li>
+          <li>Redeploy client configuration.</li>
+          <li>Run the following command in the node where you run the RecordService Client:<br />
+ <code>export HADOOP_CONF_DIR=/etc/hadoop/conf.cloudera.record_service</code></li>
+        </ol>
+      </li>
+    </ol>
+  </li>
   <li>Visit the debug page hostname:35000 to verify it started properly. </li>
   <li>Go to the RecordService cluster page in CM.</li>
   <li>Choose <strong>Deploy Client Configuration</strong> from <em>Actions</em>.</li>
@@ -239,9 +255,9 @@ isInstalled: true
 <p>You can verify the RecordService server installation by running examples from the client JAR.</p>
 
 <ol>
-  <li>Download the client JAR. 
+  <li>Download the client library and example JARs. 
     <ul>
-      <li>You can also build client JAR by yourself from the client repo.</li>
+      <li>You can also build client library yourself from the client repo.</li>
       <li>You can import it as a lib in your project, or run it directly from Hadoop, Spark-shell, and so on.</li>
     </ul>
   </li>

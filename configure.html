@@ -173,7 +173,39 @@
 
 <h3 id="sentry-table-configuration">Sentry Table Configuration</h3>
 
-<p>Sentry is configured with standard installation. No special configuration is required.</p>
+<p>Sentry is configured for you in the RecordService VM. This section describes how to configure Sentry in a  non-VM deployment.</p>
+
+<h4 id="prerequisite">Prerequisite</h4>
+
+<p>Follow CDH documentation to install Sentry and enable it for Hive (and Impala, if applicable). See <a href="http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topics/sg_sentry_service_install.html">http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topics/sg_sentry_service_install.html</a>.</p>
+
+<h4 id="configure-sentry-with-recordservice">Configure Sentry with RecordService</h4>
+
+<ol>
+  <li>Enable RecordService to read policy metadata from Sentry:
+    <ol>
+      <li>In CM, navigate to the <strong>Sentry Configuration</strong> page.</li>
+      <li>In <strong>Admin Groups</strong>, add the user <em>recordservice</em>.</li>
+      <li>In <strong>Allowed Connecting Users</strong>, add the user <em>recordservice</em>.</li>
+    </ol>
+  </li>
+  <li>Save changes.</li>
+  <li>Download CM generated <code>sentry-site.xml</code> configuration file (same config as HiveServer2)
+    <ul>
+      <li>In CM, navigate to <strong>Hive</strong> -&gt; <strong>HiveServer2</strong> -&gt; <strong>Processes</strong> -&gt; <code>sentry-site.xml</code></li>
+    </ul>
+  </li>
+  <li>Deploy configurations to cluster: copy <code>sentry-site.xml</code> to the <code>/etc/sentry/conf/</code> directory on all nodes running RecordService Planner or RecordService Planner and Worker. Nodes that are only running only the RecordService Worker role do not need this configuration option.</li>
+  <li>Enable Sentry for RecordService
+    <ol>
+      <li>In CM, navigate to <strong>RecordService Configuration</strong>.</li>
+      <li>Select the <strong>Sentry</strong> service.</li>
+      <li>In the <strong>Sentry Configuration File</strong> field, enter `/etc/sentry/conf/sentry-site.xml.</li>
+    </ol>
+  </li>
+  <li>Save changes.</li>
+  <li>Restart the Sentry and RecordService services. </li>
+</ol>
 
 <h3 id="delegation-token-configuration">Delegation Token Configuration</h3>
 
