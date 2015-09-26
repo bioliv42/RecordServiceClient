@@ -196,7 +196,7 @@ isInstalled: true
 
 <p>See <a href="http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topics/cm_ig_parcels.html">http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topics/cm_ig_parcels.html</a></p>
 
-<h3 id="start-up-recordservice-in-a-cluster-from-cm">Start up RecordService in a Cluster from CM</h3>
+<h3 id="cm-deployment">CM Deployment</h3>
 
 <p>There are the steps to start up RecordService for a cluster from CM.</p>
 
@@ -224,6 +224,16 @@ isInstalled: true
 </ol>
 
 <p>See <a href="http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topics/cm_mc_add_service.html?scroll=cmug_topic_5_1">http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topics/cm_mc_add_service.html?scroll=cmug_topic_5_1</a>.</p>
+
+<h3 id="deployment-recommendation-record-service-roles">Deployment Recommendation: Record Service Roles</h3>
+
+<p><strong>RecordService Planner</strong> - Clients (MR/Spark) connect to the Planner to submit requests. Performs authorization checks and generates all tasks to execute for the overall request. For the beta release, run only one Planner node located on a non-DataNode.</p>
+
+<p><strong>RecordService Worker</strong>: Read data from the underlying storage layer (HDFS/S3) and construct records. Worker roles cannot directly process client requests. Run a Worker on every DataNode in the cluster to ensure locality.</p>
+
+<p><strong>RecordService Planner Worker</strong>: Acts as both a Planner and a Worker. Provides flexibility for small clusters. </p>
+
+<p><strong>RecordService Gateway</strong>: Contains configuration information, such as the location of the RecordService Planner. Deploy to all Gateway nodes, and any other nodes that run client jobs that do not already have a RecordService Planner or Worker role deployed.</p>
 
 <h3 id="experiment-with-client-jars">Experiment with Client JARs</h3>
 <p>You can verify the RecordService server installation by running examples from the client JAR.</p>
