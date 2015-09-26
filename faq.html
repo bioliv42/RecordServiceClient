@@ -151,6 +151,10 @@
 
 <p><strong>A:</strong> Sentry’s HDFS Sync feature ensures that the files are locked down such that only users with full access to all of the values in a file (with Sentry permissions for the entire table) are allowed to read the files directly. See <a href="http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topics/sg_sentry_service_config.html">Configuring the Sentry Service</a>.</p>
 
+<p><strong>Q: Do I need to be running Sentry to evaluate the RecordService?</strong></p>
+
+<p><strong>A:</strong> No. You can deploy RecordService without Sentry, in which case no authorization checks will happen. This can be useful to evaluate functionality and performance.</p>
+
 <p><strong>Q: Is there any API to discover the permissions that are set?</strong> </p>
 
 <p><strong>A:</strong> Hue can show this, as well as SHOW commands in Hive or Impala CLI.</p>
