@@ -18,7 +18,7 @@
 package com.cloudera.recordservice.spark
 
 import com.cloudera.recordservice.core._
-import com.cloudera.recordservice.mr.{RecordServiceConfig, PlanUtil}
+import com.cloudera.recordservice.mr.PlanUtil
 import org.apache.spark._
 import org.apache.spark.rdd.RDD
 
@@ -69,16 +69,16 @@ abstract class RecordServiceRDDBase[T:ClassTag](@transient sc: SparkContext)
   // Configs that we use when we execute the task. These come from SparkContext
   // but we do not serialize the entire context. Instead these are populated in
   // the client (i.e. planning phase).
-  val memLimit = sc.getConf.getLong(RecordServiceConfig.MEM_LIMIT_CONF, -1);
-  val limit = sc.getConf.getLong(RecordServiceConfig.RECORDS_LIMIT_CONF, -1);
+  val memLimit = sc.getConf.getLong(RecordServiceConf.MEM_LIMIT_CONF, -1);
+  val limit = sc.getConf.getLong(RecordServiceConf.RECORDS_LIMIT_CONF, -1);
   val maxAttempts = sc.getConf.getInt(
-      RecordServiceConfig.WORKER_RETRY_ATTEMPTS_CONF, -1);
+      RecordServiceConf.WORKER_RETRY_ATTEMPTS_CONF, -1);
   val taskSleepMs = sc.getConf.getInt(
-      RecordServiceConfig.WORKER_RETRY_SLEEP_MS_CONF, -1);
+      RecordServiceConf.WORKER_RETRY_SLEEP_MS_CONF, -1);
   val connectionTimeoutMs = sc.getConf.getInt(
-      RecordServiceConfig.WORKER_CONNECTION_TIMEOUT_MS_CONF, -1);
+      RecordServiceConf.WORKER_CONNECTION_TIMEOUT_MS_CONF, -1);
   val rpcTimeoutMs = sc.getConf.getInt(
-      RecordServiceConfig.WORKER_RPC_TIMEOUT_MS_CONF, -1);
+      RecordServiceConf.WORKER_RPC_TIMEOUT_MS_CONF, -1);
 
   // Request to make
   @transient var request:Request = null
@@ -252,15 +252,15 @@ abstract class RecordServiceRDDBase[T:ClassTag](@transient sc: SparkContext)
       // credentials object.
       val principal = RecordServiceConf.getKerberosPrincipal(sc)
       val connectionTimeoutMs =
-          sc.getConf.getInt(RecordServiceConfig.PLANNER_CONNECTION_TIMEOUT_MS_CONF, -1)
+          sc.getConf.getInt(RecordServiceConf.PLANNER_CONNECTION_TIMEOUT_MS_CONF, -1)
       val rpcTimeoutMs =
-          sc.getConf.getInt(RecordServiceConfig.PLANNER_RPC_TIMEOUT_MS_CONF, -1)
+          sc.getConf.getInt(RecordServiceConf.PLANNER_RPC_TIMEOUT_MS_CONF, -1)
       val maxAttempts =
-          sc.getConf.getInt(RecordServiceConfig.PLANNER_RETRY_ATTEMPTS_CONF, -1)
+          sc.getConf.getInt(RecordServiceConf.PLANNER_RETRY_ATTEMPTS_CONF, -1)
       val sleepDurationMs =
-          sc.getConf.getInt(RecordServiceConfig.PLANNER_RETRY_SLEEP_MS_CONF, -1)
+          sc.getConf.getInt(RecordServiceConf.PLANNER_RETRY_SLEEP_MS_CONF, -1)
       val maxTasks =
-          sc.getConf.getInt(RecordServiceConfig.PLANNER_REQUEST_MAX_TASKS, -1)
+          sc.getConf.getInt(RecordServiceConf.PLANNER_REQUEST_MAX_TASKS, -1)
 
       val builder = new RecordServicePlannerClient.Builder()
       if (connectionTimeoutMs != -1) builder.setConnectionTimeoutMs(connectionTimeoutMs);
