@@ -20,7 +20,7 @@ package com.cloudera.recordservice.spark
 import org.apache.commons.lang.StringEscapeUtils.escapeSql
 
 import com.cloudera.recordservice.core.{Request, RecordServicePlannerClient, Schema}
-import com.cloudera.recordservice.mr.{RecordServiceConfig, PlanUtil}
+import com.cloudera.recordservice.mr.PlanUtil
 import org.apache.hadoop.io._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.expressions.SpecificMutableRow
@@ -52,15 +52,15 @@ case class RecordServiceRelation(table:String, size:Option[Long])(
 
   override def schema: StructType = {
     val connectionTimeoutMs = sqlContext.getConf(
-        RecordServiceConfig.PLANNER_CONNECTION_TIMEOUT_MS_CONF, "-1").toInt
+        RecordServiceConf.PLANNER_CONNECTION_TIMEOUT_MS_CONF, "-1").toInt
     val rpcTimeoutMs = sqlContext.getConf(
-        RecordServiceConfig.PLANNER_RPC_TIMEOUT_MS_CONF, "-1").toInt
+        RecordServiceConf.PLANNER_RPC_TIMEOUT_MS_CONF, "-1").toInt
     val maxAttempts = sqlContext.getConf(
-        RecordServiceConfig.PLANNER_RETRY_ATTEMPTS_CONF, "-1").toInt
+        RecordServiceConf.PLANNER_RETRY_ATTEMPTS_CONF, "-1").toInt
     val sleepDurationMs = sqlContext.getConf(
-        RecordServiceConfig.PLANNER_RETRY_SLEEP_MS_CONF, "-1").toInt
+        RecordServiceConf.PLANNER_RETRY_SLEEP_MS_CONF, "-1").toInt
     val maxTasks = sqlContext.getConf(
-        RecordServiceConfig.PLANNER_REQUEST_MAX_TASKS, "-1").toInt
+        RecordServiceConf.PLANNER_REQUEST_MAX_TASKS, "-1").toInt
 
     val builder = new RecordServicePlannerClient.Builder()
     // TODO: this code is replicated in a few places because of where the
