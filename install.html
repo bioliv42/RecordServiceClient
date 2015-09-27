@@ -154,7 +154,7 @@
   <li>Upload the CSD to <code>/opt/cloudera/csd</code> in the CM server.</li>
   <li>Change the owner and group for the JAR using the following comamand line instruction:<br />
 <code>
-chown cloudera-scm:cloudera-scm /opt/clouder/csd/RECORD_SERVICE-1.0.jar
+chown cloudera-scm:cloudera-scm /opt/cloudera/csd/RECORD_SERVICE-1.0.jar
 </code></li>
   <li>Update the permissions on the file using the following command line instruction:<br />
 <code>
@@ -184,11 +184,10 @@ isInstalled: true
 <p>These are the steps to install the RecordService Parcel.</p>
 
 <ol>
-  <li>Add the Remote Parcel Repository URL to the CM Parcel Settings page. <strong>NEED CORRECT URL.</strong></li>
-  <li>Go to <code>http://{cm-server}::7180/cmf/parcel/status</code>.</li>
+  <li>Go to <code>http://{cm-server}:7180/cmf/parcel/status</code>.</li>
   <li>Click <strong>Edit Settings</strong>.</li>
-  <li>Add the RecordService parcel URL.</li>
-  <li>Open the CM Parcel status page, <code>http://{cm-server}::7180/cmf/parcel/status</code>. </li>
+  <li>Add the RecordService parcel URL if it is not in Remote Parcel Repository URLs.</li> <strong>NEED CORRECT URL.</strong></li>
+  <li>Open the CM Parcel status page, <code>http://{cm-server}:7180/cmf/parcel/status</code>. </li>
   <li><strong>Download</strong> the RecordService parcel.</li>
   <li><strong>Distribute</strong> the parcel.</li>
   <li><strong>Activate</strong> the parcel. CM asks you to restart the entire cluster, but you only need to start/restart RecordService.</li>
@@ -202,13 +201,6 @@ isInstalled: true
 
 <ol>
   <li>Add a service from CM home page.</li>
-  <li>Run a RecordService Worker on each DataNode (DN) and one RecordService Planner. 
-    <ul>
-      <li>If the cluster is so small that every node is running the DN, run a RecordService Planner and Worker role.</li>
-      <li>If the cluster has 1 dedicated NN, <em>N</em> DNs, run: 1 Planner, <em>N</em> Workers.</li>
-      <li>If the cluster has <em>N</em> nodes, with 1 node having the NN and DN, run 1 Planner and Worker, and <em>N</em>-1 Workers.</li>
-    </ul>
-  </li>
   <li>Customize Role: 
     <ul>
       <li>RecordService Planner and Worker: Select nodes with both role of DN and NN.</li>
@@ -218,25 +210,11 @@ isInstalled: true
   </li>
   <li>Review and modify configuration settings, such as log dir and planner port.</li>
   <li>Start the service.</li>
-  <li>To enable Kerberos:
-    <ol>
-      <li>Go to the <strong>Configuration</strong> page for RecordService Gateway in CM.</li>
-      <li>Set <strong>Alternatives Priority</strong> to a number larger than the current highest priority for <code>hadoop-conf</code>.</li>
-      <li>Deploy client configuration for RecordService in CM. After that you can see <code>hadoop-conf</code> is linked to <code>/etc/hadoop/conf.cloudera.record_service</code>.</li>
-      <li>Restart NodeManager if YARN is installed in your cluster. That will create <code>container-executor.cfg</code> in <code>/etc/hadoop/conf</code>.</li>
-      <li>If you want to use your original <code>hadoop-conf</code>:
-        <ol>
-          <li>Set the <strong>Alternatives Priority</strong> back to a lower number.</li>
-          <li>Redeploy client configuration.</li>
-          <li>Run the following command in the node where you run the RecordService Client:<br />
- <code>export HADOOP_CONF_DIR=/etc/hadoop/conf.cloudera.record_service</code></li>
-        </ol>
-      </li>
-    </ol>
-  </li>
-  <li>Visit the debug page hostname:35000 to verify it started properly. </li>
+  <li>Visit the debug page hostname:11050 to verify it started properly. </li>
   <li>Go to the RecordService cluster page in CM.</li>
   <li>Choose <strong>Deploy Client Configuration</strong> from <em>Actions</em>.</li>
+  <li>Run the following command in the node where you run the RecordService Client:<br />
+<code>export HADOOP_CONF_DIR=/etc/hadoop/conf.cloudera.record_service</code></li>
 </ol>
 
 <p>See <a href="http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topics/cm_mc_add_service.html?scroll=cmug_topic_5_1">http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topics/cm_mc_add_service.html?scroll=cmug_topic_5_1</a>.</p>
@@ -273,7 +251,7 @@ isInstalled: true
     # tar -xzf tpch.tar.gz
     # hadoop fs -mkdir -p /test-warehouse/tpch.nation
     # hadoop fs -put -f tpch/nation/* /test-warehouse/tpch.nation/ 
-    # impala-shell -f create-tbls.sql
+    # impala-shell -f <a href="https://github.com/cloudera/RecordServiceClient/blob/master/tests/create-tbls.sql">create-tbls.sql</a>
 </code></pre>
 
 <pre><code>* Start up spark-shell with the RecordService JAR: 
@@ -283,7 +261,7 @@ isInstalled: true
          /path/to/recordservice-examples-spark-0.1.jar
     # scala&gt; import com.cloudera.recordservice.spark._
     import com.cloudera.recordservice.spark._
-    # scala&gt; val data = sc.recordServiceRecords("select * from tpch.nation") \
+    # scala&gt; val data = sc.recordServiceRecords("select * from tpch.nation")
          data: org.apache.spark.rdd.RDD[Array[org.apache.hadoop.io.Writable]] = \
          RecordServiceRDD[0] at RDD at RecordServiceRDDBase.scala:57
     # scala&gt; data.count()
@@ -301,12 +279,12 @@ isInstalled: true
 <li>Install Hadoop, Hive, Impala, Sentry, ZooKeeper and any other application you want to use.</li>
 <li>Install the RecordServicePlanner using the following command line instruction:<br /><br />
 <pre>
-./recordserviced -hostname=hostname -recordservice_planner_port=40000 \ 
--recordservice_worker_port=0 -recordservice_webserver_port=35000 \ 
+./recordserviced -hostname=hostname -recordservice_planner_port=12050 \
+-recordservice_worker_port=0 -recordservice_webserver_port=11050 \
 -webserver_doc_root=path/to/package/lib/recordservice \
--log_dir=path/to/log/dir -abort_on_config_error=false \ 
--lineage_event_log_dir=path/to/log/dir \ 
--audit_event_log_dir=path/to/log/dir -profile_log_dir=path/to/log/dir \ 
+-log_dir=path/to/log/dir -abort_on_config_error=false \
+-lineage_event_log_dir=path/to/log/dir \
+-audit_event_log_dir=path/to/log/dir -profile_log_dir=path/to/log/dir \
 -v=1 -mem_limit=8G
 </pre>
 </li>
@@ -315,11 +293,11 @@ isInstalled: true
 <br /><br />
 <pre>
 ./recordserviced  -hostname=hostname -recordservice_planner_port=0 \
--recordservice_worker_port=40100 -recordservice_webserver_port=35000 \
--webserver_doc_root=path/to/package/lib/recordservice \ 
--log_dir=path/to/log/dir -abort_on_config_error=false \ 
--lineage_event_log_dir=path/to/log/dir \ 
--audit_event_log_dir=path/to/log/dir -profile_log_dir=path/to/log/dir \ 
+-recordservice_worker_port=13050 -recordservice_webserver_port=11050 \
+-webserver_doc_root=path/to/package/lib/recordservice \
+-log_dir=path/to/log/dir -abort_on_config_error=false \
+-lineage_event_log_dir=path/to/log/dir \
+-audit_event_log_dir=path/to/log/dir -profile_log_dir=path/to/log/dir \
 -v=1 -mem_limit=8G
 </pre>
 </li>
@@ -327,11 +305,11 @@ isInstalled: true
 <li>Install both planner and worker in one node:
 <br /><br />
 <pre>
-./recordserviced  -hostname=hostname -recordservice_planner_port=40000 \ 
--recordservice_worker_port=40100 -recordservice_webserver_port=35000 \ 
--webserver_doc_root=path/to/package/lib/recordservice \ 
--log_dir=path/to/log/dir -abort_on_config_error=false \ 
--lineage_event_log_dir=path/to/log/dir \ 
+./recordserviced -hostname=hostname -recordservice_planner_port=12050 \
+-recordservice_worker_port=13050 -recordservice_webserver_port=11050 \
+-webserver_doc_root=path/to/package/lib/recordservice \
+-log_dir=path/to/log/dir -abort_on_config_error=false \
+-lineage_event_log_dir=path/to/log/dir \
 -audit_event_log_dir=path/to/log/dir -profile_log_dir=path/to/log/dir \
 -v=1 -mem_limit=8G
 </pre>
