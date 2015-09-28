@@ -159,8 +159,9 @@
 If your client code is compiled, your environment is not configured to run the tests on the VM. Use the following command line instructions to run all JUnit tests.</li>
 </ol>
 
-<pre><code>cd $RECORD_SERVICE_HOME/java`
-mvn test
+<pre><code>
+cd $RECORD_SERVICE_HOME/java
+mvn test -DargLine="-Duser.name=recordservice"
 </code></pre>
 
 <h2 id="troubleshooting-the-vm-configuration">Troubleshooting the VM configuration</h2>
@@ -177,7 +178,7 @@ You should see “rs-demo” listed as a running VM.</li>
 
 <h2 id="verify-vm-is-properly-listed-in-etchosts">Verify VM is properly listed in /etc/hosts</h2>
 
-<p>Check that the VM is properly listed in your /etc/hosts file. If you open that file you should see a line that lists an IP followed by <code>quickstart.cloudera</code>. You can check the VM’s IP with the following command:</p>
+<p>Check that the VM is properly listed in your <code>/etc/hosts</code> file. If you open that file you should see a line that lists an IP followed by <code>quickstart.cloudera</code>. You can check the VM’s IP with the following command:</p>
 
 <pre><code>VBoxManage guestproperty get rs-demo /VirtualBox/GuestInfo/Net/0/V4/IP
 </code></pre>
