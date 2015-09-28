@@ -247,7 +247,7 @@ chmod 644 /opt/cloudera/csd/RECORD_SERVICE-1.0.jar
 </ol>
 
 <pre><code>    > wget -q --no-clobber \ 
-      http://util-1.ent.cloudera.com/impala-test-data/tpch.tar.gz 
+      https://s3-us-west-1.amazonaws.com/recordservice-vm/tpch.tar.gz 
     > tar -xzf tpch.tar.gz
     > hadoop fs -mkdir -p /test-warehouse/tpch.nation
     > hadoop fs -put -f tpch/nation/* /test-warehouse/tpch.nation/ 
