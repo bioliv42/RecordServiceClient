@@ -182,7 +182,13 @@
 
 <h2 id="known-issues">Known Issues</h2>
 
-<h3 id="digest-md5-library-not-installed-on-cluster-breaking-delegation-tokens">digest-md5 library not installed on cluster, breaking delegation tokens</h3>
+<h3 id="spark-config">RecordService does not work with Spark when Kerberos is enabled</h3>
+
+<p>Configuration options such as Panner host/port and kerberos principal and not propagated properly when running Spark jobs.</p>
+<h4 id="workaround">Workaround</h4>
+<p>None. An upcoming RecordService client release will resolve this issue.</p>
+
+<h3 id="digest-md5-library-not-installed-on-cluster-breaking-delegation-tokens">digest-md5 library is not installed on cluster for parcel installs, breaking delegation tokens</h3>
 
 <p>The digest-md5 library is not installed by default in parcel deployments.</p>
 
