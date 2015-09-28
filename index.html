@@ -141,9 +141,10 @@
 
 <h2 id="the-motivation">The Motivation</h2>
 
-<p>The Sentry community considered how to enforce a common set of column-level authorization permissions across Hadoop. Building Sentry support into each Hadoop component as well as various applications that interact with Hadoop would require massive effort and continual maintenance.</p>
+<p>
+One of the key properties of the Hadoop ecosystem is decoupling storage managers (e.g. HDFS, Apache HBase) and compute frameworks (e.g. MapReduce, Impala, Apache Spark). While this decoupling allows for far greater flexibility—pick the framework that best solves your problem—it leads to more complexity to ensure everything works seamlessly together. Furthermore, as Hadoop becomes an increasingly critical infrastructure component for users, the expectations for compatibility, performance, and security also increase.</p>
 
-<p>Instead, the community conceived the idea of a common API for accessing tabular data as <em>records</em> — a unified data access path that can be used by multiple Hadoop components and applications with minimal code changes.</p>
+<p>RecordService is a new core security layer for Hadoop that sits between the storage managers and compute frameworks in order to provide a unified data access path.</p>
 
 <p><img src="img/unifiedDataAccessPath.png" alt="Unified Data Access Path" height="85%" width="85%" /></p>
 
