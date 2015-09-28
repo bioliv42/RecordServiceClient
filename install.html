@@ -229,14 +229,14 @@ chmod 644 /opt/cloudera/csd/RECORD_SERVICE-1.0.jar
 
 <p><strong>RecordService Gateway</strong>: Contains configuration information, such as the location of the RecordService Planner. Deploy to all Gateway nodes, and any other nodes that run client jobs that do not already have a RecordService Planner or Worker role deployed.</p>
 
-<h3 id="experiment-with-client-jars">Experiment with Client JARs</h3>
+<h3 id="experiment-with-client-jars">Run a Job Using RecordService</h3>
 <p>You can verify the RecordService server installation by running examples from the client JAR.</p>
 
 <ol>
-  <li>Download the client library and example JARs. 
+  <li>Download the client libraries and example <a href="http://archive.cloudera.com/beta/recordservice/client-dist/recordservice-client-0.1-bin.tar.gz">tarball</a>.
     <ul>
       <li>You can also build the client library yourself from the <a href="http://github.com/cloudera/RecordServiceClient">client repository</a>.</li>
-      <li>You can integrate the client JARs directly from Cloudera’s public Maven repository, or download a pre-built tarball.</li>
+      <li>Client libraries are also available directly from Cloudera’s public Maven repository.</li>
     </ul>
   </li>
   <li>To verify the server installation, you can run our client examples in your clusters.
@@ -254,7 +254,7 @@ chmod 644 /opt/cloudera/csd/RECORD_SERVICE-1.0.jar
     > impala-shell -f <a href="https://github.com/cloudera/RecordServiceClient/blob/master/tests/create-tbls.sql">create-tbls.sql</a>
 </code></pre>
 
-<pre><code>* Run MR job for <a href="https://github.com/cloudera/RecordServiceClient/blob/master/java/examples/src/main/java/com/cloudera/recordservice/examples/mapreduce/RecordCount.java">RecordCount</a> on tpch.nation:
+<pre><code>* Run a MapReduce job for <a href="https://github.com/cloudera/RecordServiceClient/blob/master/java/examples/src/main/java/com/cloudera/recordservice/examples/mapreduce/RecordCount.java">RecordCount</a> on tpch.nation:
 </code></pre>
 
 <pre><code>    > hadoop jar /path/to/recordservice-examples-0.1.jar \
