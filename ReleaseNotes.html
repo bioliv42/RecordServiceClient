@@ -182,11 +182,11 @@
 
 <h2 id="known-issues">Known Issues</h2>
 
-<h3 id="spark-config">RecordService does not work with Spark when Kerberos is enabled</h3>
+<h3 id="spark-config">RecordService client configurations are not properly propogated to Spark jobs</h3>
 
-<p>Configuration options such as Panner host/port and kerberos principal and not propagated properly when running Spark jobs.</p>
+<p>RecordService configuration options will always use their default values for Spark jobs. This limits the user's ability to configure their job and breaks Kerberos connectivity</p>
 <h4 id="workaround">Workaround</h4>
-<p>None. An upcoming RecordService client release will resolve this issue.</p>
+<p>Do not run RecordService Planner / Worker on different ports from the default values. No workaround available for Kerberos. Clients-side configuration fix to resolve this issue will be available soon.</p>
 
 <h3 id="digest-md5-library-not-installed-on-cluster-breaking-delegation-tokens">digest-md5 library is not installed on cluster for parcel installs, breaking delegation tokens</h3>
 
