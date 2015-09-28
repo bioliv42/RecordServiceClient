@@ -143,20 +143,19 @@
 
 <ol>
   <li>Install VirtualBox. The VM has been tested to work with VirtualBox version 4.3 on Ubuntu 14.04 and VirtualBox version 5 on OSX 10.9. Download VirtualBox for free at <a href="https://www.virtualbox.org/wiki/Downloads">https://www.virtualbox.org/wiki/Downloads</a>.</li>
-  <li>Download the VM from
-<a href="http://staging-aem.core.cloudera.com/content/cloudera/en/downloads/betas/recordservice/0-1-0.html">http://staging-aem.core.cloudera.com/content/cloudera/en/downloads/betas/recordservice/0-1-0.html</a>.</li>
-  <li>Untar/zip the bundle. It should contain two scripts, <code>install.sh</code> and <code>vm_Env.sh</code>.</li>
+  <li>Clone the <a href="https://github.com/cloudera/recordservice-quickstart">recordservice-quickstart</a> repository onto your local disk.</li>
+  <li>Now go to the <code>recordservice-quickstart</code> directory. It should contain two scripts, <code>install.sh</code> and <code>vm_env.sh</code>.</li>
 </ol>
 
 <h2 id="install-recordservice-vm">Install RecordService VM</h2>
 <p>These are the steps to install the RecordService VM.</p>
 
 <ol>
-  <li>In a terminal window, run the script install.sh.<br />
-This script downloads an <code>ova</code> file and load it into VirtualBox. The script might ask you to enter a password because it edits your /etc/hosts file to give the vm a stable ip address, quickstart.cloudera. When the script completes, you  have a running virtual machine that functions as a RecordService server. To test that the VM is running and IP forwarding has been successfully configured, try ssh-ing to the machine with the command <code>ssh cloudera@quickstart.cloudera</code>. The password is <code>cloudera</code>. If you are unable to ssh to the VM, refer to  <a href="#troubleshooting-the-vm-configuration">Troubleshooting the VM Configuration</a>.</li>
+  <li>In a terminal window, run the script <code>install.sh</code>.<br />
+    This script downloads an <code>ova</code> file and load it into VirtualBox. The script might ask you to enter a password because it edits your <code>/etc/hosts</code> file to give the vm a stable ip address, quickstart.cloudera. When the script completes, you have a running virtual machine that functions as a RecordService server. To test that the VM is running and IP forwarding has been successfully configured, try ssh-ing to the machine with the command <code>ssh cloudera@quickstart.cloudera</code>. The password is <code>cloudera</code>. If you are unable to ssh to the VM, refer to  <a href="#troubleshooting-the-vm-configuration">Troubleshooting the VM Configuration</a>.</li>
   <li>Navigate to the root of your RecordServiceClient repository, <code>$RECORD_SERVICE_HOME</code>.</li>
   <li>Run <code>source config.sh</code>.</li>
-  <li>Run <code>source vm_env.sh</code>.<br />
+  <li>Navigate to the <code> recordservice-quickstart</code> directory and run <code>source vm_env.sh</code>.<br />
 If your client code is compiled, your environment is not configured to run the tests on the VM. Use the following command line instructions to run all JUnit tests.</li>
 </ol>
 
