@@ -182,16 +182,29 @@ mvn test -DargLine="-Duser.name=recordservice"
   <li>You should see “rs-demo” listed as a running VM.</li>
 </ul>
 
-<h2 id="verify-vm-is-properly-listed-in-etchosts">Verify VM is properly listed in /etc/hosts</h2>
+<h3 id="verify-vm-is-properly-listed-in-etchosts">Verify VM is properly listed in /etc/hosts</h3>
 
 <p>Check that the VM is properly listed in your <code>/etc/hosts</code> file. If you open that file, you should see a line that lists an IP followed by <code>quickstart.cloudera</code>. You can check the VM’s IP with the following command:</p>
 
 <pre><code>VBoxManage guestproperty get rs-demo /VirtualBox/GuestInfo/Net/0/V4/IP
 </code></pre>
 
-<h2 id="verify-known-hosts">Verify Known Hosts</h2>
+<h3 id="verify-known-hosts">Verify Known Hosts</h3>
 
 <p>If you’ve used a Cloudera QuickStart VM before, it’s possible that your known hosts file already has an entry for <code>quickstart.cloudera</code> registered to a different key. Delete any reference to <code>quickstart.cloudera</code> from your known hosts file, usually found in <code>~/.ssh/known_hosts</code>.</p>
+
+<h2 id="debugging-the-vm">Debugging the VM</h2>
+<ul>
+  <li>Restarting a service: To restart a service, use the standard RHEL service model.</li>
+</ul>
+
+<pre><code>    service &lt;service-name&gt; start|stop|restart
+</code></pre>
+
+<p>You can view all of the installed services <code>/etc/init.d</code> directory.<br />
+* Debugging via logs: RecordService logs are in the <code>/var/log/recordservice</code> directory. You can find most service logs in the <code>/var/log</code> directory. <br />
+* Dubugging via webpage: View the RecordService debug page on your host machine at the address <code>quickstart.cloudera:11050</code>.<br />
+* Other service variables: To view the default execution environment for a service, looks for its file in the <code>/etc/default</code> directory.</p>
 
   </article>
 
@@ -211,7 +224,7 @@ mvn test -DargLine="-Duser.name=recordservice"
         <li>RecordService is licensed under</li>
         <li><a href="http://www.apache.org/licenses/LICENSE-2.0.html">The Apache License, Version 2.0</a></li>
         <li>&nbsp;</li>
-        <li>Generated on 28 September 2015</li>
+        <li>Generated on 29 September 2015</li>
       </ul>
 
     </div>
