@@ -194,17 +194,27 @@ mvn test -DargLine="-Duser.name=recordservice"
 <p>If you’ve used a Cloudera QuickStart VM before, it’s possible that your known hosts file already has an entry for <code>quickstart.cloudera</code> registered to a different key. Delete any reference to <code>quickstart.cloudera</code> from your known hosts file, usually found in <code>~/.ssh/known_hosts</code>.</p>
 
 <h2 id="debugging-the-vm">Debugging the VM</h2>
-<ul>
-  <li>Restarting a service: To restart a service, use the standard RHEL service model.</li>
-</ul>
 
-<pre><code>    service &lt;service-name&gt; start|stop|restart
+<h3 id="restarting-a-service">Restarting a service</h3>
+
+<p>To restart a service, use the standard RHEL service model.</p>
+
+<pre><code>service &lt;service-name&gt; start|stop|restart
 </code></pre>
 
-<p>You can view all of the installed services <code>/etc/init.d</code> directory.<br />
-* Debugging via logs: RecordService logs are in the <code>/var/log/recordservice</code> directory. You can find most service logs in the <code>/var/log</code> directory. <br />
-* Dubugging via webpage: View the RecordService debug page on your host machine at the address <code>quickstart.cloudera:11050</code>.<br />
-* Other service variables: To view the default execution environment for a service, looks for its file in the <code>/etc/default</code> directory.</p>
+<p>You can view all of the installed services <code>/etc/init.d</code> directory.</p>
+
+<h3 id="debugging-via-logs">Debugging Via Logs</h3>
+
+<p>RecordService logs are in the <code>/var/log/recordservice</code> directory. You can find most service logs in the <code>/var/log</code> directory.</p>
+
+<h3 id="dubugging-via-webpage">Dubugging Via Webpage</h3>
+
+<p>View the RecordService debug page on your host machine at the address <code>quickstart.cloudera:11050</code>.</p>
+
+<h3 id="other-service-variables">Other Service Variables</h3>
+
+<p>To view the default execution environment for a service, look for its file in the <code>/etc/default</code> directory.</p>
 
   </article>
 
