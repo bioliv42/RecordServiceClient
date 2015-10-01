@@ -169,11 +169,11 @@
 
 <h2 id="server-configurations">Server Configurations</h2>
 
-<p>The properties listed on the CM RecordService Configuration page are the ones Cloudera considers the most reasonable to change. However, adjusting these values should not be necessary. Very advanced administrators might consider making minor adjustments.</p>
+<p>The properties listed on the Cloudera Manager RecordService Configuration page are the ones Cloudera considers the most reasonable to change. However, adjusting these values should not be necessary. Very advanced administrators might consider making minor adjustments.</p>
 
 <h3 id="kerberos-configuration">Kerberos Configuration</h3>
 
-<p>No special configuration is required via CM. Enabling Kerberos on the cluster configures everything.</p>
+<p>No special configuration is required via Cloudera Manager. Enabling Kerberos on the cluster configures everything.</p>
 
 <h3 id="sentry-table-configuration">Sentry Table Configuration</h3>
 
@@ -190,21 +190,21 @@
 <ol>
   <li>Enable RecordService to read policy metadata from Sentry:
     <ol>
-      <li>In CM, navigate to the <strong>Sentry Configuration</strong> page.</li>
+      <li>In Cloudera Manager, navigate to the <strong>Sentry Configuration</strong> page.</li>
       <li>In <strong>Admin Groups</strong>, add the user <em>recordservice</em>.</li>
       <li>In <strong>Allowed Connecting Users</strong>, add the user <em>recordservice</em>.</li>
     </ol>
   </li>
   <li>Save changes.</li>
-  <li>Download CM generated <code>sentry-site.xml</code> configuration file (same config as HiveServer2)
+  <li>Download the Cloudera Manager generated <code>sentry-site.xml</code> configuration file (same config as HiveServer2)
     <ul>
-      <li>In CM, navigate to <strong>Hive</strong> -&gt; <strong>HiveServer2</strong> -&gt; <strong>Processes</strong> -&gt; <code>sentry-site.xml</code></li>
+      <li>In Cloudera Manager, navigate to <strong>Hive</strong> -&gt; <strong>HiveServer2</strong> -&gt; <strong>Processes</strong> -&gt; <code>sentry-site.xml</code></li>
     </ul>
   </li>
   <li>Deploy configurations to cluster: copy <code>sentry-site.xml</code> to the <code>/etc/sentry/conf/</code> directory on all nodes running RecordService Planner or RecordService Planner and Worker. Nodes that are only running only the RecordService Worker role do not need this configuration option.</li>
   <li>Enable Sentry for RecordService
     <ol>
-      <li>In CM, navigate to <strong>RecordService Configuration</strong>.</li>
+      <li>In Cloudera Manager, navigate to <strong>RecordService Configuration</strong>.</li>
       <li>Select the <strong>Sentry</strong> service.</li>
       <li>In the <strong>Sentry Configuration File</strong> field, enter `/etc/sentry/conf/sentry-site.xml.</li>
     </ol>
@@ -215,7 +215,7 @@
 
 <h3 id="delegation-token-configuration">Delegation Token Configuration</h3>
 
-<p>No special configuration is required with CM. This is enabled automatically if the cluster is kerberized.</p>
+<p>No special configuration is required with Cloudera Manager. This is enabled automatically if the cluster is kerberized.</p>
 
 <p>RecordService persists state in Zookeeper, by default, under the /recordservice Zookeeper directory. If this directory is already in use, you can configure the directory with <code>recordservice.zookeeper.znode</code>. This is a Hadoop style XML configuration that you can add to the advanced service configuration snippet.</p>
 
@@ -237,7 +237,7 @@
         <li>RecordService is licensed under</li>
         <li><a href="http://www.apache.org/licenses/LICENSE-2.0.html">The Apache License, Version 2.0</a></li>
         <li>&nbsp;</li>
-        <li>Generated on 28 September 2015</li>
+        <li>Generated on 01 October 2015</li>
       </ul>
 
     </div>

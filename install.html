@@ -147,11 +147,11 @@
 
 <h2 id="download-recordservice">Download RecordService</h2>
 
-<p>These are the ways you can install RecordService. Cloudera recommends that you install Cloudera Manager (CM) on your cluster, so that you can install RecordService as an add-on service in CM.</p>
+<p>These are the ways you can install RecordService. Cloudera recommends that you install Cloudera Manager on your cluster, so that you can install RecordService as an add-on service in Cloudera Manager.</p>
 
-<h2 id="installing-recordservice-as-an-add-on-service-in-cm">Installing RecordService as an Add-on Service in CM</h2>
+<h2 id="installing-recordservice-as-an-add-on-service-in-cloudera-manager">Installing RecordService as an Add-on Service in Cloudera Manager</h2>
 
-<p>You can install RecordService as an <a href="http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topics/cm_mc_addon_services.html">Add-on Service</a> in CM. First, install both the CSD and the Parcel in CM; then, add RecordService as an add-on service from the home page in CM.<br />
+<p>You can install RecordService as an <a href="http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topics/cm_mc_addon_services.html">Add-on Service</a> in Cloudera Manager. First, install both the CSD and the Parcel in Cloudera Manager; then, add RecordService as an add-on service from the home page in Cloudera Manager.<br />
 See <a href="http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topics/cm_mc_addon_services.html">http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topics/cm_mc_addon_services.html</a>.</p>
 
 <h3 id="installing-the-recordservice-csd">Installing the RecordService CSD</h3>
@@ -160,7 +160,7 @@ See <a href="http://www.cloudera.com/content/cloudera/en/documentation/core/late
 
 <ol>
   <li>Download the CSD from <a href="http://archive.cloudera.com/beta/recordservice/csd">http://archive.cloudera.com/beta/recordservice/csd</a>.</li>
-  <li>Upload the CSD to <code>/opt/cloudera/csd</code> in the CM server.</li>
+  <li>Upload the CSD to <code>/opt/cloudera/csd</code> in the Cloudera Manager server.</li>
   <li>Change the owner and group for the JAR using the following comamand line instruction:<br />
 <code>
 chown cloudera-scm:cloudera-scm /opt/cloudera/csd/RECORD_SERVICE-1.0.jar
@@ -169,10 +169,10 @@ chown cloudera-scm:cloudera-scm /opt/cloudera/csd/RECORD_SERVICE-1.0.jar
 <code>
 chmod 644 /opt/cloudera/csd/RECORD_SERVICE-1.0.jar
 </code></li>
-  <li>Restart the CM server
+  <li>Restart the Cloudera Manager server
     <ol>
-      <li>As the root user in the CM server, run <code>service cloudera-scm-server restart</code>.</li>
-      <li>Log in to the CM Admin Console and restart the CM Service.</li>
+      <li>As the root user in the Cloudera Manager server, run <code>service cloudera-scm-server restart</code>.</li>
+      <li>Log in to the Cloudera Manager Admin Console and restart the Cloudera Manager Service.</li>
     </ol>
   </li>
   <li>Check whether the CSD successfully installed in <code>http://{cm-server}:7180/cmf/csd/refresh</code>. Search for the following entry:</li>
@@ -196,20 +196,20 @@ isInstalled: true
   <li>Go to <code>http://{cm-server}:7180/cmf/parcel/status</code>.</li>
   <li>Click <strong>Edit Settings</strong>.</li>
   <li>Add the RecordService repository url <code>http://archive.cloudera.com/beta/recordservice/parcels/latest</code> to <strong>Remote Parcel Repository URLs</strong>.</li>
-  <li>Open the <strong>CM Parcel</strong> status page, <code>http://{cm-server}:7180/cmf/parcel/status</code>. </li>
+  <li>Open the Cloudera Manager <strong>Parcel</strong> status page, <code>http://{cm-server}:7180/cmf/parcel/status</code>. </li>
   <li><strong>Download</strong> the RecordService parcel.</li>
   <li><strong>Distribute</strong> the parcel.</li>
-  <li><strong>Activate</strong> the parcel. CM asks you to restart the entire cluster, but you only need to start/restart RecordService.</li>
+  <li><strong>Activate</strong> the parcel. Cloudera Manager asks you to restart the entire cluster, but you only need to start/restart RecordService.</li>
 </ol>
 
 <p>See <a href="http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topics/cm_ig_parcels.html">http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topics/cm_ig_parcels.html</a></p>
 
-<h3 id="cm-deployment">CM Deployment</h3>
+<h3 id="cloudera-manager-deployment">Cloudera Manager Deployment</h3>
 
-<p>There are the steps to start up RecordService for a cluster from CM.</p>
+<p>There are the steps to start up RecordService for a cluster from Cloudera Manager.</p>
 
 <ol>
-  <li>Add a service from CM home page.</li>
+  <li>Add a service from Cloudera Manager home page.</li>
   <li>Customize Role: 
     <ul>
       <li>RecordService Planner and Worker: Select nodes with both role of DN and NN.</li>
@@ -220,7 +220,7 @@ isInstalled: true
   <li>Review and modify configuration settings, such as <em>log dir</em> and <em>planner port</em>.</li>
   <li>Start the service.</li>
   <li>Visit the debug page hostname:11050 to verify it started properly. </li>
-  <li>Go to the RecordService cluster page in CM.</li>
+  <li>Go to the RecordService cluster page in Cloudera Manager.</li>
   <li>Choose <strong>Deploy Client Configuration</strong> from <em>Actions</em>.</li>
   <li>Run the following command in the node where you run the RecordService client:</li>
 </ol>
@@ -364,7 +364,7 @@ res0: Long = 25
         <li>RecordService is licensed under</li>
         <li><a href="http://www.apache.org/licenses/LICENSE-2.0.html">The Apache License, Version 2.0</a></li>
         <li>&nbsp;</li>
-        <li>Generated on 29 September 2015</li>
+        <li>Generated on 01 October 2015</li>
       </ul>
 
     </div>
