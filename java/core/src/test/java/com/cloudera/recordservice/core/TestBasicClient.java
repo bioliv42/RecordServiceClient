@@ -94,9 +94,9 @@ public class TestBasicClient extends TestBase {
 
     planner = new RecordServicePlannerClient.Builder()
         .connect(PLANNER_HOST, PLANNER_PORT);
-    assertEquals(ProtocolVersion.V1, planner.getProtocolVersion());
-    // Call it again and make sure it's fine.
-    assertEquals(ProtocolVersion.V1, planner.getProtocolVersion());
+
+    // Call it twice and make sure it's fine.
+    assertEquals(planner.getProtocolVersion(), planner.getProtocolVersion());
 
     // Plan a request.
     planner.planRequest(Request.createSqlRequest("select * from tpch.nation"));
@@ -150,9 +150,8 @@ public class TestBasicClient extends TestBase {
         new RecordServiceWorkerClient.Builder()
             .connect(PLANNER_HOST, DEFAULT_WORKER_PORT);
 
-    assertEquals(ProtocolVersion.V1, worker.getProtocolVersion());
-    // Call it again and make sure it's fine.
-    assertEquals(ProtocolVersion.V1, worker.getProtocolVersion());
+    // Call it twice and make sure it's fine.
+    assertEquals(worker.getProtocolVersion(), worker.getProtocolVersion());
 
     assertEquals(0, worker.numActiveTasks());
     worker.close();

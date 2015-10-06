@@ -292,7 +292,7 @@ public class RecordServicePlannerClient implements Closeable {
         LOG.info("Planning request: {} with attempt {}/{}. timeout= {}ms",
             request, i + 1, maxAttempts_, rpcTimeoutMs_);
         TPlanRequestParams planParams = request.request_;
-        planParams.client_version = TProtocolVersion.V1;
+        planParams.client_version = ProtocolVersion.CLIENT_VERSION;
         planParams.setUser(USER);
         if (maxTasks_ > 0) planParams.setMax_tasks(maxTasks_);
         planResult = plannerClient_.PlanRequest(planParams);
@@ -337,7 +337,7 @@ public class RecordServicePlannerClient implements Closeable {
             request, i + 1, maxAttempts_);
         TPlanRequestParams planParams = request.request_;
         planParams.setUser(USER);
-        planParams.client_version = TProtocolVersion.V1;
+        planParams.client_version = ProtocolVersion.CLIENT_VERSION;
         result = plannerClient_.GetSchema(planParams);
         return new GetSchemaResult(result);
       } catch (TRecordServiceException e) {
