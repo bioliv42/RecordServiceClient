@@ -26,7 +26,8 @@ cd $IMPALA_HOME
 set -e
 
 # Move the jars to where we need them
-find $RECORD_SERVICE_HOME/java -name "*.jar" -exec cp '{}' ${HIVE_AUX_JARS_PATH} \;
+find $RECORD_SERVICE_HOME/java -name "*recordservice-hive*.jar" -exec cp '{}' ${HIVE_AUX_JARS_PATH} \;
+find $RECORD_SERVICE_HOME/java -name "*recordservice-core*.jar" -exec cp '{}' ${HIVE_AUX_JARS_PATH} \;
 hadoop fs -mkdir -p ${HIVE_AUX_JARS_PATH}
 hadoop fs -put -f ${HIVE_AUX_JARS_PATH}/*.jar ${HIVE_AUX_JARS_PATH}
 
