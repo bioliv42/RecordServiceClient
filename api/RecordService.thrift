@@ -22,9 +22,7 @@ namespace java com.cloudera.recordservice.thrift
 
 // Version used to negotiate feature support between the server and client. Both
 // clients and servers need to maintain backwards compatibility.
-enum TProtocolVersion {
-  V1,
-}
+typedef string TProtocolVersion
 
 // 128-bit GUID.
 struct TUniqueId {
@@ -216,7 +214,7 @@ struct TRequestOptions {
 
 struct TPlanRequestParams {
   // The version of the client
-  1: required TProtocolVersion client_version = TProtocolVersion.V1
+  1: required TProtocolVersion client_version = "1.0"
 
   2: required TRequestType request_type
 
