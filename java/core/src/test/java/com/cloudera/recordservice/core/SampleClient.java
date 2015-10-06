@@ -71,7 +71,7 @@ public class SampleClient extends TestBase {
     TPlanRequestResult planResult;
     try {
       TPlanRequestParams planParams = new TPlanRequestParams();
-      planParams.client_version = TProtocolVersion.V1;
+      planParams.client_version = ProtocolVersion.CLIENT_VERSION;
       planParams.request_type = TRequestType.Sql;
       planParams.sql_stmt = query;
       planResult = planner.PlanRequest(planParams);

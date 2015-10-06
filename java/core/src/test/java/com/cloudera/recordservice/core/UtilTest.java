@@ -101,7 +101,6 @@ public class UtilTest {
     // Trivial "tests" to make code coverage happy.
     new WorkerClientUtil();
 
-    assertTrue(ProtocolVersion.values().length >= 1);
-    assertEquals(ProtocolVersion.V1, ProtocolVersion.valueOf("V1"));
+    assertEquals("1.0", ProtocolVersion.CLIENT_VERSION);
   }
 }

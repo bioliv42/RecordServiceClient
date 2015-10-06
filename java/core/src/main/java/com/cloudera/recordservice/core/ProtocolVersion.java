@@ -17,7 +17,17 @@ package com.cloudera.recordservice.core;
 //
 // This is part of the client interface.
 //
+public class ProtocolVersion {
+  public static final String CLIENT_VERSION = "1.0";
 
-public enum ProtocolVersion {
-  V1,
+  // TODO: Future enhancement, eg. maintain a blacklist for unsupported server version.
+  private String version;
+
+  ProtocolVersion(String version) {
+    this.version = version;
+  }
+
+  public String getVersion() {
+    return this.version;
+  }
 }

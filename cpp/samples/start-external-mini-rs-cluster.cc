@@ -146,10 +146,10 @@ void StartMiniCluster(int num_nodes) {
   shared_ptr<RecordServicePlannerClient> planner = CreatePlannerConnection(
       "localhost", recordservice_planner->recordservice_planner_port());
 
-  TProtocolVersion::type protocol;
+  TProtocolVersion protocol;
   try{
-    protocol = planner->GetProtocolVersion();
-    printf("%s%d\n", "Protocol: ", protocol);
+    planner->GetProtocolVersion(protocol);
+    printf("%s%s\n", "Protocol: ", protocol.c_str());
   } catch (TRecordServiceException e) {
     printf("%s\n", e.message.c_str());
   }

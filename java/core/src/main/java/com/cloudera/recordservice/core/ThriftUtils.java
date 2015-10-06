@@ -17,6 +17,7 @@ package com.cloudera.recordservice.core;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
@@ -36,7 +37,6 @@ import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.cloudera.recordservice.thrift.TProtocolVersion;
 import com.cloudera.recordservice.util.Preconditions;
 
 /**
@@ -48,6 +48,10 @@ public class ThriftUtils {
 
   private final static String KERBEROS_MECHANISM = "GSSAPI";
   private final static String TOKEN_MECHANISM = "DIGEST-MD5";
+
+  // Pattern for protocol version. The valid format contains a major version and a minor
+  // version split by '.', eg. 1.0
+  private static Pattern versionPattern = Pattern.compile("(\\d+).(\\d+)");
 
   static {
     // This is required to allow clients to connect via kerberos. This is called
@@ -185,13 +189,23 @@ public class ThriftUtils {
     return (TSocket)transport;
   }
 
-  static ProtocolVersion fromThrift(TProtocolVersion v) {
-    switch (v) {
-    case V1: return ProtocolVersion.V1;
-    default:
-      // TODO: is this right for mismatched versions? Default to a lower
-      // version?
-      throw new RuntimeException("Unrecognized version: " + v);
+  /**
+   * Return ProtocolVersion from a string of version value.
+   * Throw Runtime exception if it is unrecognized version.
+   */
+  static ProtocolVersion fromThrift(String v) {
+    if (isValidVersionFormat(v)) {
+      return new ProtocolVersion(v);
     }
+    throw new RuntimeException("Unrecognized version format: " + v);
+  }
+
+  /**
+   * Return true if version matches protocol version format.
+   *
+   * @VisibleForTesting
+   */
+  static boolean isValidVersionFormat(String version) {
+    return version != null && versionPattern.matcher(version).matches();
   }
 }
