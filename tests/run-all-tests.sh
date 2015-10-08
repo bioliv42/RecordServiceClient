@@ -20,20 +20,27 @@
 set -u
 set -e
 
-
 export RECORD_SERVICE_QUICKSTART_VM="${RECORD_SERVICE_QUICKSTART_VM:-"False"}"
 
 cd $IMPALA_HOME
 source bin/set-classpath.sh
 
-if [ $RECORD_SERVICE_QUICKSTART_VM != "True" ] && [ $RECORD_SERVICE_QUICKSTART_VM != "true" ] ; then
+function not_quickstart_vm() {
+  if [ $RECORD_SERVICE_QUICKSTART_VM != "True" ] && \
+       [ $RECORD_SERVICE_QUICKSTART_VM != "true" ]; then
+    return 0
+  else
+    return 1
+  fi
+}
+
+if not_quickstart_vm ; then
   bin/start-impala-cluster.py --kill
 fi
 
 cd $RECORD_SERVICE_HOME
 
-if [ $RECORD_SERVICE_QUICKSTART_VM != "True" ] && [ $RECORD_SERVICE_QUICKSTART_VM != "true" ] ; then
-
+if not_quickstart_vm ; then
   echo "Running mini cluster tests."
   export RUN_MINI_CLUSTER_TESTS=true
   make test
@@ -56,8 +63,7 @@ fi
 
 mvn clean package -f $RECORD_SERVICE_HOME/java/pom.xml
 
-if [ $RECORD_SERVICE_QUICKSTART_VM != "True" ] && [ $RECORD_SERVICE_QUICKSTART_VM != "true" ] ; then
-
+if not_quickstart_vm ; then
   # Start up the cluster for the tests that need an Impala cluster already running.
   cd $IMPALA_HOME
   bin/start-impala-cluster.py -s 1 --catalogd_args="-load_catalog_in_background=false"
@@ -65,6 +71,11 @@ if [ $RECORD_SERVICE_QUICKSTART_VM != "True" ] && [ $RECORD_SERVICE_QUICKSTART_V
   # Run Hive SerDe test
   cd $IMPALA_HOME/fe
   mvn -Dtest=HiveSerDeExecutorTest test
+
+  # Run Sentry tests
+  export IGNORE_SENTRY_TESTS=false
+  cd $RECORD_SERVICE_HOME/tests
+  ./run_sentry_tests.py
 
   cd $IMPALA_HOME/tests
   ./run-tests.py query_test/test_hive_serde.py
