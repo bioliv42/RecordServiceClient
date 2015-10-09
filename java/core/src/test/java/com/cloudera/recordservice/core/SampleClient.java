@@ -33,7 +33,6 @@ import com.cloudera.recordservice.thrift.TFetchResult;
 import com.cloudera.recordservice.thrift.TNetworkAddress;
 import com.cloudera.recordservice.thrift.TPlanRequestParams;
 import com.cloudera.recordservice.thrift.TPlanRequestResult;
-import com.cloudera.recordservice.thrift.TProtocolVersion;
 import com.cloudera.recordservice.thrift.TRecordServiceException;
 import com.cloudera.recordservice.thrift.TRequestType;
 import com.cloudera.recordservice.thrift.TTask;

@@ -31,7 +31,6 @@ import com.cloudera.recordservice.thrift.TErrorCode;
 import com.cloudera.recordservice.thrift.TGetSchemaResult;
 import com.cloudera.recordservice.thrift.TPlanRequestParams;
 import com.cloudera.recordservice.thrift.TPlanRequestResult;
-import com.cloudera.recordservice.thrift.TProtocolVersion;
 import com.cloudera.recordservice.thrift.TRecordServiceException;
 import com.cloudera.recordservice.util.Preconditions;
 
