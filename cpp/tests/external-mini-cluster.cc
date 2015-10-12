@@ -30,14 +30,10 @@ namespace recordservice {
 const int BASE_PORT = 30000;
 
 const char* ExternalMiniCluster::RecordServiced::NAME = "recordserviced";
-const char* ExternalMiniCluster::Statestored::NAME = "statestored";
-const char* ExternalMiniCluster::Catalogd::NAME = "catalogd";
 
 ExternalMiniCluster::ExternalMiniCluster(bool debug)
  : debug_(debug),
    impala_home_(getenv("IMPALA_HOME")),
-   statestored_(NULL),
-   catalogd_(NULL),
    next_port_(BASE_PORT) {
   if (impala_home_ == NULL) {
     cerr << "Must set IMPALA_HOME" << endl;
@@ -48,21 +44,11 @@ ExternalMiniCluster::ExternalMiniCluster(bool debug)
 }
 
 ExternalMiniCluster::~ExternalMiniCluster() {
-  if (statestored_ != NULL) Kill(statestored_);
-  if (catalogd_ != NULL) Kill(catalogd_);
   unordered_set<RecordServiced*> copy = recordserviceds_;
   recordserviceds_.clear();
   for (unordered_set<RecordServiced*>::iterator it = copy.begin(); it != copy.end(); ++it) {
     Kill(*it);
   }
-}
-
-string ExternalMiniCluster::Statestored::GetBinaryPath() {
-  return "statestore/statestored";
-}
-
-string ExternalMiniCluster::Catalogd::GetBinaryPath() {
-  return "catalog/catalogd";
 }
 
 string ExternalMiniCluster::RecordServiced::GetBinaryPath() {
@@ -85,43 +71,6 @@ vector<string> ConstructArgs(const string& binary, const map<string, string>& ar
     ret.push_back(string("--") + it->first + "=" + it->second);
   }
   return ret;
-}
-
-// Starts a catalogd process.
-bool ExternalMiniCluster::StartCatalogd(Catalogd** process) {
-  *process = NULL;
-  if (catalogd_ != NULL) {
-    cerr << "Cannot start more than one catalogd." << endl;
-    return false;
-  }
-
-  string binary = build_home_ + Catalogd::GetBinaryPath();
-  // TODO: populate these args?
-  map<string, string> args;
-
-  *process = new Catalogd(binary, ConstructArgs(binary, args));
-  if (!(*process)->Start()) return false;
-  catalogd_ = *process;
-  cout << "Started " << (*process)->name() << " pid: " << (*process)->pid() << endl;
-  return true;
-}
-
-// Starts a statestored process
-bool ExternalMiniCluster::StartStatestored(Statestored** process) {
-  *process = NULL;
-  if (statestored_ != NULL) {
-    cerr << "Cannot start more than one statestored." << endl;
-    return false;
-  }
-
-  string binary = build_home_ + Statestored::GetBinaryPath();
-  // TODO: populate these args?
-  map<string, string> args;
-  *process = new Statestored(binary, ConstructArgs(binary, args));
-  if (!(*process)->Start()) return false;
-  statestored_ = *process;
-  cout << "Started " << (*process)->name() << " pid: " << (*process)->pid() << endl;
-  return true;
 }
 
 bool ExternalMiniCluster::StartRecordServiced(
@@ -177,16 +126,10 @@ bool ExternalMiniCluster::Kill(Process* process) {
   }
   int wait_ret;
   process->Wait(&wait_ret);
-  if (process == statestored_) {
-    statestored_ = NULL;
-  } else if (process == catalogd_) {
-    catalogd_ = NULL;
-  } else {
-    recordserviceds_.erase((RecordServiced*)process);
-  }
+  // The process must be a recordserviced
+  recordserviceds_.erase((RecordServiced*)process);
   delete process;
   return true;
 }
 
 }
-
