@@ -33,6 +33,14 @@ fi
 
 # Load the test data we need.
 cd $RECORD_SERVICE_HOME
+
+set +e
+impala-shell.sh -q "DROP ROLE TEST_ROLE"
+set -e
+impala-shell.sh -q "CREATE ROLE TEST_ROLE"
+impala-shell.sh -q "GRANT ALL ON SERVER TO ROLE TEST_ROLE"
+impala-shell.sh -q "GRANT ROLE TEST_ROLE TO GROUP \`$USER\`"
+
 impala-shell.sh -f tests/create-tbls.sql
 
 # Move any existing data files to where they need to go in HDFS
