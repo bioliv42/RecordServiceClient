@@ -50,6 +50,7 @@ TEST(ClientTest, Nation) {
     TPlanRequestParams plan_params;
     plan_params.request_type = TRequestType::Sql;
     plan_params.__set_sql_stmt("select * from tpch.nation");
+    plan_params.__set_user(getenv("USER"));
     planner->PlanRequest(plan_result, plan_params);
 
     EXPECT_EQ(plan_result.schema.cols.size(), 4);
@@ -123,6 +124,7 @@ TEST(ClientTest, NationFile) {
     plan_params.request_type = TRequestType::Path;
     plan_params.__isset.path = true;
     plan_params.path.path = "/test-warehouse/tpch.nation/";
+    plan_params.__set_user(getenv("USER"));
     planner->PlanRequest(plan_result, plan_params);
 
     EXPECT_EQ(plan_result.schema.cols.size(), 1);
