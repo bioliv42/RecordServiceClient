@@ -28,17 +28,8 @@ namespace recordservice {
 
 TEST(ExternalMiniCluster, Basic) {
   ExternalMiniCluster cluster;
-  ExternalMiniCluster::Statestored* statestored;
-  ExternalMiniCluster::Catalogd* catalogd;
 
-  bool result = cluster.StartStatestored(&statestored);
-  EXPECT_TRUE(result);
-  EXPECT_TRUE(statestored != NULL);
-
-  result = cluster.StartCatalogd(&catalogd);
-  EXPECT_TRUE(result);
-  EXPECT_TRUE(catalogd != NULL);
-
+  bool result = false;
   ExternalMiniCluster::RecordServiced* recordservice_planner = NULL;
 
   for (int i = 0; i < 3; ++i) {
@@ -70,6 +61,35 @@ TEST(ExternalMiniCluster, Basic) {
 
   vector<string> data = FetchAllStrings(worker.get(), plan_result.tasks[0].task);
   EXPECT_EQ(data.size(), 25);
+}
+
+TEST(ExternalMiniCluster, NoWorker) {
+  ExternalMiniCluster cluster;
+
+  // Start up a mini cluster with only one planner and no worker.
+  ExternalMiniCluster::RecordServiced* recordservice_planner = NULL;
+  bool result = cluster.StartRecordServiced(true, false, &recordservice_planner);
+  EXPECT_TRUE(result);
+  EXPECT_TRUE(recordservice_planner != NULL);
+
+  // It seems ZK needs a long interval to update the membership info.
+  // TODO: Investigate more on this.
+  sleep(60);
+  shared_ptr<RecordServicePlannerClient> planner = CreatePlannerConnection(
+      "localhost", recordservice_planner->recordservice_planner_port());
+
+  // Now try to plan request. It should fail.
+  TPlanRequestResult plan_result;
+  TPlanRequestParams plan_params;
+  plan_params.request_type = TRequestType::Sql;
+  plan_params.__set_sql_stmt("select n_name from tpch.nation");
+  try {
+    planner->PlanRequest(plan_result, plan_params);
+    EXPECT_TRUE(false);
+  } catch (const recordservice::TRecordServiceException& ex) {
+    EXPECT_EQ(TErrorCode::INVALID_REQUEST, ex.code);
+    EXPECT_TRUE(ex.message.find("Worker membership is empty") != std::string::npos);
+  }
 }
 
 }

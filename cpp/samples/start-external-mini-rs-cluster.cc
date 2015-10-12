@@ -98,11 +98,8 @@ void KillNodeByPid(int pid) {
   ExternalMiniCluster::Process* node = GetRecordServicedByPid(pid);
   if (node != NULL) {
     cluster.Kill(node);
-  } else if (cluster.get_catalogd() != NULL && cluster.get_catalogd()->pid() == pid) {
-    cluster.Kill(cluster.get_catalogd());
-  } else if (cluster.get_statestored() != NULL &&
-        cluster.get_statestored()->pid() == pid) {
-    cluster.Kill(cluster.get_statestored());
+  } else {
+    printf("KillNodeByPid: node %d not found.", pid);
   }
 }
 
@@ -119,19 +116,8 @@ int AddRecordServiceNode() {
 // This method starts a mini cluster with a specified number of nodes. This method does
 // not return
 void StartMiniCluster(int num_nodes) {
-  ExternalMiniCluster::Statestored* statestored;
-  ExternalMiniCluster::Catalogd* catalogd;
-
-  bool result = cluster.StartStatestored(&statestored);
-  ExitIfFalse(result);
-  ExitIfFalse(statestored != NULL);
-
-  result = cluster.StartCatalogd(&catalogd);
-  ExitIfFalse(result);
-  ExitIfFalse(catalogd != NULL);
-
   ExternalMiniCluster::RecordServiced* recordservice_planner = NULL;
-
+  bool result = false;
   for (int i = 0; i < num_nodes; ++i) {
     ExternalMiniCluster::RecordServiced* recordserviced;
     result = cluster.StartRecordServiced(true, true, &recordserviced);
@@ -215,20 +201,6 @@ JNIEXPORT jint JNICALL
 Java_com_cloudera_recordservice_avro_example_MiniClusterController_GetSpecificNodePid(
     JNIEnv* env, jclass caller_class, jint planner_port) {
   return recordservice::GetSpecificNodePid(planner_port);
-}
-
-extern "C"
-JNIEXPORT jint JNICALL
-Java_com_cloudera_recordservice_avro_example_MiniClusterController_GetStatestorePid(
-    JNIEnv* env, jclass caller_class) {
-  return recordservice::cluster.get_statestored()->pid();
-}
-
-extern "C"
-JNIEXPORT jint JNICALL
-Java_com_cloudera_recordservice_avro_example_MiniClusterController_GetCatalogPid(
-    JNIEnv* env, jclass caller_class) {
-  return recordservice::cluster.get_catalogd()->pid();
 }
 
 // The main method starts up a mini cluster. As the cluster shuts down when the mini
