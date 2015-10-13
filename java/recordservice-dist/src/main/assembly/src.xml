@@ -50,6 +50,8 @@
         <include>hive/**</include>
         <include>mr/**</include>
         <include>spark/**</include>
+        <include>hcatalog/**</include>
+        <include>hcatalog-pig-adapter/**</include>
         <include>avro/**</include>
         <include>avro-mr/**</include>
         <include>avro-example/**</include>
