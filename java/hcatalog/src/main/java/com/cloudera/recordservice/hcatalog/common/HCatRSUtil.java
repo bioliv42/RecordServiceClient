@@ -70,7 +70,6 @@ public class HCatRSUtil {
       throw new IllegalStateException(
               "Failed to configure StorageHandler", e);
     }
-
     return jobProperties;
   }
 
@@ -82,7 +81,6 @@ public class HCatRSUtil {
             partitionInfo.getInputFormatClassName(),
             partitionInfo.getOutputFormatClassName());
   }
-
 
   public static String serialize(Serializable obj) throws IOException {
     if (obj == null) {
