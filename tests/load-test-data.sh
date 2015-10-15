@@ -19,6 +19,22 @@
 set -u
 set -e
 
+USE_SENTRY=1
+
+# parse command line options
+for ARG in $*
+do
+  case "$ARG" in
+    -no_sentry)
+      USE_SENTRY=0
+      ;;
+    -help|*)
+      echo "[-no_sentry] : If used, no sentry roles are created"
+      exit 1
+      ;;
+  esac
+done
+
 # Copy the TPC-H dataset
 DATASRC="http://util-1.ent.cloudera.com/impala-test-data/"
 DATADST=${IMPALA_HOME}/testdata/impala-data
@@ -34,12 +50,14 @@ fi
 # Load the test data we need.
 cd $RECORD_SERVICE_HOME
 
-set +e
-impala-shell.sh -q "DROP ROLE TEST_ROLE"
-set -e
-impala-shell.sh -q "CREATE ROLE TEST_ROLE"
-impala-shell.sh -q "GRANT ALL ON SERVER TO ROLE TEST_ROLE"
-impala-shell.sh -q "GRANT ROLE TEST_ROLE TO GROUP \`$USER\`"
+if [ $USE_SENTRY -eq 1 ]; then
+  set +e
+  impala-shell.sh -q "DROP ROLE TEST_ROLE"
+  set -e
+  impala-shell.sh -q "CREATE ROLE TEST_ROLE"
+  impala-shell.sh -q "GRANT ALL ON SERVER TO ROLE TEST_ROLE"
+  impala-shell.sh -q "GRANT ROLE TEST_ROLE TO GROUP \`$USER\`"
+fi
 
 impala-shell.sh -f tests/create-tbls.sql
 
