@@ -19,16 +19,10 @@
 
 package com.cloudera.recordservice.hcatalog.mapreduce;
 
-import com.cloudera.recordservice.core.*;
 import com.cloudera.recordservice.hcatalog.common.HCatRSUtil;
-import com.cloudera.recordservice.mapred.RecordServiceInputFormat;
-import com.cloudera.recordservice.mapreduce.RecordServiceInputSplit;
-import com.cloudera.recordservice.mr.RecordServiceConfig;
+import com.cloudera.recordservice.mapreduce.RecordServiceInputFormat;
+import com.cloudera.recordservice.mr.PlanUtil;
 import com.cloudera.recordservice.mr.RecordServiceRecord;
-import com.cloudera.recordservice.mr.Schema;
-import com.cloudera.recordservice.mr.TaskInfo;
-import com.cloudera.recordservice.thrift.TPlanRequestResult;
-import com.cloudera.recordservice.thrift.TTask;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -59,18 +53,6 @@ public abstract class HCatRSBaseInputFormat
 
   private final static Logger LOG =
           LoggerFactory.getLogger(HCatRSBaseInputFormat.class);
-  public static Job job;
-
-  // Kerberos principal.
-  public final static String KERBEROS_PRINCIPAL_CONF = "recordservice.kerberos.principal";
-
-  /**
-   * get the schema for the HCatRecord data returned by HCatInputFormat.
-   *
-   * @param context the jobContext
-   * @throws IllegalArgumentException
-   */
-  private Class<? extends InputFormat> inputFileFormatClass;
 
   // TODO needs to go in InitializeInput? as part of InputJobInfo
   private static HCatSchema getOutputSchema(Configuration conf)
@@ -95,17 +77,15 @@ public abstract class HCatRSBaseInputFormat
   }
 
   protected static RecordServiceInputFormat
-  getMapRedInputFormat(JobConf job, Class inputFormatClass) throws IOException {
-    return (
-            RecordServiceInputFormat)
-      ReflectionUtils.newInstance(RecordServiceInputFormat.class, job);
+  getMapRedInputFormat(JobConf job){
+    return ReflectionUtils.newInstance(RecordServiceInputFormat.class, job);
   }
 
   /**
    * Logically split the set of input files for the job. Returns the
    * underlying InputFormat's splits
    * @param jobContext the job context object
-   * @return the splits, an HCatInputSplit wrapper over the storage
+   * @return the splits, an HCatRSSplit wrapper over the storage
    *         handler InputSplits
    * @throws IOException or InterruptedException
    */
@@ -113,8 +93,8 @@ public abstract class HCatRSBaseInputFormat
   public List<InputSplit> getSplits(JobContext jobContext)
     throws IOException, InterruptedException {
     Configuration conf = jobContext.getConfiguration();
-    //Get the job info from the configuration,
-    //throws exception if not initialized
+    // Get the job info from the configuration,
+    // throws exception if not initialized
     InputJobInfo inputJobInfo;
     try {
       inputJobInfo = getJobInfo(conf);
@@ -125,60 +105,18 @@ public abstract class HCatRSBaseInputFormat
     List<InputSplit> splits = new ArrayList<InputSplit>();
     List<PartInfo> partitionInfoList = inputJobInfo.getPartitions();
     if (partitionInfoList == null) {
-      //No partitions match the specified partition filter
+      // No partitions match the specified partition filter
       return splits;
     }
 
-
-    HiveStorageHandler storageHandler;
     JobConf jobConf;
-    PlanRequestResult result = null;
-    //For each matching partition, call getSplits on the underlying InputFormat
+    // For each matching partition, call getSplits on the underlying InputFormat
     for (PartInfo partitionInfo : partitionInfoList) {
       jobConf = HCatUtil.getJobConfFromContext(jobContext);
-      Request request = null;
-
-      // hardcoded until base call works for ease of testing purposes
-      request = Request.createTableScanRequest(HCatRSInputFormat.getRequestString());
       Credentials credentials = jobContext.getCredentials();
-      RecordServicePlannerClient planner = null;
-
-      try {
-        RecordServicePlannerClient.Builder builder =
-                new RecordServicePlannerClient.Builder();
-        String kerberosPrincipal =
-                jobConf.get(RecordServiceConfig.KERBEROS_PRINCIPAL_CONF);
-        builder.setKerberosPrincipal(kerberosPrincipal);
-        List<NetworkAddress> plannerHostPorts = RecordServiceConfig.getPlannerHostPort(
-                jobConf.get(RecordServiceConfig.PLANNER_HOSTPORTS_CONF,
-                        RecordServiceConfig.DEFAULT_PLANNER_HOSTPORTS));
-        Exception lastException = null;
-        for (int i = 0; i < plannerHostPorts.size(); ++i) {
-          NetworkAddress hostPort = plannerHostPorts.get(i);
-          try {
-            RecordServicePlannerClient tempPlanner = builder.connect(hostPort.hostname, hostPort.port);
-            if (tempPlanner != null)
-              planner = tempPlanner;
-          } catch (RecordServiceException e) {
-            // Ignore, try next host. The errors in builder should be sufficient.
-            lastException = e;
-          } catch (IOException e) {
-            // Ignore, try next host. The errors in builder should be sufficient.
-            lastException = e;
-          }
-        }
-        result = planner.planRequest(request);
-      } catch (Exception e) {
-        throw new IOException(e);
-      } finally {
-        if (planner != null) planner.close();
-      }
-
-      Schema schema = new Schema(result.schema);
-
-      for (Task task : result.tasks){
-        com.cloudera.recordservice.mapred.RecordServiceInputSplit baseSplit = new com.cloudera.recordservice.mapred.RecordServiceInputSplit(new RecordServiceInputSplit(schema, new TaskInfo(task, result.hosts)));
-        splits.add(new HCatRSSplit(partitionInfo, baseSplit));
+      PlanUtil.SplitsInfo splitsInfo = PlanUtil.getSplits(jobConf, credentials);
+      for (InputSplit split : splitsInfo.splits){
+        splits.add(new HCatRSSplit(partitionInfo, split));
       }
       LOG.debug(String.format("Generated %d splits.", splits.size()));
     }
@@ -220,48 +158,10 @@ public abstract class HCatRSBaseInputFormat
     Map<String, String> jobProperties = partitionInfo.getJobProperties();
     HCatUtil.copyJobPropertiesToJobConf(jobProperties, jobConf);
     HCatRSUtil.copyCredentialsToJobConf(jobContext.getCredentials(), jobConf);
-    Map<String, Object> valuesNotInDataCols = getColValsNotInDataColumns(
-      getOutputSchema(conf), partitionInfo
-    );
 
-    return new HCatRecordReader(storageHandler, valuesNotInDataCols);
+    return new HCatRecordReader(storageHandler);
   }
 
-
-  /**
-   * gets values for fields requested by output schema which will not be in the data
-   */
-  private static Map<String, Object> getColValsNotInDataColumns(HCatSchema outputSchema,
-                                  PartInfo partInfo) throws HCatException {
-    HCatSchema dataSchema = partInfo.getPartitionSchema();
-    Map<String, Object> vals = new HashMap<String, Object>();
-    for (String fieldName : outputSchema.getFieldNames()) {
-      if (dataSchema.getPosition(fieldName) == null) {
-        // this entry of output is not present in the output schema
-        // so, we first check the table schema to see if it is a part col
-        if (partInfo.getPartitionValues().containsKey(fieldName)) {
-
-          // First, get the appropriate field schema for this field
-          HCatFieldSchema fschema = outputSchema.get(fieldName);
-
-          // For a partition key type, this will be a primitive typeinfo.
-          // Obtain relevant object inspector for this typeinfo
-          ObjectInspector oi = TypeInfoUtils.getStandardJavaObjectInspectorFromTypeInfo(fschema.getTypeInfo());
-
-          // get appropriate object from the string representation of the value in partInfo.getPartitionValues()
-          // Essentially, partition values are represented as strings, but we want the actual object type associated
-          Object objVal = ObjectInspectorConverters
-              .getConverter(PrimitiveObjectInspectorFactory.javaStringObjectInspector, oi)
-              .convert(partInfo.getPartitionValues().get(fieldName));
-
-          vals.put(fieldName, objVal);
-        } else {
-          vals.put(fieldName, null);
-        }
-      }
-    }
-    return vals;
-  }
 
   /**
    * Gets the HCatTable schema for the table specified in the HCatInputFormat.setInput call
@@ -306,61 +206,5 @@ public abstract class HCatRSBaseInputFormat
 
     return (InputJobInfo) HCatRSUtil.deserialize(jobString);
   }
-
-  private void setInputPath(JobConf jobConf, String location)
-    throws IOException {
-
-    // ideally we should just call FileInputFormat.setInputPaths() here - but
-    // that won't work since FileInputFormat.setInputPaths() needs
-    // a Job object instead of a JobContext which we are handed here
-
-    int length = location.length();
-    int curlyOpen = 0;
-    int pathStart = 0;
-    boolean globPattern = false;
-    List<String> pathStrings = new ArrayList<String>();
-
-    for (int i = 0; i < length; i++) {
-      char ch = location.charAt(i);
-      switch (ch) {
-      case '{': {
-        curlyOpen++;
-        if (!globPattern) {
-          globPattern = true;
-        }
-        break;
-      }
-      case '}': {
-        curlyOpen--;
-        if (curlyOpen == 0 && globPattern) {
-          globPattern = false;
-        }
-        break;
-      }
-      case ',': {
-        if (!globPattern) {
-          pathStrings.add(location.substring(pathStart, i));
-          pathStart = i + 1;
-        }
-        break;
-      }
-      }
-    }
-    pathStrings.add(location.substring(pathStart, length));
-
-    Path[] paths = StringUtils.stringToPath(pathStrings.toArray(new String[0]));
-    String separator = "";
-    StringBuilder str = new StringBuilder();
-
-    for (Path path : paths) {
-      FileSystem fs = path.getFileSystem(jobConf);
-      final String qualifiedPath = fs.makeQualified(path).toString();
-      str.append(separator)
-        .append(StringUtils.escapeString(qualifiedPath));
-      separator = StringUtils.COMMA_STR;
-    }
-
-    jobConf.set("mapred.input.dir", str.toString());
-  }
-
+  
 }

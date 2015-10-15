@@ -18,33 +18,26 @@
  */
 package com.cloudera.recordservice.pig;
 
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Properties;
-
-import com.cloudera.recordservice.core.Records;
+import com.cloudera.recordservice.hcatalog.mapreduce.InputJobInfo;
+import com.cloudera.recordservice.hcatalog.mapreduce.PartInfo;
 import com.cloudera.recordservice.mr.RecordServiceRecord;
-import org.apache.commons.lang.ObjectUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.RecordReader;
-import org.apache.hive.hcatalog.data.HCatRecord;
 import org.apache.hive.hcatalog.data.schema.HCatSchema;
-import com.cloudera.recordservice.hcatalog.mapreduce.InputJobInfo;
-import com.cloudera.recordservice.hcatalog.mapreduce.PartInfo;
-import org.apache.pig.LoadFunc;
-import org.apache.pig.LoadMetadata;
-import org.apache.pig.LoadPushDown;
-import org.apache.pig.PigException;
-import org.apache.pig.ResourceStatistics;
+import org.apache.pig.*;
 import org.apache.pig.backend.executionengine.ExecException;
 import org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.PigSplit;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.impl.logicalLayer.FrontendException;
 import org.apache.pig.impl.util.UDFContext;
+
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Properties;
 
 /**
  * Base class for HCatLoader and HCatEximLoader
@@ -63,7 +56,6 @@ abstract class HCatBaseLoader extends LoadFunc implements LoadMetadata, LoadPush
   @Override
   public Tuple getNext() throws IOException {
     try {
-
       RecordServiceRecord record = (RecordServiceRecord) (reader.nextKeyValue() ? reader.getCurrentValue() : null);
       Tuple t = PigHCatUtil.transformToTuple(record, outputSchema);
       // TODO : we were discussing an iter interface, and also a LazyTuple

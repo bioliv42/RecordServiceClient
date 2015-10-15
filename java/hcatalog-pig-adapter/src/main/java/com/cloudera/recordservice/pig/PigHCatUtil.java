@@ -19,25 +19,10 @@
 package com.cloudera.recordservice.pig;
 
 
-import java.io.IOException;
-import java.sql.Date;
-import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Properties;
-
-import com.cloudera.recordservice.core.ByteArray;
 import com.cloudera.recordservice.mr.DecimalWritable;
 import com.cloudera.recordservice.mr.RecordServiceRecord;
 import com.cloudera.recordservice.mr.TimestampNanosWritable;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.hive.common.type.HiveChar;
-import org.apache.hadoop.hive.common.type.HiveDecimal;
-import org.apache.hadoop.hive.common.type.HiveVarchar;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
 import org.apache.hadoop.hive.metastore.MetaStoreUtils;
@@ -48,7 +33,6 @@ import org.apache.hadoop.mapreduce.Job;
 import org.apache.hive.hcatalog.common.HCatConstants;
 import org.apache.hive.hcatalog.common.HCatException;
 import org.apache.hive.hcatalog.common.HCatUtil;
-import org.apache.hive.hcatalog.data.HCatRecord;
 import org.apache.hive.hcatalog.data.Pair;
 import org.apache.hive.hcatalog.data.schema.HCatFieldSchema;
 import org.apache.hive.hcatalog.data.schema.HCatFieldSchema.Type;
@@ -57,18 +41,18 @@ import org.apache.pig.LoadPushDown.RequiredField;
 import org.apache.pig.PigException;
 import org.apache.pig.ResourceSchema;
 import org.apache.pig.ResourceSchema.ResourceFieldSchema;
-import org.apache.pig.data.DataBag;
-import org.apache.pig.data.DataByteArray;
-import org.apache.pig.data.DataType;
-import org.apache.pig.data.DefaultDataBag;
-import org.apache.pig.data.Tuple;
-import org.apache.pig.data.TupleFactory;
+import org.apache.pig.data.*;
 import org.apache.pig.impl.logicalLayer.schema.Schema;
 import org.apache.pig.impl.util.UDFContext;
 import org.apache.pig.impl.util.Utils;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.sql.Date;
+import java.util.*;
+import java.util.Map.Entry;
 
 class PigHCatUtil {
 
@@ -388,18 +372,10 @@ class PigHCatUtil {
     if (record == null) {
       return null;
     }
-    List<Object> objList = new ArrayList<Object>();
-    int index = 0;
-    try {
-      while (record.getColumnValue(index) != null) {
-        Writable wr = record.getColumnValue(index);
-        objList.add(wr);
-        ++index;
-      }
-    }
-    // It is going to go out of bounds with the current RecordServiceRecord implementation
-    catch(IndexOutOfBoundsException ex){
-      //Do Nothing
+    List objList = new ArrayList();
+    com.cloudera.recordservice.mr.Schema schema = record.getSchema();
+    for (int i = 0; i < schema.getNumColumns(); ++i) {
+      objList.add(record.getColumnValue(i));
     }
     return transformToTuple(objList, hs);
   }

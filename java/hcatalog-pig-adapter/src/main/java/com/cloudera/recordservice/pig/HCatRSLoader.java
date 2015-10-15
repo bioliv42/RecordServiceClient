@@ -18,33 +18,24 @@
  */
 package com.cloudera.recordservice.pig;
 
-import java.io.IOException;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Properties;
-
-import com.cloudera.recordservice.mr.RecordServiceConfig;
+import com.cloudera.recordservice.hcatalog.common.HCatRSUtil;
+import com.cloudera.recordservice.hcatalog.mapreduce.HCatRSInputFormat;
+import com.cloudera.recordservice.hcatalog.mapreduce.HCatTableInfo;
+import com.cloudera.recordservice.hcatalog.mapreduce.InputJobInfo;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.common.classification.InterfaceAudience;
 import org.apache.hadoop.hive.common.classification.InterfaceStability;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.ql.metadata.Table;
 import org.apache.hadoop.mapreduce.InputFormat;
 import org.apache.hadoop.mapreduce.Job;
-import com.cloudera.recordservice.hcatalog.mapreduce.HCatTableInfo;
 import org.apache.hadoop.security.Credentials;
 import org.apache.hive.hcatalog.common.HCatConstants;
 import org.apache.hive.hcatalog.common.HCatContext;
 import org.apache.hive.hcatalog.common.HCatUtil;
 import org.apache.hive.hcatalog.data.Pair;
 import org.apache.hive.hcatalog.data.schema.HCatSchema;
-import com.cloudera.recordservice.hcatalog.mapreduce.InputJobInfo;
-import com.cloudera.recordservice.hcatalog.mapreduce.HCatRSInputFormat;
-import com.cloudera.recordservice.hcatalog.common.HCatRSUtil;
 import org.apache.pig.Expression;
 import org.apache.pig.Expression.BinaryExpression;
 import org.apache.pig.PigException;
@@ -53,6 +44,10 @@ import org.apache.pig.ResourceStatistics;
 import org.apache.pig.impl.util.UDFContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.util.*;
+import java.util.Map.Entry;
 
 /**
  * Pig {@link org.apache.pig.LoadFunc} to read data from HCat
