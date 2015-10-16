@@ -171,9 +171,9 @@ class InternalUtil {
   }
 
   /**
-   * Casts an InputSplit into a HCatSplit, providing a useful error message if the cast fails.
+   * Casts an InputSplit into a HCatRSSplit, providing a useful error message if the cast fails.
    * @param split the InputSplit
-   * @return the HCatSplit
+   * @return the HCatRSSplit
    * @throws IOException
    */
   public static HCatRSSplit castToHCatRSSplit(InputSplit split) throws IOException {

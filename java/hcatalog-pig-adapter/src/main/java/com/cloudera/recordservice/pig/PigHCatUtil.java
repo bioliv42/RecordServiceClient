@@ -54,6 +54,12 @@ import java.sql.Date;
 import java.util.*;
 import java.util.Map.Entry;
 
+/*
+ * This Class was copied from the Hcatalog-Pig-Adapter Project
+ * Orginal name: PigHcatUtil
+ * Changes: ConvertToTuples method now converts record service records
+ * instead of HcatRecords
+ */
 class PigHCatUtil {
 
   private static final Logger LOG = LoggerFactory.getLogger(PigHCatUtil.class);
