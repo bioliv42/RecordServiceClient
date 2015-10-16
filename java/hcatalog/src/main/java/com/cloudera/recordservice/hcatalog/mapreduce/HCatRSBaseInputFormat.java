@@ -76,11 +76,6 @@ public abstract class HCatRSBaseInputFormat
       HCatUtil.serialize(hcatSchema));
   }
 
-  protected static RecordServiceInputFormat
-  getMapRedInputFormat(JobConf job){
-    return ReflectionUtils.newInstance(RecordServiceInputFormat.class, job);
-  }
-
   /**
    * Logically split the set of input files for the job. Returns the
    * underlying InputFormat's splits
@@ -118,8 +113,8 @@ public abstract class HCatRSBaseInputFormat
       for (InputSplit split : splitsInfo.splits){
         splits.add(new HCatRSSplit(partitionInfo, split));
       }
-      LOG.debug(String.format("Generated %d splits.", splits.size()));
     }
+    LOG.debug(String.format("Generated %d splits.", splits.size()));
     return splits;
   }
 
@@ -206,5 +201,5 @@ public abstract class HCatRSBaseInputFormat
 
     return (InputJobInfo) HCatRSUtil.deserialize(jobString);
   }
-  
+
 }

@@ -35,7 +35,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 
-/** The HCatSplit wrapper around the InputSplit returned by the underlying InputFormat */
+/** The HCatRSSplit wrapper around the InputSplit returned by the underlying InputFormat */
 public class HCatRSSplit extends InputSplit
   implements Writable {
 

@@ -33,21 +33,7 @@ import java.io.IOException;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-
 public class TestHCatRSUtil extends TestBase {
-
-    @Test
-    public void getStorageHandlerTest() throws IOException {
-
-        // TODO: Can we use mocking frameworks like mockito? I really dont want to instantiate the entire object....
-
-        /*PartInfo info = new PartInfo(null, null, "location", null, null, null);
-        Configuration conf = new Configuration();
-
-        HiveStorageHandler handler = HCatRSUtil.getStorageHandler(conf, info);
-        assertTrue(handler != null);*/
-    }
-
 
     public void serializeTest() throws IOException {
         assertEquals("", HCatRSUtil.serialize(null));
@@ -58,19 +44,9 @@ public class TestHCatRSUtil extends TestBase {
 
     @Test
     public void deserializeTest() throws IOException {
-
         // first the null branches
         assertEquals(null, HCatRSUtil.deserialize(null));
         assertEquals(null, HCatRSUtil.deserialize(""));
-
-
-        // TODO: Failing to deserialize, need to look into this further
-        /*InputJobInfo info = InputJobInfo.create("db", "example", "filter", null);
-        String serialized = HCatRSUtil.serialize(info);
-        InputJobInfo test = (InputJobInfo) HCatRSUtil.deserialize(serialized);
-        assertEquals("db", test.getDatabaseName());
-        assertEquals("example", test.getTableName());
-        assertEquals("filter", test.getFilter());*/
     }
 
     @Test
