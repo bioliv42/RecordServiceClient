@@ -1,4 +1,147 @@
-<ul>
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Configure RecordService</title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="An abstraction layer between storage managers (for example, HDFS, HBase, Kudu) and compute frameworks (for example, MapReduce, Spark, Hive).">
+    <link rel="canonical" href="http://github.mtv.cloudera.com/CDH/RecordServiceClient/docs//configure.html">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/docs//css/main.css">
+    <link href='http://fonts.googleapis.com/css?family=Raleway:200,400,500,600,700' rel='stylesheet' type='text/css'>
+    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
+
+</head>
+
+
+    <body>
+
+    <header class="site-header">
+
+  <div class="wrap">
+
+    <a class="site-title" href="/docs//"><img src="../img/rs.png" height="25%" width="25%" align="left"></a>
+<br/><br/>An abstraction layer between storage managers (for example, HDFS, HBase, Kudu) and compute frameworks (for example, MapReduce, Spark, Hive).
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+           viewBox="0 0 18 15" enable-background="new 0 0 18 15" xml:space="preserve">
+          <path fill="#505050" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0
+            h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#505050" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484
+            h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#505050" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0
+            c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+    </nav>
+
+  </div>
+<div>
+
+</div>
+</header>
+
+
+    <div class="page-content">
+      
+      <div class="sidebar">
+      
+        <h4>Overview</h4>
+        <ul>
+          
+        </ul>
+      
+        <h4></h4>
+        <ul>
+          
+          
+          <li><a href="/docs//index.html">Introduction</a></li>
+          
+          
+          
+          <li><a href="/docs//betastart.html">Getting Started</a></li>
+          
+          
+          
+          <li><a href="/docs//ReleaseNotes.html">Beta Release Notes</a></li>
+          
+          
+        </ul>
+      
+        <h4>Installation</h4>
+        <ul>
+          
+        </ul>
+      
+        <h4></h4>
+        <ul>
+          
+          
+          <li><a href="/docs//install.html">Download RecordService</a></li>
+          
+          
+          
+          <li><a href="/docs//configure.html">Configure RecordService</a></li>
+          
+          
+          
+          <li><a href="/docs//vm.html">Download VM</a></li>
+          
+          
+        </ul>
+      
+        <h4>Demonstration</h4>
+        <ul>
+          
+        </ul>
+      
+        <h4></h4>
+        <ul>
+          
+          
+          <li><a href="/docs//appint.html">Application Integration</a></li>
+          
+          
+          
+          <li><a href="/docs//examples.html">Run Examples</a></li>
+          
+          
+        </ul>
+      
+        <h4>Resources</h4>
+        <ul>
+          
+        </ul>
+      
+        <h4></h4>
+        <ul>
+          
+          
+          <li><a href="/docs//faq.html">FAQ</a></li>
+          
+          
+          
+          <li><a href="/docs//getin.html">Get Involved</a></li>
+          
+          
+        </ul>
+      
+      </div>
+      
+
+      <div class="wrap">
+      <div class="post">
+
+  <header class="post-header">
+    <h1>Configure RecordService</h1>
+  </header>
+
+  <article class="post-content">
+  <ul>
   <li><a href="#client-configurations">Client Configurations</a></li>
   <li><a href="#server-configurations">Server Configurations</a></li>
 </ul>
@@ -75,3 +218,64 @@
 <p>No special configuration is required with Cloudera Manager. This is enabled automatically if the cluster is kerberized.</p>
 
 <p>RecordService persists state in Zookeeper, by default, under the /recordservice Zookeeper directory. If this directory is already in use, you can configure the directory with <code>recordservice.zookeeper.znode</code>. This is a Hadoop style XML configuration that you can add to the advanced service configuration snippet.</p>
+
+  </article>
+
+</div>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrap columns">
+
+    <div class="left">
+      <h2 class="footer-heading">RecordService, Beta</h2>
+
+      <ul>
+        <li>RecordService is licensed under</li>
+        <li><a href="http://www.apache.org/licenses/LICENSE-2.0.html">The Apache License, Version 2.0</a></li>
+        <li>&nbsp;</li>
+        <li>Generated on 19 October 2015</li>
+      </ul>
+
+    </div>
+
+    <div class="middle">
+    </div>
+
+    <div class="right"> 
+      <p class="text">
+        <div class="columns">
+          <div class="left">
+            <ul>
+              <li><a href="https://github.com/cloudera/RecordServiceClient"><i class="fa fa-github fa-lg"></i>&nbsp; Source</a></li>
+              <li><a href="https://groups.google.com/forum/#!forum/recordservice-user"><i class="fa fa-comments-o fa-lg"></i>&nbsp; Mailing list</a></li>
+              <li><a href="http://github.com/cloudera/RecordServiceClient/"><i class="fa fa-cogs fa-lg"></i>&nbsp; How to contribute</a></li>
+<!-- Info not available
+              <li><a href="https://jira.cloudera.com/browse/CDH/component/12921/"><i class="fa fa-bug fa-lg"></i>&nbsp; Issue tracking</a></li>
+-->
+            </ul>
+          </div>
+          <div class="right">
+            <ul>
+              <li><a href="https://github.com/cloudera/RecordServiceClient/tree/master/java/examples"><i class="fa fa-play"></i>&nbsp; Examples</a></li>
+<!-- Info not available
+              <li><a href="/docs/apidocs/index.html"><i class="fa fa-file-text-o"></i>&nbsp; API Javadoc</a></li>
+              <li><a href="/docs/jdiff/changes.html"><i class="fa fa-bolt fs-lg"></i>&nbsp; API Changes</a></li>
+-->
+              <li><a href="/docs//ReleaseNotes.html"><i class="fa fa-info fa-lg"></i>&nbsp; Release Notes</a></li>
+            </ul>
+          </div>
+        </div>
+      </p>
+    </div>
+
+  </div>
+
+</footer>
+
+
+    </body>
+</html>
