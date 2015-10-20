@@ -126,18 +126,30 @@ void StartMiniCluster(int num_nodes) {
     if (recordservice_planner == NULL) recordservice_planner = recordserviced;
   }
 
-  printf("%s\n", "Sleeping to allow cluster to startup");
-  sleep(5);
+  printf("Sleeping to allow cluster to startup\n");
+  sleep(1);
+  shared_ptr<RecordServicePlannerClient> planner;
+  int i = 10;
+  while (i > 0) {
+    try {
+      planner = CreatePlannerConnection(
+        "localhost", recordservice_planner->recordservice_planner_port());
+      break;
+    } catch (TTransportException e) {
+      sleep(1);
+      i = i - 1;
+      printf("Sleeping...\n");
+    }
+  }
 
-  shared_ptr<RecordServicePlannerClient> planner = CreatePlannerConnection(
-      "localhost", recordservice_planner->recordservice_planner_port());
+  ExitIfFalse(i);
 
   TProtocolVersion protocol;
   try{
     planner->GetProtocolVersion(protocol);
     printf("%s%s\n", "Protocol: ", protocol.c_str());
   } catch (TRecordServiceException e) {
-    printf("%s\n", e.message.c_str());
+    printf("Failure in healthcheck query GetProtocolVersion:\n%s\n", e.message.c_str());
   }
 
   while (1) {
