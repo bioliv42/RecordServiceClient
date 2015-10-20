@@ -45,8 +45,6 @@ public class MiniClusterController {
   public native void KillNodeByPid(int pid);
   public native int[] GetRunningMiniNodePids();
   public native int GetSpecificNodePid(int plannerPort);
-  public native int GetStatestorePid();
-  public native int GetCatalogPid();
   public native int AddRecordServiceNode();
   public native String[] GetNodeArgs(int pid);
 
@@ -55,8 +53,6 @@ public class MiniClusterController {
   public static final String MINICLUSTER_LIBRARY = "libExternalMiniCluster.so";
   public static final String BUILT_RS_CODE_LOCATION = "/cpp/build/release/recordservice/";
 
-  public int catalogPid_ = -1;
-  public int statestorePid_ = -1;
   public Thread clusterThread_;
 
   private static MiniClusterController miniCluster_;
@@ -118,8 +114,7 @@ public class MiniClusterController {
   }
 
   /**
-   * This method returns the number of nodes in the cluster not including the
-   * catalog or the statestore
+   * This method returns the number of nodes in the cluster
    */
   public int getClusterSize() {
     return clusterList_.size();
@@ -142,34 +137,6 @@ public class MiniClusterController {
    */
   public void killRandomNode() {
     killNode(getRandomNode());
-  }
-
-  /**
-   * This method returns the process id of the statestore
-   */
-  public int getStatestorePid() {
-    return GetStatestorePid();
-  }
-
-  /**
-   * This method returns the process id of the catalog
-   */
-  public int getCatalogPid() {
-    return GetCatalogPid();
-  }
-
-  /**
-   * This method checks if there is a running statestore
-   */
-  public boolean isStatestoreAlive() {
-    return getStatestorePid() > 1;
-  }
-
-  /**
-   * This method checks if there is a running catalog
-   */
-  public boolean isCatalogAlive() {
-    return getCatalogPid() > 1;
   }
 
   /**
@@ -210,7 +177,6 @@ public class MiniClusterController {
     public int hs2Port_;
     public int bePort_;
     public int webserverPort_;
-    public int statestoreSubscriberPort_;
     public int plannerPort_;
     public int workerPort_;
 
@@ -219,8 +185,7 @@ public class MiniClusterController {
       beeswaxPort_ = args.get("beeswax_port");
       hs2Port_ = args.get("hs2_port");
       bePort_ = args.get("be_port");
-      webserverPort_ = args.get("webserver_port");
-      statestoreSubscriberPort_ = args.get("state_store_subscriber_port");
+      webserverPort_ = args.get("recordservice_webserver_port");
       plannerPort_ = args.get("recordservice_planner_port");
       workerPort_ = args.get("recordservice_worker_port");
     }
@@ -265,8 +230,6 @@ public class MiniClusterController {
   private void populateFields() {
     miniCluster_ = this;
     populateNodeList();
-    catalogPid_ = getCatalogPid();
-    statestorePid_ = getStatestorePid();
   }
 
   /**
@@ -329,17 +292,6 @@ public class MiniClusterController {
             "were found but are not being tracked by the MiniClusterController");
         return false;
       }
-    }
-    // Check the catalog and statestore
-    int sPid = getStatestorePid();
-    int cPid = getCatalogPid();
-    if (sPid != statestorePid_) {
-      System.err.println("Statestore pid does not match MiniClusterController value");
-      return false;
-    }
-    if (cPid != catalogPid_) {
-      System.err.println("Catalog pid does not match MiniClusterController value");
-      return false;
     }
     return true;
   }
