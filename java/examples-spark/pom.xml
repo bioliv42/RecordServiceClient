@@ -56,6 +56,13 @@
       <artifactId>spark-core_${sparkcore.version}</artifactId>
       <version>${spark.version}</version>
     </dependency>
+    <dependency>
+      <!-- Needs to add this to make the shade jar include it -->
+      <groupId>javax.ws.rs</groupId>
+      <artifactId>jsr311-api</artifactId>
+      <version>1.1</version>
+      <scope>runtime</scope>
+    </dependency>
   </dependencies>
 
   <build>
@@ -151,14 +158,17 @@
                 </filters>
                 <artifactSet>
                   <includes>
+                    <include>javax.ws.rs:*</include>
                     <include>com.cloudera.recordservice:*</include>
                     <include>com.google.guava:*</include>
+                    <include>com.sun.jersey:jersey-server*</include>
                     <include>commons-lang:*</include>
                     <include>commons-collections:*</include>
                     <include>commons-configuration:*</include>
                     <include>org.scala-lang:*</include>
                     <include>org.apache.commons:*</include>
                     <include>org.apache.spark:spark-core*</include>
+                    <include>org.apache.spark:spark-unsafe*</include>
                     <include>org.apache.spark:spark-network-shuffle*</include>
                     <include>org.apache.spark:spark-network-common*</include>
                     <include>org.apache.hadoop:hadoop-client*</include>
@@ -177,7 +187,9 @@
                     <include>io.dropwizard.metrics:*</include>
                     <include>org.json4s:*</include>
                     <include>com.fasterxml.jackson.core:*</include>
+                    <include>com.fasterxml.jackson.module:*</include>
                     <include>com.esotericsoftware.reflectasm:*</include>
+                    <include>com.thoughtworks.paranamer:*</include>
                     <include>org.xerial.snappy:*</include>
                   </includes>
                 </artifactSet>
