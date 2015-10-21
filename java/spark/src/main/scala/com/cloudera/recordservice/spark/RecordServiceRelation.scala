@@ -28,6 +28,7 @@ import org.apache.spark.sql.sources._
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{Row, SQLContext}
 import org.apache.spark.{Logging, SparkException}
+import org.apache.spark.unsafe.types.UTF8String
 
 /**
  * SparkSQL integration with the RecordService.
@@ -81,6 +82,8 @@ case class RecordServiceRelation(table:String, size:Option[Long])(
       planner.close()
     }
   }
+
+  override def needConversion: Boolean = false
 
   override val sizeInBytes =
     if (size.isDefined) {
@@ -211,6 +214,7 @@ case class RecordServiceRelation(table:String, size:Option[Long])(
       val numCols = requiredColumns.size
 
       // Map the result from the record service RDD to a MutableRow
+      // Relies on type erasure hack to pass RDD[InternalRow] to RDD[Row]
       baseRDD.map(x => {
         val rsSchema = baseRDD.getSchema()
         for (i <- 0 until numCols) {
@@ -226,7 +230,7 @@ case class RecordServiceRelation(table:String, size:Option[Long])(
               case Schema.Type.FLOAT => mutableRow.setFloat(i, x.nextFloat(i))
               case Schema.Type.DOUBLE => mutableRow.setDouble(i, x.nextDouble(i))
               case Schema.Type.STRING =>
-                mutableRow.setString(i, x.nextByteArray(i).toString)
+                mutableRow.update(i, UTF8String.fromString(x.nextByteArray(i).toString))
               case Schema.Type.DECIMAL =>
                 val d = x.nextDecimal(i)
                 mutableRow.update(i,
@@ -238,7 +242,7 @@ case class RecordServiceRelation(table:String, size:Option[Long])(
           }
         }
         mutableRow
-      })
+      }).asInstanceOf[RDD[Row]]
     }
   }
 }
