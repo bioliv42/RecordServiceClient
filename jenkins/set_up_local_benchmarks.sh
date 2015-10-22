@@ -3,6 +3,22 @@
 
 # Loads data and starts the cluster to run local benchmarks.
 
+USE_SENTRY=1
+
+# parse command line options
+for ARG in $*
+do
+  case "$ARG" in
+    -no_sentry)
+      USE_SENTRY=0
+      ;;
+    -help|*)
+      echo "[-no_sentry] : If used, no sentry roles are created"
+      exit 1
+      ;;
+  esac
+done
+
 # Builds record service client.
 export TARGET_BUILD_TYPE=Release
 source $WORKSPACE/repos/RecordServiceClient/jenkins/preamble_rs.sh
@@ -53,6 +69,15 @@ else
   echo ">>> Starting impala"
   cd $IMPALA_HOME
   bin/start-impala-cluster.py -s 1 --build_type=release --catalogd_args="-load_catalog_in_background=false"
+fi
+
+if [ $USE_SENTRY -eq 1 ]; then
+  set +e
+  impala-shell.sh -q "DROP ROLE TEST_ROLE"
+  set -e
+  impala-shell.sh -q "CREATE ROLE TEST_ROLE"
+  impala-shell.sh -q "GRANT ALL ON SERVER TO ROLE TEST_ROLE"
+  impala-shell.sh -q "GRANT ROLE TEST_ROLE TO GROUP \`$USER\`"
 fi
 
 cd $RECORD_SERVICE_HOME/java
