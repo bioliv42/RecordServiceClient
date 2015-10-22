@@ -168,6 +168,7 @@ void ExecRequestDistributed(const char* request, TRecordFormat::type format) {
     TPlanRequestParams plan_params;
     plan_params.request_type = TRequestType::Sql;
     plan_params.__set_sql_stmt(request);
+    plan_params.__set_user(getenv("USER"));
     planner.PlanRequest(plan_result, plan_params);
   } catch (const TRecordServiceException& e) {
     printf("Failed with exception:\n%s\n", e.message.c_str());
