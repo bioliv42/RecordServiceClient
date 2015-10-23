@@ -141,9 +141,7 @@
   </header>
 
   <article class="post-content">
-  <p>RecordService provides an abstraction layer between compute frameworks and data storage. It provides row- and column-level security, and other advantages as well.</p>
-
-<p>This release of RecordService is a public beta and should not be run on production clusters. During the public beta period, RecordService is supported through the mailing list <a href="mailto:RecordService-user@googlegroups.com">RecordService-user@googlegroups.com</a>, not through the Cloudera Support Portal.</p>
+  <p>This release of RecordService is a public beta and should not be run on production clusters. During the public beta period, RecordService is supported through the mailing list <a href="mailto:RecordService-user@googlegroups.com">RecordService-user@googlegroups.com</a>, not through the Cloudera Support Portal.</p>
 
 <p>As you use RecordService during the public beta period, keep in mind the following:</p>
 
@@ -155,7 +153,7 @@
     <p>There is no guarantee that a bug will be fixed in a future release.</p>
   </li>
   <li>
-    <p>The RecordService team does not provide patches for beta releases, and cannot guarantee upgrades from this release to follow-on releases.</p>
+    <p>The RecordService team does not provide patches for beta releases, and cannot guarantee upgrades from this release to later releases.</p>
   </li>
   <li>
     <p>Although multiple releases of beta code might be planned, the contents are not guaranteed. There is no schedule for future beta code releases. Any releases are announced to the user group as they occur.</p>
@@ -175,9 +173,7 @@
 
 <h2 id="recordservice-vm-requirements">RecordService VM Requirements</h2>
 
-<p>RecordService VM requires VirtualBox version 4.3 or 5. You can download a free copy of VirtualBox at</p>
-
-<p><a href="https://www.virtualbox.org/wiki/Downloads">https://www.virtualbox.org/wiki/Downloads</a>.</p>
+<p>RecordService VM requires VirtualBox version 4.3 or 5. You can download a free copy of VirtualBox at <a href="https://www.virtualbox.org/wiki/Downloads">https://www.virtualbox.org/wiki/Downloads</a>.</p>
 
 <h2 id="platform-and-hardware-support">Platform and Hardware Support</h2>
 
@@ -185,20 +181,20 @@
 
 <ul>
   <li>CDH 5.4</li>
-  <li>Server support: RHEL5-6, Ubuntu LTS, SLES, Debian</li>
+  <li>Server support: RHEL5 and RHEL6, Ubuntu LTS, SLES, and Debian</li>
   <li>Intel Nehalem (or later) or AMD  Bulldozer (or later) processor</li>
-  <li>64GB memory</li>
+  <li>64 GB memory</li>
   <li>For optimal performance, run with 12 or more disks, or use SSD.</li>
 </ul>
 
 <h2 id="storage-and-file-format-support">Storage and File Format Support</h2>
 
-<p>RecordService supports reading HDFS or S3 of file format:</p>
+<p>RecordService supports reading HDFS or S3 of the following file formats:</p>
 
 <ul>
   <li>Parquet</li>
   <li>Text</li>
-  <li>Sequence File</li>
+  <li>Sequence file</li>
   <li>RC</li>
   <li>Avro</li>
 </ul>
@@ -228,7 +224,7 @@
 
 <h3 id="recordservice-client-configurations-are-not-properly-propagated-to-spark-jobs">RecordService client configurations are not properly propagated to Spark jobs</h3>
 
-<p>RecordService configuration options are not propagated to Spark jobs using the RecordService CSD. All configuration options must be specified in the job or via Cloudera Manager safety valves for Spark.</p>
+<p>RecordService configuration options are not propagated to Spark jobs using the RecordService custom service descriptor (CSD). All configuration options must be specified in the job or through Cloudera Manager safety valves for Spark.</p>
 
 <h4 id="workaround">Workaround:</h4>
 
@@ -256,7 +252,7 @@
 <p>The digest-md5 library is not installed by default in parcel deployments.</p>
 
 <h4 id="workaround-1">Workaround</h4>
-<p>To install the library on RHEL6 use the following command line instruction:</p>
+<p>To install the library on RHEL 6, use the following command-line instruction:</p>
 
 <pre><code>sudo yum install cyrus-sasl-md5
 </code></pre>
@@ -280,7 +276,7 @@
 <h3 id="security-limitations">Security Limitations</h3>
 
 <ul>
-  <li>Only supports simple single-table views (no joins or aggregations).</li>
+  <li>RecordService only supports simple single-table views (no joins or aggregations).</li>
   <li>SSL support has not been tested.</li>
   <li>Oozie integration has not been tested.</li>
 </ul>
@@ -324,7 +320,7 @@
         <li>RecordService is licensed under</li>
         <li><a href="http://www.apache.org/licenses/LICENSE-2.0.html">The Apache License, Version 2.0</a></li>
         <li>&nbsp;</li>
-        <li>Generated on 19 October 2015</li>
+        <li>Generated on 23 October 2015</li>
       </ul>
 
     </div>

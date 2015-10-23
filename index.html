@@ -141,13 +141,13 @@
   </header>
 
   <article class="post-content">
-  <p>RecordService provides an abstraction layer between compute frameworks and data storage. It provides row- and column-level security, and other advantages as well.</p>
+  <p>RecordService provides an abstraction layer between compute frameworks and data storage. It provides row- and column-level security, and other advantages.</p>
 
 <h2 id="the-motivation">The Motivation</h2>
 
-<p>One of the key aspects of the Hadoop ecosystem is decoupling storage managers (for example, HDFS, Apache HBase) and compute frameworks (for example, MapReduce, Impala, Apache Spark). While this decoupling allows for far greater flexibility — pick the framework that best solves your problem — it leads to more complexity to ensure everything works together seamlessly. Furthermore, as Hadoop becomes an increasingly critical infrastructure component for users, the expectations for compatibility, performance, and security also increase.</p>
+<p>One of the key aspects of the Hadoop ecosystem is decoupling storage managers (for example, HDFS and Apache HBase) and compute frameworks (for example, MapReduce, Impala and Apache Spark). Although this decoupling allows for far greater flexibility — pick the framework that best solves your problem — it leads to more complexity to ensure that everything works together seamlessly. Furthermore, as Hadoop becomes an increasingly critical infrastructure component for users, the expectations for compatibility, performance, and security also increase.</p>
 
-<p>RecordService is a new core security layer for Hadoop that sits between the storage managers and compute frameworks in order to provide a unified data access path.</p>
+<p>RecordService is a new core security layer for Hadoop that sits between the storage managers and compute frameworks to provide a unified data access path.</p>
 
 <p><img src="img/unifiedDataAccessPath.png" alt="Unified Data Access Path" height="85%" width="85%" /></p>
 
@@ -155,10 +155,10 @@
 
 <ul>
   <li>RecordService provides fine-grained data permissions and enforcement across Hadoop.</li>
-  <li>Clients work independent of on-disk storage format.</li>
-  <li>The unified data access path provides a single place to implement and test file format-related changes.</li>
+  <li>Clients work independently of on-disk storage format.</li>
+  <li>The unified data access path provides a single place to implement and test file format–related changes.</li>
   <li>Components swap transparently above or below RecordService.</li>
-  <li>Performance is boosted via Impala’s optimized scanner, dynamic code generation, and Parquet implementation.</li>
+  <li>Performance is improved through the optimized scanner, dynamic code generation, and Parquet implementation provided by Impala.</li>
   <li>Existing MapReduce and Spark jobs gain Impala-quality performance.</li>
   <li>RecordService can make projections over original source datasets instead of making copies or subsets.</li>
 </ul>
@@ -168,10 +168,10 @@
 <p>RecordService provides the following services.</p>
 
 <ul>
-  <li>RecordServicePlanner — Generates tasks, performs authorization checks, handles metadata access. Called during input split generation. </li>
-  <li>RecordServiceWorker — Executes tasks, reads and writes to the storage layer.
+  <li>RecordServicePlanner — Generates tasks, performs authorization checks, and handles metadata access. Called during input split generation. </li>
+  <li>RecordServiceWorker — Executes tasks, and reads and writes to the storage layer.
     <ul>
-      <li>Builds on Impala’s highly optimized I/O scheduler and file parsers.</li>
+      <li>Builds on the highly optimized I/O scheduler and file parsers provided by Impala.</li>
       <li>Returns rows in a canonical format.</li>
     </ul>
   </li>
@@ -179,7 +179,6 @@
   <li>Client Integration Libraries — Allow easy migration to RecordService.</li>
 </ul>
 
-<h3 id="recordservice-mdash-architecture-overview">RecordService — Architecture Overview</h3>
 <p><img src="img/RecordServiceArchitectureOverview.png" alt="Record Service Architecture Overview " height="85%" width="85%" /></p>
 
 
@@ -201,7 +200,7 @@
         <li>RecordService is licensed under</li>
         <li><a href="http://www.apache.org/licenses/LICENSE-2.0.html">The Apache License, Version 2.0</a></li>
         <li>&nbsp;</li>
-        <li>Generated on 19 October 2015</li>
+        <li>Generated on 23 October 2015</li>
       </ul>
 
     </div>

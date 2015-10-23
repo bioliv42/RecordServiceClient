@@ -141,37 +141,37 @@
   </header>
 
   <article class="post-content">
-  <p>These are the instructions for installing RecordService in an existing Hadoop cluster. Using the RecordService VM is an alternative for those who want to quickly install and explore the features of RecordService.</p>
+  <p>Use these instructions to install RecordService in an existing Hadoop cluster. You can also use the RecordService VM if you want to quickly install and explore the features of RecordService.</p>
 
 <p>See <a href="/RecordServiceClient/vm.html">Download and Install RecordService VM</a>.</p>
 
 <h2 id="download-recordservice">Download RecordService</h2>
 
-<p>These are the ways you can install RecordService. Cloudera recommends that you install Cloudera Manager on your cluster, so that you can install RecordService as an add-on service in Cloudera Manager.</p>
+<p>Use these instructions to install RecordService. Cloudera recommends that you install Cloudera Manager on your cluster, so that you can download and install RecordService as an add-on service in Cloudera Manager.</p>
 
 <h2 id="installing-recordservice-as-an-add-on-service-in-cloudera-manager">Installing RecordService as an Add-on Service in Cloudera Manager</h2>
 
-<p>You can install RecordService as an <a href="http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topics/cm_mc_addon_services.html">Add-on Service</a> in Cloudera Manager. First, install both the CSD and the Parcel in Cloudera Manager; then, add RecordService as an add-on service from the home page in Cloudera Manager.<br />
+<p>You can install RecordService as an <a href="http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topics/cm_mc_addon_services.html">Add-on Service</a> in Cloudera Manager. First, install both the custom service descriptor (CSD) and the parcel in Cloudera Manager; then, add RecordService as an add-on service from the home page in Cloudera Manager.<br />
 See <a href="http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topics/cm_mc_addon_services.html">http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topics/cm_mc_addon_services.html</a>.</p>
 
 <h3 id="installing-the-recordservice-csd">Installing the RecordService CSD</h3>
 
-<p>These are the steps to install the RecordService CSD.</p>
+<p>Follow these steps to install the RecordService CSD.</p>
 
 <ol>
   <li>Download the CSD from <a href="http://archive.cloudera.com/beta/recordservice/csd">http://archive.cloudera.com/beta/recordservice/csd</a>.</li>
   <li>Upload the CSD to <code>/opt/cloudera/csd</code> in the Cloudera Manager server.</li>
-  <li>Change the owner and group for the JAR using the following comamand line instruction:<br />
+  <li>Change the owner and group for the JAR using the following comamand-line instruction:<br />
 <code>
 chown cloudera-scm:cloudera-scm /opt/cloudera/csd/RECORD_SERVICE-1.0.jar
 </code></li>
-  <li>Update the permissions on the file using the following command line instruction:<br />
+  <li>Update the permissions on the file using the following command-line instruction:<br />
 <code>
 chmod 644 /opt/cloudera/csd/RECORD_SERVICE-1.0.jar
 </code></li>
-  <li>Restart the Cloudera Manager server
+  <li>Restart the Cloudera Manager server:
     <ol>
-      <li>As the root user in the Cloudera Manager server, run <code>service cloudera-scm-server restart</code>.</li>
+      <li>As the root user on the Cloudera Manager server, run <code>service cloudera-scm-server restart</code>.</li>
       <li>Log in to the Cloudera Manager Admin Console and restart the Cloudera Manager Service.</li>
     </ol>
   </li>
@@ -190,7 +190,7 @@ isInstalled: true
 
 <h3 id="parcel-installation">Parcel Installation</h3>
 
-<p>These are the steps to install the RecordService Parcel.</p>
+<p>Follow these steps to install the RecordService Parcel.</p>
 
 <ol>
   <li>Go to <code>http://{cm-server}:7180/cmf/parcel/status</code>.</li>
@@ -206,23 +206,23 @@ isInstalled: true
 
 <h3 id="cloudera-manager-deployment">Cloudera Manager Deployment</h3>
 
-<p>There are the steps to start up RecordService for a cluster from Cloudera Manager.</p>
+<p>Follow these steps to start RecordService for a cluster from Cloudera Manager.</p>
 
 <ol>
-  <li>Add a service from Cloudera Manager home page.</li>
-  <li>Customize Role: 
+  <li>Add a service from the Cloudera Manager home page.</li>
+  <li>Customize role: 
     <ul>
-      <li>RecordService Planner and Worker: Select nodes with both role of DN and NN.</li>
-      <li>RecordService Planner: Select nodes with role of NN.</li>
-      <li>RecordService Worker: Select nodes with role of DN.</li>
+      <li>RecordService Planner and Worker: Select hosts with both the role of DN and NN.</li>
+      <li>RecordService Planner: Select hosts with the role of NN.</li>
+      <li>RecordService Worker: Select hosts with the role of DN.</li>
     </ul>
   </li>
   <li>Review and modify configuration settings, such as <em>log dir</em> and <em>planner port</em>.</li>
   <li>Start the service.</li>
-  <li>Visit the debug page hostname:11050 to verify it started properly. </li>
+  <li>Go to the debug page hostname:11050 to verify that the service started properly. </li>
   <li>Go to the RecordService cluster page in Cloudera Manager.</li>
-  <li>Choose <strong>Deploy Client Configuration</strong> from <em>Actions</em>.</li>
-  <li>Run the following command in the node where you run the RecordService client:</li>
+  <li>From <strong>Actions</strong> choose <strong>Deploy Client Configuration</strong>.</li>
+  <li>Run the following command on the host where you run the RecordService client:</li>
 </ol>
 
 <pre><code>export HADOOP_CONF_DIR=/etc/hadoop/conf.cloudera.record_service
@@ -232,7 +232,7 @@ isInstalled: true
 
 <h3 id="recordservice-role-deployment-recommendations">RecordService Role Deployment Recommendations</h3>
 
-<p><strong>RecordService Planner</strong> - Clients (MR/Spark) connect to the Planner to submit requests. Performs authorization checks and generates all tasks to execute for the overall request. For the beta release, run only one Planner node located on a non-DataNode.</p>
+<p><strong>RecordService Planner</strong>: Clients (MapReduce and Spark) connect to the Planner to submit requests. The Planner performs authorization checks and generates all tasks to execute for the overall request. For the beta release, run only one Planner node located on a non-DataNode.</p>
 
 <p><strong>RecordService Worker</strong>: Read data from the underlying storage layer (HDFS/S3) and construct records. Worker roles cannot directly process client requests. Run a Worker on every DataNode in the cluster to ensure locality.</p>
 
@@ -248,10 +248,10 @@ isInstalled: true
   <li>Download the client library and example tarball. <a href="http://archive.cloudera.com/beta/recordservice/client-dist/recordservice-client-0.1-bin.tar.gz">http://archive.cloudera.com/beta/recordservice/client-dist/recordservice-client-0.1-bin.tar.gz</a>
     <ul>
       <li>You can also build the client library yourself from the client repository. <a href="http://github.mtv.cloudera.com/CDH/RecordServiceClient">http://github.mtv.cloudera.com/CDH/RecordServiceClient</a>.</li>
-      <li>Client libraries are also available directly from Cloudera’s public Maven repository.</li>
+      <li>Client libraries are also available directly from the Cloudera public Maven repository.</li>
     </ul>
   </li>
-  <li>To verify the server installation, you can run client examples in your clusters.</li>
+  <li>To verify the server installation, run client examples in your clusters.</li>
 </ol>
 
 <li>Log in to one of the nodes in your cluster, and load test data:</li>
@@ -273,7 +273,7 @@ com.cloudera.recordservice.examples.mapreduce.RecordCount \
 "SELECT * FROM tpch.nation" "/tmp/recordcount_output"
 </code></pre>
 
-<li>Start up spark-shell with the RecordService JAR:</li>
+<li>Start spark-shell with the RecordService JAR:</li>
 
 <pre><code>&gt; path/to/spark/bin/spark-shell \
 --conf spark.recordservice.planner.hostports=planner_host:planner_port \
@@ -290,12 +290,12 @@ res0: Long = 25
 
 <h3 id="package-installation-not-recommended">Package Installation (Not Recommended)</h3>
 
-<p>These are the steps to install RecordService from a package.</p>
+<p>Follow these steps to install RecordService from a package.</p>
 
 <ol>
-<li>Download package from <a href="http://archive.cloudera.com/beta/recordservice">http://archive.cloudera.com/beta/recordservice</a>.</li>
-<li>Install Hadoop, Hive, Impala, Sentry, ZooKeeper and any other application you want to use.</li>
-<li>Install the RecordServicePlanner using the following command line instruction:<br /><br />
+<li>Download the package from <a href="http://archive.cloudera.com/beta/recordservice">http://archive.cloudera.com/beta/recordservice</a>.</li>
+<li>Install Hadoop, Hive, Impala, Sentry, ZooKeeper, and any other application you want to use.</li>
+<li>Install the RecordServicePlanner using the following command-line instruction:<br /><br />
 <pre>
 ./recordserviced -hostname=hostname -recordservice_planner_port=12050 \
 -recordservice_worker_port=0 -recordservice_webserver_port=11050 \
@@ -307,7 +307,7 @@ res0: Long = 25
 </pre>
 </li>
 <br />
-<li>Install the worker using the following command line instruction.
+<li>Install the worker using the following command-line instruction.
 <br /><br />
 <pre>
 ./recordserviced  -hostname=hostname -recordservice_planner_port=0 \
@@ -320,7 +320,7 @@ res0: Long = 25
 </pre>
 </li>
 <br />
-<li>Install both planner and worker in one node:
+<li>Install both planner and worker on one node:
 <br /><br />
 <pre>
 ./recordserviced -hostname=hostname -recordservice_planner_port=12050 \
@@ -335,7 +335,7 @@ res0: Long = 25
 <br />
 <li>Set additional parameters:
 <ul>
-<li>Add the following params if the cluster is kerberized:
+<li>Add the following parameters if the cluster is Kerberized:
 <pre>
 -principal=kerberos_principle -keytab_file=the/path/to/record_service.keytab
 </pre></li>
@@ -364,7 +364,7 @@ res0: Long = 25
         <li>RecordService is licensed under</li>
         <li><a href="http://www.apache.org/licenses/LICENSE-2.0.html">The Apache License, Version 2.0</a></li>
         <li>&nbsp;</li>
-        <li>Generated on 19 October 2015</li>
+        <li>Generated on 23 October 2015</li>
       </ul>
 
     </div>
