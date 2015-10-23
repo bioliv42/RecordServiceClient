@@ -71,7 +71,6 @@ public class HCatRSLoader extends HCatLoader {
   private static final Logger LOG = LoggerFactory.getLogger(HCatRSLoader.class);
 
   private static final String PARTITION_FILTER = "partition.filter"; // for future use
-
   private HCatRSInputFormat hcatRSInputFormat = null;
   private String dbName;
   private String tableName;
@@ -158,6 +157,7 @@ public class HCatRSLoader extends HCatLoader {
       Credentials crd = new Credentials();
       crd.addAll(job.getCredentials());
       jobCredentials.put(INNER_SIGNATURE_PREFIX + "_" + signature, crd);
+      clone.setInputFormatClass(HCatRSInputFormat.class);
     }
 
     // Need to also push projections by calling setOutputSchema on
@@ -195,7 +195,7 @@ public class HCatRSLoader extends HCatLoader {
     if(LOG.isDebugEnabled()) {
       LOG.debug("outputSchema=" + outputSchema);
     }
-
+    job.setInputFormatClass(HCatRSInputFormat.class);
   }
 
   @Override
@@ -371,7 +371,7 @@ public class HCatRSLoader extends HCatLoader {
         // Report size to the extent possible.
       }
     }
-
+    LOG.info("SIZE:" + sizeInBytes + "\n\n");
     return sizeInBytes;
   }
 

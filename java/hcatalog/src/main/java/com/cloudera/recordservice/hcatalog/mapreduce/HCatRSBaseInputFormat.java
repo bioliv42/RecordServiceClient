@@ -105,16 +105,15 @@ public abstract class HCatRSBaseInputFormat
     }
 
     JobConf jobConf;
-    // For each matching partition, call getSplits on the underlying InputFormat
-    for (PartInfo partitionInfo : partitionInfoList) {
-      jobConf = HCatUtil.getJobConfFromContext(jobContext);
-      Credentials credentials = jobContext.getCredentials();
-      PlanUtil.SplitsInfo splitsInfo = PlanUtil.getSplits(jobConf, credentials);
-      for (InputSplit split : splitsInfo.splits){
-        splits.add(new HCatRSSplit(partitionInfo, split));
-      }
-    }
-    LOG.debug(String.format("Generated %d splits.", splits.size()));
+    jobConf = HCatUtil.getJobConfFromContext(jobContext);
+    Credentials credentials = jobContext.getCredentials();
+    PlanUtil.SplitsInfo splitsInfo = PlanUtil.getSplits(jobConf, credentials);
+    LOG.info("Num Tasks: " + jobConf.getNumMapTasks());
+    LOG.info(String.format("Generated %d splits.", splitsInfo.splits.size()));
+    InputSplit[] array = (splitsInfo.splits.toArray(new InputSplit[splitsInfo.splits.size()]));
+    LOG.info("ARRAY LENGTH: " + array.length);
+    LOG.info("Value of use new: " + jobConf.getUseNewMapper());
+    splits = splitsInfo.splits;
     return splits;
   }
 
@@ -133,28 +132,12 @@ public abstract class HCatRSBaseInputFormat
   public RecordReader<WritableComparable, RecordServiceRecord>
   createRecordReader(InputSplit split,
              TaskAttemptContext taskContext) throws IOException, InterruptedException {
-
-    HCatRSSplit hcatSplit = InternalUtil.castToHCatRSSplit(split);
-    PartInfo partitionInfo = hcatSplit.getPartitionInfo();
-    // Ensure PartInfo's TableInfo is initialized.
-    if (partitionInfo.getTableInfo() == null) {
-      partitionInfo.setTableInfo(((InputJobInfo) HCatRSUtil.deserialize(
-              taskContext.getConfiguration().get(HCatConstants.HCAT_KEY_JOB_INFO)
-      )).getTableInfo());
-
-    }
     JobContext jobContext = taskContext;
 
     Configuration conf = jobContext.getConfiguration();
-    HiveStorageHandler storageHandler = HCatRSUtil.getStorageHandler(
-            conf, partitionInfo);
-
     JobConf jobConf = HCatUtil.getJobConfFromContext(jobContext);
-    Map<String, String> jobProperties = partitionInfo.getJobProperties();
-    HCatUtil.copyJobPropertiesToJobConf(jobProperties, jobConf);
-    HCatRSUtil.copyCredentialsToJobConf(jobContext.getCredentials(), jobConf);
-
-    return new HCatRecordReader(storageHandler);
+    HCatRSUtil.copyCredentialsToJobConf(taskContext.getCredentials(), jobConf);
+    return new HCatRecordReader();
   }
 
 
