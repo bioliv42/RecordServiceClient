@@ -56,10 +56,27 @@ inline boost::shared_ptr<RecordServiceWorkerClient> CreateWorkerConnection(
 }
 
 inline std::vector<std::string> FetchAllStrings(
-    RecordServiceWorkerClient* worker, const std::string& task) {
+    TPlanRequestResult& plan_result, int task_idx) {
+  EXPECT_GE(task_idx, 0);
+  EXPECT_LT(task_idx, plan_result.tasks.size());
+
+  TTask& ttask = plan_result.tasks[task_idx];
+  TNetworkAddress address;
+
+  // Find a worker host to connect to
+  if (ttask.local_hosts.empty()) {
+    EXPECT_FALSE(plan_result.hosts.empty());
+    address = plan_result.hosts[0];
+  } else {
+    address = ttask.local_hosts[0];
+  }
+
+  boost::shared_ptr<RecordServiceWorkerClient> worker =
+      CreateWorkerConnection(address.hostname.c_str(), address.port);
+
   TExecTaskResult exec_result;
   TExecTaskParams exec_params;
-  exec_params.task = task;
+  exec_params.task = ttask.task;
   worker->ExecTask(exec_result, exec_params);
 
   TFetchResult fetch_result;
