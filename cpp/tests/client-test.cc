@@ -116,8 +116,6 @@ TEST(ClientTest, NationFile) {
   try {
     shared_ptr<RecordServicePlannerClient> planner =
         CreatePlannerConnection(PLANNER_HOST, RECORD_SERVICE_PLANNER_PORT);
-    shared_ptr<RecordServiceWorkerClient> worker =
-        CreateWorkerConnection(PLANNER_HOST, RECORD_SERVICE_WORKER_PORT);
 
     TPlanRequestResult plan_result;
     TPlanRequestParams plan_params;
@@ -132,7 +130,7 @@ TEST(ClientTest, NationFile) {
     EXPECT_EQ(plan_result.schema.cols[0].name, "record");
 
     EXPECT_EQ(plan_result.tasks.size(), 1);
-    vector<string> data = FetchAllStrings(worker.get(), plan_result.tasks[0].task);
+    vector<string> data = FetchAllStrings(plan_result, 0);
 
     // Verify a few records
     EXPECT_EQ(data[5], "5|ETHIOPIA|0|ven packages wake quickly. regu");

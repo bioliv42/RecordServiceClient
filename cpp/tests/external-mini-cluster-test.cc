@@ -55,11 +55,7 @@ TEST(ExternalMiniCluster, Basic) {
   planner->PlanRequest(plan_result, plan_params);
   EXPECT_EQ(plan_result.tasks.size(), 1);
 
-  shared_ptr<RecordServiceWorkerClient> worker = CreateWorkerConnection(
-      plan_result.tasks[0].local_hosts[0].hostname.c_str(),
-      plan_result.tasks[0].local_hosts[0].port);
-
-  vector<string> data = FetchAllStrings(worker.get(), plan_result.tasks[0].task);
+  vector<string> data = FetchAllStrings(plan_result, 0);
   EXPECT_EQ(data.size(), 25);
 }
 
