@@ -30,6 +30,10 @@ if [ $S3 -eq 1 ]; then
   echo ">>> Loading test data"
   . $RECORD_SERVICE_HOME/tests/load-test-data-s3.sh
 
+  # Sleep 1 min to wait for role info synced
+  echo ">>> Sleep 1 min"
+  sleep 1m
+
   echo ">>> Running tests"
   cd $RECORD_SERVICE_HOME/java/core
   mvn -Dtest=*S3* test
