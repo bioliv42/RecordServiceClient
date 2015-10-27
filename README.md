@@ -7,7 +7,7 @@ This repo contains the RecordService service definition, the client libraries to
 
 ## Getting Started
 ### Prereqs
-We require a thrift 0.9+ compiler and java 7.
+We require a thrift 0.9+ compiler, maven, cmake and java 7.
 
 Increase your maven heap size:
 
@@ -19,7 +19,7 @@ On Ubuntu:
 
 On OSX:
 
-    brew install thrift
+    brew install thrift maven cmake
 
 ### Setup
 After cloning the repo for the first time you will need to run:
