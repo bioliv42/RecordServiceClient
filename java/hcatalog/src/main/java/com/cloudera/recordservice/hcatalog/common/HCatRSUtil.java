@@ -73,15 +73,6 @@ public class HCatRSUtil {
     return jobProperties;
   }
 
-  public static HiveStorageHandler getStorageHandler(Configuration conf, PartInfo partitionInfo) throws IOException {
-    return HCatUtil.getStorageHandler(
-            conf,
-            partitionInfo.getStorageHandlerClassName(),
-            partitionInfo.getSerdeClassName(),
-            partitionInfo.getInputFormatClassName(),
-            partitionInfo.getOutputFormatClassName());
-  }
-
   public static String serialize(Serializable obj) throws IOException {
     if (obj == null) {
       return "";
