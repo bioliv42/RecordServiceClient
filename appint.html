@@ -143,20 +143,20 @@
   <article class="post-content">
   <h2 id="mapreduce-input-formats">MapReduce Input Formats</h2>
 
-<p>RecordService is designed to integrate well with existing MapReduce InputFormats. The RecordService client contains InputFormats that are common for most applications. They implement the standard MR1 and MR2 InputFormat API, and should be usable by any existing application or library that expects InputFormats. The examples also contain cases of custom InputFormats that can be easily built on top of the lower level RecordService client APIs.<br />
+<p>RecordService is designed to integrate with existing MapReduce InputFormats. The RecordService client contains InputFormats that are common for most applications. They implement the standard MRv1 and MRv2 InputFormat API, and should be usable by any existing application or library that accepts InputFormats. The examples also contain custom InputFormats that can be built on top of the lower-level RecordService client APIs.<br />
 Unlike many standard Hadoop InputFormats, the RecordService format is independent of the underlying storage format. For example, you can use the AvroInputFormat even if the underlying data is a CSV file. The InputFormat specifies the Java object model used by the application (for example, Avro objects when using AvroInputFormat, hadoop.io.Text when using TextInputFormat, and so on). </p>
 
 <h2 id="drop-in-replacements-for-textinputformat-and-avroinputformat">Drop-in Replacements for TextInputFormat and AvroInputFormat</h2>
 
-<p>To assist with application migration, RecordService provides two InputFormats that closely mimic the API of their existing counterparts. There is an implementation of TextInputFormat (identical class name but in our package as Hadoop’s TextInputFormat) and also variants of the Avro InputFormats (again, identical class name but in the RecordService package). These are drop-in replacements. As demonstrated in some of the examples, you can migrate applications by changing the package names for those classes.</p>
+<p>For application migration, RecordService provides implementations of TextInputFormat (com.cloudera.recordservice.mapreduce.TextInputFormat) and AvroInputFormat (com.cloudera.recordservice.avro.mapred.AvroInputFormat). These are drop-in replacements for the corresponding classes in the Hadoop API. Several examples show that you can migrate applications by changing the import statements for those classes to RecordService package names.</p>
 
 <h2 id="spark-rdd">Spark RDD</h2>
 
-<p>RecordService integrates with Spark in several ways. You can use the InputFormats discussed above through the Spark APIs (SparkContext.hadoopFile()). In some cases, RecordService achieves native Spark integration by implementing the RDD interface directly (as opposed to the InputFormat approach which implements a MapReduce API that Spark knows how to use). The SchemaRDDExample in examples-spark demonstrates this.</p>
+<p>RecordService integrates with Spark in several ways. You can use the InputFormats discussed above through the Spark APIs (SparkContext.hadoopFile()). In some cases, RecordService achieves native Spark integration by implementing the RDD (Resilient Distributed Dataset) interface directly (as opposed to the InputFormat approach, which implements a MapReduce API that Spark can use). The SchemaRDDExample in examples-spark demonstrates this.</p>
 
 <h2 id="spark-sql-support-and-dataframes">Spark SQL Support and DataFrames</h2>
 
-<p>RecordService integrates with SparkSQL (and by extension DataFrames) by implementing the SparkSQL DataSources API. RecordService supports projection and predicate push down.</p>
+<p>RecordService integrates with SparkSQL (and by extension DataFrames) by implementing the SparkSQL DataSources API. RecordService supports projection and predicate pushdown.</p>
 
   </article>
 
@@ -176,7 +176,7 @@ Unlike many standard Hadoop InputFormats, the RecordService format is independen
         <li>RecordService is licensed under</li>
         <li><a href="http://www.apache.org/licenses/LICENSE-2.0.html">The Apache License, Version 2.0</a></li>
         <li>&nbsp;</li>
-        <li>Generated on 19 October 2015</li>
+        <li>Generated on 29 October 2015</li>
       </ul>
 
     </div>

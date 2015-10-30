@@ -149,69 +149,91 @@
 
 <p>Instructions for running the examples are stored in the repository with the source code.</p>
 
-<h3 id="rscat">RSCat</h3>
-
-<p>This example shows how you can output tabular data for any dataset readable by RecordService. It demonstrates a standalone Java application built on the core libraries without using a computation framework such as MapReduce or Spark.</p>
-
-<h3 id="sumquerybenchmark">SumQueryBenchmark</h3>
-
-<p>This demonstrates running a sum over a column and pushing the scan to RecordService. It shows how you can use RecordService to accelerate scan-intensive operations.</p>
-
-<h3 id="terasort">Terasort</h3>
-
-<p>This is a port of the Hadoop <a href="https://hadoop.apache.org/docs/current/api/org/apache/hadoop/examples/terasort/package-summary.html">Terasort</a> benchmark test ported to RecordService. See README in the Terasort package for more details. This also demonstrates how to implement a custom InputFormat using the RecordService APIs.</p>
-
-<h3 id="mapredcolorcountmapreduceagecountmapreducecolorcount">MapredColorCount/MapreduceAgeCount/MapReduceColorCount</h3>
-
-<p>These examples are ported from Apache Avro. They demonstrate the steps required to port an existing Avro-based MapReduce job to use RecordService.</p>
-
-<h3 id="recordcountwordcount">RecordCount/WordCount</h3>
-
-<p>More MapReduce applications that demonstrate some other InputFormats included in the client library, including TextInputFormat and RecordServiceInputformat. Useful for existing MapReduce jobs already using TextInputFormat.</p>
-
-<h3 id="reading-data-from-a-view-and-enforcing-sentry-permissions--uses-recordcount">Reading data from a View, and Enforcing Sentry Permissions  (uses RecordCount)</h3>
-
-<p>This example demonstrates how an MR job can now read data even when the user only has permission to see part of the data in a file (table). See <a href="https://github.com/cloudera/RecordServiceClient/tree/master/java/examples#how-to-enforce-sentry-permissions-with-mapreduce">https://github.com/cloudera/RecordServiceClient/tree/master/java/examples#how-to-enforce-sentry-permissions-with-mapreduce</a></p>
-
-<h3 id="comclouderarecordserviceexamplesavro">com.cloudera.recordservice.examples.avro</h3>
-
-<p>Unmodified from the Apache Avro examples, these utilities help you generate sample data.</p>
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: left">Example</th>
+      <th style="text-align: left">Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: left">RSCat</td>
+      <td style="text-align: left">This example shows how you can output tabular data for any dataset readable by RecordService. It demonstrates a standalone Java application built on the core libraries without using a computation framework such as MapReduce or Spark.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">SumQueryBenchmark</td>
+      <td style="text-align: left">This demonstrates running a sum over a column and pushing the scan to RecordService. It shows how you can use RecordService to accelerate scan-intensive operations.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">Terasort</td>
+      <td style="text-align: left">This is a port of the Hadoop <a href="https://hadoop.apache.org/docs/current/api/org/apache/hadoop/examples/terasort/package-summary.html">Terasort</a> benchmark test ported to RecordService. See README in the Terasort package for more details. This also demonstrates how to implement a custom InputFormat using the RecordService APIs.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">MapredColorCount/MapreduceAgeCount/MapReduceColorCount</td>
+      <td style="text-align: left">These examples are ported from Apache Avro. They demonstrate the steps required to port an existing Avro-based MapReduce job to use RecordService.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">RecordCount/WordCount</td>
+      <td style="text-align: left">More MapReduce applications that demonstrate some other InputFormats included in the client library, including TextInputFormat and RecordServiceInputformat. Useful for existing MapReduce jobs already using TextInputFormat.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">Reading data from a View, and Enforcing Sentry Permissions  (uses RecordCount)</td>
+      <td style="text-align: left">This example demonstrates how an MR job can now read data even when the user only has permission to see part of the data in a file (table). See <a href="https://github.com/cloudera/RecordServiceClient/tree/master/java/examples#how-to-enforce-sentry-permissions-with-mapreduce">https://github.com/cloudera/RecordServiceClient/tree/master/java/examples#how-to-enforce-sentry-permissions-with-mapreduce</a></td>
+    </tr>
+    <tr>
+      <td style="text-align: left">com.cloudera.recordservice.examples.avro</td>
+      <td style="text-align: left">Unmodified from the Apache Avro examples, these utilities help you generate sample data.</td>
+    </tr>
+  </tbody>
+</table>
 
 <h2 id="recordservice-spark-examples">RecordService Spark Examples</h2>
 
 <p>The following examples can be found at <a href="https://github.com/cloudera/RecordServiceClient/tree/master/java/examples-spark">https://github.com/cloudera/RecordServiceClient/tree/master/java/examples-spark</a>.</p>
 
-<h3 id="query1query2">Query1/Query2</h3>
-
-<p>Examples that demonstrate RecordService native RDD integration using RecordServiceRDD.</p>
-
-<h3 id="wordcount">WordCount</h3>
-
-<p>The Hadoop WordCount example built on top of the RecordService equivalent of textFile().</p>
-
-<h3 id="schemarddexample">SchemaRDDExample</h3>
-
-<p>Another example of the native RDD integration, this time using SchemaRecordServiceRDD.</p>
-
-<h3 id="terachecksum">TeraChecksum</h3>
-
-<p>This example uses hadoopFile() with the RecordService InputFormats. This is a port of the TeraChecksum MapReduce job, written in Spark.</p>
-
-<h3 id="tpcdsbenchmark">TpcdsBenchmark</h3>
-
-<p>This demonstrates the SparkSQL integration running a portion of the tpcds benchmark.</p>
-
-<h3 id="dataframeexample">DataFrameExample</h3>
-
-<p>An example that demonstrates DataFrames and RecordService working together.</p>
-
-<h3 id="how-to-use-recordservice-with-spark-shell">How to use RecordService with Spark shell</h3>
-
-<p>Examples of using spark-shell to interact with RecordService in a variety of ways.</p>
-
-<h3 id="reading-data-from-a-view-and-enforcing-sentry-permissions">Reading Data from a View and Enforcing Sentry Permissions</h3>
-
-<p>This example demonstrates how an MR job may now read data even when the user only has permission to see part of the data in a file (table). See <a href="https://github.com/cloudera/RecordServiceClient/blob/master/java/examples-spark/README.md#how-to-enforce-sentry-permissions-with-spark">https://github.com/cloudera/RecordServiceClient/blob/master/java/examples-spark/README.md#how-to-enforce-sentry-permissions-with-spark</a></p>
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: left">Example</th>
+      <th style="text-align: left">Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: left">Query1/Query2</td>
+      <td style="text-align: left">Examples that demonstrate RecordService native RDD Resilient Distributed Dataset (RDD) integration using RecordServiceRDD.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">WordCount</td>
+      <td style="text-align: left">The Hadoop WordCount example built on top of the RecordService equivalent of textFile().</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">SchemaRDDExample</td>
+      <td style="text-align: left">Another example of the native RDD integration, this time using SchemaRecordServiceRDD.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">TeraChecksum</td>
+      <td style="text-align: left">This example uses hadoopFile() with the RecordService InputFormats. This is a port of the TeraChecksum MapReduce job, written in Spark.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">TpcdsBenchmark</td>
+      <td style="text-align: left">This demonstrates the SparkSQL integration running a portion of the tpcds benchmark.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">DataFrameExample</td>
+      <td style="text-align: left">An example that demonstrates DataFrames and RecordService working together.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">How to use RecordService with Spark shell</td>
+      <td style="text-align: left">Examples of using spark-shell to interact with RecordService in a variety of ways.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">Reading Data from a View and Enforcing Sentry Permissions</td>
+      <td style="text-align: left">This example demonstrates how an MR job may now read data even when the user only has permission to see part of the data in a file (table). See <a href="https://github.com/cloudera/RecordServiceClient/blob/master/java/examples-spark/README.md#how-to-enforce-sentry-permissions-with-spark">ReadMe.md</a></td>
+    </tr>
+  </tbody>
+</table>
 
   </article>
 
@@ -231,7 +253,7 @@
         <li>RecordService is licensed under</li>
         <li><a href="http://www.apache.org/licenses/LICENSE-2.0.html">The Apache License, Version 2.0</a></li>
         <li>&nbsp;</li>
-        <li>Generated on 19 October 2015</li>
+        <li>Generated on 29 October 2015</li>
       </ul>
 
     </div>

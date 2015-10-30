@@ -143,23 +143,23 @@
   <article class="post-content">
   <h2 id="downloading-recordservice-vm">Downloading RecordService VM</h2>
 
-<p>These are the steps to download the RecordService VM.</p>
+<p>Follow these steps to download the RecordService VM.</p>
 
 <ol>
-  <li>Install VirtualBox. The VM has been tested to work with VirtualBox version 4.3 on Ubuntu 14.04 and VirtualBox version 5 on OSX 10.9. Download VirtualBox for free at <a href="https://www.virtualbox.org/wiki/Downloads">https://www.virtualbox.org/wiki/Downloads</a>.</li>
+  <li>Install VirtualBox. The VM works with VirtualBox version 4.3 on Ubuntu 14.04 and VirtualBox version 5 on OSX 10.9. Download VirtualBox for free at <a href="https://www.virtualbox.org/wiki/Downloads">https://www.virtualbox.org/wiki/Downloads</a>.</li>
   <li>Clone the recordservice-quickstart repository onto your local disk from <a href="https://github.com/cloudera/recordservice-quickstart">https://github.com/cloudera/recordservice-quickstart</a>.</li>
 </ol>
 
 <h2 id="installing-the-recordservice-vm">Installing the RecordService VM</h2>
 
-<p>These are the steps to install the RecordService VM.</p>
+<p>Follow these steps to install the RecordService VM.</p>
 
 <ol>
   <li>In a terminal window, navigate to the root of the RSQuickstart Git repository.</li>
   <li>Run the script <code>install.sh</code>.</li>
 </ol>
 
-<p>This script downloads an <code>ova</code> file and loads it into VirtualBox. The script might ask you to enter a password, because it edits your <code>/etc/hosts</code> file to give the VM a stable IP address, <code>quickstart.cloudera</code>. When the script completes, you  have a running VM that functions as a RecordService server.</p>
+<p>This script downloads an <code>ova</code> file and loads it into VirtualBox. The script might ask you to enter a password, because it edits your <code>/etc/hosts</code> file to give the VM a stable IP address, <code>quickstart.cloudera</code>. When the script completes, the running VM functions as a RecordService server.</p>
 
 <h3 id="testing-your-vm-configuration">Testing Your VM Configuration</h3>
 
@@ -170,9 +170,9 @@
   <li>Enter the password <code>cloudera</code>.</li>
 </ol>
 
-<p>If you are unable to ssh to the VM, refer to  <a href="#troubleshooting-the-vm-configuration">Troubleshooting the VM Configuration</a>.</p>
+<p>If you cannot ssh to the VM, see <a href="#troubleshooting-the-vm-configuration">Troubleshooting the VM Configuration</a>.</p>
 
-<p>This verifies that you are able to log in to the VM. You can continue to explore the VM, but you should run the commands that follow from your host machine.</p>
+<p>Successfully connecting through ssh verifies that you can log in to the VM.</p>
 
 <h3 id="configuring-recordservice-environment-variables">Configuring RecordService Environment Variables</h3>
 
@@ -185,14 +185,14 @@
   <li>Test your environment with the command <code>mvn test -DargLine="-Duser.name=recordservice"</code></li>
 </ol>
 
-<p>The VM is preconfigured with the data needed to execute the tests. The <em>recordservice</em> user has access to the necessary data via Sentry.</p>
+<p>The VM is preconfigured with sample data to execute the tests. The <em>recordservice</em> user has access to the data via Sentry.</p>
 
-<p>To make it faster for you to begin using RecordService, the VM is not secured with LDAP or Kerberos. If you want to change the security configuration, you can add roles in Sentry through <code>impala-shell</code>. If you have <code>impala-shell</code> on your host machine, you can connect to the VM by issuing the following command.</p>
+<p>The VM is not secured with LDAP or Kerberos. If you want to change the security configuration, you can add roles in Sentry through <code>impala-shell</code>. If you have <code>impala-shell</code> on your host machine, you can connect to the VM by issuing the following command.</p>
 
 <pre><code>impala-shell -i quickstart.cloudera:21000 -u impala
 </code></pre>
 
-<p>You can also test this from within <code>impala-shell</code>.</p>
+<p>You can also connect from within <code>impala-shell</code>.</p>
 
 <pre><code>CONNECT quickstart.cloudera:21000;
 </code></pre>
@@ -202,26 +202,24 @@
 <h3 id="unable-to-ssh-to-the-vm">Unable to ssh to the VM</h3>
 <ul>
   <li>Ensure that the ssh daemon is running on your machine.</li>
-  <li>Ensure that the RecordService VM is running. In your terminal, enter the command:</li>
+  <li>Ensure that the RecordService VM is running. In your terminal, enter the following command:</li>
 </ul>
 
 <pre><code>VBoxManage list runningvms
 </code></pre>
 
-<ul>
-  <li>You should see “rs-demo” listed as a running VM.</li>
-</ul>
+<p>    You should see “rs-demo” listed as a running VM.</p>
 
-<h3 id="verify-vm-is-properly-listed-in-etchosts">Verify VM is properly listed in /etc/hosts</h3>
+<h3 id="verify-vm-is-listed-correctly-in-etchosts">Verify VM is listed correctly in /etc/hosts</h3>
 
-<p>Check that the VM is properly listed in your <code>/etc/hosts</code> file. If you open that file, you should see a line that lists an IP followed by <code>quickstart.cloudera</code>. You can check the VM’s IP with the following command:</p>
+<p>Check that the VM is listed correctly in your <code>/etc/hosts</code> file. If you open the file, you should see a line that lists an IP address followed by <code>quickstart.cloudera</code>. You can check the VM’s IP with the following command:</p>
 
 <pre><code>VBoxManage guestproperty get rs-demo /VirtualBox/GuestInfo/Net/0/V4/IP
 </code></pre>
 
 <h3 id="verify-known-hosts">Verify Known Hosts</h3>
 
-<p>If you’ve used a Cloudera QuickStart VM before, it’s possible that your known hosts file already has an entry for <code>quickstart.cloudera</code> registered to a different key. Delete any reference to <code>quickstart.cloudera</code> from your known hosts file, usually found in <code>~/.ssh/known_hosts</code>.</p>
+<p>If you’ve used a Cloudera QuickStart VM before, your known hosts file might already have an entry for <code>quickstart.cloudera</code> registered to a different key. Delete any reference to <code>quickstart.cloudera</code> from your known hosts file, which is usually found in <code>~/.ssh/known_hosts</code>.</p>
 
 <h2 id="debugging-the-vm">Debugging the VM</h2>
 
@@ -240,7 +238,7 @@
 
 <h3 id="dubugging-via-webpage">Dubugging Via Webpage</h3>
 
-<p>View the RecordService debug page on your host machine at the address <code>quickstart.cloudera:11050</code>.</p>
+<p>View the RecordService debug page on your host machine at <code>quickstart.cloudera:11050</code>.</p>
 
 <h3 id="other-service-variables">Other Service Variables</h3>
 
@@ -264,7 +262,7 @@
         <li>RecordService is licensed under</li>
         <li><a href="http://www.apache.org/licenses/LICENSE-2.0.html">The Apache License, Version 2.0</a></li>
         <li>&nbsp;</li>
-        <li>Generated on 19 October 2015</li>
+        <li>Generated on 29 October 2015</li>
       </ul>
 
     </div>
