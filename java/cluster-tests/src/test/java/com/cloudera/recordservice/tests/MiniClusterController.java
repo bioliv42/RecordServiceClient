@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package com.cloudera.recordservice.avro.example;
+package com.cloudera.recordservice.tests;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -28,6 +28,7 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RunningJob;
 
 import com.cloudera.recordservice.mr.RecordServiceConfig;
+import com.cloudera.recordservice.tests.ClusterController.ClusterNode;
 
 /**
  * A class that starts a minicluster locally and runs a map reduce job on the
@@ -36,7 +37,8 @@ import com.cloudera.recordservice.mr.RecordServiceConfig;
  * This class is a singleton. It first needs to be instantiated, and then the
  * instance method returns the class instance.
  *
- * Usage: MiniClusterController.Start(num_nodes);
+ * Usage:
+ * MiniClusterController.Start(num_nodes);
  * MiniClusterController miniCluster = MiniClusterController.instance();
  */
 public class MiniClusterController {
@@ -48,7 +50,6 @@ public class MiniClusterController {
   public native int AddRecordServiceNode();
   public native String[] GetNodeArgs(int pid);
 
-  public static final int DEFAULT_NUM_NODES = 3;
   public static final int BASE_PORT = 30000;
   public static final String MINICLUSTER_LIBRARY = "libExternalMiniCluster.so";
   public static final String BUILT_RS_CODE_LOCATION = "/cpp/build/release/recordservice/";
@@ -84,11 +85,18 @@ public class MiniClusterController {
     return pidSet;
   }
 
+  public void printActiveNodes() {
+    for (MiniClusterNode n : clusterList_) {
+      System.out.println(n);
+    }
+  }
+
   /**
    * This method kills the given node
    */
   public void killNode(MiniClusterNode node) {
     if (node != null) {
+      System.out.println("Killing node: " + node.pid_);
       KillNodeByPid(node.pid_);
     }
     clusterList_.remove(node);
@@ -149,8 +157,8 @@ public class MiniClusterController {
       return null;
     }
     JobConf conf = new JobConf(mrClass);
-    conf.set(RecordServiceConfig.PLANNER_HOSTPORTS_CONF,
-        "localhost:" + getRandomNode().plannerPort_);
+    conf.set(RecordServiceConfig.PLANNER_HOSTPORTS_CONF, "localhost:"
+        + getRandomNode().plannerPort_);
     return conf;
   }
 
@@ -162,8 +170,8 @@ public class MiniClusterController {
       System.err.println("Cannot run MR job because the cluster has no active nodes");
       return null;
     }
-    mrJob.set(RecordServiceConfig.PLANNER_HOSTPORTS_CONF,
-        "localhost:" + getRandomNode().plannerPort_);
+    mrJob.set(RecordServiceConfig.PLANNER_HOSTPORTS_CONF, "localhost:"
+        + getRandomNode().plannerPort_);
     System.out.println("Running Job");
     return JobClient.runJob(mrJob);
   }
@@ -171,7 +179,7 @@ public class MiniClusterController {
   /**
    * This class represents a node in the minicluster
    */
-  public class MiniClusterNode {
+  public class MiniClusterNode extends ClusterNode {
     public int pid_;
     public int beeswaxPort_;
     public int hs2Port_;
@@ -181,6 +189,7 @@ public class MiniClusterController {
     public int workerPort_;
 
     public MiniClusterNode(Map<String, Integer> args) {
+      super("localhost");
       pid_ = args.get("pid");
       beeswaxPort_ = args.get("beeswax_port");
       hs2Port_ = args.get("hs2_port");
@@ -188,6 +197,15 @@ public class MiniClusterController {
       webserverPort_ = args.get("recordservice_webserver_port");
       plannerPort_ = args.get("recordservice_planner_port");
       workerPort_ = args.get("recordservice_worker_port");
+    }
+
+    @Override
+    public String toString() {
+      String s = "Node pid: " + pid_ + "\n\tbeeswax port: " + beeswaxPort_;
+      s = s + "\n\ths2 port: " + hs2Port_ + "\n\tbe port: " + bePort_;
+      s = s + "\n\twebserver port: " + webserverPort_ + "\n\tplanner port: ";
+      s = s + plannerPort_ + "\n\tworker port: " + workerPort_;
+      return s;
     }
   }
 
@@ -335,12 +353,25 @@ public class MiniClusterController {
   private MiniClusterController(int numNodes) throws InterruptedException {
     start(numNodes);
     populateFields();
+
+    // We allot enough time for each node to have 20 seconds to startup. The
+    // nodes should not need that long, but this helps prevent test failures
+    // due to a slow network
+    int timer = 20 * numNodes;
+    while (getClusterSize() < numNodes) {
+      if (timer == 0) {
+        return;
+      }
+      Thread.sleep(1000);
+      populateFields();
+      timer--;
+    }
   }
 
   public static void main(String[] args) throws InterruptedException, IOException,
       NumberFormatException {
     org.apache.log4j.BasicConfigurator.configure();
-    int numNodes = DEFAULT_NUM_NODES;
+    int numNodes = ClusterController.DEFAULT_NUM_NODES;
     if (args.length == 1) {
       numNodes = Integer.parseInt(args[0]);
     }

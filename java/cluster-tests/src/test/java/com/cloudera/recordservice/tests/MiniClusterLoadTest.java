@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package com.cloudera.recordservice.avro.example;
+package com.cloudera.recordservice.tests;
 
 import static org.junit.Assert.*;
 
@@ -19,8 +19,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 import org.junit.After;
 import org.junit.AfterClass;
@@ -28,7 +26,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.cloudera.recordservice.avro.example.JobQueue.RSMRJob;
+import com.cloudera.recordservice.tests.JobQueue.RSMRJob;
 
 /**
  * This class submits batches of jobs to the mini cluster RecordService using
@@ -66,7 +64,7 @@ public class MiniClusterLoadTest {
   @Test
   public <T> void testBasicBatchExecution() throws IOException, InterruptedException {
     JobQueue jobQ = new JobQueue(DEFAULT_WORKER_THREAD_NUM);
-    ArrayList<RSMRJob> jobList = new ArrayList<RSMRJob>();
+    Collection<Callable<T>> jobList = new ArrayList<Callable<T>>();
     for (int i = 0; i < 5; ++i) {
       jobList.add(jobQ.new RSMRJob(TestMiniClusterController.createWordCountMRJobConf()));
     }
