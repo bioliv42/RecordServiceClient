@@ -12,16 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "external-mini-cluster.h"
 #include <boost/lexical_cast.hpp>
+#include <gtest/gtest.h>
+#include <iostream>
+#include <stdio.h>
+#include <string.h>
+#include <sstream>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <string.h>
-#include <iostream>
-#include <sstream>
+#include <thrift/protocol/TBinaryProtocol.h>
+#include <thrift/transport/TSocket.h>
+#include <thrift/transport/TTransportUtils.h>
 #include <vector>
-#include <stdio.h>
 
+#include "external-mini-cluster.h"
+#include "test-common.h"
+
+using namespace apache::thrift;
+using namespace apache::thrift::protocol;
+using namespace apache::thrift::transport;
 using namespace boost;
 using namespace std;
 
@@ -102,6 +111,32 @@ bool ExternalMiniCluster::StartRecordServiced(
 
   *process = new RecordServiced(binary, ConstructArgs(binary, args));
   if (!(*process)->Start()) return false;
+
+  // This while loop waits until the node is up and ready to accept connections
+  // TODO: Find a better way to do this
+  sleep(1);
+  int i = 10;
+  while (i > 0) {
+    try {
+      if (start_record_service_worker) {
+        CreateWorkerTransport("localhost",
+          atoi(args["recordservice_worker_port"].c_str()));
+      } else if (start_record_service_planner) {
+        CreatePlannerTransport("localhost",
+          atoi(args["recordservice_planner_port"].c_str()));
+      }
+      break;
+    } catch (TTransportException e) {
+      sleep(1);
+      i = i - 1;
+      printf("Sleeping until node is ready...\n");
+    }
+  }
+
+  if (i == 0) {
+    printf("Node did not start. Exiting...\n");
+    exit(1);
+  }
 
   if (start_record_service_planner) {
     (*process)->planner_port_ = atoi(args["recordservice_planner_port"].c_str());

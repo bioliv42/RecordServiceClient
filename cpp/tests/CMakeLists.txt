@@ -23,11 +23,15 @@ add_library(TestUtil
   subprocess.cc
 )
 
-SET(LINK_LIBS 
+SET(LINK_LIBS
   TestUtil
   RecordServiceThrift
   thriftstatic
-  gtest)
+  gtest
+  gflagsstatic)
+
+add_executable(start-external-mini-rs-cluster start-external-mini-rs-cluster.cc)
+target_link_libraries(start-external-mini-rs-cluster ${LINK_LIBS})
 
 add_executable(client-test client-test.cc)
 target_link_libraries(client-test ${LINK_LIBS})
@@ -37,4 +41,5 @@ add_executable(external-mini-cluster-test external-mini-cluster-test.cc)
 target_link_libraries(external-mini-cluster-test ${LINK_LIBS})
 add_test(external-mini-cluster-test ${EXECUTABLE_OUTPUT_PATH}/external-mini-cluster-test)
 
-
+add_library(ExternalMiniCluster SHARED start-external-mini-rs-cluster.cc)
+target_link_libraries(ExternalMiniCluster ${LINK_LIBS})

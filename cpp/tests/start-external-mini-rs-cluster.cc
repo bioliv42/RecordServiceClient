@@ -20,9 +20,9 @@
 #include <vector>
 #include <string>
 
-#include "../tests/external-mini-cluster.h"
-#include "../tests/test-common.h"
-#include "../tests/subprocess.h"
+#include "external-mini-cluster.h"
+#include "test-common.h"
+#include "subprocess.h"
 
 using namespace boost;
 using namespace std;
@@ -108,8 +108,6 @@ int AddRecordServiceNode() {
   bool result = cluster.StartRecordServiced(true, true, &recordserviced);
   ExitIfFalse(result);
   ExitIfFalse(recordserviced != NULL);
-  printf("%s\n", "Sleeping to allow node to startup");
-  sleep(5);
   return recordserviced->pid();
 }
 
@@ -125,33 +123,6 @@ void StartMiniCluster(int num_nodes) {
     ExitIfFalse(recordserviced != NULL);
     if (recordservice_planner == NULL) recordservice_planner = recordserviced;
   }
-
-  printf("Sleeping to allow cluster to startup\n");
-  sleep(1);
-  shared_ptr<RecordServicePlannerClient> planner;
-  int i = 10;
-  while (i > 0) {
-    try {
-      planner = CreatePlannerConnection(
-        "localhost", recordservice_planner->recordservice_planner_port());
-      break;
-    } catch (TTransportException e) {
-      sleep(1);
-      i = i - 1;
-      printf("Sleeping...\n");
-    }
-  }
-
-  ExitIfFalse(i);
-
-  TProtocolVersion protocol;
-  try{
-    planner->GetProtocolVersion(protocol);
-    printf("%s%s\n", "Protocol: ", protocol.c_str());
-  } catch (TRecordServiceException e) {
-    printf("Failure in healthcheck query GetProtocolVersion:\n%s\n", e.message.c_str());
-  }
-
   while (1) {
     sleep(10);
   }
@@ -161,14 +132,14 @@ void StartMiniCluster(int num_nodes) {
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_cloudera_recordservice_avro_example_MiniClusterController_StartMiniCluster(
+Java_com_cloudera_recordservice_tests_MiniClusterController_StartMiniCluster(
     JNIEnv* env, jclass caller_class, jint num_nodes) {
   recordservice::StartMiniCluster(num_nodes);
 }
 
 extern "C"
 JNIEXPORT jobjectArray JNICALL
-Java_com_cloudera_recordservice_avro_example_MiniClusterController_GetNodeArgs(
+Java_com_cloudera_recordservice_tests_MiniClusterController_GetNodeArgs(
     JNIEnv* env, jclass caller_class, jint pid) {
   recordservice::ExternalMiniCluster::Process* node =
       recordservice::GetRecordServicedByPid(pid);
@@ -186,21 +157,21 @@ Java_com_cloudera_recordservice_avro_example_MiniClusterController_GetNodeArgs(
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_cloudera_recordservice_avro_example_MiniClusterController_KillNodeByPid(
+Java_com_cloudera_recordservice_tests_MiniClusterController_KillNodeByPid(
     JNIEnv* env, jclass caller_class, jint pid) {
   recordservice::KillNodeByPid(pid);
 }
 
 extern "C"
 JNIEXPORT jint JNICALL
-Java_com_cloudera_recordservice_avro_example_MiniClusterController_AddRecordServiceNode(
+Java_com_cloudera_recordservice_tests_MiniClusterController_AddRecordServiceNode(
     JNIEnv* env, jclass caller_class) {
   return recordservice::AddRecordServiceNode();
 }
 
 extern "C"
 JNIEXPORT jintArray JNICALL
-Java_com_cloudera_recordservice_avro_example_MiniClusterController_GetRunningMiniNodePids(
+Java_com_cloudera_recordservice_tests_MiniClusterController_GetRunningMiniNodePids(
     JNIEnv* env, jclass caller_class) {
   vector<int> pid_vector = recordservice::GetRunningRecordServicedPids();
   jintArray result = (env)->NewIntArray(pid_vector.size());
@@ -210,7 +181,7 @@ Java_com_cloudera_recordservice_avro_example_MiniClusterController_GetRunningMin
 
 extern "C"
 JNIEXPORT jint JNICALL
-Java_com_cloudera_recordservice_avro_example_MiniClusterController_GetSpecificNodePid(
+Java_com_cloudera_recordservice_tests_MiniClusterController_GetSpecificNodePid(
     JNIEnv* env, jclass caller_class, jint planner_port) {
   return recordservice::GetSpecificNodePid(planner_port);
 }
