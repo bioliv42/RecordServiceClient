@@ -28,9 +28,3 @@ target_link_libraries(rs-grep ${LINK_LIBS})
 
 add_executable(plan-request plan-request.cc)
 target_link_libraries(plan-request ${LINK_LIBS})
-
-add_executable(start-external-mini-rs-cluster start-external-mini-rs-cluster.cc)
-target_link_libraries(start-external-mini-rs-cluster ${LINK_LIBS})
-
-add_library(ExternalMiniCluster SHARED start-external-mini-rs-cluster.cc)
-target_link_libraries(ExternalMiniCluster ${LINK_LIBS})

@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package com.cloudera.recordservice.avro.example;
+package com.cloudera.recordservice.tests;
 
 import static org.junit.Assert.*;
 
@@ -32,8 +32,9 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.cloudera.recordservice.avro.example.WordCount.Map;
-import com.cloudera.recordservice.avro.example.WordCount.Reduce;
+import com.cloudera.recordservice.examples.mapreduce.WordCount;
+import com.cloudera.recordservice.examples.mapreduce.WordCount.Map;
+import com.cloudera.recordservice.examples.mapreduce.WordCount.Reduce;
 
 public class TestMiniClusterController {
   public static final int DEFAULT_NODE_NUM = 3;
@@ -119,13 +120,13 @@ public class TestMiniClusterController {
   }
 
   /**
-   * This method kills a node in a cluster and then checks to make sure that the
-   * cluster state is correct.
+   * This method adds a node to the cluster and then checks to make sure that
+   * the cluster state is correct.
    */
   @Test
   public void testClusterHealth() throws IOException {
     assertTrue("Cluster is in incorrect state!", miniCluster_.isClusterStateCorrect());
-    miniCluster_.killRandomNode();
+    miniCluster_.addRecordServiced();
     assertTrue("Cluster is in incorrect state!", miniCluster_.isClusterStateCorrect());
   }
 
