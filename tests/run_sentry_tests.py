@@ -69,7 +69,8 @@ if __name__ == "__main__":
   run_impala_query(
     "GRANT ROLE " + TEST_ROLE + " TO GROUP " + TEST_USER + ";" +
     "GRANT SELECT ON TABLE tpch.nation_view TO ROLE " + TEST_ROLE + ";" +
-    "GRANT ALL ON URI 'hdfs:/test-warehouse/tpch.nation' TO ROLE " + TEST_ROLE)
+    "GRANT ALL ON URI 'hdfs:/test-warehouse/tpch.nation' TO ROLE " + TEST_ROLE + ";" +
+    "GRANT SELECT(n_name, n_nationkey) ON TABLE tpch.nation to ROLE " + TEST_ROLE)
 
   # Need to wait for a while before the Sentry change is populated.
   # TODO: how to avoid this waiting?
