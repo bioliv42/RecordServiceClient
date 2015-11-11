@@ -35,7 +35,6 @@ public class TestSentry extends TestBase {
   @Test
   /**
    * Tests Sentry service with RecordService SQL request.
-   * TODO: add tests for column-level permission once that is supported.
    */
   public void testSQLRequest() throws IOException, RecordServiceException {
     if (IGNORE_SENTRY_TESTS) return;
@@ -53,6 +52,21 @@ public class TestSentry extends TestBase {
       assertTrue("Actual message is: " + ex.detail,
           ex.detail.contains("does not have privileges to execute"));
     }
+
+    // Should fail when accessing the columns which the test role doesn't have access to.
+    try {
+      planner.planRequest(
+          Request.createSqlRequest("select n_regionkey, n_comment from tpch.nation"));
+      assertTrue("plan request should have thrown an exception", false);
+    } catch (RecordServiceException ex) {
+      assertEquals(RecordServiceException.ErrorCode.INVALID_REQUEST, ex.code);
+      assertTrue("Actual message is: " + ex.detail,
+          ex.detail.contains("does not have privileges to execute"));
+    }
+
+    // Accessing columns which the test role has access to should work.
+    planner.planRequest(
+        Request.createSqlRequest("select n_name, n_nationkey from tpch.nation"));
 
     // Accessing tpch.nation_view should work
     planner.planRequest(Request.createTableScanRequest("tpch.nation_view"));
