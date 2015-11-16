@@ -433,6 +433,13 @@ public class RecordServiceWorkerClient implements Closeable {
         // Now that we've connected, set a larger timeout as RPCs that do work can take
         // much longer.
         ThriftUtils.getSocketTransport(transport).setTimeout(rpcTimeoutMs_);
+        if (!protocolVersion_.isValidProtocolVersion()) {
+          String errorMsg =
+              "Current RecordServiceClient does not support server protocol version: " +
+              protocolVersion_.getVersion();
+          LOG.warn(errorMsg);
+          throw new RecordServiceException(errorMsg, new TRecordServiceException());
+        }
         return;
       } catch (TRecordServiceException e) {
         // For 'GetProtocolVersion' call, the server side will first establish
@@ -450,7 +457,9 @@ public class RecordServiceWorkerClient implements Closeable {
         throw new RecordServiceException("Connection to RecordServiceWorker at " +
             hostname + ":" + port + " is rejected. ", e);
       } catch (TTransportException e) {
-        LOG.warn("Could not connect to RecordServiceWorker. " + e);
+        String errorMsg = "Could not get service protocol version from " +
+            "RecordServiceWorker at " + hostname + ":" + port + ". ";
+        LOG.warn(errorMsg + e);
         if (e.getType() == TTransportException.END_OF_FILE) {
           TRecordServiceException ex = new TRecordServiceException();
           ex.code = TErrorCode.AUTHENTICATION_ERROR;
@@ -459,12 +468,13 @@ public class RecordServiceWorkerClient implements Closeable {
               "as the server.";
           throw new RecordServiceException(ex);
         }
-        throw new IOException("Could not get service protocol version from " +
-            "RecordServiceWorker at " + hostname + ":" + port, e);
+        throw new IOException(errorMsg, e);
       } catch (TException e) {
-        throw new IOException("Could not get service protocol version. It's likely " +
+        String errorMsg = "Could not get service protocol version. It's likely " +
             "the service at " + hostname + ":" + port + " is not running the " +
-            "RecordServiceWorker.", e);
+            "RecordServiceWorker. ";
+        LOG.warn(errorMsg + e);
+        throw new IOException(errorMsg, e);
       }
     }
   }
