@@ -160,6 +160,34 @@ public class TestBasicClient extends TestBase {
     worker.close();
   }
 
+  /**
+   * Verify the server protocol version is within the list of the client lib.
+   * TODO: add invalid tests when we have new server with unsupported protocol version
+   */
+  @Test
+  public void testProtocolVersion() throws RecordServiceException, IOException {
+    RecordServicePlannerClient planner = new RecordServicePlannerClient.Builder()
+        .connect(PLANNER_HOST, PLANNER_PORT);
+    ProtocolVersion serverVersion;
+    try {
+      serverVersion = planner.getProtocolVersion();
+      assertTrue("Current RecordServiceClient does not support server protocol version: "
+          + serverVersion.getVersion(), serverVersion.isValidProtocolVersion());
+    } finally {
+      planner.close();
+    }
+
+    RecordServiceWorkerClient worker = new RecordServiceWorkerClient.Builder()
+        .connect(PLANNER_HOST, DEFAULT_WORKER_PORT);
+    try {
+      serverVersion = worker.getProtocolVersion();
+      assertTrue("Current RecordServiceClient does not support server protocol version: "
+          + serverVersion.getVersion(), serverVersion.isValidProtocolVersion());
+    } finally {
+      worker.close();
+    }
+  }
+
   @Test
   public void testConnectionDrop() throws IOException, RecordServiceException {
     RecordServicePlannerClient planner = new RecordServicePlannerClient.Builder()

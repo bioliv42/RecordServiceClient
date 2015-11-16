@@ -14,13 +14,18 @@
 
 package com.cloudera.recordservice.core;
 
-//
-// This is part of the client interface.
-//
+import java.util.Arrays;
+import java.util.List;
+
+/**
+ * This is part of the client interface.
+ */
 public class ProtocolVersion {
   public static final String CLIENT_VERSION = "1.0";
 
-  // TODO: Future enhancement, eg. maintain a blacklist for unsupported server version.
+  // White list for server protocol version
+  private static final List<String> SERVER_VERSION_LIST = Arrays.asList("1.0");
+
   private String version;
 
   ProtocolVersion(String version) {
@@ -29,5 +34,12 @@ public class ProtocolVersion {
 
   public String getVersion() {
     return this.version;
+  }
+
+  /**
+   * Return true if the server version is within the server version list.
+   */
+  public boolean isValidProtocolVersion() {
+    return SERVER_VERSION_LIST.contains(version);
   }
 }
