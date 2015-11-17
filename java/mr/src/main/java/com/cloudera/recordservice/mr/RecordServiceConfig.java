@@ -169,14 +169,14 @@ public class RecordServiceConfig {
       if (hostPortStr.length() == 0) continue;
       String[] hostPort = hostPortStr.split(":");
       if (hostPort.length != 2) {
-        throw new IOException("Invalid hostport: " + hostPort);
+        throw new IOException("Invalid hostport: " + hostPortStr);
       }
       String host = hostPort[0];
       int port = 0;
       try {
         port = Integer.parseInt(hostPort[1]);
       } catch (NumberFormatException e) {
-        throw new IOException("Invalid hostport: " + hostPort);
+        throw new IOException("Invalid hostport: " + hostPortStr);
       }
       result.add(new NetworkAddress(host, port));
     }
