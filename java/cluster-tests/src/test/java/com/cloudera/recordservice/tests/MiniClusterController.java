@@ -29,6 +29,7 @@ import org.apache.hadoop.mapred.RunningJob;
 
 import com.cloudera.recordservice.mr.RecordServiceConfig;
 import com.cloudera.recordservice.tests.ClusterController.ClusterNode;
+import com.cloudera.recordservice.util.Preconditions;
 
 /**
  * A class that starts a minicluster locally and runs a map reduce job on the
@@ -42,36 +43,38 @@ import com.cloudera.recordservice.tests.ClusterController.ClusterNode;
  * MiniClusterController miniCluster = MiniClusterController.instance();
  */
 public class MiniClusterController {
-  public static native void StartMiniCluster(int numNodes);
+  private static native void StartMiniCluster(int numNodes);
 
-  public native void KillNodeByPid(int pid);
-  public native int[] GetRunningMiniNodePids();
-  public native int GetSpecificNodePid(int plannerPort);
-  public native int AddRecordServiceNode();
-  public native String[] GetNodeArgs(int pid);
+  private native void KillNodeByPid(int pid);
+  private native int[] GetRunningMiniNodePids();
+  private native int GetSpecificNodePid(int plannerPort);
+  private native int AddRecordServiceNode(boolean startPlanner, boolean startWorker);
+  private native String[] GetNodeArgs(int pid);
 
-  public static final int BASE_PORT = 30000;
-  public static final String MINICLUSTER_LIBRARY = "libExternalMiniCluster.so";
-  public static final String BUILT_RS_CODE_LOCATION = "/cpp/build/release/recordservice/";
+  private static final String MINICLUSTER_LIBRARY = "libExternalMiniCluster.so";
+  private static final String BUILT_RS_CODE_LOCATION = "/cpp/build/release/recordservice/";
 
-  public Thread clusterThread_;
+  private Thread clusterThread_;
 
   private static MiniClusterController miniCluster_;
 
   private List<MiniClusterNode> clusterList_;
 
   /**
-   * This method starts a minicluster with the specified number of nodes. This
-   * method calls via JNI the cpp StartMiniCluster method which sleeps
-   * indefinitely after starting the cluster, so this method will not return
-   * unless the cluster is stopped.
+   * This method starts a minicluster with the specified number of nodes.
+   * It should only be called once. If the minicluster has already been instantiated,
+   * nothing is executed.
    */
-  private static void startMiniCluster(int numNodes) {
-    String rsHome = System.getenv("RECORD_SERVICE_HOME");
-    String path = rsHome + BUILT_RS_CODE_LOCATION;
-    System.load(path + MINICLUSTER_LIBRARY);
-    System.out.println("Number of nodes: " + numNodes);
-    MiniClusterController.StartMiniCluster(numNodes);
+  public static void Start(int numNodes) throws InterruptedException {
+    new MiniClusterController(numNodes);
+  }
+
+  /**
+   * This method returns the instantiated instance of MiniClusterController. If
+   * the MiniClusterController has not been instantiated, it returns null.
+   */
+  public static MiniClusterController instance() {
+    return miniCluster_;
   }
 
   /**
@@ -83,12 +86,6 @@ public class MiniClusterController {
     HashSet<Integer> pidSet = new HashSet<Integer>();
     Collections.addAll(pidSet, ArrayUtils.toObject(GetRunningMiniNodePids()));
     return pidSet;
-  }
-
-  public void printActiveNodes() {
-    for (MiniClusterNode n : clusterList_) {
-      System.out.println(n);
-    }
   }
 
   /**
@@ -103,14 +100,24 @@ public class MiniClusterController {
   }
 
   /**
-   * This method adds a recordserviced to the cluster
+   * Adds a recordserviced to the cluster. If 'startPlanner' is true, run it
+   * as planner; if 'startWorker' is true, run it as worker. If both are true,
+   * run as both planner and worker.
    */
-  public void addRecordServiced() {
-    int pid = AddRecordServiceNode();
+  public void addRecordServiced(boolean startPlanner, boolean startWorker) {
+    Preconditions.checkArgument(startPlanner || startWorker);
+    int pid = AddRecordServiceNode(startPlanner, startWorker);
     Map<String, Integer> args = processNodeArgs(GetNodeArgs(pid));
     args.put("pid", pid);
     MiniClusterNode newNode = new MiniClusterNode(args);
     clusterList_.add(newNode);
+  }
+
+  /**
+   * Adds a recordserviced which runs as both planner and worker to the cluster
+   */
+  public void addRecordServiced() {
+    addRecordServiced(true, true);
   }
 
   /**
@@ -177,9 +184,51 @@ public class MiniClusterController {
   }
 
   /**
+   * Print all the active nodes to the standard out.
+   */
+  public void printActiveNodes() {
+    for (MiniClusterNode n : clusterList_) {
+      System.out.println(n);
+    }
+  }
+
+  /**
+   * This method checks the current state of the MiniClusterController object
+   * against the actual state of the system.
+   * Returns false if some running cluster nodes are not tracked by this
+   * MiniClusterController, or if some nodes tracked by this MiniClusterController
+   * are not running. Returns true otherwise.
+   */
+  public boolean isClusterStateCorrect() {
+    HashSet<Integer> pidSet = getRunningMiniNodePids();
+    // Check the cluster list
+    if (pidSet.size() > 0 && (clusterList_ == null || clusterList_.size() <= 0)) {
+      printPids(pidSet,
+          "were found but are not being tracked by the MiniClusterController");
+      return false;
+    } else {
+      for (MiniClusterNode node : clusterList_) {
+        if (!pidSet.contains(node.pid_)) {
+          System.err.println("Node with pid = " + node.pid_
+              + " was expected but not found");
+          return false;
+        }
+        // Two nodes cannot share the same process ID
+        pidSet.remove(node.pid_);
+      }
+      if (pidSet.size() > 0) {
+        printPids(pidSet,
+            "were found but are not being tracked by the MiniClusterController");
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /**
    * This class represents a node in the minicluster
    */
-  public class MiniClusterNode extends ClusterNode {
+  public static class MiniClusterNode extends ClusterNode {
     public int pid_;
     public int beeswaxPort_;
     public int hs2Port_;
@@ -227,6 +276,20 @@ public class MiniClusterController {
     public void run() {
       MiniClusterController.startMiniCluster(numNodes_);
     }
+  }
+
+  /**
+   * This method starts a minicluster with the specified number of nodes. This
+   * method calls via JNI the cpp StartMiniCluster method which sleeps
+   * indefinitely after starting the cluster, so this method will not return
+   * unless the cluster is stopped.
+   */
+  private static void startMiniCluster(int numNodes) {
+    String rsHome = System.getenv("RECORD_SERVICE_HOME");
+    String path = rsHome + BUILT_RS_CODE_LOCATION;
+    System.load(path + MINICLUSTER_LIBRARY);
+    System.out.println("Number of nodes: " + numNodes);
+    MiniClusterController.StartMiniCluster(numNodes);
   }
 
   /**
@@ -285,36 +348,6 @@ public class MiniClusterController {
   }
 
   /**
-   * This method checks the current state of the MiniClusterController object
-   * against the actual state of the system.
-   */
-  public boolean isClusterStateCorrect() {
-    HashSet<Integer> pidSet = getRunningMiniNodePids();
-    // Check the cluster list
-    if (pidSet.size() > 0 && (clusterList_ == null || clusterList_.size() <= 0)) {
-      printPids(pidSet,
-          "were found but are not being tracked by the MiniClusterController");
-      return false;
-    } else {
-      for (MiniClusterNode node : clusterList_) {
-        if (!pidSet.contains(node.pid_)) {
-          System.err.println("Node with pid = " + node.pid_
-              + " was expected but not found");
-          return false;
-        }
-        // Two nodes cannot share the same process ID
-        pidSet.remove(node.pid_);
-      }
-      if (pidSet.size() > 0) {
-        printPids(pidSet,
-            "were found but are not being tracked by the MiniClusterController");
-        return false;
-      }
-    }
-    return true;
-  }
-
-  /**
    * This method populates the node list with the live nodes found running
    */
   private void populateNodeList() {
@@ -327,22 +360,6 @@ public class MiniClusterController {
       MiniClusterNode newNode = new MiniClusterNode(args);
       clusterList_.add(newNode);
     }
-  }
-
-  /**
-   * This method instantiates the minicluster. It should only be called once. If
-   * the minicluster has already been instantiated, nothing is executed.
-   */
-  public static void Start(int num_nodes) throws InterruptedException {
-    new MiniClusterController(num_nodes);
-  }
-
-  /**
-   * This method returns the instantiated instance of MiniClusterController. If
-   * the MiniClusterController has not been instantiated, it returns null.
-   */
-  public static MiniClusterController instance() {
-    return miniCluster_;
   }
 
   /**
