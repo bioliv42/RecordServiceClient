@@ -15,26 +15,56 @@
 package com.cloudera.recordservice.spark
 
 import org.apache.spark.{SparkContext, SparkConf}
-import org.scalatest.{BeforeAndAfterAll, FunSuite}
+import org.scalatest.{Outcome,BeforeAndAfter, BeforeAndAfterAll, FunSuite}
 
 // TODO: add error tests.
-class KerberosTestSuite extends FunSuite with BeforeAndAfterAll {
+class KerberosTestSuite extends FunSuite with BeforeAndAfterAll with BeforeAndAfter {
   @transient private var _sc: SparkContext = _
 
   def sc: SparkContext = _sc
 
-  val HAS_KERBEROS_CREDENTIALS: Boolean =
-      System.getenv("HAS_KERBEROS_CREDENTIALS") != null &&
-      System.getenv("HAS_KERBEROS_CREDENTIALS").equalsIgnoreCase("true")
+  // Kerberos hosts (planners & workers), planner and planner principal for testing
+  var kerberosHosts_ : List[String] = List()
+  var plannerHost_ : String = ""
+  var plannerPrincipal_ : String = ""
 
-  val conf = new SparkConf(false)
-    .set(RecordServiceConf.PLANNER_HOSTPORTS_CONF, "vd0224.halxg.cloudera.com:12050")
-    .set(RecordServiceConf.KERBEROS_PRINCIPAL_CONF,
-        "impala/vd0224.halxg.cloudera.com@HALXG.CLOUDERA.COM")
+  val KERBEROS_HOSTS = "KERBEROS_HOSTS"
+
+  override def withFixture(test: NoArgTest): Outcome = {
+    assume(sc != null)
+    test()
+  }
 
   override def beforeAll() {
     super.beforeAll()
-    _sc = new SparkContext("local", "test", conf)
+
+    if (System.getenv("HAS_KERBEROS_CREDENTIALS") == null ||
+        !System.getenv("HAS_KERBEROS_CREDENTIALS").equalsIgnoreCase("true")) {
+      return
+    }
+
+    if (System.getenv(KERBEROS_HOSTS) != null) {
+      kerberosHosts_ = System.getenv(KERBEROS_HOSTS).split(":").toList
+      if (kerberosHosts_.isEmpty) {
+        println("Can't find any host from the input '" + KERBEROS_HOSTS + "':"
+          + System.getenv(KERBEROS_HOSTS))
+        return
+      }
+
+      println(KERBEROS_HOSTS + ": ")
+      kerberosHosts_.foreach(println)
+
+      plannerHost_ = kerberosHosts_(0)
+      plannerPrincipal_ = getPrincipal("impala", plannerHost_)
+      val conf = new SparkConf(false)
+        .set(RecordServiceConf.PLANNER_HOSTPORTS_CONF, plannerHost_ + ":12050")
+        .set(RecordServiceConf.KERBEROS_PRINCIPAL_CONF, plannerPrincipal_)
+      _sc = new SparkContext("local", "test", conf)
+    } else {
+      println("To run Kerberos tests, you need to set" +
+        " environment variable '" + KERBEROS_HOSTS
+        + "' with a colon separated list of kerberoized hosts.")
+    }
   }
 
   override def afterAll() {
@@ -43,10 +73,13 @@ class KerberosTestSuite extends FunSuite with BeforeAndAfterAll {
     super.afterAll()
   }
 
+  def getPrincipal(primary: String, hostname: String) = {
+    val firstDot = hostname.indexOf(".")
+    primary + "/" + hostname + "@" + hostname.substring(firstDot + 1).toUpperCase
+  }
+
   test("NationTest") {
-    if (HAS_KERBEROS_CREDENTIALS) {
-      val rdd = new RecordServiceRecordRDD(sc).setTable("sample_07")
-      assert(rdd.count() == 823)
-    }
+    val rdd = new RecordServiceRecordRDD(sc).setTable("sample_07")
+    assert(rdd.count() == 823)
   }
 }

@@ -30,4 +30,22 @@ public class TestUtil {
     }
     return temp.getAbsolutePath();
   }
+
+  /**
+   * Get a Kerberos principal corresponding to the 'hostName'.
+   * For instance: given "impala" and "rs-kerberos-1.vpc.cloudera.com" this returns
+   * "impala/rs-kerberos-1.vpc.cloudera.com/VPC.CLOUDERA.COM"
+   */
+  public static String makePrincipal(String primary, String hostName) {
+    int firstDot = hostName.indexOf(".");
+    return makePrincipal(primary, hostName,
+        hostName.substring(firstDot + 1).toUpperCase());
+  }
+
+  /**
+   * Get a Kerberos principal corresponding to the 'primary', 'hostName' and 'realm'.
+   */
+  public static String makePrincipal(String primary, String hostName, String realm) {
+    return primary + "/" + hostName + "@" + realm;
+  }
 }
