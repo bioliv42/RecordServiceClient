@@ -300,6 +300,50 @@ public class TestBasicClient extends TestBase {
     worker.close();
   }
 
+  // Tests that the delegation token APIs fail gracefully if called to a
+  // non-secure server.
+  @Test
+  public void testUnsecureConnectionTokens() throws IOException,
+      RecordServiceException, InterruptedException {
+    RecordServicePlannerClient planner = new RecordServicePlannerClient.Builder()
+        .connect(PLANNER_HOST, PLANNER_PORT);
+    boolean exceptionThrown = false;
+    try {
+      planner.getDelegationToken(null);
+    } catch (RecordServiceException e) {
+      assertTrue(e.code == RecordServiceException.ErrorCode.AUTHENTICATION_ERROR);
+      assertTrue(e.getMessage().contains(
+          "can only be called with a Kerberos connection."));
+      exceptionThrown = true;
+    }
+    assertTrue(exceptionThrown);
+
+    DelegationToken dummyToken = new DelegationToken("a", "b", new byte[1]);
+
+    exceptionThrown = false;
+    try {
+      planner.cancelDelegationToken(dummyToken);
+    } catch (RecordServiceException e) {
+      assertTrue(e.code == RecordServiceException.ErrorCode.AUTHENTICATION_ERROR);
+      assertTrue(e.getMessage().contains(
+          "can only be called from a secure connection."));
+      exceptionThrown = true;
+    }
+    assertTrue(exceptionThrown);
+
+    exceptionThrown = false;
+    try {
+      planner.renewDelegationToken(dummyToken);
+    } catch (RecordServiceException e) {
+      assertTrue(e.code == RecordServiceException.ErrorCode.AUTHENTICATION_ERROR);
+      assertTrue(e.getMessage().contains(
+          "can only be called with a Kerberos connection."));
+      exceptionThrown = true;
+    }
+    assertTrue(exceptionThrown);
+    planner.close();
+  }
+
   @Test
   public void testPlannerTimeout() throws IOException, RecordServiceException {
     boolean exceptionThrown = false;

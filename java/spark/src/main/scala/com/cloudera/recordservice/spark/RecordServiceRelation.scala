@@ -21,7 +21,6 @@ import org.apache.commons.lang.StringEscapeUtils.escapeSql
 
 import com.cloudera.recordservice.core.{Request, RecordServicePlannerClient, Schema}
 import com.cloudera.recordservice.mr.PlanUtil
-import org.apache.hadoop.io._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.expressions.SpecificMutableRow
 import org.apache.spark.sql.sources._
