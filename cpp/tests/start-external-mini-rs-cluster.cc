@@ -103,16 +103,16 @@ void KillNodeByPid(int pid) {
   }
 }
 
-int AddRecordServiceNode() {
+int AddRecordServiceNode(bool start_planner, bool start_worker) {
   ExternalMiniCluster::RecordServiced* recordserviced;
-  bool result = cluster.StartRecordServiced(true, true, &recordserviced);
+  bool result = cluster.StartRecordServiced(start_planner, start_worker, &recordserviced);
   ExitIfFalse(result);
   ExitIfFalse(recordserviced != NULL);
   return recordserviced->pid();
 }
 
-// This method starts a mini cluster with a specified number of nodes. This method does
-// not return
+// This method starts a mini cluster with a specified number of nodes, all of them
+// running both as planner and worker. This method does not return.
 void StartMiniCluster(int num_nodes) {
   ExternalMiniCluster::RecordServiced* recordservice_planner = NULL;
   bool result = false;
@@ -159,14 +159,15 @@ extern "C"
 JNIEXPORT void JNICALL
 Java_com_cloudera_recordservice_tests_MiniClusterController_KillNodeByPid(
     JNIEnv* env, jclass caller_class, jint pid) {
-  recordservice::KillNodeByPid(pid);
+  recordservice::KillNodeByPid((int) pid);
 }
 
 extern "C"
 JNIEXPORT jint JNICALL
 Java_com_cloudera_recordservice_tests_MiniClusterController_AddRecordServiceNode(
-    JNIEnv* env, jclass caller_class) {
-  return recordservice::AddRecordServiceNode();
+    JNIEnv* env, jclass caller_class, jboolean start_planner, jboolean start_worker) {
+  return recordservice::AddRecordServiceNode(
+      (bool) start_planner, (bool) start_worker);
 }
 
 extern "C"
