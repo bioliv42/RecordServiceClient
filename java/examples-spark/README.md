@@ -104,15 +104,18 @@ For details on how to create and set up access to views, please check out the [M
 ### Reading data through SQL query
 
 Similarly to MapReduce, if the data is a table in Hive MetaStore, one can get
-fine-grained access to it through **views**. Following the MapReduce example,
-suppose the view is already set up, now if we launch a Spark job for
-[RecordCount](src/main/scala/com/cloudera/recordservice/examples/spark/RecordCount.scala)
+fine-grained access to it through either the column-level security feature starting from
+Sentry 1.5, or by creating a separate **view** with selected columns on the original table.
+Following the MapReduce example, suppose we only want to give the role `demorole` access to
+the columns `n_name` and `n_nationkey`, and suppose both the column privileges and the view
+are already set up, now if we launch a Spark job for [RecordCount](src/main/scala/com/cloudera/recordservice/examples/spark/RecordCount.scala)
 on the `tpch.nation` table mentioned in the MapReduce example:
 
 ```
 spark-submit \
   --class com.cloudera.recordservice.examples.spark.RecordCount \
   --master <master-url> \
+  --properties_file /path/to/properties_file \
   /path/to/recordservice-examples-spark-0.1.jar \
   "SELECT * FROM tpch.nation"
 ```
@@ -124,13 +127,25 @@ TRecordServiceException(code:INVALID_REQUEST, message:Could not plan request.,
 detail:AuthorizationException: User 'cloudera' does not have privileges to execute 'SELECT' on:
 tpch.nation)
 ```
-
-However, accessing the `tpch.nation_names` view is OK:
+However, accessing the columns we've been granted privileges with will be OK:
 
 ```
 spark-submit \
   --class com.cloudera.recordservice.examples.spark.RecordCount \
   --master <master-url> \
+  --properties_file /path/to/properties_file \
+  /path/to/recordservice-examples-spark-0.1.jar \
+  "SELECT n_name, n_nationkey FROM tpch.nation"
+
+```
+
+Accessing the `tpch.nation_names` view is also OK:
+
+```
+spark-submit \
+  --class com.cloudera.recordservice.examples.spark.RecordCount \
+  --master <master-url> \
+  --properties_file /path/to/properties_file \
   /path/to/recordservice-examples-spark-0.1.jar \
   "SELECT * FROM tpch.nation_names"
 
@@ -147,5 +162,6 @@ as example:
 spark-submit \
   --class com.cloudera.recordservice.examples.spark.WordCount \
   --master <master-url> \
+  --properties_file /path/to/properties_file \
   /path/to/recordservice-examples-spark-0.1.jar
 ```

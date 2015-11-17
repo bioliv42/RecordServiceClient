@@ -30,7 +30,8 @@ another using **path request**. We also have examples showing how to do this in 
 check the [Spark example](../examples-spark/README.md#how-to-enforce-sentry-permissions-with-spark) for details.
 
 Before jumping into the examples, please make sure the Sentry Service is started.
-In the QuickStart VM, this can simply be done by:
+If you're using the [QuickStart VM](https://github.com/cloudera/recordservice-quickstart) provided
+by us, this can simply be done by:
 
 ```bash
 sudo service sentry-store restart
@@ -38,27 +39,29 @@ sudo service sentry-store restart
 
 ### Reading data through SQL query
 
-If the data is a registered table in Hive MetaStore, one can access it through
-SQL queries and enforce fine-grained restrictions with **views**. The following shows
-how to do this.
+If the data is a registered table in Hive MetaStore, currently there are two ways to enforce
+fine-grained column-level privilege for the table: using column-level security
+, which is a new feature starting from Sentry 1.5, or creating a view on the selected columns of the table.
+In the following we'll describe these two approaches separately.
 
-#### Granting permission to view
-
-In this section we'll first create a demo group and role, then create a view on a selected
-subset of columns to an existing table, and grant access of that view to the demo role.
-
-First, create a group and add the current user to that group:
+First, for demonstration purpose, we shall create a test group and add the current user to that group:
 
 ```bash
 sudo groupadd demogroup
 sudo usermod -a -G demogroup $USER
 ```
 
-Then, start up Impala or Hive (we use Impala here, but one can also use Beeline in Hive
-to do the same thing) and create a view on an existing table. For demonstration, here
-we use `tpch.nation` (the table is also available in our QuickStart VM) as example.
+Then, creating a test role called `demorole`, and add it to the group `demogroup` defined above.
+This can be done with either Impala or Hive (we use Impala here).
 
-This is how the schema for `tpch.nation` looks like:
+```bash
+sudo -u impala impala-shell
+[quickstart.cloudera:21000] > CREATE ROLE demorole;
+[quickstart.cloudera:21000] > GRANT ROLE demorole to GROUP demogroup;
+```
+
+We shall use `tpch.nation` as example, which is also available in our QuickStart VM.
+The schema for this table looks like:
 
 | column_name | column_type |
 |-------------|-------------|
@@ -67,22 +70,17 @@ This is how the schema for `tpch.nation` looks like:
 | n_regionkey | smallint    |
 | n_comment   | string      |
 
+#### Granting permissions using column-level security
+
 Suppose we want some users with a particular role to only be able to read the
- `n_nationkey` and `n_name` columns, we can do the following:
+`n_nationkey` and `n_name` columns, we can do the following:
 
 ```bash
 sudo -u impala impala-shell
-[quickstart.cloudera:21000] > CREATE ROLE demorole;
-[quickstart.cloudera:21000] > GRANT ROLE demorole to GROUP demogroup;
-[quickstart.cloudera:21000] > USE tpch;
-[quickstart.cloudera:21000] > CREATE VIEW nation_names AS SELECT n_nationkey, n_name FROM tpch.nation;
-[quickstart.cloudera:21000] > GRANT SELECT ON TABLE tpch.nation_names TO ROLE demorole;
+[quickstart.cloudera:21000] > GRANT SELECT(n_name, n_nationkey) ON TABLE tpch.nation TO ROLE demorole;
 ```
 
-This first creates a role called `demorole`, then add the role
-to the group `demogroup` we created above. It then creates a view on the `n_nationkey`
-and `n_name` columns of the `tpch.nation` table, and grant the **select** privilege to
-the `demorole`.
+This grants the **SELECT** privilege on columns `n_name` and `n_nationkey` to the role `demorole`.
 
 #### Running MR Job
 
@@ -104,7 +102,37 @@ detail:AuthorizationException: User 'cloudera' does not have privileges to execu
 tpch.nation)
 ```
 
-Then try to access the `tpch.nation_names` view:
+Now try to just select the column which we've been granted privilege to access:
+
+```bash
+hadoop jar /path/to/recordservice-examples-0.1.jar \
+  com.cloudera.recordservice.examples.mapreduce.RecordCount \
+  "SELECT n_name, n_nationkey FROM tpch.nation" \
+  "/tmp/recordcount_output"
+```
+
+This will succeed with correct result.
+
+#### Granting permission to view
+
+Another way to enforce column level restrictions is to use views. Similar to the above,
+suppose we want some users with a particular role to only be able to read the
+`n_nationkey` and `n_name` columns, we can do the following:
+
+```bash
+sudo -u impala impala-shell
+[quickstart.cloudera:21000] > USE tpch;
+[quickstart.cloudera:21000] > CREATE VIEW nation_names AS SELECT n_nationkey, n_name FROM tpch.nation;
+[quickstart.cloudera:21000] > GRANT SELECT ON TABLE tpch.nation_names TO ROLE demorole;
+```
+
+which creates a view on the `n_nationkey`
+and `n_name` columns of the `tpch.nation` table, and grant the **SELECT** privilege to
+the `demorole`.
+
+#### Running MR Job
+
+Now try to access the `tpch.nation_names` view:
  
 ```bash
 hadoop jar /path/to/recordservice-examples-0.1.jar \
