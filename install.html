@@ -217,7 +217,34 @@ isInstalled: true
       <li>RecordService Worker: Select hosts with the role of DN.</li>
     </ul>
   </li>
-  <li>Review and modify configuration settings, such as <em>log dir</em> and <em>planner port</em>.</li>
+  <li>Review and modify configuration settings, such as <em>log dir</em> and <em>planner port</em>.
+    <ul>
+      <li>If Sentry is enabled in the cluster, add the following configuration to the field <strong>Configuration Snippet (Safety Valve) for sentry-site.xml</strong>.
+        <pre>
+&lt;property&gt;
+  &lt;name&gt;sentry.service.server.principal&lt;/name&gt;
+  &lt;value&gt;sentry/_HOST@principal&lt;/value&gt;
+&lt;/property&gt;
+&lt;property&gt;
+ &lt;name&gt;sentry.service.security.mode&lt;/name&gt;
+ &lt;value&gt;kerberos&lt;/value&gt;
+&lt;/property&gt;
+&lt;property&gt;
+ &lt;name&gt;sentry.service.client.server.rpc-address&lt;/name&gt;
+ &lt;value&gt;hostname&lt;/value&gt;
+&lt;/property&gt;
+&lt;property&gt;
+ &lt;name&gt;sentry.service.client.server.rpc-port&lt;/name&gt;
+ &lt;value&gt;portnum&lt;/value&gt;
+&lt;/property&gt;
+&lt;property&gt;
+ &lt;name&gt;hive.sentry.server&lt;/name&gt;
+ &lt;value&gt;server1&lt;/value&gt;
+&lt;/property&gt;
+  </pre>
+      </li>
+    </ul>
+  </li>
   <li>Start the service.</li>
   <li>Go to the debug page hostname:11050 to verify that the service started properly. </li>
   <li>Go to the RecordService cluster page in Cloudera Manager.</li>
@@ -225,7 +252,7 @@ isInstalled: true
   <li>Run the following command on the host where you run the RecordService client:</li>
 </ol>
 
-<pre><code>export HADOOP_CONF_DIR=/etc/hadoop/conf.cloudera.record_service
+<pre><code>export HADOOP_CONF_DIR=/etc/recordservice/conf
 </code></pre>
 
 <p>See <a href="http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topics/cm_mc_add_service.html?scroll=cmug_topic_5_1">http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topics/cm_mc_add_service.html?scroll=cmug_topic_5_1</a>.</p>
@@ -364,7 +391,7 @@ res0: Long = 25
         <li>RecordService is licensed under</li>
         <li><a href="http://www.apache.org/licenses/LICENSE-2.0.html">The Apache License, Version 2.0</a></li>
         <li>&nbsp;</li>
-        <li>Generated on 23 October 2015</li>
+        <li>Generated on 17 November 2015</li>
       </ul>
 
     </div>
