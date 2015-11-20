@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package com.cloudera.recordservice.tests;
 
 import static org.junit.Assert.*;
@@ -61,7 +62,7 @@ public class TestMiniClusterController {
   public void tearDown() throws Exception {
   }
 
-  public static JobConf createWordCountMRJobConf() throws IOException {
+  public static JobConf createWordCountMRJobConf()  {
     JobConf conf = new JobConf(WordCount.class);
     fillInWordCountMRJobConf(conf);
     return conf;
@@ -101,7 +102,7 @@ public class TestMiniClusterController {
   @Test
   public void testRunningJobLocally() throws IOException, InterruptedException {
     JobConf sampleJob = createWordCountMRJobConf();
-    RunningJob runningJob = miniCluster_.runJobLocally(sampleJob);
+    RunningJob runningJob = miniCluster_.runJob(sampleJob);
     runningJob.waitForCompletion();
     assertTrue(runningJob.isSuccessful());
   }

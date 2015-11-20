@@ -14,63 +14,108 @@
 
 package com.cloudera.recordservice.tests;
 
+import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Field;
+import java.net.MalformedURLException;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RunningJob;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.json.JSONException;
 
 /**
- * This class controls the cluster during tests, both the minicluster and a
- * real cluster. To control the minicluster commands are run through the
+ * This class controls the cluster during tests, both the minicluster and a real
+ * cluster. To control the minicluster commands are run through the
  * MiniClusterController class but using this class as an api allows the tests
  * to be cluster agnostic.
  */
 public class ClusterController {
   public static final int DEFAULT_NUM_NODES = 3;
+  public static final String CM_USER_NAME = "admin";
+  public static final String CM_PASSWORD = "admin";
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(ClusterController.class);
+
+  public static ClusterController cluster_;
 
   public final boolean USE_MINI_CLUSTER;
+  public final String RECORD_SERVICE_PLANNER_HOST;
 
-  public MiniClusterController miniCluster_;
+  public ClusterConfiguration clusterConfiguration_;
   public List clusterList_;
   public List activeNodes_;
   public List availableNodes_;
+  public String HADOOP_CONF_DIR;
 
   /**
    * If a miniCluster is being used, this class simply instantiates a
    * MiniClusterController.
    *
+   * If a real cluster is being used, this class gets the necessary
+   * configuration files via the CM api. The HADOOP_CONF_DIR and
+   * RECORD_SERVICE_PLANNER_HOSTS environment variables are set. These only
+   * apply within the JVM.
+   *
+   * Variables: boolean miniCluster: if true, use miniCluster String hostname:
+   * the hostname of a CM enabled machine in a cluster
+   *
    * TODO: Future work involves doing the necessary steps to ensure that a
    * cluster is healthy and ready for RecordService jobs to be executed.
    */
-  public ClusterController(boolean miniCluster) {
+  public ClusterController(boolean miniCluster, String hostname) {
     USE_MINI_CLUSTER = miniCluster;
+    RECORD_SERVICE_PLANNER_HOST = hostname;
     try {
       if (USE_MINI_CLUSTER) {
         MiniClusterController.Start(DEFAULT_NUM_NODES);
-        miniCluster_ = MiniClusterController.instance();
+        cluster_ = MiniClusterController.instance();
+        HADOOP_CONF_DIR = System.getenv("HADOOP_CONF_DIR");
       } else {
-        throw new NotImplementedException();
+        clusterConfiguration_ = new ClusterConfiguration(hostname, CM_USER_NAME,
+            CM_PASSWORD);
+        Map<String, String> envMap = new HashMap<String, String>();
+        HADOOP_CONF_DIR = clusterConfiguration_.getHadoopConfDir();
+        String IMPALA_HOME = System.getenv("IMPALA_HOME");
+        envMap.put("HADOOP_CONF_DIR", HADOOP_CONF_DIR);
+        envMap.put("RECORD_SERVICE_PLANNER_HOST", RECORD_SERVICE_PLANNER_HOST);
+        envMap.put("HADOOP_HOME", IMPALA_HOME
+            + "/thirdparty/hadoop-2.6.0-cdh5.5.0-SNAPSHOT/");
+        // Add these two additional system variables to the JVM environment.
+        // Hadoop and RecordService rely on these variables to execute on a
+        // cluster.
+        setEnv(envMap);
+        LOGGER.debug("HADOOP_CONF_DIR: " + System.getenv("HADOOP_CONF_DIR"));
+        LOGGER.debug("HADOOP_HOME: " + System.getenv("HADOOP_HOME"));
+        cluster_ = this;
       }
     } catch (InterruptedException e) {
-      System.out.println("Error starting mini cluster");
-      e.printStackTrace();
+      LOGGER.debug("Error starting mini cluster", e);
+      System.exit(1);
+    } catch (MalformedURLException e) {
+      LOGGER.debug("Error getting cluster configuration", e);
+      System.exit(1);
+    } catch (JSONException e) {
+      LOGGER.debug("Error getting cluster configuration", e);
+      System.exit(1);
+    } catch (IOException e) {
+      LOGGER.debug("Error getting cluster configuration", e);
       System.exit(1);
     }
-
   }
 
   /**
    * This method runs the given job as specified in the JobConf on the cluster
    */
   public RunningJob runJob(JobConf mrJob) throws IOException {
-    if (USE_MINI_CLUSTER) {
-      return miniCluster_.runJobLocally(mrJob);
-    } else {
-      return JobClient.runJob(mrJob);
-    }
+    return JobClient.runJob(mrJob);
   }
 
   /**
@@ -83,10 +128,80 @@ public class ClusterController {
    * would not do anything.
    */
   public void addNode() {
-    if (USE_MINI_CLUSTER) {
-      miniCluster_.addRecordServiced();
-    } else {
-      throw new NotImplementedException();
+    throw new NotImplementedException();
+  }
+
+  /**
+   * This method returns a JobConf object that allows a map reduce job to be run
+   * on the cluster
+   */
+  public JobConf getJobConf() throws MalformedURLException {
+    JobConf conf = new JobConf();
+    populateJobConf(conf);
+    return conf;
+  }
+
+  /**
+   * This method populates a JobConf with the information in the HadoopConfDir
+   */
+  public JobConf populateJobConf(JobConf conf) throws MalformedURLException {
+    File[] files = new File(clusterConfiguration_.getHadoopConfDir()).listFiles();
+    for (File file : files) {
+      if (file.getName().endsWith(".xml")) {
+        conf.addResource(file.getAbsoluteFile().toURI().toURL());
+      }
+    }
+    String[] bs = clusterConfiguration_.getHadoopConfDir().split("/");
+    String newPath = "/";
+    for (int i = 0; i < bs.length - 1; i++) {
+      newPath += bs[i] + "/";
+    }
+    newPath += "recordservice-conf/recordservice-site.xml";
+    conf.addResource(new File(newPath).getAbsoluteFile().toURI().toURL());
+    return conf;
+  }
+
+  /**
+   * This method allows the caller to add environment variables to the JVM.
+   * There is no easy way to do this through a simple call, such as there is to
+   * read env variables using System.getEnv(variableName). Much of the method
+   * was written with guidance from stack overflow:
+   * http://stackoverflow.com/questions
+   * /318239/how-do-i-set-environment-variables-from-java
+   */
+  protected static void setEnv(Map<String, String> newenv) {
+    try {
+      Class<?> processEnvironmentClass = Class.forName("java.lang.ProcessEnvironment");
+      Field theEnvironmentField = processEnvironmentClass
+          .getDeclaredField("theEnvironment");
+      theEnvironmentField.setAccessible(true);
+      Map<String, String> env = (Map<String, String>) theEnvironmentField.get(null);
+      env.putAll(newenv);
+      Field theCaseInsensitiveEnvironmentField = processEnvironmentClass
+          .getDeclaredField("theCaseInsensitiveEnvironment");
+      theCaseInsensitiveEnvironmentField.setAccessible(true);
+      Map<String, String> cienv = (Map<String, String>) theCaseInsensitiveEnvironmentField
+          .get(null);
+      cienv.putAll(newenv);
+    } catch (NoSuchFieldException e) {
+      try {
+        Class[] classes = Collections.class.getDeclaredClasses();
+        Map<String, String> env = System.getenv();
+        for (Class cl : classes) {
+          if ("java.util.Collections$UnmodifiableMap".equals(cl.getName())) {
+            Field field = cl.getDeclaredField("m");
+            field.setAccessible(true);
+            Object obj = field.get(env);
+            Map<String, String> map = (Map<String, String>) obj;
+            map.clear();
+            map.putAll(newenv);
+          }
+        }
+      } catch (Exception e2) {
+        e2.printStackTrace();
+      }
+    } catch (Exception e1) {
+      e1.printStackTrace();
     }
   }
 

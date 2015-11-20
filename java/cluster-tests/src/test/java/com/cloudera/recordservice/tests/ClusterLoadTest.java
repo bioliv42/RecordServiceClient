@@ -11,11 +11,13 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package com.cloudera.recordservice.tests;
 
 import static org.junit.Assert.*;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.Callable;
@@ -27,20 +29,27 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.cloudera.recordservice.tests.JobQueue.RSMRJob;
+import com.cloudera.recordservice.tests.ClusterController;
 
 /**
- * This class submits batches of jobs to the mini cluster RecordService using
+ * This class submits batches of jobs to a RecordService cluster object using
  * the JobQueue object.
  */
-public class MiniClusterLoadTest {
+public class ClusterLoadTest {
   public static final int DEFAULT_CLUSTER_NODE_NUM = 3;
   public static final int DEFAULT_WORKER_THREAD_NUM = 3;
-  MiniClusterController miniCluster_;
+
+  public static String HOST_ADDRESS = System.getenv("HOST_ADDRESS");
+
+  ClusterController cluster_;
 
   @BeforeClass
   public static void setUpBeforeClass() throws Exception {
     org.apache.log4j.BasicConfigurator.configure();
-    MiniClusterController.Start(DEFAULT_CLUSTER_NODE_NUM);
+    if ( HOST_ADDRESS == null || HOST_ADDRESS.equals("")) {
+      HOST_ADDRESS = "vd0214.halxg.cloudera.com";
+    }
+    new ClusterController(false, HOST_ADDRESS);
   }
 
   @AfterClass
@@ -49,27 +58,22 @@ public class MiniClusterLoadTest {
 
   @Before
   public void setUp() throws Exception {
-    miniCluster_ = MiniClusterController.instance();
-    assertTrue(miniCluster_.isClusterStateCorrect());
+    cluster_ = ClusterController.cluster_;
   }
 
   @After
   public void tearDown() throws Exception {
   }
 
-  /**
-   * This test submits a simple batch of MR jobs to the mini cluster, executes
-   * them, and checks to ensure that all of the jobs complete.
-   */
   @Test
-  public <T> void testBasicBatchExecution() throws IOException, InterruptedException {
-    JobQueue jobQ = new JobQueue(DEFAULT_WORKER_THREAD_NUM);
+  public <T> void testLonghaul() throws InterruptedException, MalformedURLException {
+    JobQueue jobQ = new JobQueue(1);
     Collection<Callable<T>> jobList = new ArrayList<Callable<T>>();
-    for (int i = 0; i < 5; ++i) {
-      jobList.add(jobQ.new RSMRJob(TestMiniClusterController.createWordCountMRJobConf()));
+    for (int i = 0; i < 10; ++i) {
+      jobList.add(jobQ.new RSMRJob(cluster_.populateJobConf(TestMiniClusterController
+          .createWordCountMRJobConf())));
     }
-    jobQ.addJobsToQueue((Collection<? extends Callable<T>>) jobList);
+    jobQ.addJobsToQueue(jobList);
     assertTrue(jobQ.checkCompleted());
   }
-
 }

@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package com.cloudera.recordservice.tests;
 
 import java.io.IOException;
@@ -18,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.concurrent.BlockingQueue;
@@ -49,7 +51,7 @@ public class JobQueue {
   private ThreadPoolExecutor threadPoolExecutor_;
   // Jobs started by the threadPoolExecutor
   private List<Future> synchedJobList_;
-  private MiniClusterController miniCluster_;
+  private ClusterController cluster_;
   // If true, all completed jobs have been successful. Used by completion daemon
   private boolean successful_ = true;
   // Length of timeout in seconds
@@ -61,8 +63,15 @@ public class JobQueue {
    */
   public JobQueue(int workerThreads) {
     synchedJobList_ = Collections.synchronizedList(new ArrayList<Future>());
-    miniCluster_ = MiniClusterController.instance();
+    // miniCluster_ = MiniClusterController.instance();
+    cluster_ = ClusterController.cluster_;
     startThreadPool();
+  }
+
+  public boolean killQueue() {
+    List<Runnable> l = threadPoolExecutor_.shutdownNow();
+    System.out.println("After kill call");
+    return l != null;
   }
 
   /**
@@ -79,18 +88,17 @@ public class JobQueue {
 
     @Override
     public Object call() throws Exception {
-      job_ = miniCluster_.runJobLocally(conf_);
+      job_ = cluster_.runJob(conf_);
       return job_;
     }
   }
 
   /**
-   * The daemon traverses the active jobs list checking for completed jobs.
-   * Jobs that have been marked as successful are removed from the
-   * synchedJobList_. If the daemon finds an unsuccessful job it changes the
-   * global boolean successful_ variable to false and shuts down the
-   * threadPoolExecutor. There should only be a maximum of one
-   * JobCompletionDaemons per JobQueue.
+   * The daemon traverses the active jobs list checking for completed jobs. Jobs
+   * that have been marked as successful are removed from the synchedJobList_.
+   * If the daemon finds an unsuccessful job it changes the global boolean
+   * successful_ variable to false and shuts down the threadPoolExecutor. There
+   * should only be a maximum of one JobCompletionDaemons per JobQueue.
    */
   private final class JobCompletionDaemon implements Runnable {
     @Override
@@ -141,10 +149,11 @@ public class JobQueue {
   /**
    * Checks the synched job list returning true if all jobs marked as completed
    * were also marked as successful. Successful jobs are removed from the list.
-   * On the first found failure, the method returns false and does not
-   * remove said job from the list.
+   * On the first found failure, the method returns false and does not remove
+   * said job from the list.
    */
   public boolean checkCompleted() {
+    List<RunningJob> theFailureList = new LinkedList<RunningJob>();
     synchronized (synchedJobList_) {
       Iterator<Future> it = synchedJobList_.iterator();
       while (it.hasNext()) {
@@ -154,19 +163,23 @@ public class JobQueue {
           if (job.isComplete()) {
             if (!job.isSuccessful()) {
               successful_ = false;
+              theFailureList.add(job);
               return successful_;
             }
             it.remove();
           }
         } catch (IOException e) {
           LOGGER.debug(e.getStackTrace().toString());
+          e.printStackTrace();
           successful_ = false;
           return successful_;
         } catch (ExecutionException ee) {
           LOGGER.debug(ee.getStackTrace().toString());
+          ee.printStackTrace();
           successful_ = false;
           return successful_;
         } catch (InterruptedException ie) {
+          ie.printStackTrace();
           LOGGER.debug(ie.getStackTrace().toString());
           successful_ = false;
           return successful_;
@@ -174,6 +187,10 @@ public class JobQueue {
       }
     }
     successful_ = true;
+    Iterator<RunningJob> it = theFailureList.iterator();
+    while (it.hasNext()) {
+      System.out.println(it.next().getID());
+    }
     return successful_;
   }
 
