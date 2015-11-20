@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package com.cloudera.recordservice.tests;
 
 import java.io.IOException;
@@ -38,11 +39,10 @@ import com.cloudera.recordservice.util.Preconditions;
  * This class is a singleton. It first needs to be instantiated, and then the
  * instance method returns the class instance.
  *
- * Usage:
- * MiniClusterController.Start(num_nodes);
- * MiniClusterController miniCluster = MiniClusterController.instance();
+ * Usage: MiniClusterController.Start(num_nodes); MiniClusterController
+ * miniCluster = MiniClusterController.instance();
  */
-public class MiniClusterController {
+public class MiniClusterController extends ClusterController {
   private static native void StartMiniCluster(int numNodes);
 
   private native void KillNodeByPid(int pid);
@@ -55,15 +55,14 @@ public class MiniClusterController {
   private static final String BUILT_RS_CODE_LOCATION = "/cpp/build/release/recordservice/";
 
   private Thread clusterThread_;
+  private List<MiniClusterNode> clusterList_;
 
   private static MiniClusterController miniCluster_;
 
-  private List<MiniClusterNode> clusterList_;
-
   /**
-   * This method starts a minicluster with the specified number of nodes.
-   * It should only be called once. If the minicluster has already been instantiated,
-   * nothing is executed.
+   * This method starts a minicluster with the specified number of nodes. It
+   * should only be called once. If the minicluster has already been
+   * instantiated, nothing is executed.
    */
   public static void Start(int numNodes) throws InterruptedException {
     new MiniClusterController(numNodes);
@@ -100,9 +99,9 @@ public class MiniClusterController {
   }
 
   /**
-   * Adds a recordserviced to the cluster. If 'startPlanner' is true, run it
-   * as planner; if 'startWorker' is true, run it as worker. If both are true,
-   * run as both planner and worker.
+   * Adds a recordserviced to the cluster. If 'startPlanner' is true, run it as
+   * planner; if 'startWorker' is true, run it as worker. If both are true, run
+   * as both planner and worker.
    */
   public void addRecordServiced(boolean startPlanner, boolean startWorker) {
     Preconditions.checkArgument(startPlanner || startWorker);
@@ -118,6 +117,10 @@ public class MiniClusterController {
    */
   public void addRecordServiced() {
     addRecordServiced(true, true);
+  }
+
+  public void addNode() {
+    addRecordServiced();
   }
 
   /**
@@ -172,7 +175,7 @@ public class MiniClusterController {
   /**
    * This method takes JobConf and executes it
    */
-  public RunningJob runJobLocally(JobConf mrJob) throws IOException {
+  public RunningJob runJob(JobConf mrJob) throws IOException {
     if (clusterList_.size() == 0) {
       System.err.println("Cannot run MR job because the cluster has no active nodes");
       return null;
@@ -194,10 +197,10 @@ public class MiniClusterController {
 
   /**
    * This method checks the current state of the MiniClusterController object
-   * against the actual state of the system.
-   * Returns false if some running cluster nodes are not tracked by this
-   * MiniClusterController, or if some nodes tracked by this MiniClusterController
-   * are not running. Returns true otherwise.
+   * against the actual state of the system. Returns false if some running
+   * cluster nodes are not tracked by this MiniClusterController, or if some
+   * nodes tracked by this MiniClusterController are not running. Returns true
+   * otherwise.
    */
   public boolean isClusterStateCorrect() {
     HashSet<Integer> pidSet = getRunningMiniNodePids();
@@ -368,6 +371,7 @@ public class MiniClusterController {
    * should be called.
    */
   private MiniClusterController(int numNodes) throws InterruptedException {
+    super(true, "localhost");
     start(numNodes);
     populateFields();
 
