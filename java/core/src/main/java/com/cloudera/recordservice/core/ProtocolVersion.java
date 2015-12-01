@@ -42,4 +42,9 @@ public class ProtocolVersion {
   public boolean isValidProtocolVersion() {
     return SERVER_VERSION_LIST.contains(version);
   }
+
+  @Override
+  public String toString() {
+    return this.version;
+  }
 }
