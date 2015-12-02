@@ -37,14 +37,14 @@ import java.lang.reflect.Constructor;
 
 /** The HCatSplit wrapper around the InputSplit returned by the underlying InputFormat */
 public class HCatRSSplit extends InputSplit
-  implements Writable, org.apache.hadoop.mapred.InputSplit {
+  implements Writable {
 
   private static final Logger LOG = LoggerFactory.getLogger(HCatRSSplit.class);
   /** The partition info for the split. */
   private PartInfo partitionInfo;
 
   /** The split returned by the underlying InputFormat split. */
-  private org.apache.hadoop.mapred.InputSplit baseMapRedSplit;
+  private org.apache.hadoop.mapreduce.InputSplit baseMapRedSplit;
 
   private TaskInfo taskInfo_;
   private Schema schema_;
@@ -62,7 +62,7 @@ public class HCatRSSplit extends InputSplit
    * @param baseMapRedSplit the base mapred split
    */
   public HCatRSSplit(PartInfo partitionInfo,
-           org.apache.hadoop.mapred.InputSplit baseMapRedSplit) {
+           org.apache.hadoop.mapreduce.InputSplit baseMapRedSplit) {
 
     this.partitionInfo = partitionInfo;
     // dataSchema can be obtained from partitionInfo.getPartitionSchema()
@@ -81,7 +81,7 @@ public class HCatRSSplit extends InputSplit
    * Gets the underlying InputSplit.
    * @return the baseMapRedSplit
    */
-  public org.apache.hadoop.mapred.InputSplit getBaseSplit() {
+  public org.apache.hadoop.mapreduce.InputSplit getBaseSplit() {
     return baseMapRedSplit;
   }
 
@@ -112,6 +112,9 @@ public class HCatRSSplit extends InputSplit
     } catch (IOException e) {
       LOG.warn("Exception in HCatSplit", e);
     }
+    catch (InterruptedException e) {
+      LOG.warn("Exception in HCatSplit", e);
+    }
     return 0; // we errored
   }
 
@@ -123,6 +126,9 @@ public class HCatRSSplit extends InputSplit
     try {
       return baseMapRedSplit.getLocations();
     } catch (IOException e) {
+      LOG.warn("Exception in HCatSplit", e);
+    }
+    catch (InterruptedException e) {
       LOG.warn("Exception in HCatSplit", e);
     }
     return new String[0]; // we errored
@@ -138,14 +144,14 @@ public class HCatRSSplit extends InputSplit
     partitionInfo = (PartInfo) HCatRSUtil.deserialize(partitionInfoString);
 
     String baseSplitClassName = WritableUtils.readString(input);
-    org.apache.hadoop.mapred.InputSplit split;
+    org.apache.hadoop.mapreduce.InputSplit split;
     try {
-      Class<? extends org.apache.hadoop.mapred.InputSplit> splitClass =
-        (Class<? extends org.apache.hadoop.mapred.InputSplit>) JavaUtils.getClassLoader().loadClass(baseSplitClassName);
+      Class<? extends org.apache.hadoop.mapreduce.InputSplit> splitClass =
+        (Class<? extends org.apache.hadoop.mapreduce.InputSplit>) JavaUtils.getClassLoader().loadClass(baseSplitClassName);
 
       //Class.forName().newInstance() does not work if the underlying
       //InputSplit has package visibility
-      Constructor<? extends org.apache.hadoop.mapred.InputSplit>
+      Constructor<? extends org.apache.hadoop.mapreduce.InputSplit>
         constructor =
         splitClass.getDeclaredConstructor(new Class[]{});
       constructor.setAccessible(true);

@@ -19,27 +19,36 @@
 
 package com.cloudera.recordservice.hcatalog.mapreduce;
 
-import com.cloudera.recordservice.core.NetworkAddress;
-import com.cloudera.recordservice.core.RecordServiceException;
-import com.cloudera.recordservice.core.RecordServicePlannerClient;
-import com.cloudera.recordservice.core.Request;
+import java.io.IOException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
 import com.cloudera.recordservice.hcatalog.common.HCatRSUtil;
+import com.cloudera.recordservice.mr.PlanUtil;
 import com.cloudera.recordservice.mr.RecordServiceConfig;
-import com.cloudera.recordservice.mr.security.DelegationTokenIdentifier;
-import com.cloudera.recordservice.mr.security.TokenUtils;
-import com.cloudera.recordservice.thrift.TPlanRequestResult;
 import com.google.common.base.Preconditions;
 import org.apache.hadoop.classification.InterfaceAudience;
 import org.apache.hadoop.classification.InterfaceStability;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.Job;
+import org.apache.hive.hcatalog.common.HCatConstants;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.mapreduce.InputSplit;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.security.Credentials;
 import org.apache.hadoop.security.token.Token;
-import org.apache.hive.hcatalog.common.HCatConstants;
 import org.apache.hive.hcatalog.data.schema.HCatSchema;
+import com.cloudera.recordservice.core.NetworkAddress;
+import com.cloudera.recordservice.core.RecordServiceException;
+import com.cloudera.recordservice.core.RecordServicePlannerClient;
+import com.cloudera.recordservice.core.Request;
+import com.cloudera.recordservice.mr.security.DelegationTokenIdentifier;
+import com.cloudera.recordservice.mr.security.TokenUtils;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Properties;
 
 /**
@@ -51,17 +60,6 @@ public class HCatRSInputFormat extends HCatRSBaseInputFormat {
 
   private Configuration conf;
   private InputJobInfo inputJobInfo;
-  private static String requestString;
-
-  /**
-   * Initializes the input with a null filter.
-   * See {@link #setInput(Configuration, String, String, String)}
-   */
-  public static HCatRSInputFormat setInput(
-          Job job, String dbName, String tableName)
-    throws IOException {
-    return setInput(job.getConfiguration(), dbName, tableName, null);
-  }
 
   /**
    * Initializes the input with a provided filter.
@@ -70,12 +68,9 @@ public class HCatRSInputFormat extends HCatRSBaseInputFormat {
   public static HCatRSInputFormat setInput(
           Job job, String dbName, String tableName, String filter)
     throws IOException {
+    RecordServiceConfig.setInputTable(job.getConfiguration(), dbName, tableName);
     Request request = null;
-    createRequestString(dbName, tableName);
-    // hardcoded until base call works for ease of testing purposes
-    request = Request.createTableScanRequest(requestString);
     Credentials credentials = job.getCredentials();
-    TPlanRequestResult result = null;
     RecordServicePlannerClient planner = null;
     try {
       RecordServicePlannerClient.Builder builder =
@@ -90,9 +85,7 @@ public class HCatRSInputFormat extends HCatRSBaseInputFormat {
       for (int i = 0; i < plannerHostPorts.size(); ++i) {
         NetworkAddress hostPort = plannerHostPorts.get(i);
         try {
-          RecordServicePlannerClient tempPlanner = builder.connect(hostPort.hostname, hostPort.port);
-          if (tempPlanner != null)
-            planner = tempPlanner;
+           planner = builder.connect(hostPort.hostname, hostPort.port);
         } catch (RecordServiceException e) {
           // Ignore, try next host. The errors in builder should be sufficient.
           lastException = e;
@@ -101,26 +94,20 @@ public class HCatRSInputFormat extends HCatRSBaseInputFormat {
           lastException = e;
         }
       }
-        // TODO: what to set as renewer?
+      if(lastException != null){
+        throw new IOException(
+                "Could not connect to any of the configured planners.", lastException);
+      }
+      // TODO: what to set as renewer?
       Token<DelegationTokenIdentifier> delegationToken =
-                TokenUtils.fromTDelegationToken(planner.getDelegationToken(""));
-        credentials.addToken(DelegationTokenIdentifier.DELEGATION_KIND, delegationToken);
+              TokenUtils.fromTDelegationToken(planner.getDelegationToken(""));
+      credentials.addToken(DelegationTokenIdentifier.DELEGATION_KIND, delegationToken);
     } catch (Exception e) {
       throw new IOException(e);
     } finally {
       if (planner != null) planner.close();
     }
     return setInput(job.getConfiguration(), dbName, tableName, filter);
-  }
-
-  /**
-   * Initializes the input with a null filter.
-   * See {@link #setInput(Configuration, String, String, String)}
-   */
-  public static HCatRSInputFormat setInput(
-          Configuration conf, String dbName, String tableName)
-    throws IOException {
-    return setInput(conf, dbName, tableName, null);
   }
 
   /**
@@ -148,8 +135,6 @@ public class HCatRSInputFormat extends HCatRSBaseInputFormat {
     } catch (Exception e) {
       throw new IOException(e);
     }
-
-
 
     return hCatRSInputFormat;
   }
@@ -223,18 +208,5 @@ public class HCatRSInputFormat extends HCatRSBaseInputFormat {
     Preconditions.checkNotNull(inputInfo,
         "inputJobInfo is null, setInput has not yet been called to save job into conf supplied.");
     return inputInfo.getTableInfo().getDataColumns();
-  }
-
-  private static void createRequestString(String databaseName, String tableName){
-    String request = "";
-    if(databaseName != null){
-      request += databaseName + ".";
-    }
-    request += tableName;
-    requestString = request;
-  }
-
-  public static String getRequestString(){
-    return requestString;
   }
 }

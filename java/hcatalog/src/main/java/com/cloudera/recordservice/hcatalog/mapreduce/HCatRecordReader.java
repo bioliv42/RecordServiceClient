@@ -19,12 +19,13 @@
 package com.cloudera.recordservice.hcatalog.mapreduce;
 
 import com.cloudera.recordservice.hcatalog.common.HCatRSUtil;
-import com.cloudera.recordservice.mapred.RecordServiceInputFormat;
+import com.cloudera.recordservice.mapreduce.RecordServiceInputFormat;
 import com.cloudera.recordservice.mr.RecordServiceRecord;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.ql.metadata.HiveStorageHandler;
 import org.apache.hadoop.hive.serde2.Deserializer;
 import org.apache.hadoop.hive.serde2.SerDeException;
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapreduce.RecordReader;
@@ -37,7 +38,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.Map;
 
 /** The HCat wrapper for the underlying RecordReader,
  * this ensures that the initialize on
@@ -48,32 +48,21 @@ class HCatRecordReader extends RecordReader<WritableComparable, RecordServiceRec
 
   private static final Logger LOG = LoggerFactory.getLogger(HCatRecordReader.class);
 
-  private InputErrorTracker errorTracker;
-
-  WritableComparable currentKey;
-  RecordServiceRecord currentValue;
-  RecordServiceRecord currentRecord;
-
   /** The underlying record reader to delegate to. */
-  private RecordServiceInputFormat.RecordServiceRecordReader baseRecordReader;
+  private  RecordReader<NullWritable, RecordServiceRecord> baseRecordReader;
 
   /** The storage handler used */
   private final HiveStorageHandler storageHandler;
 
   private Deserializer deserializer;
 
-  private Map<String, Object> valuesNotInDataCols;
-
   private HCatSchema outputSchema = null;
-  private HCatSchema dataSchema = null;
 
   /**
    * Instantiates a new hcat record reader.
    */
-  public HCatRecordReader(HiveStorageHandler storageHandler,
-              Map<String, Object> valuesNotInDataCols) {
+  public HCatRecordReader(HiveStorageHandler storageHandler) {
     this.storageHandler = storageHandler;
-    this.valuesNotInDataCols = valuesNotInDataCols;
   }
 
   /* (non-Javadoc)
@@ -98,14 +87,9 @@ class HCatRecordReader extends RecordReader<WritableComparable, RecordServiceRec
       outputSchema = hcatRSSplit.getTableSchema();
     }
 
-    // Pull the table schema out of the Split info
-    // TODO This should be passed in the TaskAttemptContext instead
-    dataSchema = hcatRSSplit.getDataSchema();
-
-    errorTracker = new InputErrorTracker(taskContext.getConfiguration());
   }
 
-  private RecordServiceInputFormat.RecordServiceRecordReader createBaseRecordReader(HCatRSSplit hcatRSSplit,
+  private RecordReader<NullWritable, RecordServiceRecord> createBaseRecordReader(HCatRSSplit hcatRSSplit,
                                      HiveStorageHandler storageHandler, TaskAttemptContext taskContext) throws IOException {
 
     JobConf jobConf = HCatUtil.getJobConfFromContext(taskContext);
@@ -113,9 +97,14 @@ class HCatRecordReader extends RecordReader<WritableComparable, RecordServiceRec
     HCatUtil.copyJobPropertiesToJobConf(hcatRSSplit.getPartitionInfo().getJobProperties(), jobConf);
     HCatRSUtil.copyCredentialsToJobConf(taskContext.getCredentials(), jobConf);
     RecordServiceInputFormat inputFormat =
-      HCatRSInputFormat.getMapRedInputFormat(jobConf, storageHandler.getInputFormatClass());
-    return (RecordServiceInputFormat.RecordServiceRecordReader) inputFormat.getRecordReader(hcatRSSplit.getBaseSplit(), jobConf,
-      InternalUtil.createReporter(taskContext));
+      HCatRSInputFormat.getMapRedInputFormat(jobConf);
+    try {
+      return inputFormat.createRecordReader(hcatRSSplit.getBaseSplit(), taskContext);
+    }
+    catch (InterruptedException e){
+      LOG.error("Unable to create Record Reader", e);
+    }
+    return null;
   }
 
   private void createDeserializer(HCatRSSplit hcatRSSplit, HiveStorageHandler storageHandler,
@@ -140,7 +129,7 @@ class HCatRecordReader extends RecordReader<WritableComparable, RecordServiceRec
   @Override
   public WritableComparable getCurrentKey()
     throws IOException, InterruptedException {
-    return currentKey;
+    return baseRecordReader.getCurrentKey();
   }
 
   /* (non-Javadoc)
@@ -148,7 +137,7 @@ class HCatRecordReader extends RecordReader<WritableComparable, RecordServiceRec
    */
   @Override
   public RecordServiceRecord getCurrentValue() throws IOException, InterruptedException {
-    return currentRecord;
+    return baseRecordReader.getCurrentValue();
   }
 
   /* (non-Javadoc)
@@ -159,6 +148,9 @@ class HCatRecordReader extends RecordReader<WritableComparable, RecordServiceRec
     try {
       return baseRecordReader.getProgress();
     } catch (IOException e) {
+      LOG.warn("Exception in HCatRecord reader", e);
+    }
+    catch (InterruptedException e) {
       LOG.warn("Exception in HCatRecord reader", e);
     }
     return 0.0f; // errored
@@ -175,18 +167,7 @@ class HCatRecordReader extends RecordReader<WritableComparable, RecordServiceRec
    */
   @Override
   public boolean nextKeyValue() throws IOException, InterruptedException {
-    if (currentKey == null) {
-      currentKey = baseRecordReader.createKey();
-      currentValue = baseRecordReader.createValue();
-    }
-
-    while (baseRecordReader.next(currentKey, currentValue)) {
-
-      currentRecord = currentValue;
-      return true;
-    }
-
-    return false;
+    return baseRecordReader.nextKeyValue();
   }
 
   /* (non-Javadoc)
