@@ -34,6 +34,8 @@
     <module>hive</module>
     <module>mr</module>
     <module>spark</module>
+    <module>hcatalog</module>
+    <module>hcatalog-pig-adapter</module>
     <module>avro</module>
     <module>avro-mr</module>
     <module>avro-example</module>
@@ -51,6 +53,7 @@
     <hive.version>1.1.0-cdh5.5.0</hive.version>
     <avro.version>1.7.6-cdh5.5.0</avro.version>
     <spark.version>1.5.0-cdh5.5.0</spark.version>
+    <hcatalog.version>1.1.0-cdh5.5.0</hcatalog.version>
     <scala.version>2.10.4</scala.version>
     <scala.binary.version>2.10</scala.binary.version>
     <sparkcore.version>2.10</sparkcore.version>
