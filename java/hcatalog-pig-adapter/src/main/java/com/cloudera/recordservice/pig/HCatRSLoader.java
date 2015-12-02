@@ -22,7 +22,10 @@ import com.cloudera.recordservice.hcatalog.common.HCatRSUtil;
 import com.cloudera.recordservice.hcatalog.mapreduce.HCatRSInputFormat;
 import com.cloudera.recordservice.hcatalog.mapreduce.HCatTableInfo;
 import com.cloudera.recordservice.hcatalog.mapreduce.InputJobInfo;
+import com.cloudera.recordservice.hcatalog.mapreduce.PartInfo;
+import com.cloudera.recordservice.mr.RecordServiceRecord;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.common.classification.InterfaceAudience;
 import org.apache.hadoop.hive.common.classification.InterfaceStability;
@@ -30,17 +33,22 @@ import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hadoop.hive.ql.metadata.Table;
 import org.apache.hadoop.mapreduce.InputFormat;
 import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.security.Credentials;
 import org.apache.hive.hcatalog.common.HCatConstants;
 import org.apache.hive.hcatalog.common.HCatContext;
 import org.apache.hive.hcatalog.common.HCatUtil;
 import org.apache.hive.hcatalog.data.Pair;
 import org.apache.hive.hcatalog.data.schema.HCatSchema;
+import org.apache.hive.hcatalog.pig.HCatLoader;
 import org.apache.pig.Expression;
 import org.apache.pig.Expression.BinaryExpression;
 import org.apache.pig.PigException;
 import org.apache.pig.ResourceSchema;
 import org.apache.pig.ResourceStatistics;
+import org.apache.pig.backend.executionengine.ExecException;
+import org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.PigSplit;
+import org.apache.pig.data.Tuple;
 import org.apache.pig.impl.util.UDFContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,10 +59,15 @@ import java.util.Map.Entry;
 
 /**
  * Pig {@link org.apache.pig.LoadFunc} to read data from HCat
+ * This Class was copied from the Hcatalog-Pig-Adapter Project
+ * Orginal name: HCatLoader
+ * Changes: Now extends HcatLoader instead of HcatBaseLoader,
+ * InputFormat Has been changed to a Record Service input format
+ * GetNext Function was overriden to use RecordServiceRecords
  */
 @InterfaceAudience.Public
 @InterfaceStability.Evolving
-public class HCatRSLoader extends HCatBaseLoader {
+public class HCatRSLoader extends HCatLoader {
   private static final Logger LOG = LoggerFactory.getLogger(HCatRSLoader.class);
 
   private static final String PARTITION_FILTER = "partition.filter"; // for future use
@@ -62,7 +75,9 @@ public class HCatRSLoader extends HCatBaseLoader {
   private HCatRSInputFormat hcatRSInputFormat = null;
   private String dbName;
   private String tableName;
+  private RecordReader<?, ?> reader;
   private String hcatServerUri;
+  private HCatSchema outputSchema = null;
   private String partitionFilterString;
   private final PigHCatUtil phutil = new PigHCatUtil();
 
@@ -287,6 +302,32 @@ public class HCatRSLoader extends HCatBaseLoader {
     }
   }
 
+  @Override
+  public Tuple getNext() throws IOException {
+    try {
+      RecordServiceRecord record = (RecordServiceRecord) (reader.nextKeyValue() ? reader.getCurrentValue() : null);
+      Tuple t = PigHCatUtil.transformToTuple(record, outputSchema);
+      // TODO : we were discussing an iter interface, and also a LazyTuple
+      // change this when plans for that solidifies.
+      return t;
+    } catch (ExecException e) {
+      int errCode = 6018;
+      String errMsg = "Error while reading input";
+      throw new ExecException(errMsg, errCode,
+              PigException.REMOTE_ENVIRONMENT, e);
+    } catch (Exception eOther) {
+      int errCode = 6018;
+      String errMsg = "Error converting read value to tuple";
+      throw new ExecException(errMsg, errCode,
+              PigException.REMOTE_ENVIRONMENT, eOther);
+    }
+  }
+
+  @Override
+  public void prepareToRead(RecordReader reader, PigSplit arg1) throws IOException {
+    this.reader = reader;
+  }
+
   public static void addSpecialCasesParametersForHCatLoader(
           Configuration conf, HCatTableInfo tableInfo) {
     if ((tableInfo == null) || (tableInfo.getStorerInfo() == null)){
@@ -300,6 +341,38 @@ public class HCatRSLoader extends HCatBaseLoader {
       // This parameter was added due to the requirement in HIVE-7072
       conf.set("pig.noSplitCombination", "true");
     }
+  }
+
+  /**
+   * A utility method to get the size of inputs. This is accomplished by summing the
+   * size of all input paths on supported FileSystems. Locations whose size cannot be
+   * determined are ignored. Note non-FileSystem and unpartitioned locations will not
+   * report their input size by default. This method was copied from HcatBaseLoader to use
+   * the Record Service InputJobInfo.
+   */
+  protected static long getSizeInBytes(InputJobInfo inputJobInfo) throws IOException {
+    Configuration conf = new Configuration();
+    long sizeInBytes = 0;
+
+    for (PartInfo partInfo : inputJobInfo.getPartitions()) {
+      try {
+        Path p = new Path(partInfo.getLocation());
+        if (p.getFileSystem(conf).isFile(p)) {
+          sizeInBytes += p.getFileSystem(conf).getFileStatus(p).getLen();
+        } else {
+          FileStatus[] fileStatuses = p.getFileSystem(conf).listStatus(p);
+          if (fileStatuses != null) {
+            for (FileStatus child : fileStatuses) {
+              sizeInBytes += child.getLen();
+            }
+          }
+        }
+      } catch (IOException e) {
+        // Report size to the extent possible.
+      }
+    }
+
+    return sizeInBytes;
   }
 
 }

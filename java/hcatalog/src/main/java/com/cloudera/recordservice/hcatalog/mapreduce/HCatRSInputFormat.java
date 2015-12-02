@@ -47,6 +47,7 @@ import com.cloudera.recordservice.core.RecordServicePlannerClient;
 import com.cloudera.recordservice.core.Request;
 import com.cloudera.recordservice.mr.security.DelegationTokenIdentifier;
 import com.cloudera.recordservice.mr.security.TokenUtils;
+import org.apache.hive.hcatalog.mapreduce.HCatInputFormat;
 
 import java.io.IOException;
 import java.util.Properties;
@@ -209,4 +210,6 @@ public class HCatRSInputFormat extends HCatRSBaseInputFormat {
         "inputJobInfo is null, setInput has not yet been called to save job into conf supplied.");
     return inputInfo.getTableInfo().getDataColumns();
   }
+
+
 }

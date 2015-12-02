@@ -49,7 +49,7 @@ class HCatRecordReader extends RecordReader<WritableComparable, RecordServiceRec
   private static final Logger LOG = LoggerFactory.getLogger(HCatRecordReader.class);
 
   /** The underlying record reader to delegate to. */
-  private  RecordReader<NullWritable, RecordServiceRecord> baseRecordReader;
+  private RecordReader<NullWritable, RecordServiceRecord> baseRecordReader;
 
   /** The storage handler used */
   private final HiveStorageHandler storageHandler;
@@ -96,15 +96,14 @@ class HCatRecordReader extends RecordReader<WritableComparable, RecordServiceRec
 
     HCatUtil.copyJobPropertiesToJobConf(hcatRSSplit.getPartitionInfo().getJobProperties(), jobConf);
     HCatRSUtil.copyCredentialsToJobConf(taskContext.getCredentials(), jobConf);
-    RecordServiceInputFormat inputFormat =
-      HCatRSInputFormat.getMapRedInputFormat(jobConf);
+    RecordServiceInputFormat inputFormat = ReflectionUtils.newInstance(RecordServiceInputFormat.class, jobConf);;
     try {
       return inputFormat.createRecordReader(hcatRSSplit.getBaseSplit(), taskContext);
     }
     catch (InterruptedException e){
       LOG.error("Unable to create Record Reader", e);
+      return null;
     }
-    return null;
   }
 
   private void createDeserializer(HCatRSSplit hcatRSSplit, HiveStorageHandler storageHandler,
