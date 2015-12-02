@@ -110,6 +110,7 @@ public class HCatRSInputFormat extends HCatRSBaseInputFormat {
     } finally {
       if (planner != null) planner.close();
     }
+    job.getConfiguration().setLong("pig.maxCombinedSplitSize", 1);
     job.setInputFormatClass(HCatRSInputFormat.class);
     return setInput(job.getConfiguration(), dbName, tableName, filter);
   }

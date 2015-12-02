@@ -86,22 +86,6 @@ public class HCatTableInfo implements Serializable {
   }
 
   /**
-   * Gets the value of databaseName
-   * @return the databaseName
-   */
-  public String getDatabaseName() {
-    return databaseName;
-  }
-
-  /**
-   * Gets the value of tableName
-   * @return the tableName
-   */
-  public String getTableName() {
-    return tableName;
-  }
-
-  /**
    * @return return schema of data columns as defined in meta store
    */
   public HCatSchema getDataColumns() {
@@ -131,18 +115,6 @@ public class HCatTableInfo implements Serializable {
     return storerInfo;
   }
 
-  public String getTableLocation() {
-    return table.getSd().getLocation();
-  }
-
-  /**
-   * minimize dependency on hive classes so this is package private
-   * this should eventually no longer be used
-   * @return hive metastore representation of table
-   */
-  Table getTable() {
-    return table;
-  }
 
   /**
    * create an HCatTableInfo instance from the supplied Hive Table instance

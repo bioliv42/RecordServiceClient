@@ -88,14 +88,6 @@ public class PartInfo implements Serializable {
   }
 
   /**
-   * Gets the value of partitionSchema.
-   * @return the partitionSchema
-   */
-  public HCatSchema getPartitionSchema() {
-    return partitionSchema;
-  }
-
-  /**
    * @return the storage handler class name
    */
   public String getStorageHandlerClassName() {
@@ -123,13 +115,6 @@ public class PartInfo implements Serializable {
     return serdeClassName;
   }
 
-  /**
-   * Gets the input storage handler properties.
-   * @return HCat-specific properties set at the partition
-   */
-  public Properties getInputStorageHandlerProperties() {
-    return hcatProperties;
-  }
 
   /**
    * Gets the value of location.
@@ -145,22 +130,6 @@ public class PartInfo implements Serializable {
    */
   public void setPartitionValues(Map<String, String> partitionValues) {
     this.partitionValues = partitionValues;
-  }
-
-  /**
-   * Gets the partition values.
-   * @return the partition values
-   */
-  public Map<String, String> getPartitionValues() {
-    return partitionValues;
-  }
-
-  /**
-   * Gets the job properties.
-   * @return a map of the job properties
-   */
-  public Map<String, String> getJobProperties() {
-    return jobProperties;
   }
 
   /**

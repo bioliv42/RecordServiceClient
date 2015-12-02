@@ -20,6 +20,7 @@
 package com.cloudera.recordservice.hcatalog.mapreduce;
 
 import com.cloudera.recordservice.hcatalog.common.HCatRSUtil;
+import com.cloudera.recordservice.mapred.RecordServiceInputSplit;
 import com.cloudera.recordservice.mapreduce.RecordServiceInputFormat;
 import com.cloudera.recordservice.mr.PlanUtil;
 import com.cloudera.recordservice.mr.RecordServiceRecord;
@@ -42,9 +43,9 @@ import org.apache.hive.hcatalog.common.HCatException;
 import org.apache.hive.hcatalog.common.HCatUtil;
 import org.apache.hive.hcatalog.data.schema.HCatFieldSchema;
 import org.apache.hive.hcatalog.data.schema.HCatSchema;
+import org.apache.hive.hcatalog.mapreduce.HCatSplit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.util.*;
 
@@ -80,7 +81,7 @@ public abstract class HCatRSBaseInputFormat
    * Logically split the set of input files for the job. Returns the
    * underlying InputFormat's splits
    * @param jobContext the job context object
-   * @return the splits, an HCatRSSplit wrapper over the storage
+   * @return the splits, a RecordServiceSplit wrapper over the storage
    *         handler InputSplits
    * @throws IOException or InterruptedException
    */
@@ -113,8 +114,11 @@ public abstract class HCatRSBaseInputFormat
     InputSplit[] array = (splitsInfo.splits.toArray(new InputSplit[splitsInfo.splits.size()]));
     LOG.info("ARRAY LENGTH: " + array.length);
     LOG.info("Value of use new: " + jobConf.getUseNewMapper());
-    splits = splitsInfo.splits;
-    return splits;
+    for(StackTraceElement el: Thread.currentThread().getStackTrace())
+      LOG.info(el.getLineNumber() + "    " + el.toString());
+    LOG.info("Pig Combined Size: " + conf.getLong("pig.maxCombinedSplitSize", 0));
+    LOG.info("DONE");
+    return splitsInfo.splits;
   }
 
   /**
