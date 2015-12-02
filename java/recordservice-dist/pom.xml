@@ -80,7 +80,17 @@
       <artifactId>recordservice-examples-spark</artifactId>
       <version>${project.version}</version>
     </dependency>
-  </dependencies>
+    <dependency>
+      <groupId>com.cloudera.recordservice</groupId>
+      <artifactId>recordservice-hcatalog</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.cloudera.recordservice</groupId>
+      <artifactId>recordservice-hcatalog-pig-adapter</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+ </dependencies>
 
   <build>
     <plugins>
