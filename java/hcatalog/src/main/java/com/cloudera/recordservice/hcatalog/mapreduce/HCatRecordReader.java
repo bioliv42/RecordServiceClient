@@ -20,6 +20,7 @@ package com.cloudera.recordservice.hcatalog.mapreduce;
 
 import com.cloudera.recordservice.hcatalog.common.HCatRSUtil;
 import com.cloudera.recordservice.mapreduce.RecordServiceInputFormat;
+import com.cloudera.recordservice.mapreduce.RecordServiceInputSplit;
 import com.cloudera.recordservice.mr.RecordServiceRecord;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.ql.metadata.HiveStorageHandler;
@@ -51,18 +52,10 @@ class HCatRecordReader extends RecordReader<WritableComparable, RecordServiceRec
   /** The underlying record reader to delegate to. */
   private RecordReader<NullWritable, RecordServiceRecord> baseRecordReader;
 
-  /** The storage handler used */
-  private final HiveStorageHandler storageHandler;
-
-  private Deserializer deserializer;
-
-  private HCatSchema outputSchema = null;
-
   /**
    * Instantiates a new hcat record reader.
    */
-  public HCatRecordReader(HiveStorageHandler storageHandler) {
-    this.storageHandler = storageHandler;
+  public HCatRecordReader() {
   }
 
   /* (non-Javadoc)
@@ -73,52 +66,21 @@ class HCatRecordReader extends RecordReader<WritableComparable, RecordServiceRec
   @Override
   public void initialize(org.apache.hadoop.mapreduce.InputSplit split,
                TaskAttemptContext taskContext) throws IOException, InterruptedException {
-
-    HCatRSSplit hcatRSSplit = InternalUtil.castToHCatRSSplit(split);
-
-    baseRecordReader = createBaseRecordReader(hcatRSSplit, storageHandler, taskContext);
-    createDeserializer(hcatRSSplit, storageHandler, taskContext);
-
-    // Pull the output schema out of the TaskAttemptContext
-    outputSchema = (HCatSchema) HCatUtil.deserialize(
-      taskContext.getConfiguration().get(HCatConstants.HCAT_KEY_OUTPUT_SCHEMA));
-
-    if (outputSchema == null) {
-      outputSchema = hcatRSSplit.getTableSchema();
-    }
-
+    RecordServiceInputSplit recordServiceSplit = (RecordServiceInputSplit) split;
+    baseRecordReader = createBaseRecordReader(recordServiceSplit, taskContext);
   }
 
-  private RecordReader<NullWritable, RecordServiceRecord> createBaseRecordReader(HCatRSSplit hcatRSSplit,
-                                     HiveStorageHandler storageHandler, TaskAttemptContext taskContext) throws IOException {
-
+  private RecordReader<NullWritable, RecordServiceRecord> createBaseRecordReader(RecordServiceInputSplit recordServiceSplit,
+                                     TaskAttemptContext taskContext) throws IOException {
     JobConf jobConf = HCatUtil.getJobConfFromContext(taskContext);
-
-    HCatUtil.copyJobPropertiesToJobConf(hcatRSSplit.getPartitionInfo().getJobProperties(), jobConf);
     HCatRSUtil.copyCredentialsToJobConf(taskContext.getCredentials(), jobConf);
-    RecordServiceInputFormat inputFormat = ReflectionUtils.newInstance(RecordServiceInputFormat.class, jobConf);;
+    RecordServiceInputFormat inputFormat = ReflectionUtils.newInstance(RecordServiceInputFormat.class, jobConf);
     try {
-      return inputFormat.createRecordReader(hcatRSSplit.getBaseSplit(), taskContext);
+      return inputFormat.createRecordReader(recordServiceSplit, taskContext);
     }
     catch (InterruptedException e){
       LOG.error("Unable to create Record Reader", e);
       return null;
-    }
-  }
-
-  private void createDeserializer(HCatRSSplit hcatRSSplit, HiveStorageHandler storageHandler,
-                  TaskAttemptContext taskContext) throws IOException {
-
-    deserializer = ReflectionUtils.newInstance(storageHandler.getSerDeClass(),
-      taskContext.getConfiguration());
-
-    try {
-      InternalUtil.initializeDeserializer(deserializer, storageHandler.getConf(),
-              hcatRSSplit.getPartitionInfo().getTableInfo(),
-              hcatRSSplit.getPartitionInfo().getPartitionSchema());
-    } catch (SerDeException e) {
-      throw new IOException("Failed initializing deserializer "
-        + storageHandler.getSerDeClass().getName(), e);
     }
   }
 

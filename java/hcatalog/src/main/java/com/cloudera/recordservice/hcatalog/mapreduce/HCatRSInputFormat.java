@@ -33,6 +33,7 @@ import com.google.common.base.Preconditions;
 import org.apache.hadoop.classification.InterfaceAudience;
 import org.apache.hadoop.classification.InterfaceStability;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hive.hcatalog.common.HCatConstants;
 import org.apache.hadoop.conf.Configuration;
@@ -40,6 +41,7 @@ import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.security.Credentials;
 import org.apache.hadoop.security.token.Token;
+import org.apache.hive.hcatalog.common.HCatUtil;
 import org.apache.hive.hcatalog.data.schema.HCatSchema;
 import com.cloudera.recordservice.core.NetworkAddress;
 import com.cloudera.recordservice.core.RecordServiceException;
@@ -86,7 +88,7 @@ public class HCatRSInputFormat extends HCatRSBaseInputFormat {
       for (int i = 0; i < plannerHostPorts.size(); ++i) {
         NetworkAddress hostPort = plannerHostPorts.get(i);
         try {
-           planner = builder.connect(hostPort.hostname, hostPort.port);
+          planner = builder.connect(hostPort.hostname, hostPort.port);
         } catch (RecordServiceException e) {
           // Ignore, try next host. The errors in builder should be sufficient.
           lastException = e;
@@ -108,6 +110,7 @@ public class HCatRSInputFormat extends HCatRSBaseInputFormat {
     } finally {
       if (planner != null) planner.close();
     }
+    job.setInputFormatClass(HCatRSInputFormat.class);
     return setInput(job.getConfiguration(), dbName, tableName, filter);
   }
 
@@ -139,77 +142,5 @@ public class HCatRSInputFormat extends HCatRSBaseInputFormat {
 
     return hCatRSInputFormat;
   }
-
-  /**
-   * @deprecated as of 0.13, slated for removal with 0.15
-   * Use {@link #setInput(Configuration, String, String, String)} instead,
-   * to specify a partition filter to directly initialize the input with.
-   */
-  @Deprecated
-  public HCatRSInputFormat setFilter(String filter) throws IOException {
-    // null filters are supported to simplify client code
-    if (filter != null) {
-      inputJobInfo = InputJobInfo.create(
-        inputJobInfo.getDatabaseName(),
-        inputJobInfo.getTableName(),
-        filter,
-        inputJobInfo.getProperties());
-      try {
-        InitializeInput.setInput(conf, inputJobInfo);
-      } catch (Exception e) {
-        throw new IOException(e);
-      }
-    }
-    return this;
-  }
-
-  /**
-   * Set properties for the input format.
-   * @param properties properties for the input specification
-   * @return this
-   * @throws IOException on all errors
-   */
-  public HCatRSInputFormat setProperties(Properties properties) throws IOException {
-    Preconditions.checkNotNull(properties, "required argument 'properties' is null");
-    inputJobInfo = InputJobInfo.create(
-      inputJobInfo.getDatabaseName(),
-      inputJobInfo.getTableName(),
-      inputJobInfo.getFilter(),
-      properties);
-    try {
-      InitializeInput.setInput(conf, inputJobInfo);
-    } catch (Exception e) {
-      throw new IOException(e);
-    }
-    return this;
-  }
-
-  /**
-   * Return partitioning columns for this input, can only be called after setInput is called.
-   * @return partitioning columns of the table specified by the job.
-   * @throws IOException
-   */
-  public static HCatSchema getPartitionColumns(Configuration conf) throws IOException {
-    InputJobInfo inputInfo = (InputJobInfo) HCatRSUtil.deserialize(
-        conf.get(HCatConstants.HCAT_KEY_JOB_INFO));
-    Preconditions.checkNotNull(inputInfo,
-        "inputJobInfo is null, setInput has not yet been called to save job into conf supplied.");
-    return inputInfo.getTableInfo().getPartitionColumns();
-
-  }
-
-  /**
-   * Return data columns for this input, can only be called after setInput is called.
-   * @return data columns of the table specified by the job.
-   * @throws IOException
-   */
-  public static HCatSchema getDataColumns(Configuration conf) throws IOException {
-    InputJobInfo inputInfo = (InputJobInfo) HCatRSUtil.deserialize(
-        conf.get(HCatConstants.HCAT_KEY_JOB_INFO));
-    Preconditions.checkNotNull(inputInfo,
-        "inputJobInfo is null, setInput has not yet been called to save job into conf supplied.");
-    return inputInfo.getTableInfo().getDataColumns();
-  }
-
 
 }
