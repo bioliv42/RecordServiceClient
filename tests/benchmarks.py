@@ -20,6 +20,10 @@ import os
 
 IMPALA_SHELL_CMD = os.environ['IMPALA_HOME'] + "/bin/impala-shell.sh -i LOCALHOST -B "
 
+# TODO: right now this is used in several places (e.g., pom.xml). It would
+# be good if there's a way to only define it at one place.
+VERSION = "0.2.0-cdh5.5.x"
+
 def read_file(path):
   data = ""
   with open(path, "r") as f:
@@ -44,13 +48,13 @@ def native_client_cmd(query):
 
 def java_client_cmd(query):
   return "java -classpath " + os.environ['RECORD_SERVICE_HOME'] +\
-      "/java/examples/target/recordservice-examples-0.1.jar " +\
+      "/java/examples/target/recordservice-examples-" + VERSION + ".jar " +\
       "com.cloudera.recordservice.examples.SumQueryBenchmark " +\
       "\"" + query + "\""
 
 def mr_record_count(query, outpath):
   return "hadoop jar " + os.environ['RECORD_SERVICE_HOME'] +\
-      "/java/examples/target/recordservice-examples-0.1.jar " +\
+      "/java/examples/target/recordservice-examples-" + VERSION + ".jar " +\
       "com.cloudera.recordservice.examples.mapreduce.RecordCount " +\
       "\"" + query + "\"" + " \"" + outpath + "\""
 
@@ -64,7 +68,7 @@ def spark_record_count(query):
     "--driver-memory 20g " +\
     "--conf \"spark.driver.maxResultSize=15g\" " +\
     os.environ['RECORD_SERVICE_HOME'] +\
-    "/java/examples-spark/target/recordservice-examples-spark-0.1.jar " +\
+    "/java/examples-spark/target/recordservice-examples-spark-" + VERSION + ".jar " +\
     "\"" + query + "\""
 
 def hive_rs_cmd(query, tbl_name, fetch_size):
@@ -82,7 +86,7 @@ def hive_cmd(query):
 #TODO: I think this spends a lot of time just starting up spark.
 def spark_cmd(cl, query):
   return "java -classpath " + os.environ['RECORD_SERVICE_HOME'] +\
-      "/java/examples-spark/target/recordservice-examples-spark-0.1.jar " + cl +\
+      "/java/examples-spark/target/recordservice-examples-spark-" + VERSION + ".jar " + cl +\
       " \"" + query + "\""
 
 def spark_q1(query):
