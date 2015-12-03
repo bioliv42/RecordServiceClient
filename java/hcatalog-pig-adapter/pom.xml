@@ -6,7 +6,7 @@
  <parent>
     <groupId>com.cloudera.recordservice</groupId>
     <artifactId>recordservice</artifactId>
-    <version>0.2.0-cdh5.5.x</version>
+    <version>0.3.0-cdh5.7.x</version>
   </parent>
 
   <artifactId>recordservice-hcatalog-pig-adapter</artifactId>
