@@ -15,10 +15,19 @@
 package com.cloudera.recordservice.core;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import org.junit.Assume;
 import org.junit.Before;
@@ -523,4 +532,72 @@ public class TestKerberosConnection extends TestBase {
     assertTrue(exceptionThrown);
     worker.close();
   }
+
+  /**
+   * Test the case when there are multiple planners simultaneously generating and using
+   * delegation tokens.
+   * Note, this test assumes that all kerberos hosts that this test is using are
+   * running RS planner.
+   */
+  @Test
+  public void testMultiplePlanners() throws ExecutionException, InterruptedException,
+      RecordServiceException, IOException {
+    List<Future<Void>> futures = new ArrayList<Future<Void>>();
+    ExecutorService executorService = Executors.newFixedThreadPool(10);
+    final Random rand = new Random();
+
+    for (int i = 0; i < 20; ++i) {
+      futures.add(executorService.submit(new Callable<Void>() {
+        @Override
+        public Void call() throws Exception {
+          int idx = rand.nextInt(kerberosHosts_.length);
+          RecordServicePlannerClient plannerClient =
+              new RecordServicePlannerClient.Builder()
+                  .setKerberosPrincipal(
+                      TestUtil.makePrincipal("impala", kerberosHosts_[idx]))
+                  .connect(kerberosHosts_[idx], PLANNER_PORT);
+
+          // Try to get a delegation token
+          DelegationToken token = null;
+          try {
+            token = plannerClient.getDelegationToken("impala");
+          } catch (Exception ex) {
+            assertFalse("getDelegationToken() failed with " + ex.getMessage(), true);
+          }
+
+          // Now randomly pick another planner and connect using the token, it should
+          // be OK.
+          idx = rand.nextInt(kerberosHosts_.length);
+          try {
+            plannerClient =
+                new RecordServicePlannerClient.Builder()
+                    .setDelegationToken(token)
+                    .connect(kerberosHosts_[idx], PLANNER_PORT);
+          } catch (Exception ex) {
+            assertFalse("setDelegationToken() failed with " + ex.getMessage(), true);
+          }
+          return null;
+        }
+      }));
+    }
+
+    Throwable firstFailure = null;
+    for (Future<Void> f : futures) {
+      try {
+        f.get();
+      } catch (ExecutionException ex) {
+        firstFailure = ex.getCause();
+      }
+    }
+
+    executorService.shutdownNow();
+    while (!executorService.isTerminated()) {
+      Thread.sleep(1000);
+    }
+
+    if (firstFailure != null) {
+      assertTrue("Test failed with: " + firstFailure.getMessage(), false);
+    }
+  }
+
 }
