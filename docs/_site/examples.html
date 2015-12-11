@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>RecordService Examples • RecordService</title>
+    
+    
+    
+    
+    	<!-- Twitter Cards -->
+	<meta name="twitter:title" content="RecordService Examples">
+	
+	
+	
+	
+	<meta name="twitter:card" content="summary">
+	<meta name="twitter:image" content="/images//img/rs120x120.png">
+	
+	<!-- Open Graph -->
+	<meta property="og:locale" content="en">
+	<meta property="og:type" content="article">
+	<meta property="og:title" content="RecordService Examples">
+	
+	<meta property="og:url" content="/examples.html">
+	<meta property="og:site_name" content="RecordService">
+
+    <link rel="canonical" href="/examples.html">
+
+    <link href="/atom.xml" type="application/atom+xml" rel="alternate" title="RecordService Atom Feed">
+    <link href="/sitemap.xml" type="application/xml" rel="sitemap" title="Sitemap">
+
+    <meta name="HandheldFriendly" content="True">
+    <meta name="MobileOptimized" content="320">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="cleartype" content="on">
+
+    <link rel="stylesheet" href="/css/main.css">
+    <!-- HTML5 Shiv and Media Query Support for IE -->
+    <!--[if lt IE 9]>
+      <script src="/js/vendor/html5shiv.min.js"></script>
+      <script src="/js/vendor/respond.min.js"></script>
+    <![endif]-->
+
+  </head>
+
+  <body id="js-body">
+    <!--[if lt IE 9]><div class="upgrade notice-warning"><strong>Your browser is quite old!</strong> Why not <a href="http://whatbrowser.org/">upgrade to a newer one</a> to better enjoy this site?</div><![endif]-->
+
+    <header id="masthead">
+  <div class="inner-wrap" >
+<img src="/img/rs120x120.png" height="48" width="48" align="left"/> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="/" class="site-title">RecordService</a>
+
+    <nav role="navigation" class="menu top-menu">
+        <ul class="menu-item">
+	<li class="home"><a href="/">RecordService</a></li>
+	
+    
+        
+    
+
+    <li><a href="/overview.html" >Overview</a></li>
+
+  
+    
+        
+    
+
+    <li><a href="/ReleaseNotes.html" >Release</a></li>
+
+  
+    
+        
+    
+
+    <li><a href="/betastart.html" >Get Started</a></li>
+
+  
+    
+        
+    
+
+    <li><a href="/examples.html" >Examples</a></li>
+
+  
+    
+        
+    
+
+    <li><a href="/faq.html" >FAQ</a></li>
+
+  
+    
+        
+    
+
+    <li><a href="/getin.html" >Join In</a></li>
+
+  
+</ul>
+
+    </nav>
+</div><!-- /.inner-wrap -->
+</header><!-- /.masthead -->
+    <nav role="navigation" id="js-menu" class="sliding-menu-content">
+  <h5>RecordService <span>Table of Contents</span></h5>
+  <ul class="menu-item">
+    <li>
+      <a href="/overview.html">
+        
+        <div class="title">Overview</div>
+        
+      </a>
+    </li><li>
+      <a href="/ReleaseNotes.html">
+        
+        <div class="title">Release</div>
+        
+      </a>
+    </li><li>
+      <a href="/betastart.html">
+        
+        <div class="title">Get Started</div>
+        
+      </a>
+    </li><li>
+      <a href="/examples.html">
+        
+        <div class="title">Examples</div>
+        
+      </a>
+    </li><li>
+      <a href="/faq.html">
+        
+        <div class="title">FAQ</div>
+        
+      </a>
+    </li><li>
+      <a href="/getin.html">
+        
+        <div class="title">Join In</div>
+        
+      </a>
+    </li>
+  </ul>
+</nav>
+<button type="button" id="js-menu-trigger" class="sliding-menu-button lines-button x2" role="button" aria-label="Toggle Navigation">
+  <span class="nav-lines"></span>
+</button>
+
+<div id="js-menu-screen" class="menu-screen"></div>
+
+
+    <div id="page-wrapper">
+      <div id="main" role="main">
+	<article class="wrap" itemscope itemtype="http://schema.org/Article">
+		
+		
+		<div class="page-title">
+			<h1>RecordService Examples</h1>
+		</div>
+		<div class="inner-wrap">
+			<div id="content" class="page-content" itemprop="articleBody">
+				<p>You can find the source code for RecordService examples in the RecordService Client GitHub repository.</p>
+
+<p><a href="https://github.com/cloudera/RecordServiceClient/tree/master/java/examples">https://github.com/cloudera/RecordServiceClient/tree/master/java/examples</a></p>
+
+<p>Instructions for running the examples are stored in the repository with the source code.</p>
+
+<nav class="toc">
+<ul id="markdown-toc">
+  <li><a href="#hadoop-and-mapreduce-examples" id="markdown-toc-hadoop-and-mapreduce-examples">Hadoop and MapReduce Examples</a></li>
+  <li><a href="#recordservice-spark-examples" id="markdown-toc-recordservice-spark-examples">RecordService Spark Examples</a></li>
+</ul>
+
+</nav>
+
+<h2 id="hadoop-and-mapreduce-examples">Hadoop and MapReduce Examples</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: left">Example</th>
+      <th style="text-align: left">Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: left">RSCat</td>
+      <td style="text-align: left">This example shows how you can output tabular data for any dataset readable by RecordService. It demonstrates a standalone Java application built on the core libraries without using a computation framework such as MapReduce or Spark.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">SumQueryBenchmark</td>
+      <td style="text-align: left">This demonstrates running a sum over a column and pushing the scan to RecordService. It shows how you can use RecordService to accelerate scan-intensive operations.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">Terasort</td>
+      <td style="text-align: left">This is a port of the Hadoop <a href="https://hadoop.apache.org/docs/current/api/org/apache/hadoop/examples/terasort/package-summary.html">Terasort</a> benchmark test ported to RecordService. See README in the Terasort package for more details. This also demonstrates how to implement a custom InputFormat using the RecordService APIs.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">MapredColorCount / MapreduceAgeCount / MapReduceColorCount</td>
+      <td style="text-align: left">These examples are ported from Apache Avro. They demonstrate the steps required to port an existing Avro-based MapReduce job to use RecordService.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">RecordCount/WordCount</td>
+      <td style="text-align: left">More MapReduce applications that demonstrate some other InputFormats included in the client library, including TextInputFormat and RecordServiceInputformat. Useful for existing MapReduce jobs already using TextInputFormat.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">Reading data from a View, and Enforcing Sentry Permissions  (uses RecordCount)</td>
+      <td style="text-align: left">This example demonstrates how an MR job can now read data even when the user only has permission to see part of the data in a file (table). See <a href="https://github.com/cloudera/RecordServiceClient/tree/master/java/examples#how-to-enforce-sentry-permissions-with-mapreduce">https://github.com/cloudera/RecordServiceClient/tree/master/java/examples#how-to-enforce-sentry-permissions-with-mapreduce</a></td>
+    </tr>
+    <tr>
+      <td style="text-align: left">com.cloudera.recordservice.examples.avro</td>
+      <td style="text-align: left">Unmodified from the Apache Avro examples, these utilities help you generate sample data.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="recordservice-spark-examples">RecordService Spark Examples</h2>
+
+<p>The following examples can be found at <a href="https://github.com/cloudera/RecordServiceClient/tree/master/java/examples-spark">https://github.com/cloudera/RecordServiceClient/tree/master/java/examples-spark</a>.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: left">Example</th>
+      <th style="text-align: left">Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: left">Query1/Query2</td>
+      <td style="text-align: left">Examples that demonstrate RecordService native RDD Resilient Distributed Dataset (RDD) integration using RecordServiceRDD.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">WordCount</td>
+      <td style="text-align: left">The Hadoop WordCount example built on top of the RecordService equivalent of textFile().</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">SchemaRDDExample</td>
+      <td style="text-align: left">Another example of the native RDD integration, this time using SchemaRecordServiceRDD.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">TeraChecksum</td>
+      <td style="text-align: left">This example uses hadoopFile() with the RecordService InputFormats. This is a port of the TeraChecksum MapReduce job, written in Spark.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">TpcdsBenchmark</td>
+      <td style="text-align: left">This demonstrates the SparkSQL integration running a portion of the tpcds benchmark.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">DataFrameExample</td>
+      <td style="text-align: left">An example that demonstrates DataFrames and RecordService working together.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">How to use RecordService with Spark shell</td>
+      <td style="text-align: left">Examples of using spark-shell to interact with RecordService in a variety of ways.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">Reading Data from a View and Enforcing Sentry Permissions</td>
+      <td style="text-align: left">This example demonstrates how an MR job may now read data even when the user only has permission to see part of the data in a file (table). See <a href="https://github.com/cloudera/RecordServiceClient/blob/master/java/examples-spark/README.md#how-to-enforce-sentry-permissions-with-spark">ReadMe.md</a></td>
+    </tr>
+  </tbody>
+</table>
+
+
+				<hr />
+				<footer class="page-footer">
+					
+					
+					
+				</footer><!-- /.footer -->
+				<aside>
+					
+				</aside>
+			</div><!-- /.content -->
+		</div><!-- /.inner-wrap -->
+		
+	</article><!-- ./wrap -->
+</div><!-- /#main -->
+
+      <footer role="contentinfo" id="site-footer">
+	<nav role="navigation" class="menu bottom-menu">
+		<ul class="menu-item">
+		
+      
+        
+        
+			<li><a href="http://www.cloudera.com" target="_blank">Cloudera</a></li>
+		
+		</ul>
+	</nav><!-- /.bottom-menu -->
+	<p class="copyright">&#169; 2015 <a href="">RecordService</a> powered by <a href="http://jekyllrb.com" rel="nofollow">Jekyll</a> + <a href="http://mmistakes.github.io/skinny-bones-jekyll/" rel="nofollow">Skinny Bones</a>.</p>
+</footer>
+    </div>
+
+    <script src="/js/vendor/jquery-1.9.1.min.js"></script>
+    <script src="/js/main.js"></script>
+
+  </body>
+
+</html>
