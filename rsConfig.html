@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Configuring RecordService • RecordService</title>
+    
+    
+    
+    
+    	<!-- Twitter Cards -->
+	<meta name="twitter:title" content="Configuring RecordService">
+	
+	
+	
+	
+	<meta name="twitter:card" content="summary">
+	<meta name="twitter:image" content="/images//img/rs120x120.png">
+	
+	<!-- Open Graph -->
+	<meta property="og:locale" content="en">
+	<meta property="og:type" content="article">
+	<meta property="og:title" content="Configuring RecordService">
+	
+	<meta property="og:url" content="/rsConfig.html">
+	<meta property="og:site_name" content="RecordService">
+
+    <link rel="canonical" href="/rsConfig.html">
+
+    <link href="/atom.xml" type="application/atom+xml" rel="alternate" title="RecordService Atom Feed">
+    <link href="/sitemap.xml" type="application/xml" rel="sitemap" title="Sitemap">
+
+    <meta name="HandheldFriendly" content="True">
+    <meta name="MobileOptimized" content="320">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="cleartype" content="on">
+
+    <link rel="stylesheet" href="/css/main.css">
+    <!-- HTML5 Shiv and Media Query Support for IE -->
+    <!--[if lt IE 9]>
+      <script src="/js/vendor/html5shiv.min.js"></script>
+      <script src="/js/vendor/respond.min.js"></script>
+    <![endif]-->
+
+  </head>
+
+  <body id="js-body">
+    <!--[if lt IE 9]><div class="upgrade notice-warning"><strong>Your browser is quite old!</strong> Why not <a href="http://whatbrowser.org/">upgrade to a newer one</a> to better enjoy this site?</div><![endif]-->
+
+    <header id="masthead">
+  <div class="inner-wrap" >
+<img src="/img/rs120x120.png" height="48" width="48" align="left"/> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="/" class="site-title">RecordService</a>
+
+    <nav role="navigation" class="menu top-menu">
+        <ul class="menu-item">
+	<li class="home"><a href="/">RecordService</a></li>
+	
+    
+        
+    
+
+    <li><a href="/overview.html" >Overview</a></li>
+
+  
+    
+        
+    
+
+    <li><a href="/ReleaseNotes.html" >Release</a></li>
+
+  
+    
+        
+    
+
+    <li><a href="/betastart.html" >Get Started</a></li>
+
+  
+    
+        
+    
+
+    <li><a href="/examples.html" >Examples</a></li>
+
+  
+    
+        
+    
+
+    <li><a href="/faq.html" >FAQ</a></li>
+
+  
+    
+        
+    
+
+    <li><a href="/getin.html" >Join In</a></li>
+
+  
+</ul>
+
+    </nav>
+</div><!-- /.inner-wrap -->
+</header><!-- /.masthead -->
+    <nav role="navigation" id="js-menu" class="sliding-menu-content">
+  <h5>RecordService <span>Table of Contents</span></h5>
+  <ul class="menu-item">
+    <li>
+      <a href="/overview.html">
+        
+        <div class="title">Overview</div>
+        
+      </a>
+    </li><li>
+      <a href="/ReleaseNotes.html">
+        
+        <div class="title">Release</div>
+        
+      </a>
+    </li><li>
+      <a href="/betastart.html">
+        
+        <div class="title">Get Started</div>
+        
+      </a>
+    </li><li>
+      <a href="/examples.html">
+        
+        <div class="title">Examples</div>
+        
+      </a>
+    </li><li>
+      <a href="/faq.html">
+        
+        <div class="title">FAQ</div>
+        
+      </a>
+    </li><li>
+      <a href="/getin.html">
+        
+        <div class="title">Join In</div>
+        
+      </a>
+    </li>
+  </ul>
+</nav>
+<button type="button" id="js-menu-trigger" class="sliding-menu-button lines-button x2" role="button" aria-label="Toggle Navigation">
+  <span class="nav-lines"></span>
+</button>
+
+<div id="js-menu-screen" class="menu-screen"></div>
+
+
+    <div id="page-wrapper">
+      <div id="main" role="main">
+	<article class="wrap" itemscope itemtype="http://schema.org/Article">
+		
+		
+		<div class="page-title">
+			<h1>Configuring RecordService</h1>
+		</div>
+		<div class="inner-wrap">
+			<div id="content" class="page-content" itemprop="articleBody">
+				<nav class="toc">
+<ul id="markdown-toc">
+  <li><a href="#client-configurations" id="markdown-toc-client-configurations">Client Configurations</a></li>
+  <li><a href="#server-configurations" id="markdown-toc-server-configurations">Server Configurations</a>    <ul>
+      <li><a href="#kerberos-configuration" id="markdown-toc-kerberos-configuration">Kerberos Configuration</a></li>
+      <li><a href="#sentry-table-configuration" id="markdown-toc-sentry-table-configuration">Sentry Table Configuration</a></li>
+      <li><a href="#delegation-token-configuration" id="markdown-toc-delegation-token-configuration">Delegation Token Configuration</a></li>
+    </ul>
+  </li>
+</ul>
+
+</nav>
+
+<h2 id="client-configurations">Client Configurations</h2>
+
+<p>While it should not be necessary to change the default configuration, you have the option modifying RecordService properties.</p>
+
+<p>To change any of the setting listed below:</p>
+
+<ol>
+<li>In Cloudera Manager, navigate to the RecordService configuration page.
+</li>
+<li>
+Search for <code>Safety Valve</code>.
+</li>
+<li>In the search results, look for <b>RecordService (Beta) Client Advanced Configuration Snippet (Safety Valve) for recordservice-conf/recordservice-site.xml</b>. 
+</li>
+<li> Add or change the value in the field provided. For example, to change <code>recordservice.task.fetch.size</code> to <code>1000</code>, add the following code:
+<br /><pre>
+&lt;property&gt;
+  &lt;name&gt;recordservice.task.fetch.size&lt;/name&gt;
+  &lt;value&gt;1000&lt;/value&gt;
+&lt;/property&gt;
+</pre>
+</li>
+<li>Click <b>Save Changes</b>.
+</li>
+<li>From the <b>Actions</b> menu, choose <b>Deploy Client Configuration</b>.
+</li>
+</ol>
+
+<p>For more information, see <a href="http://www.cloudera.com/content/www/en-us/documentation/enterprise/latest/topics/cm_mc_mod_configs.html">Modifying Configuration Properties Using Cloudera Manager</a>.</p>
+
+<p>These are the configuration settings you can (optionally) adjust in your RecordService instance.</p>
+
+<table border="1">    
+<tr><th>CATEGORY</th><th>PARAMETER</th><th>DESCRIPTION</th><th> DEFAULT VALUE </th></tr>
+<tr align="left"><td style="vertical-align:top">Connectivity</td><td style="vertical-align:top">recordservice.planner.hostports</td><td style="vertical-align:top">Comma separated list of planner service host/ports.</td><td style="vertical-align:top">localhost:12050</td></tr>
+
+<tr align="left"><td style="vertical-align:top">Connectivity</td><td style="vertical-align:top">recordservice.kerberos.principal</td><td style="vertical-align:top">Kerberos principal for the planner service. Required if using Kerberos.</td><td style="vertical-align:top"></td></tr>
+
+<tr align="left"><td style="vertical-align:top">Connectivity</td><td style="vertical-align:top">recordservice.planner.retry.attempts</td><td style="vertical-align:top">Maximum number of attempts to retry RecordService RPCs with Planner.</td><td style="vertical-align:top">3</td></tr>
+
+<tr align="left"><td style="vertical-align:top">Connectivity</td><td style="vertical-align:top">recordservice.planner.retry.sleepMs</td><td style="vertical-align:top">Sleep between retry attempts with Planner in milliseconds.</td><td style="vertical-align:top">5000</td></tr>
+
+<tr align="left"><td style="vertical-align:top">Connectivity</td><td style="vertical-align:top">recordservice.planner.connection.timeoutMs</td><td style="vertical-align:top">Timeout when connecting to the Planner service in milliseconds.</td><td style="vertical-align:top">30000</td></tr>
+
+<tr align="left"><td style="vertical-align:top">Connectivity</td><td style="vertical-align:top">recordservice.planner.rpc.timeoutMs</td><td style="vertical-align:top">Timeout for Planner RPCs in milliseconds.</td><td style="vertical-align:top">120000</td></tr>
+
+<tr align="left"><td style="vertical-align:top">Connectivity</td><td style="vertical-align:top">recordservice.worker.retry.attempts</td><td style="vertical-align:top">Maximum number of attempts to retry RecordService RPCs with a Worker.</td><td style="vertical-align:top">3</td></tr>
+
+<tr align="left"><td style="vertical-align:top">Connectivity</td><td style="vertical-align:top">recordservice.worker.retry.sleepMs</td><td style="vertical-align:top">Sleep in milliseconds between retry attempts with Worker.</td><td style="vertical-align:top">5000</td></tr>
+
+<tr align="left"><td style="vertical-align:top">Connectivity</td><td style="vertical-align:top">recordservice.worker.connection.timeoutMs</td><td style="vertical-align:top">Timeout when connecting to the Worker service in milliseconds.</td><td style="vertical-align:top">10000</td></tr>
+
+<tr align="left"><td style="vertical-align:top">Connectivity</td><td style="vertical-align:top">recordservice.worker.rpc.timeoutMs</td><td style="vertical-align:top">Timeout for Worker RPCs in milliseconds.</td><td style="vertical-align:top">120000</td></tr>
+
+<tr align="left"><td style="vertical-align:top">Performance</td><td style="vertical-align:top">recordservice.task.fetch.size</td><td style="vertical-align:top">Configures the maximum number of records returned when fetching results from the RecordService. If not set, the server default is used. <br /><br />
+Note: This might need to be adjusted according to the type of workloads (MR, Spark, etc), due to the differences in the data processing speed.</td><td style="vertical-align:top">5000</td></tr>
+
+<tr align="left"><td style="vertical-align:top">Resource Management</td><td style="vertical-align:top">recordservice.task.memlimit.bytes</td><td style="vertical-align:top">Maximum memory the server should use per task. Tasks exceeding this limit are aborted.  If not set, the server process limit is used.</td><td style="vertical-align:top">-1 (Unlimited)</td></tr>
+
+<tr align="left"><td style="vertical-align:top">Resource Management</td><td style="vertical-align:top">recordservice.task.plan.maxTasks</td><td style="vertical-align:top">Hint for maximum number of tasks to generate per PlanRequest. This is not strictly enforced by the server, but is used to determine if task combining should occur. This value might need to be set for large datasets.</td><td style="vertical-align:top">-1 (Unlimited)</td></tr>
+
+<tr align="left"><td style="vertical-align:top">Resource Management (Advanced)</td><td style="vertical-align:top">recordservice.task.records.limit</td><td style="vertical-align:top">Maximum number of records returned per task.</td><td style="vertical-align:top">-1 (Unlimited)</td></tr>
+
+<tr align="left"><td style="vertical-align:top">Logging (Advanced)</td><td style="vertical-align:top">recordservice.worker.server.enableLogging</td><td style="vertical-align:top">Enable server logging (logging level from Log4j).</td><td style="vertical-align:top">FALSE</td></tr>
+</table>
+
+<h2 id="server-configurations">Server Configurations</h2>
+
+<p>The properties listed on the Cloudera Manager RecordService Configuration page are the ones Cloudera considers the most reasonable to change. However, adjusting these values should not be necessary. Very advanced administrators might consider making minor adjustments.</p>
+
+<h3 id="kerberos-configuration">Kerberos Configuration</h3>
+
+<p>No special configuration is required via Cloudera Manager. Enabling Kerberos on the cluster configures everything.</p>
+
+<h3 id="sentry-table-configuration">Sentry Table Configuration</h3>
+
+<p>Sentry is configured for you in the RecordService VM. This section describes how to configure Sentry in a  non-VM deployment.</p>
+
+<h4 id="prerequisite">Prerequisite</h4>
+
+<p>Follow CDH documentation to install Sentry and enable it for Hive (and Impala, if applicable).</p>
+
+<p>See <a href="http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topics/sg_sentry_service_install.html">http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topics/sg_sentry_service_install.html</a>.</p>
+
+<h4 id="configure-sentry-with-recordservice">Configure Sentry with RecordService</h4>
+
+<ol>
+<li>Enable RecordService to read policy metadata from Sentry:
+    <ul>
+    <li>In Cloudera Manager, navigate to the <b>Sentry Configuration</b> page.</li>
+    <li>In <b>Admin Groups</b>, add the user <i>recordservice</i>.</li>
+    <li>In <b>Allowed Connecting Users</b>, add the user <i>recordservice</i>.</li>
+    </ul></li>
+<li>Save changes.</li>
+<li>Enable Sentry for RecordService.
+    <ul>
+    <li>In Cloudera Manager, navigate to <b>RecordService Configuration</b>.</li>
+    <li>Select the <b>Sentry-1</b> service.</li>
+    <li>In the <b>Configuration Snippet (Safety Valve) for sentry-site.xml</b> field, enter the following settings.</li>
+    </ul>
+
+
+<pre>
+&lt;property&gt;
+    &lt;name&gt;sentry.service.server.principal&lt;/name&gt;
+    &lt;value&gt;sentry/_HOST@principal&lt;/value&gt;
+&lt;/property&gt;
+
+&lt;property&gt;
+    &lt;name&gt;sentry.service.security.mode&lt;/name&gt;
+    &lt;value&gt;kerberos&lt;/value&gt;
+&lt;/property&gt;
+
+&lt;property&gt;
+    &lt;name&gt;sentry.service.client.server.rpc-address&lt;/name&gt;
+    &lt;value&gt;hostname&lt;/value&gt;
+&lt;/property&gt;
+
+&lt;property&gt;
+    &lt;name&gt;sentry.service.client.server.rpc-port&lt;/name&gt;
+    &lt;value&gt;portnum&lt;/value&gt;
+&lt;/property&gt;
+
+&lt;property&gt;
+    &lt;name&gt;hive.sentry.server&lt;/name&gt;
+    &lt;value&gt;server1&lt;/value&gt;
+&lt;/property&gt;
+</pre>
+
+</li>
+<li>Save changes.</li>
+<li>Restart the Sentry and RecordService services.</li>
+</ol>
+
+<h3 id="delegation-token-configuration">Delegation Token Configuration</h3>
+
+<p>No special configuration is required with Cloudera Manager. This is enabled automatically if the cluster is kerberized.</p>
+
+<p>RecordService persists state in Zookeeper, by default, under the /recordservice Zookeeper directory. If this directory is already in use, you can configure the directory with <code>recordservice.zookeeper.znode</code>. This is a Hadoop style XML configuration that you can add to the advanced service configuration snippet.</p>
+
+				<hr />
+				<footer class="page-footer">
+					
+					
+					
+				</footer><!-- /.footer -->
+				<aside>
+					
+				</aside>
+			</div><!-- /.content -->
+		</div><!-- /.inner-wrap -->
+		
+	</article><!-- ./wrap -->
+</div><!-- /#main -->
+
+      <footer role="contentinfo" id="site-footer">
+	<nav role="navigation" class="menu bottom-menu">
+		<ul class="menu-item">
+		
+      
+        
+        
+			<li><a href="http://www.cloudera.com" target="_blank">Cloudera</a></li>
+		
+		</ul>
+	</nav><!-- /.bottom-menu -->
+	<p class="copyright">&#169; 2015 <a href="">RecordService</a> powered by <a href="http://jekyllrb.com" rel="nofollow">Jekyll</a> + <a href="http://mmistakes.github.io/skinny-bones-jekyll/" rel="nofollow">Skinny Bones</a>.</p>
+</footer>
+    </div>
+
+    <script src="/js/vendor/jquery-1.9.1.min.js"></script>
+    <script src="/js/main.js"></script>
+
+  </body>
+
+</html>

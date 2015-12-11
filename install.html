@@ -1,435 +1,198 @@
 <!DOCTYPE html>
 <html>
-
   <head>
     <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>Download and Install RecordService</title>
-    <meta name="viewport" content="width=device-width">
-    <meta name="description" content="An abstraction layer between storage managers (for example, HDFS, HBase, Kudu) and compute frameworks (for example, MapReduce, Spark, Hive).">
-    <link rel="canonical" href="http://github.mtv.cloudera.com/CDH/RecordServiceClient/RecordServiceClient/install.html">
-
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="/RecordServiceClient/css/main.css">
-    <link href='http://fonts.googleapis.com/css?family=Raleway:200,400,500,600,700' rel='stylesheet' type='text/css'>
-    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
-
-</head>
-
-
-    <body>
-
-    <header class="site-header">
-
-  <div class="wrap">
-
-    <a class="site-title" href="/RecordServiceClient/"><img src="img/rs.png" height="25%" width="25%" align="left"></a>
-<br/><br/>An abstraction layer between storage managers (for example, HDFS, HBase, Kudu) and compute frameworks (for example, MapReduce, Spark, Hive).
-    <nav class="site-nav">
-      <a href="#" class="menu-icon">
-        <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
-           viewBox="0 0 18 15" enable-background="new 0 0 18 15" xml:space="preserve">
-          <path fill="#505050" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0
-            h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
-          <path fill="#505050" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484
-            h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
-          <path fill="#505050" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0
-            c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
-        </svg>
-      </a>
-    </nav>
-
-  </div>
-<div>
-
-</div>
-</header>
-
-
-    <div class="page-content">
-      
-      <div class="sidebar">
-      
-        <h4>Overview</h4>
-        <ul>
-          
-        </ul>
-      
-        <h4></h4>
-        <ul>
-          
-          
-          <li><a href="/RecordServiceClient/index.html">Introduction</a></li>
-          
-          
-          
-          <li><a href="/RecordServiceClient/betastart.html">Getting Started</a></li>
-          
-          
-          
-          <li><a href="/RecordServiceClient/ReleaseNotes.html">Beta Release Notes</a></li>
-          
-          
-        </ul>
-      
-        <h4>Installation</h4>
-        <ul>
-          
-        </ul>
-      
-        <h4></h4>
-        <ul>
-          
-          
-          <li><b>Download RecordService</b></li>
-          
-          
-          
-          <li><a href="/RecordServiceClient/configure.html">Configure RecordService</a></li>
-          
-          
-          
-          <li><a href="/RecordServiceClient/vm.html">Download VM</a></li>
-          
-          
-        </ul>
-      
-        <h4>Demonstration</h4>
-        <ul>
-          
-        </ul>
-      
-        <h4></h4>
-        <ul>
-          
-          
-          <li><a href="/RecordServiceClient/appint.html">Application Integration</a></li>
-          
-          
-          
-          <li><a href="/RecordServiceClient/examples.html">Run Examples</a></li>
-          
-          
-        </ul>
-      
-        <h4>Resources</h4>
-        <ul>
-          
-        </ul>
-      
-        <h4></h4>
-        <ul>
-          
-          
-          <li><a href="/RecordServiceClient/faq.html">FAQ</a></li>
-          
-          
-          
-          <li><a href="/RecordServiceClient/getin.html">Get Involved</a></li>
-          
-          
-        </ul>
-      
-      </div>
-      
-
-      <div class="wrap">
-      <div class="post">
-
-  <header class="post-header">
-    <h1>Download and Install RecordService</h1>
-  </header>
-
-  <article class="post-content">
-  <p>Use these instructions to install RecordService in an existing Hadoop cluster. You can also use the RecordService VM if you want to quickly install and explore the features of RecordService.</p>
-
-<p>See <a href="/RecordServiceClient/vm.html">Download and Install RecordService VM</a>.</p>
-
-<h2 id="download-recordservice">Download RecordService</h2>
-
-<p>Use these instructions to install RecordService. Cloudera recommends that you install Cloudera Manager on your cluster, so that you can download and install RecordService as an add-on service in Cloudera Manager.</p>
-
-<h2 id="installing-recordservice-as-an-add-on-service-in-cloudera-manager">Installing RecordService as an Add-on Service in Cloudera Manager</h2>
-
-<p>You can install RecordService as an <a href="http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topics/cm_mc_addon_services.html">Add-on Service</a> in Cloudera Manager. First, install both the custom service descriptor (CSD) and the parcel in Cloudera Manager; then, add RecordService as an add-on service from the home page in Cloudera Manager.<br />
-See <a href="http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topics/cm_mc_addon_services.html">http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topics/cm_mc_addon_services.html</a>.</p>
-
-<h3 id="installing-the-recordservice-csd">Installing the RecordService CSD</h3>
-
-<p>Follow these steps to install the RecordService CSD.</p>
-
-<ol>
-  <li>Download the CSD from <a href="http://archive.cloudera.com/beta/recordservice/csd">http://archive.cloudera.com/beta/recordservice/csd</a>.</li>
-  <li>Upload the CSD to <code>/opt/cloudera/csd</code> in the Cloudera Manager server.</li>
-  <li>Change the owner and group for the JAR using the following comamand-line instruction:<br />
-<code>
-chown cloudera-scm:cloudera-scm /opt/cloudera/csd/RECORD_SERVICE-1.0.jar
-</code></li>
-  <li>Update the permissions on the file using the following command-line instruction:<br />
-<code>
-chmod 644 /opt/cloudera/csd/RECORD_SERVICE-1.0.jar
-</code></li>
-  <li>Restart the Cloudera Manager server:
-    <ol>
-      <li>As the root user on the Cloudera Manager server, run <code>service cloudera-scm-server restart</code>.</li>
-      <li>Log in to the Cloudera Manager Admin Console and restart the Cloudera Manager Service.</li>
-    </ol>
-  </li>
-  <li>Check whether the CSD successfully installed in <code>http://{cm-server}:7180/cmf/csd/refresh</code>. Search for the following entry:</li>
-</ol>
-
-<pre><code>{
-csdName: "RECORD_SERVICE-1.0",
-serviceType: "RECORD_SERVICE",
-source: "/opt/cloudera/csd/RECORD_SERVICE-1.0.jar",
-isInstalled: true
-}
-</code></pre>
-
-<p>See <a href="http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topics/cm_mc_addon_services.html">http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topics/cm_mc_addon_services.html</a>.</p>
-
-<h3 id="parcel-installation">Parcel Installation</h3>
-
-<p>Follow these steps to install the RecordService Parcel.</p>
-
-<ol>
-  <li>Go to <code>http://{cm-server}:7180/cmf/parcel/status</code>.</li>
-  <li>Click <strong>Edit Settings</strong>.</li>
-  <li>Add the RecordService repository url <code>http://archive.cloudera.com/beta/recordservice/parcels/latest</code> to <strong>Remote Parcel Repository URLs</strong>.</li>
-  <li>Open the Cloudera Manager <strong>Parcel</strong> status page, <code>http://{cm-server}:7180/cmf/parcel/status</code>. </li>
-  <li><strong>Download</strong> the RecordService parcel.</li>
-  <li><strong>Distribute</strong> the parcel.</li>
-  <li><strong>Activate</strong> the parcel. Cloudera Manager asks you to restart the entire cluster, but you only need to start/restart RecordService.</li>
-</ol>
-
-<p>See <a href="http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topics/cm_ig_parcels.html">http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topics/cm_ig_parcels.html</a></p>
-
-<h3 id="cloudera-manager-deployment">Cloudera Manager Deployment</h3>
-
-<p>Follow these steps to start RecordService for a cluster from Cloudera Manager.</p>
-
-<ol>
-  <li>Add a service from the Cloudera Manager home page.</li>
-  <li>Customize role: 
-    <ul>
-      <li>RecordService Planner and Worker: Select hosts with both the role of DN and NN.</li>
-      <li>RecordService Planner: Select hosts with the role of NN.</li>
-      <li>RecordService Worker: Select hosts with the role of DN.</li>
-    </ul>
-  </li>
-  <li>Review and modify configuration settings, such as <em>log dir</em> and <em>planner port</em>.
-    <ul>
-      <li>If Sentry is enabled in the cluster, add the following configuration to the field <strong>Configuration Snippet (Safety Valve) for sentry-site.xml</strong>.
-        <pre>
-&lt;property&gt;
-  &lt;name&gt;sentry.service.server.principal&lt;/name&gt;
-  &lt;value&gt;sentry/_HOST@principal&lt;/value&gt;
-&lt;/property&gt;
-&lt;property&gt;
- &lt;name&gt;sentry.service.security.mode&lt;/name&gt;
- &lt;value&gt;kerberos&lt;/value&gt;
-&lt;/property&gt;
-&lt;property&gt;
- &lt;name&gt;sentry.service.client.server.rpc-address&lt;/name&gt;
- &lt;value&gt;hostname&lt;/value&gt;
-&lt;/property&gt;
-&lt;property&gt;
- &lt;name&gt;sentry.service.client.server.rpc-port&lt;/name&gt;
- &lt;value&gt;portnum&lt;/value&gt;
-&lt;/property&gt;
-&lt;property&gt;
- &lt;name&gt;hive.sentry.server&lt;/name&gt;
- &lt;value&gt;server1&lt;/value&gt;
-&lt;/property&gt;
-  </pre>
-      </li>
-    </ul>
-  </li>
-  <li>Start the service.</li>
-  <li>Go to the debug page hostname:11050 to verify that the service started properly. </li>
-  <li>Go to the RecordService cluster page in Cloudera Manager.</li>
-  <li>From <strong>Actions</strong> choose <strong>Deploy Client Configuration</strong>.</li>
-  <li>Run the following command on the host where you run the RecordService client:</li>
-</ol>
-
-<pre><code>export HADOOP_CONF_DIR=/etc/recordservice/conf
-</code></pre>
-
-<p>See <a href="http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topics/cm_mc_add_service.html?scroll=cmug_topic_5_1">http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topics/cm_mc_add_service.html?scroll=cmug_topic_5_1</a>.</p>
-
-<h3 id="recordservice-role-deployment-recommendations">RecordService Role Deployment Recommendations</h3>
-
-<p><strong>RecordService Planner</strong>: Clients (MapReduce and Spark) connect to the Planner to submit requests. The Planner performs authorization checks and generates all tasks to execute for the overall request. For the beta release, run only one Planner node located on a non-DataNode.</p>
-
-<p><strong>RecordService Worker</strong>: Read data from the underlying storage layer (HDFS/S3) and construct records. Worker roles cannot directly process client requests. Run a Worker on every DataNode in the cluster to ensure locality.</p>
-
-<p><strong>RecordService Planner Worker</strong>: Acts as both a Planner and a Worker. Provides flexibility for small clusters. </p>
-
-<p><strong>RecordService Gateway</strong>: Contains configuration information, such as the location of the RecordService Planner. Deploy to all Gateway nodes, and any other nodes that run client jobs that do not already have a RecordService Planner or Worker role deployed.</p>
-
-<h3 id="run-a-job-using-recordservice">Run a Job Using RecordService</h3>
-
-<p>You can verify the RecordService server installation by running examples from the client JAR.</p>
-
-<ol>
-  <li>Download the client library and example tarball. <a href="http://archive.cloudera.com/beta/recordservice/client-dist/recordservice-client-0.1-bin.tar.gz">http://archive.cloudera.com/beta/recordservice/client-dist/recordservice-client-0.1-bin.tar.gz</a>
-    <ul>
-      <li>You can also build the client library yourself from the client repository. <a href="http://github.mtv.cloudera.com/CDH/RecordServiceClient">http://github.mtv.cloudera.com/CDH/RecordServiceClient</a>.</li>
-      <li>Client libraries are also available directly from the Cloudera public Maven repository.</li>
-    </ul>
-  </li>
-  <li>To verify the server installation, run client examples in your clusters.</li>
-</ol>
-
-<li>Log in to one of the nodes in your cluster, and load test data:</li>
-
-<pre><code>    &gt; wget -q --no-clobber \ 
-      https://s3-us-west-1.amazonaws.com/recordservice-vm/tpch.tar.gz 
-    &gt; tar -xzf tpch.tar.gz
-    &gt; hadoop fs -mkdir -p /test-warehouse/tpch.nation
-    &gt; hadoop fs -put -f tpch/nation/* /test-warehouse/tpch.nation/ 
-    &gt; impala-shell -f create-tbls.sql
-</code></pre>
-
-<p>See  <a href="https://github.com/cloudera/RecordServiceClient/blob/master/tests/create-tbls.sql">https://github.com/cloudera/RecordServiceClient/blob/master/tests/create-tbls.sql</a>.</p>
-
-<li>Run a MapReduce job for RecordCount on tpch.nation:</li>
-
-<pre><code>&gt; hadoop jar /path/to/recordservice-examples-0.1.jar \
-com.cloudera.recordservice.examples.mapreduce.RecordCount \
-"SELECT * FROM tpch.nation" "/tmp/recordcount_output"
-</code></pre>
-
-<li>Start spark-shell with the RecordService JAR:</li>
-
-<pre><code>&gt; path/to/spark/bin/spark-shell \
---conf spark.recordservice.planner.hostports=planner_host:planner_port \
---jars /path/to/recordservice-examples-spark-0.1.jar
-&gt; scala&gt; import com.cloudera.recordservice.spark._
-import com.cloudera.recordservice.spark._
-&gt; scala&gt; val data = sc.recordServiceRecords("select * from tpch.nation")
-data: org.apache.spark.rdd.RDD[Array[org.apache.hadoop.io.Writable]] = \ RecordServiceRDD[0] at RDD at RecordServiceRDDBase.scala:57
-&gt; scala&gt; data.count()
-res0: Long = 25
-</code></pre>
-
-<p>See <a href="http://github.mtv.cloudera.com/CDH/RecordServiceClient/blob/master/java/examples-spark/README.md">http://github.mtv.cloudera.com/CDH/RecordServiceClient/blob/master/java/examples-spark/README.md</a></p>
-
-<h3 id="package-installation-not-recommended">Package Installation (Not Recommended)</h3>
-
-<p>Follow these steps to install RecordService from a package.</p>
-
-<ol>
-<li>Download the package from <a href="http://archive.cloudera.com/beta/recordservice">http://archive.cloudera.com/beta/recordservice</a>.</li>
-<li>Install Hadoop, Hive, Impala, Sentry, ZooKeeper, and any other application you want to use.</li>
-<li>Install the RecordServicePlanner using the following command-line instruction:<br /><br />
-<pre>
-./recordserviced -hostname=hostname -recordservice_planner_port=12050 \
--recordservice_worker_port=0 -recordservice_webserver_port=11050 \
--webserver_doc_root=path/to/package/lib/recordservice \
--log_dir=path/to/log/dir -abort_on_config_error=false \
--lineage_event_log_dir=path/to/log/dir \
--audit_event_log_dir=path/to/log/dir -profile_log_dir=path/to/log/dir \
--v=1 -mem_limit=8G
-</pre>
-</li>
-<br />
-<li>Install the worker using the following command-line instruction.
-<br /><br />
-<pre>
-./recordserviced  -hostname=hostname -recordservice_planner_port=0 \
--recordservice_worker_port=13050 -recordservice_webserver_port=11050 \
--webserver_doc_root=path/to/package/lib/recordservice \
--log_dir=path/to/log/dir -abort_on_config_error=false \
--lineage_event_log_dir=path/to/log/dir \
--audit_event_log_dir=path/to/log/dir -profile_log_dir=path/to/log/dir \
--v=1 -mem_limit=8G
-</pre>
-</li>
-<br />
-<li>Install both planner and worker on one node:
-<br /><br />
-<pre>
-./recordserviced -hostname=hostname -recordservice_planner_port=12050 \
--recordservice_worker_port=13050 -recordservice_webserver_port=11050 \
--webserver_doc_root=path/to/package/lib/recordservice \
--log_dir=path/to/log/dir -abort_on_config_error=false \
--lineage_event_log_dir=path/to/log/dir \
--audit_event_log_dir=path/to/log/dir -profile_log_dir=path/to/log/dir \
--v=1 -mem_limit=8G
-</pre>
-</li>
-<br />
-<li>Set additional parameters:
-<ul>
-<li>Add the following parameters if the cluster is Kerberized:
-<pre>
--principal=kerberos_principle -keytab_file=the/path/to/record_service.keytab
-</pre></li>
-<li>Add the Sentry configuration file, if applicable:
-<br /><pre>
--sentry_config=path/to/sentry-site.xml/
-</pre></li></ul>
+    <title>Download and Install RecordService • RecordService</title>
     
-</li></ol>
+    
+    
+    
+    	<!-- Twitter Cards -->
+	<meta name="twitter:title" content="Download and Install RecordService">
+	
+	
+	
+	
+	<meta name="twitter:card" content="summary">
+	<meta name="twitter:image" content="/images//img/rs120x120.png">
+	
+	<!-- Open Graph -->
+	<meta property="og:locale" content="en">
+	<meta property="og:type" content="article">
+	<meta property="og:title" content="Download and Install RecordService">
+	
+	<meta property="og:url" content="/install.html">
+	<meta property="og:site_name" content="RecordService">
 
-  </article>
+    <link rel="canonical" href="/install.html">
 
-</div>
+    <link href="/atom.xml" type="application/atom+xml" rel="alternate" title="RecordService Atom Feed">
+    <link href="/sitemap.xml" type="application/xml" rel="sitemap" title="Sitemap">
 
-      </div>
-    </div>
+    <meta name="HandheldFriendly" content="True">
+    <meta name="MobileOptimized" content="320">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="cleartype" content="on">
 
-    <footer class="site-footer">
+    <link rel="stylesheet" href="/css/main.css">
+    <!-- HTML5 Shiv and Media Query Support for IE -->
+    <!--[if lt IE 9]>
+      <script src="/js/vendor/html5shiv.min.js"></script>
+      <script src="/js/vendor/respond.min.js"></script>
+    <![endif]-->
 
-  <div class="wrap columns">
+  </head>
 
-    <div class="left">
-      <h2 class="footer-heading">RecordService, Beta</h2>
+  <body id="js-body">
+    <!--[if lt IE 9]><div class="upgrade notice-warning"><strong>Your browser is quite old!</strong> Why not <a href="http://whatbrowser.org/">upgrade to a newer one</a> to better enjoy this site?</div><![endif]-->
 
-      <ul>
-        <li>RecordService is licensed under</li>
-        <li><a href="http://www.apache.org/licenses/LICENSE-2.0.html">The Apache License, Version 2.0</a></li>
-        <li>&nbsp;</li>
-        <li>Generated on 17 November 2015</li>
-      </ul>
+    <header id="masthead">
+  <div class="inner-wrap" >
+<img src="/img/rs120x120.png" height="48" width="48" align="left"/> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="/" class="site-title">RecordService</a>
 
-    </div>
+    <nav role="navigation" class="menu top-menu">
+        <ul class="menu-item">
+	<li class="home"><a href="/">RecordService</a></li>
+	
+    
+        
+    
 
-    <div class="middle">
-    </div>
+    <li><a href="/overview.html" >Overview</a></li>
 
-    <div class="right"> 
-      <p class="text">
-        <div class="columns">
-          <div class="left">
-            <ul>
-              <li><a href="https://github.com/cloudera/RecordServiceClient"><i class="fa fa-github fa-lg"></i>&nbsp; Source</a></li>
-              <li><a href="https://groups.google.com/forum/#!forum/recordservice-user"><i class="fa fa-comments-o fa-lg"></i>&nbsp; Mailing list</a></li>
-              <li><a href="http://github.com/cloudera/RecordServiceClient/"><i class="fa fa-cogs fa-lg"></i>&nbsp; How to contribute</a></li>
-<!-- Info not available
-              <li><a href="https://jira.cloudera.com/browse/CDH/component/12921/"><i class="fa fa-bug fa-lg"></i>&nbsp; Issue tracking</a></li>
--->
-            </ul>
-          </div>
-          <div class="right">
-            <ul>
-              <li><a href="https://github.com/cloudera/RecordServiceClient/tree/master/java/examples"><i class="fa fa-play"></i>&nbsp; Examples</a></li>
-<!-- Info not available
-              <li><a href="/docs/apidocs/index.html"><i class="fa fa-file-text-o"></i>&nbsp; API Javadoc</a></li>
-              <li><a href="/docs/jdiff/changes.html"><i class="fa fa-bolt fs-lg"></i>&nbsp; API Changes</a></li>
--->
-              <li><a href="/RecordServiceClient/ReleaseNotes.html"><i class="fa fa-info fa-lg"></i>&nbsp; Release Notes</a></li>
-            </ul>
-          </div>
-        </div>
-      </p>
-    </div>
+  
+    
+        
+    
 
-  </div>
+    <li><a href="/ReleaseNotes.html" >Release</a></li>
 
+  
+    
+        
+    
+
+    <li><a href="/betastart.html" >Get Started</a></li>
+
+  
+    
+        
+    
+
+    <li><a href="/examples.html" >Examples</a></li>
+
+  
+    
+        
+    
+
+    <li><a href="/faq.html" >FAQ</a></li>
+
+  
+    
+        
+    
+
+    <li><a href="/getin.html" >Join In</a></li>
+
+  
+</ul>
+
+    </nav>
+</div><!-- /.inner-wrap -->
+</header><!-- /.masthead -->
+    <nav role="navigation" id="js-menu" class="sliding-menu-content">
+  <h5>RecordService <span>Table of Contents</span></h5>
+  <ul class="menu-item">
+    <li>
+      <a href="/overview.html">
+        
+        <div class="title">Overview</div>
+        
+      </a>
+    </li><li>
+      <a href="/ReleaseNotes.html">
+        
+        <div class="title">Release</div>
+        
+      </a>
+    </li><li>
+      <a href="/betastart.html">
+        
+        <div class="title">Get Started</div>
+        
+      </a>
+    </li><li>
+      <a href="/examples.html">
+        
+        <div class="title">Examples</div>
+        
+      </a>
+    </li><li>
+      <a href="/faq.html">
+        
+        <div class="title">FAQ</div>
+        
+      </a>
+    </li><li>
+      <a href="/getin.html">
+        
+        <div class="title">Join In</div>
+        
+      </a>
+    </li>
+  </ul>
+</nav>
+<button type="button" id="js-menu-trigger" class="sliding-menu-button lines-button x2" role="button" aria-label="Toggle Navigation">
+  <span class="nav-lines"></span>
+</button>
+
+<div id="js-menu-screen" class="menu-screen"></div>
+
+
+    <div id="page-wrapper">
+      <div id="main" role="main">			
+	<div class="wrap">
+		
+		<div class="page-title">
+			<h1>Download and Install RecordService</h1>
+			
+		</div>
+		<div class="archive-wrap">
+			<div class="page-content">
+				<h2 id="installation">Installation</h2>
+
+<p><a href="/installOnCluster.html">Download and Install RecordService on Your CDH Cluster</a></p>
+
+<p><a href="/vm.html">Download and Install the RecordService VM</a>.</p>
+
+<h2 id="configuration">Configuration</h2>
+
+<p><a href="/rsConfig.html">Configure RecordService</a>.</p>
+
+
+			</div><!-- /.page-content -->
+		</div class="archive-wrap"><!-- /.archive-wrap -->
+	</div><!-- /.wrap -->
+</div><!-- /#main -->
+      <footer role="contentinfo" id="site-footer">
+	<nav role="navigation" class="menu bottom-menu">
+		<ul class="menu-item">
+		
+      
+        
+        
+			<li><a href="http://www.cloudera.com" target="_blank">Cloudera</a></li>
+		
+		</ul>
+	</nav><!-- /.bottom-menu -->
+	<p class="copyright">&#169; 2015 <a href="">RecordService</a> powered by <a href="http://jekyllrb.com" rel="nofollow">Jekyll</a> + <a href="http://mmistakes.github.io/skinny-bones-jekyll/" rel="nofollow">Skinny Bones</a>.</p>
 </footer>
+    </div>
 
+    <script src="/js/vendor/jquery-1.9.1.min.js"></script>
+    <script src="/js/main.js"></script>
 
-    </body>
+  </body>
+
 </html>

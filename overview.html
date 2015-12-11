@@ -2,13 +2,13 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>Getting Involved • RecordService</title>
+    <title>RecordService Overview • RecordService</title>
     
     
     
     
     	<!-- Twitter Cards -->
-	<meta name="twitter:title" content="Getting Involved">
+	<meta name="twitter:title" content="RecordService Overview">
 	
 	
 	
@@ -19,12 +19,12 @@
 	<!-- Open Graph -->
 	<meta property="og:locale" content="en">
 	<meta property="og:type" content="article">
-	<meta property="og:title" content="Getting Involved">
+	<meta property="og:title" content="RecordService Overview">
 	
-	<meta property="og:url" content="/getin.html">
+	<meta property="og:url" content="/overview.html">
 	<meta property="og:site_name" content="RecordService">
 
-    <link rel="canonical" href="/getin.html">
+    <link rel="canonical" href="/overview.html">
 
     <link href="/atom.xml" type="application/atom+xml" rel="alternate" title="RecordService Atom Feed">
     <link href="/sitemap.xml" type="application/xml" rel="sitemap" title="Sitemap">
@@ -156,38 +156,62 @@
 		
 		
 		<div class="page-title">
-			<h1>Getting Involved</h1>
+			<h1>RecordService Overview</h1>
 		</div>
 		<div class="inner-wrap">
 			<div id="content" class="page-content" itemprop="articleBody">
-				<p>You are welcome to comment and contribute to the RecordService project in any of these ways.</p>
+				<p>RecordService provides an abstraction layer between compute frameworks and data storage. It provides row- and column-level security, and other advantages.</p>
 
-<h2 id="mailing-list">Mailing list</h2>
+<nav class="toc">
+<ul id="markdown-toc">
+  <li><a href="#the-motivation" id="markdown-toc-the-motivation">The Motivation</a></li>
+  <li><a href="#the-benefits" id="markdown-toc-the-benefits">The Benefits</a></li>
+  <li><a href="#the-design" id="markdown-toc-the-design">The Design</a></li>
+</ul>
 
-<p><a href="https://groups.google.com/forum/#!forum/recordservice-user">recordservice-user@googlegroups.com</a></p>
+</nav>
 
-<h2 id="discussion-forum">Discussion forum</h2>
+<h2 id="the-motivation">The Motivation</h2>
 
-<p><a href="http://community.cloudera.com/t5/Beta-Releases/bd-p/Beta">http://community.cloudera.com/t5/Beta-Releases/bd-p/Beta</a></p>
+<p>One of the key aspects of the Hadoop ecosystem is decoupling storage managers (for example, HDFS and Apache HBase) and compute frameworks (for example, MapReduce, Impala and Apache Spark). Although this decoupling allows for far greater flexibility — pick the framework that best solves your problem — it leads to more complexity to ensure that everything works together seamlessly. Furthermore, as Hadoop becomes an increasingly critical infrastructure component for users, the expectations for compatibility, performance, and security also increase.</p>
 
-<h2 id="contributions">Contributions</h2>
+<p>RecordService is a new core security layer for Hadoop that sits between the storage managers and compute frameworks to provide a unified data access path.</p>
 
-<p><a href="http://github.com/cloudera/RecordServiceClient/">http://github.com/cloudera/RecordServiceClient/</a></p>
+<p><img src="img/unifiedDataAccessPath.png" alt="Unified Data Access Path" height="100%" width="100%" /></p>
 
-<h2 id="documentation">Documentation</h2>
+<h2 id="the-benefits">The Benefits</h2>
 
-<p><a href="http://cloudera.github.io/RecordServiceClient/">http://cloudera.github.io/RecordServiceClient/</a></p>
+<ul>
+  <li>RecordService provides fine-grained data permissions and enforcement across Hadoop.</li>
+  <li>Clients work independently of on-disk storage format.</li>
+  <li>The unified data access path provides a single place to implement and test file format–related changes.</li>
+  <li>Components swap transparently above or below RecordService.</li>
+  <li>Performance is improved through the optimized scanner, dynamic code generation, and Parquet implementation provided by Impala.</li>
+  <li>Existing MapReduce and Spark jobs gain Impala-quality performance.</li>
+  <li>RecordService can make projections over original source datasets instead of making copies or subsets.</li>
+</ul>
 
-<h2 id="bug-reporting">Bug Reporting</h2>
-<p>Open Github issue.</p>
+<h2 id="the-design">The Design</h2>
 
-<h2 id="server-implementation">Server Implementation</h2>
+<p>RecordService provides the following services.</p>
 
-<p><a href="http://github.com/cloudera/RecordService/">http://github.com/cloudera/RecordService/</a></p>
+<ul>
+  <li>RecordServicePlanner — Generates tasks, performs authorization checks, and handles metadata access. Called during input split generation.</li>
+  <li>RecordServiceWorker — Executes tasks, and reads and writes to the storage layer.
+    <ul>
+      <li>Builds on the highly optimized I/O scheduler and file parsers provided by Impala.</li>
+      <li>Returns rows in a canonical format.</li>
+    </ul>
+  </li>
+  <li>Thrift APIs.</li>
+  <li>Client Integration Libraries — Allow easy migration to RecordService.</li>
+</ul>
+
+<p><img src="img/RecordServiceArchitectureOverview.png" alt="Record Service Architecture Overview " height="100%" width="100%" /></p>
+
 
 				<hr />
 				<footer class="page-footer">
-					
 					
 					
 				</footer><!-- /.footer -->
@@ -197,7 +221,7 @@
 			</div><!-- /.content -->
 		</div><!-- /.inner-wrap -->
 		
-	</article><!-- ./wrap -->
+	</article><!-- /.wrap -->
 </div><!-- /#main -->
 
       <footer role="contentinfo" id="site-footer">

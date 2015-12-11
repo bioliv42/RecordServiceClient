@@ -1,153 +1,180 @@
 <!DOCTYPE html>
 <html>
-
   <head>
     <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>RecordService Examples</title>
-    <meta name="viewport" content="width=device-width">
-    <meta name="description" content="An abstraction layer between storage managers (for example, HDFS, HBase, Kudu) and compute frameworks (for example, MapReduce, Spark, Hive).">
-    <link rel="canonical" href="http://github.mtv.cloudera.com/CDH/RecordServiceClient/RecordServiceClient/examples.html">
+    <title>RecordService Examples • RecordService</title>
+    
+    
+    
+    
+    	<!-- Twitter Cards -->
+	<meta name="twitter:title" content="RecordService Examples">
+	
+	
+	
+	
+	<meta name="twitter:card" content="summary">
+	<meta name="twitter:image" content="/images//img/rs120x120.png">
+	
+	<!-- Open Graph -->
+	<meta property="og:locale" content="en">
+	<meta property="og:type" content="article">
+	<meta property="og:title" content="RecordService Examples">
+	
+	<meta property="og:url" content="/examples.html">
+	<meta property="og:site_name" content="RecordService">
 
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="/RecordServiceClient/css/main.css">
-    <link href='http://fonts.googleapis.com/css?family=Raleway:200,400,500,600,700' rel='stylesheet' type='text/css'>
-    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="canonical" href="/examples.html">
 
-</head>
+    <link href="/atom.xml" type="application/atom+xml" rel="alternate" title="RecordService Atom Feed">
+    <link href="/sitemap.xml" type="application/xml" rel="sitemap" title="Sitemap">
 
+    <meta name="HandheldFriendly" content="True">
+    <meta name="MobileOptimized" content="320">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="cleartype" content="on">
 
-    <body>
+    <link rel="stylesheet" href="/css/main.css">
+    <!-- HTML5 Shiv and Media Query Support for IE -->
+    <!--[if lt IE 9]>
+      <script src="/js/vendor/html5shiv.min.js"></script>
+      <script src="/js/vendor/respond.min.js"></script>
+    <![endif]-->
 
-    <header class="site-header">
+  </head>
 
-  <div class="wrap">
+  <body id="js-body">
+    <!--[if lt IE 9]><div class="upgrade notice-warning"><strong>Your browser is quite old!</strong> Why not <a href="http://whatbrowser.org/">upgrade to a newer one</a> to better enjoy this site?</div><![endif]-->
 
-    <a class="site-title" href="/RecordServiceClient/"><img src="img/rs.png" height="25%" width="25%" align="left"></a>
-<br/><br/>An abstraction layer between storage managers (for example, HDFS, HBase, Kudu) and compute frameworks (for example, MapReduce, Spark, Hive).
-    <nav class="site-nav">
-      <a href="#" class="menu-icon">
-        <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
-           viewBox="0 0 18 15" enable-background="new 0 0 18 15" xml:space="preserve">
-          <path fill="#505050" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0
-            h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
-          <path fill="#505050" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484
-            h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
-          <path fill="#505050" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0
-            c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
-        </svg>
-      </a>
+    <header id="masthead">
+  <div class="inner-wrap" >
+<img src="/img/rs120x120.png" height="48" width="48" align="left"/> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="/" class="site-title">RecordService</a>
+
+    <nav role="navigation" class="menu top-menu">
+        <ul class="menu-item">
+	<li class="home"><a href="/">RecordService</a></li>
+	
+    
+        
+    
+
+    <li><a href="/overview.html" >Overview</a></li>
+
+  
+    
+        
+    
+
+    <li><a href="/ReleaseNotes.html" >Release</a></li>
+
+  
+    
+        
+    
+
+    <li><a href="/betastart.html" >Get Started</a></li>
+
+  
+    
+        
+    
+
+    <li><a href="/examples.html" >Examples</a></li>
+
+  
+    
+        
+    
+
+    <li><a href="/faq.html" >FAQ</a></li>
+
+  
+    
+        
+    
+
+    <li><a href="/getin.html" >Join In</a></li>
+
+  
+</ul>
+
     </nav>
+</div><!-- /.inner-wrap -->
+</header><!-- /.masthead -->
+    <nav role="navigation" id="js-menu" class="sliding-menu-content">
+  <h5>RecordService <span>Table of Contents</span></h5>
+  <ul class="menu-item">
+    <li>
+      <a href="/overview.html">
+        
+        <div class="title">Overview</div>
+        
+      </a>
+    </li><li>
+      <a href="/ReleaseNotes.html">
+        
+        <div class="title">Release</div>
+        
+      </a>
+    </li><li>
+      <a href="/betastart.html">
+        
+        <div class="title">Get Started</div>
+        
+      </a>
+    </li><li>
+      <a href="/examples.html">
+        
+        <div class="title">Examples</div>
+        
+      </a>
+    </li><li>
+      <a href="/faq.html">
+        
+        <div class="title">FAQ</div>
+        
+      </a>
+    </li><li>
+      <a href="/getin.html">
+        
+        <div class="title">Join In</div>
+        
+      </a>
+    </li>
+  </ul>
+</nav>
+<button type="button" id="js-menu-trigger" class="sliding-menu-button lines-button x2" role="button" aria-label="Toggle Navigation">
+  <span class="nav-lines"></span>
+</button>
 
-  </div>
-<div>
-
-</div>
-</header>
+<div id="js-menu-screen" class="menu-screen"></div>
 
 
-    <div class="page-content">
-      
-      <div class="sidebar">
-      
-        <h4>Overview</h4>
-        <ul>
-          
-        </ul>
-      
-        <h4></h4>
-        <ul>
-          
-          
-          <li><a href="/RecordServiceClient/index.html">Introduction</a></li>
-          
-          
-          
-          <li><a href="/RecordServiceClient/betastart.html">Getting Started</a></li>
-          
-          
-          
-          <li><a href="/RecordServiceClient/ReleaseNotes.html">Beta Release Notes</a></li>
-          
-          
-        </ul>
-      
-        <h4>Installation</h4>
-        <ul>
-          
-        </ul>
-      
-        <h4></h4>
-        <ul>
-          
-          
-          <li><a href="/RecordServiceClient/install.html">Download RecordService</a></li>
-          
-          
-          
-          <li><a href="/RecordServiceClient/configure.html">Configure RecordService</a></li>
-          
-          
-          
-          <li><a href="/RecordServiceClient/vm.html">Download VM</a></li>
-          
-          
-        </ul>
-      
-        <h4>Demonstration</h4>
-        <ul>
-          
-        </ul>
-      
-        <h4></h4>
-        <ul>
-          
-          
-          <li><a href="/RecordServiceClient/appint.html">Application Integration</a></li>
-          
-          
-          
-          <li><a href="/RecordServiceClient/examples.html">Run Examples</a></li>
-          
-          
-        </ul>
-      
-        <h4>Resources</h4>
-        <ul>
-          
-        </ul>
-      
-        <h4></h4>
-        <ul>
-          
-          
-          <li><a href="/RecordServiceClient/faq.html">FAQ</a></li>
-          
-          
-          
-          <li><a href="/RecordServiceClient/getin.html">Get Involved</a></li>
-          
-          
-        </ul>
-      
-      </div>
-      
+    <div id="page-wrapper">
+      <div id="main" role="main">
+	<article class="wrap" itemscope itemtype="http://schema.org/Article">
+		
+		
+		<div class="page-title">
+			<h1>RecordService Examples</h1>
+		</div>
+		<div class="inner-wrap">
+			<div id="content" class="page-content" itemprop="articleBody">
+				<p>You can find the source code for RecordService examples in the RecordService Client GitHub repository.</p>
 
-      <div class="wrap">
-      <div class="post">
-
-  <header class="post-header">
-    <h1>RecordService Examples</h1>
-  </header>
-
-  <article class="post-content">
-  <h2 id="recordservice-examples">RecordService Examples</h2>
-
-<p>You can find the source code for RecordService examples in the RecordService Client GitHub repository.</p>
-
-<p><a href="https://github.com/cloudera/RecordServiceClient/tree/master/java/examples">https://github.com/cloudera/RecordServiceClient/tree/master/java/examples</a> </p>
+<p><a href="https://github.com/cloudera/RecordServiceClient/tree/master/java/examples">https://github.com/cloudera/RecordServiceClient/tree/master/java/examples</a></p>
 
 <p>Instructions for running the examples are stored in the repository with the source code.</p>
+
+<nav class="toc">
+<ul id="markdown-toc">
+  <li><a href="#hadoop-and-mapreduce-examples" id="markdown-toc-hadoop-and-mapreduce-examples">Hadoop and MapReduce Examples</a></li>
+  <li><a href="#recordservice-spark-examples" id="markdown-toc-recordservice-spark-examples">RecordService Spark Examples</a></li>
+</ul>
+
+</nav>
+
+<h2 id="hadoop-and-mapreduce-examples">Hadoop and MapReduce Examples</h2>
 
 <table>
   <thead>
@@ -170,7 +197,7 @@
       <td style="text-align: left">This is a port of the Hadoop <a href="https://hadoop.apache.org/docs/current/api/org/apache/hadoop/examples/terasort/package-summary.html">Terasort</a> benchmark test ported to RecordService. See README in the Terasort package for more details. This also demonstrates how to implement a custom InputFormat using the RecordService APIs.</td>
     </tr>
     <tr>
-      <td style="text-align: left">MapredColorCount/MapreduceAgeCount/MapReduceColorCount</td>
+      <td style="text-align: left">MapredColorCount / MapreduceAgeCount / MapReduceColorCount</td>
       <td style="text-align: left">These examples are ported from Apache Avro. They demonstrate the steps required to port an existing Avro-based MapReduce job to use RecordService.</td>
     </tr>
     <tr>
@@ -235,63 +262,40 @@
   </tbody>
 </table>
 
-  </article>
 
-</div>
+				<hr />
+				<footer class="page-footer">
+					
+					
+					
+				</footer><!-- /.footer -->
+				<aside>
+					
+				</aside>
+			</div><!-- /.content -->
+		</div><!-- /.inner-wrap -->
+		
+	</article><!-- ./wrap -->
+</div><!-- /#main -->
 
-      </div>
-    </div>
-
-    <footer class="site-footer">
-
-  <div class="wrap columns">
-
-    <div class="left">
-      <h2 class="footer-heading">RecordService, Beta</h2>
-
-      <ul>
-        <li>RecordService is licensed under</li>
-        <li><a href="http://www.apache.org/licenses/LICENSE-2.0.html">The Apache License, Version 2.0</a></li>
-        <li>&nbsp;</li>
-        <li>Generated on 29 October 2015</li>
-      </ul>
-
-    </div>
-
-    <div class="middle">
-    </div>
-
-    <div class="right"> 
-      <p class="text">
-        <div class="columns">
-          <div class="left">
-            <ul>
-              <li><a href="https://github.com/cloudera/RecordServiceClient"><i class="fa fa-github fa-lg"></i>&nbsp; Source</a></li>
-              <li><a href="https://groups.google.com/forum/#!forum/recordservice-user"><i class="fa fa-comments-o fa-lg"></i>&nbsp; Mailing list</a></li>
-              <li><a href="http://github.com/cloudera/RecordServiceClient/"><i class="fa fa-cogs fa-lg"></i>&nbsp; How to contribute</a></li>
-<!-- Info not available
-              <li><a href="https://jira.cloudera.com/browse/CDH/component/12921/"><i class="fa fa-bug fa-lg"></i>&nbsp; Issue tracking</a></li>
--->
-            </ul>
-          </div>
-          <div class="right">
-            <ul>
-              <li><a href="https://github.com/cloudera/RecordServiceClient/tree/master/java/examples"><i class="fa fa-play"></i>&nbsp; Examples</a></li>
-<!-- Info not available
-              <li><a href="/docs/apidocs/index.html"><i class="fa fa-file-text-o"></i>&nbsp; API Javadoc</a></li>
-              <li><a href="/docs/jdiff/changes.html"><i class="fa fa-bolt fs-lg"></i>&nbsp; API Changes</a></li>
--->
-              <li><a href="/RecordServiceClient/ReleaseNotes.html"><i class="fa fa-info fa-lg"></i>&nbsp; Release Notes</a></li>
-            </ul>
-          </div>
-        </div>
-      </p>
-    </div>
-
-  </div>
-
+      <footer role="contentinfo" id="site-footer">
+	<nav role="navigation" class="menu bottom-menu">
+		<ul class="menu-item">
+		
+      
+        
+        
+			<li><a href="http://www.cloudera.com" target="_blank">Cloudera</a></li>
+		
+		</ul>
+	</nav><!-- /.bottom-menu -->
+	<p class="copyright">&#169; 2015 <a href="">RecordService</a> powered by <a href="http://jekyllrb.com" rel="nofollow">Jekyll</a> + <a href="http://mmistakes.github.io/skinny-bones-jekyll/" rel="nofollow">Skinny Bones</a>.</p>
 </footer>
+    </div>
 
+    <script src="/js/vendor/jquery-1.9.1.min.js"></script>
+    <script src="/js/main.js"></script>
 
-    </body>
+  </body>
+
 </html>

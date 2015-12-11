@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title>RecordService</title>
+  <generator uri="https://github.com/jekyll/jekyll">Jekyll v2.5.3</generator>
+    <icon>/apple-touch-icon-precomposed.png</icon>
+  <subtitle>An abstraction layer between storage managers (for example, HDFS, HBase, Kudu) and compute frameworks (for example, MapReduce, Spark, Hive).</subtitle>
+  <link href="/atom.xml" rel="self"/>
+  <link href="/" rel="alternate" type="text/html"/>
+  <updated>2015-12-10T17:40:09-08:00</updated>
+  <id>/</id>
+  <author>
+    <name>Dennis Dawson</name>
+    <uri>/</uri>
+    <email>ddawson@cloudera.com</email>
+  </author>
+
+  
+  
+</feed>
