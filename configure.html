@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Configure RecordService</title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="An abstraction layer between storage managers (for example, HDFS, HBase, Kudu) and compute frameworks (for example, MapReduce, Spark, Hive).">
+    <link rel="canonical" href="http://github.mtv.cloudera.com/CDH/RecordServiceClient/RecordServiceClient/configure.html">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/RecordServiceClient/css/main.css">
+    <link href='http://fonts.googleapis.com/css?family=Raleway:200,400,500,600,700' rel='stylesheet' type='text/css'>
+    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
+
+</head>
+
+
+    <body>
+
+    <header class="site-header">
+
+  <div class="wrap">
+
+    <a class="site-title" href="/RecordServiceClient/"><img src="img/rs.png" height="25%" width="25%" align="left"></a>
+<br/><br/>An abstraction layer between storage managers (for example, HDFS, HBase, Kudu) and compute frameworks (for example, MapReduce, Spark, Hive).
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+           viewBox="0 0 18 15" enable-background="new 0 0 18 15" xml:space="preserve">
+          <path fill="#505050" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0
+            h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#505050" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484
+            h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#505050" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0
+            c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+    </nav>
+
+  </div>
+<div>
+
+</div>
+</header>
+
+
+    <div class="page-content">
+      
+      <div class="sidebar">
+      
+        <h4>Overview</h4>
+        <ul>
+          
+        </ul>
+      
+        <h4></h4>
+        <ul>
+          
+          
+          <li><a href="/RecordServiceClient/index.html">Introduction</a></li>
+          
+          
+          
+          <li><a href="/RecordServiceClient/betastart.html">Getting Started</a></li>
+          
+          
+          
+          <li><a href="/RecordServiceClient/ReleaseNotes.html">Beta Release Notes</a></li>
+          
+          
+        </ul>
+      
+        <h4>Installation</h4>
+        <ul>
+          
+        </ul>
+      
+        <h4></h4>
+        <ul>
+          
+          
+          <li><a href="/RecordServiceClient/install.html">Download RecordService</a></li>
+          
+          
+          
+          <li><a href="/RecordServiceClient/configure.html">Configure RecordService</a></li>
+          
+          
+          
+          <li><a href="/RecordServiceClient/vm.html">Download VM</a></li>
+          
+          
+        </ul>
+      
+        <h4>Demonstration</h4>
+        <ul>
+          
+        </ul>
+      
+        <h4></h4>
+        <ul>
+          
+          
+          <li><a href="/RecordServiceClient/appint.html">Application Integration</a></li>
+          
+          
+          
+          <li><a href="/RecordServiceClient/examples.html">Run Examples</a></li>
+          
+          
+        </ul>
+      
+        <h4>Resources</h4>
+        <ul>
+          
+        </ul>
+      
+        <h4></h4>
+        <ul>
+          
+          
+          <li><a href="/RecordServiceClient/faq.html">FAQ</a></li>
+          
+          
+          
+          <li><a href="/RecordServiceClient/getin.html">Get Involved</a></li>
+          
+          
+        </ul>
+      
+      </div>
+      
+
+      <div class="wrap">
+      <div class="post">
+
+  <header class="post-header">
+    <h1>Configure RecordService</h1>
+  </header>
+
+  <article class="post-content">
+  <ul>
+  <li><a href="#client-configurations">Client Configurations</a></li>
+  <li><a href="#server-configurations">Server Configurations</a></li>
+</ul>
+
+<h2 id="client-configurations">Client Configurations</h2>
+
+<p>While it should not be necessary to change the default configuration, you have the option of modifying any of these settings.</p>
+
+<table border="1">          
+<tr align="left" valign="top"><th> PROPERTY </th><th> DESCRIPTION </th><th> PARAMETER </th><th> VALUE </th><th> SIGNIFICANCE </th></tr>
+<tr align="left" valign="top"><td> FETCH_SIZE_CONF </td><td> Option for performance tuning that configures the max number of records returned when fetching results from the RecordService. If not set, server default will be used. </td><td> recordservice.task.fetch.size </td><td>  </td><td>  </td></tr>
+<tr align="left" valign="top"><td> MEM_LIMIT_CONF </td><td> Maximum memory the server uses per task </td><td> recordservice.task.memlimit.bytes </td><td>  </td><td>  </td></tr>
+<tr align="left" valign="top"><td> RECORDS_LIMIT_CONF </td><td> Maximum number of records returned per task </td><td> recordservice.task.records.limit </td><td>  </td><td>  </td></tr>
+<tr align="left" valign="top"><td> PLANNER_REQUEST_MAX_TASKS </td><td> Maximum number of tasks to generate per PlanRequest </td><td> recordservice.task.plan.maxTasks </td><td>  </td><td>  </td></tr>
+<tr align="left" valign="top"><td> PLANNER_RETRY_ATTEMPTS_CONF </td><td> Maximum number of attempts to retry RecordService RPCs with Planner </td><td> recordservice.planner.retry.attempts </td><td>  </td><td>  </td></tr>
+<tr align="left" valign="top"><td> PLANNER_RETRY_SLEEP_MS_CONF </td><td> Sleep between retry attempts with Planner in milliseconds </td><td> recordservice.planner.retry.sleepMs </td><td>  </td><td>  </td></tr>
+<tr align="left" valign="top"><td> PLANNER_CONNECTION_TIMEOUT_MS_CONF </td><td> Timeout when connecting to the Planner service </td><td> recordservice.planner.connection.timeoutMs </td><td>  </td><td>  </td></tr>
+<tr align="left" valign="top"><td> PLANNER_RPC_TIMEOUT_MS_CONF </td><td> Timeout for Planner RPCs </td><td> recordservice.planner.rpc.timeoutMs </td><td>  </td><td>  </td></tr>
+<tr align="left" valign="top"><td> WORKER_RETRY_ATTEMPTS_CONF </td><td> Maximum number of attempts to retry RecordService RPCs with Worker </td><td> recordservice.worker.retry.attempts </td><td>  </td><td>  </td></tr>
+<tr align="left" valign="top"><td> WORKER_RETRY_SLEEP_MS_CONF </td><td> Sleep in milliseconds between retry attempts with Worker </td><td> recordservice.worker.retry.sleepMs </td><td>  </td><td>  </td></tr>
+<tr align="left" valign="top"><td> WORKER_CONNECTION_TIMEOUT_MS_CONF </td><td> Timeout when connecting to the Worker service </td><td> recordservice.worker.connection.timeoutMs </td><td>  </td><td>  </td></tr>
+<tr align="left" valign="top"><td> WORKER_RPC_TIMEOUT_MS_CONF </td><td> Timeout for Worker RPCs   </td><td> recordservice.worker.rpc.timeoutMs </td><td>  </td><td>  </td></tr>
+<tr align="left" valign="top"><td> WORKER_ENABLE_SERVER_LOGGING_CONF </td><td> Enable server logging (logging level from Log4j)   </td><td> recordservice.worker.server.enableLogging </td><td>  </td><td>  </td></tr>
+</table>
+
+<h2 id="server-configurations">Server Configurations</h2>
+
+<p>The properties listed on the Cloudera Manager RecordService Configuration page are the ones Cloudera considers the most reasonable to change. However, adjusting these values should not be necessary. Very advanced administrators might consider making minor adjustments.</p>
+
+<h3 id="kerberos-configuration">Kerberos Configuration</h3>
+
+<p>No special configuration is required via Cloudera Manager. Enabling Kerberos on the cluster configures everything.</p>
+
+<h3 id="sentry-table-configuration">Sentry Table Configuration</h3>
+
+<p>Sentry is configured for you in the RecordService VM. This section describes how to configure Sentry in a  non-VM deployment.</p>
+
+<h4 id="prerequisite">Prerequisite</h4>
+
+<p>Follow CDH documentation to install Sentry and enable it for Hive (and Impala, if applicable).</p>
+
+<p>See <a href="http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topics/sg_sentry_service_install.html">http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topics/sg_sentry_service_install.html</a>.</p>
+
+<h4 id="configure-sentry-with-recordservice">Configure Sentry with RecordService</h4>
+
+<ol>
+  <li>Enable RecordService to read policy metadata from Sentry:
+    <ol>
+      <li>In Cloudera Manager, navigate to the <strong>Sentry Configuration</strong> page.</li>
+      <li>In <strong>Admin Groups</strong>, add the user <em>recordservice</em>.</li>
+      <li>In <strong>Allowed Connecting Users</strong>, add the user <em>recordservice</em>.</li>
+    </ol>
+  </li>
+  <li>Save changes.</li>
+  <li>Download the Cloudera Manager generated <code>sentry-site.xml</code> configuration file (same config as HiveServer2)
+    <ul>
+      <li>In Cloudera Manager, navigate to <strong>Hive</strong> -&gt; <strong>HiveServer2</strong> -&gt; <strong>Processes</strong> -&gt; <code>sentry-site.xml</code></li>
+    </ul>
+  </li>
+  <li>Deploy configurations to cluster: copy <code>sentry-site.xml</code> to the <code>/etc/sentry/conf/</code> directory on all nodes running RecordService Planner or RecordService Planner and Worker. Nodes that are only running only the RecordService Worker role do not need this configuration option.</li>
+  <li>Enable Sentry for RecordService
+    <ol>
+      <li>In Cloudera Manager, navigate to <strong>RecordService Configuration</strong>.</li>
+      <li>Select the <strong>Sentry</strong> service.</li>
+      <li>In the <strong>Sentry Configuration File</strong> field, enter `/etc/sentry/conf/sentry-site.xml.</li>
+    </ol>
+  </li>
+  <li>Save changes.</li>
+  <li>Restart the Sentry and RecordService services. </li>
+</ol>
+
+<h3 id="delegation-token-configuration">Delegation Token Configuration</h3>
+
+<p>No special configuration is required with Cloudera Manager. This is enabled automatically if the cluster is kerberized.</p>
+
+<p>RecordService persists state in Zookeeper, by default, under the /recordservice Zookeeper directory. If this directory is already in use, you can configure the directory with <code>recordservice.zookeeper.znode</code>. This is a Hadoop style XML configuration that you can add to the advanced service configuration snippet.</p>
+
+  </article>
+
+</div>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrap columns">
+
+    <div class="left">
+      <h2 class="footer-heading">RecordService, Beta</h2>
+
+      <ul>
+        <li>RecordService is licensed under</li>
+        <li><a href="http://www.apache.org/licenses/LICENSE-2.0.html">The Apache License, Version 2.0</a></li>
+        <li>&nbsp;</li>
+        <li>Generated on 19 October 2015</li>
+      </ul>
+
+    </div>
+
+    <div class="middle">
+    </div>
+
+    <div class="right"> 
+      <p class="text">
+        <div class="columns">
+          <div class="left">
+            <ul>
+              <li><a href="https://github.com/cloudera/RecordServiceClient"><i class="fa fa-github fa-lg"></i>&nbsp; Source</a></li>
+              <li><a href="https://groups.google.com/forum/#!forum/recordservice-user"><i class="fa fa-comments-o fa-lg"></i>&nbsp; Mailing list</a></li>
+              <li><a href="http://github.com/cloudera/RecordServiceClient/"><i class="fa fa-cogs fa-lg"></i>&nbsp; How to contribute</a></li>
+<!-- Info not available
+              <li><a href="https://jira.cloudera.com/browse/CDH/component/12921/"><i class="fa fa-bug fa-lg"></i>&nbsp; Issue tracking</a></li>
+-->
+            </ul>
+          </div>
+          <div class="right">
+            <ul>
+              <li><a href="https://github.com/cloudera/RecordServiceClient/tree/master/java/examples"><i class="fa fa-play"></i>&nbsp; Examples</a></li>
+<!-- Info not available
+              <li><a href="/docs/apidocs/index.html"><i class="fa fa-file-text-o"></i>&nbsp; API Javadoc</a></li>
+              <li><a href="/docs/jdiff/changes.html"><i class="fa fa-bolt fs-lg"></i>&nbsp; API Changes</a></li>
+-->
+              <li><a href="/RecordServiceClient/ReleaseNotes.html"><i class="fa fa-info fa-lg"></i>&nbsp; Release Notes</a></li>
+            </ul>
+          </div>
+        </div>
+      </p>
+    </div>
+
+  </div>
+
+</footer>
+
+
+    </body>
+</html>
