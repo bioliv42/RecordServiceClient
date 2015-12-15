@@ -88,7 +88,7 @@ Now, if we want to count the number of records in the `tpch.nation` with the abo
 we can launch a MR job for [RecordCount](src/main/java/com/cloudera/recordservice/examples/mapreduce/RecordCount.java) on the table:
 
 ```bash
-hadoop jar /path/to/recordservice-examples-0.1.jar \
+hadoop jar /path/to/recordservice-examples-${VERSION_NUMBER}.jar \
   com.cloudera.recordservice.examples.mapreduce.RecordCount \
   "SELECT * FROM tpch.nation" \
   "/tmp/recordcount_output"
@@ -105,7 +105,7 @@ tpch.nation)
 Now try to just select the column which we've been granted privilege to access:
 
 ```bash
-hadoop jar /path/to/recordservice-examples-0.1.jar \
+hadoop jar /path/to/recordservice-examples-${VERSION_NUMBER}.jar \
   com.cloudera.recordservice.examples.mapreduce.RecordCount \
   "SELECT n_name, n_nationkey FROM tpch.nation" \
   "/tmp/recordcount_output"
@@ -133,9 +133,9 @@ the `demorole`.
 #### Running MR Job
 
 Now try to access the `tpch.nation_names` view:
- 
+
 ```bash
-hadoop jar /path/to/recordservice-examples-0.1.jar \
+hadoop jar /path/to/recordservice-examples-${VERSION_NUMBER}.jar \
   com.cloudera.recordservice.examples.mapreduce.RecordCount \
   "SELECT * FROM tpch.nation_names" \
   "/tmp/recordcount_output"
@@ -186,7 +186,7 @@ can deploy the client configuration first, after which it will generate a config
 file under `/etc/recordservice/conf`.
 
 ```bash
-hadoop jar /path/to/recordservice-examples-0.1.jar \
+hadoop jar /path/to/recordservice-examples-${VERSION_NUMBER}.jar \
   com.cloudera.recordservice.examples.mapreduce.WordCount \
   "/test-warehouse/tpch.nation" \
   "/tmp/wordcount_output"
