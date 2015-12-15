@@ -9,7 +9,7 @@ share: false
 
 [Download and Install RecordService on Your CDH Cluster]({{site.baseurl}}/installOnCluster.html)
 
-[Download and Install the RecordService VM]({{site.baseur}}/vm.html).
+[Download and Install the RecordService VM]({{site.baseurl}}/vm.html).
 
 ## Configuration
 
