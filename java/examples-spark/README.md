@@ -116,7 +116,7 @@ spark-submit \
   --class com.cloudera.recordservice.examples.spark.RecordCount \
   --master <master-url> \
   --properties_file /path/to/properties_file \
-  /path/to/recordservice-examples-spark-0.1.jar \
+  /path/to/recordservice-examples-spark-${VERSION_NUMBER}.jar \
   "SELECT * FROM tpch.nation"
 ```
 
@@ -134,7 +134,7 @@ spark-submit \
   --class com.cloudera.recordservice.examples.spark.RecordCount \
   --master <master-url> \
   --properties_file /path/to/properties_file \
-  /path/to/recordservice-examples-spark-0.1.jar \
+  /path/to/recordservice-examples-spark-${VERSION_NUMBER}.jar \
   "SELECT n_name, n_nationkey FROM tpch.nation"
 
 ```
@@ -146,7 +146,7 @@ spark-submit \
   --class com.cloudera.recordservice.examples.spark.RecordCount \
   --master <master-url> \
   --properties_file /path/to/properties_file \
-  /path/to/recordservice-examples-spark-0.1.jar \
+  /path/to/recordservice-examples-spark-${VERSION_NUMBER}.jar \
   "SELECT * FROM tpch.nation_names"
 
 ```
@@ -163,5 +163,5 @@ spark-submit \
   --class com.cloudera.recordservice.examples.spark.WordCount \
   --master <master-url> \
   --properties_file /path/to/properties_file \
-  /path/to/recordservice-examples-spark-0.1.jar
+  /path/to/recordservice-examples-spark-${VERSION_NUMBER}.jar
 ```
