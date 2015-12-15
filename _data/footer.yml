@@ -1,0 +1,7 @@
+# Footer navigation links
+- title: Cloudera
+  url: http://www.cloudera.com
+- title: Source Code
+  url: https://github.com/cloudera/RecordServiceClient/
+- title: Mailing List
+  url: http://groups.google.com/forum/#!forum/recordservice-user
