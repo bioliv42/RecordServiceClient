@@ -23,6 +23,6 @@ share: false
 <div class="tile">
   <h2 class="post-title" align="center">Try RecordService For Yourself</h2>
  <p class="post-excerpt">Use the <a href="./vm.html">QuickStart VM</a> to take RecordService for a spin.</p>
-  <p align="center"><img src="/images/lilSunbear120x125.png"/></p>
+  <p align="center"><img src="{{site.url}}/images/lilSunbear120x125.png"/></p>
 </div><!-- /.tile -->
 </div><!-- /.tiles -->
