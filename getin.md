@@ -24,7 +24,7 @@ If you have questions, comments, reflections, inspirations, suggestions, or need
 [http://cloudera.github.io/RecordServiceClient/](http://cloudera.github.io/RecordServiceClient/)
 
 ## Bug Reporting 
-Open Github issue at [https://issues.cloudera.org/projects/RS](https://issues.cloudera.org/projects/RS).
+File JIRA issue at [https://issues.cloudera.org/projects/RS](https://issues.cloudera.org/projects/RS).
 
 ## Server Implementation
 
