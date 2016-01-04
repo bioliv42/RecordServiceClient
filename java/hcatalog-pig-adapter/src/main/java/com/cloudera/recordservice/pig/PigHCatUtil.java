@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 
+import com.cloudera.recordservice.hcatalog.common.HCatRSUtil;
 import com.cloudera.recordservice.mr.DecimalWritable;
 import com.cloudera.recordservice.mr.RecordServiceRecord;
 import com.cloudera.recordservice.mr.TimestampNanosWritable;
@@ -216,6 +217,7 @@ class PigHCatUtil {
     }
 
     Pair<String, String> dbTablePair = PigHCatUtil.getDBTableNames(location);
+    dbTablePair = HCatRSUtil.cleanQueryPair(dbTablePair);
     String dbName = dbTablePair.first;
     String tableName = dbTablePair.second;
     Table table = null;
@@ -404,17 +406,16 @@ class PigHCatUtil {
         + "' is not supported in Pig as a column type", PIG_EXCEPTION_CODE);
   }
 
-  public static Tuple transformToTuple(RecordServiceRecord record, HCatSchema hs)
-      throws Exception {
+  public static Tuple transformToTuple(RecordServiceRecord record) throws Exception {
     if (record == null) {
       return null;
     }
-    List objList = new ArrayList();
     com.cloudera.recordservice.mr.Schema schema = record.getSchema();
+    List objList = new ArrayList();
     for (int i = 0; i < schema.getNumColumns(); ++i) {
       objList.add(record.getColumnValue(i));
     }
-    return transformToTuple(objList, hs);
+    return transformToTuple(objList, schema);
   }
 
   /**
@@ -423,35 +424,16 @@ class PigHCatUtil {
    * @param o object from Hive value system
    * @return object in Pig value system 
    */
-  public static Object extractPigObject(Object o, HCatFieldSchema hfs) throws Exception {
-    /*Note that HCatRecordSerDe.serializePrimitiveField() will be called before this, thus
-    * some type promotion/conversion may occur: e.g. Short to Integer.  We should refactor
-    * this so that it's hapenning in one place per module/product that we are integrating
-    * with. All Pig conversion should be done here, etc.*/
+  public static Object extractPigObject(Object o, com.cloudera.recordservice.core.Schema.TypeDesc itemType) throws Exception {
+    /*Note that HCatRecordSerDe.serializePrimitiveField() will be called before this, thus some
+    * type promotion/conversion may occur: e.g. Short to Integer.  We should refactor this so
+    * that it's hapenning in one place per module/product that we are integrating with.
+    * All Pig conversion should be done here, etc.*/
     if(o == null) {
       return null;
     }
     Object result;
-    Type itemType = hfs.getType();
-    switch (itemType) {
-    case STRUCT:
-      result = transformToTuple((List<?>) o, hfs);
-      break;
-    case ARRAY:
-      result = transformToBag((List<?>) o, hfs);
-      break;
-    case MAP:
-      result = transformToPigMap((Map<?, ?>) o, hfs);
-      break;
-    case DATE:
-      /*java.sql.Date is weird.  It automatically adjusts it's millis value to be in the
-      * local TZ e.g. d = new java.sql.Date(System.currentMillis()).toString() so if you
-      * do this just after midnight in Palo Alto, you'll get yesterday's date printed
-      * out.*/
-      Date d = (Date)o;
-      result = new DateTime(d.getYear() + 1900, d.getMonth() + 1,
-          d.getDate(), 0, 0,0,0);//uses local TZ
-      break;
+    switch (itemType.typeId) {
       case BOOLEAN:
         result = ((BooleanWritable) o).get();
         break;
@@ -473,17 +455,12 @@ class PigHCatUtil {
       case DOUBLE:
         result =  ((DoubleWritable) o).get();
         break;
-
       case STRING:
       case VARCHAR:
       case CHAR:
         result = ((Text) o).toString();
         break;
-
-      case BINARY:
-        result = ((BytesWritable) o).getBytes();
-        break;
-      case TIMESTAMP:
+      case TIMESTAMP_NANOS:
         result = ((TimestampNanosWritable) o).get();
         break;
       case DECIMAL:
@@ -496,8 +473,8 @@ class PigHCatUtil {
     return result;
   }
 
-  private static Tuple transformToTuple(List<?> objList, HCatFieldSchema hfs)
-      throws Exception {
+  // TODO: Re-implement when RecordService supports complex types.
+  /*private static Tuple transformToTuple(List<?> objList, HCatFieldSchema hfs) throws Exception {
     try {
       return transformToTuple(objList, hfs.getStructSubSchema());
     } catch (Exception e) {
@@ -507,59 +484,18 @@ class PigHCatUtil {
         throw e;
       }
     }
-  }
+  }*/
 
-  private static Tuple transformToTuple(List<?> objList, HCatSchema hs) throws Exception {
+  private static Tuple transformToTuple(List<?> objList,  com.cloudera.recordservice.mr.Schema schema) throws Exception {
     if (objList == null) {
       return null;
     }
     Tuple t = tupFac.newTuple(objList.size());
-    List<HCatFieldSchema> subFields = hs.getFields();
-    for (int i = 0; i < subFields.size(); i++) {
-      t.set(i, extractPigObject(objList.get(i), subFields.get(i)));
+    for (int i = 0; i < schema.getNumColumns(); i++) {
+      t.set(i, extractPigObject(objList.get(i), schema.getColumnInfo(i).type));
     }
     return t;
   }
-
-  private static Map<String, Object> transformToPigMap(
-      Map<?, ?> map, HCatFieldSchema hfs) throws Exception {
-    if (map == null) {
-      return null;
-    }
-
-    Map<String, Object> result = new HashMap<String, Object>();
-    for (Entry<?, ?> entry : map.entrySet()) {
-      // since map key for Pig has to be Strings
-      if (entry.getKey()!=null) {
-        result.put(entry.getKey().toString(),
-            extractPigObject(entry.getValue(), hfs.getMapValueSchema().get(0)));
-      }
-    }
-    return result;
-  }
-
-  private static DataBag transformToBag(List<?> list, HCatFieldSchema hfs)
-      throws Exception {
-    if (list == null) {
-      return null;
-    }
-
-    HCatFieldSchema elementSubFieldSchema =
-        hfs.getArrayElementSchema().getFields().get(0);
-    DataBag db = new DefaultDataBag();
-    for (Object o : list) {
-      Tuple tuple;
-      if (elementSubFieldSchema.getType() == Type.STRUCT) {
-        tuple = transformToTuple((List<?>) o, elementSubFieldSchema);
-      } else {
-        // bags always contain tuples
-        tuple = tupFac.newTuple(extractPigObject(o, elementSubFieldSchema));
-      }
-      db.add(tuple);
-    }
-    return db;
-  }
-
 
   private static void validateHCatSchemaFollowsPigRules(HCatSchema tblSchema)
       throws PigException {
