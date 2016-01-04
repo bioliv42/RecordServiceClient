@@ -22,6 +22,7 @@ package com.cloudera.recordservice.hcatalog.mapreduce;
 import java.io.IOException;
 import java.util.List;
 
+import com.cloudera.recordservice.hcatalog.common.HCatRSUtil;
 import com.cloudera.recordservice.mr.PlanUtil;
 import com.cloudera.recordservice.mr.RecordServiceConfig;
 import com.google.common.base.Preconditions;
@@ -31,6 +32,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.security.Credentials;
 import org.apache.hadoop.security.token.Token;
+import org.apache.hive.hcatalog.common.HCatUtil;
+import org.apache.hive.hcatalog.data.Pair;
 import com.cloudera.recordservice.core.NetworkAddress;
 import com.cloudera.recordservice.core.RecordServiceException;
 import com.cloudera.recordservice.core.RecordServicePlannerClient;
@@ -50,11 +53,21 @@ public class HCatRSInputFormat extends HCatRSBaseInputFormat {
    * Initializes the input with a provided filter.
    * See {@link #setInput(Configuration, String, String, String)}
    */
-  public static HCatRSInputFormat setInput(
-      Job job, String dbName, String tableName, String filter) throws IOException {
-    RecordServiceConfig.setInputTable(job.getConfiguration(), dbName, tableName);
+  public static HCatRSInputFormat setInput(Job job, String location, String filter)
+      throws IOException {
     Configuration conf = job.getConfiguration();
     String kerberosPrincipal = conf.get(ConfVars.KERBEROS_PRINCIPAL_CONF.name);
+    Pair<String, String> dbTablePair = HCatUtil.getDbAndTableName(location);
+    dbTablePair = HCatRSUtil.cleanQueryPair(dbTablePair);
+    String dbName = dbTablePair.first;
+    String tableName = dbTablePair.second;
+    if (location.toLowerCase().startsWith("select")) {
+      RecordServiceConfig.setInputQuery(job.getConfiguration(), location);
+    }
+    else{
+      RecordServiceConfig.setInputTable(job.getConfiguration(), dbName, tableName);
+
+    }
     Credentials credentials = job.getCredentials();
     RecordServicePlannerClient.Builder builder = PlanUtil.getBuilder(conf);
     List<NetworkAddress> plannerHosts = PlanUtil.getPlannerHostPorts(conf);

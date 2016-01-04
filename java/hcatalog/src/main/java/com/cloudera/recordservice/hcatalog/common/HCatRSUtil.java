@@ -37,6 +37,7 @@ import org.apache.hadoop.hive.serde.serdeConstants;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.security.Credentials;
 import org.apache.hive.hcatalog.common.HCatConstants;
+import org.apache.hive.hcatalog.data.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -103,6 +104,27 @@ public class HCatRSUtil {
     } catch (Exception e) {
       throw new IOException("Deserialization error: " + e.getMessage(), e);
     }
+
+  }
+
+  public static Pair<String, String> cleanQueryPair(Pair<String, String> dbTablePair){
+    String dbName;
+    String tableName;
+    String[] dbCheck = dbTablePair.first.split(" ");
+    if(dbCheck.length != 1) {
+      dbName = dbCheck[dbCheck.length - 1];
+    }
+    else {
+      dbName = dbTablePair.first;
+    }
+    String[] tbCheck = dbTablePair.second.split(" ");
+    if(dbCheck.length != 1) {
+      tableName = tbCheck[0];
+    }
+    else {
+      tableName = dbTablePair.second;
+    }
+    return new Pair<String, String>(dbName, tableName);
   }
 
   public static String encodeBytes(byte[] bytes) {
