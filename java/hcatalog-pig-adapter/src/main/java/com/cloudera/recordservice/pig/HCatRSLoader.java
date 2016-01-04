@@ -75,8 +75,6 @@ public class HCatRSLoader extends HCatLoader {
 
   private static final String PARTITION_FILTER = "partition.filter"; // for future use
   private HCatRSInputFormat hcatRSInputFormat = null;
-  private String dbName;
-  private String tableName;
   private RecordReader<?, ?> reader;
   private String hcatServerUri;
   private HCatSchema outputSchema = null;
@@ -111,9 +109,6 @@ public class HCatRSLoader extends HCatLoader {
     Properties udfProps = udfContext.getUDFProperties(this.getClass(),
         new String[]{signature});
     job.getConfiguration().set(INNER_SIGNATURE, INNER_SIGNATURE_PREFIX + "_" + signature);
-    Pair<String, String> dbTablePair = PigHCatUtil.getDBTableNames(location);
-    dbName = dbTablePair.first;
-    tableName = dbTablePair.second;
 
     RequiredFieldList requiredFieldsInfo = (RequiredFieldList) udfProps
       .get(PRUNE_PROJECTION_INFO);
@@ -136,7 +131,7 @@ public class HCatRSLoader extends HCatLoader {
       }
     } else {
       Job clone = new Job(job.getConfiguration());
-      HCatRSInputFormat.setInput(job, dbName, tableName, getPartitionFilterString());
+      HCatRSInputFormat.setInput(job, location, getPartitionFilterString());
       InputJobInfo inputJobInfo = (InputJobInfo) HCatRSUtil.deserialize(
           job.getConfiguration().get(HCatConstants.HCAT_KEY_JOB_INFO));
 
@@ -222,7 +217,6 @@ public class HCatRSLoader extends HCatLoader {
   public ResourceSchema getSchema(String location, Job job) throws IOException {
     HCatContext.INSTANCE.setConf(job.getConfiguration()).getConf().get()
       .setBoolean(HCatConstants.HCAT_DATA_TINY_SMALL_INT_PROMOTION, true);
-
     Table table = phutil.getTable(location,
       hcatServerUri != null ? hcatServerUri : PigHCatUtil.getHCatServerUri(job),
       PigHCatUtil.getHCatServerPrincipal(job),
@@ -313,7 +307,7 @@ public class HCatRSLoader extends HCatLoader {
     try {
       RecordServiceRecord record = (RecordServiceRecord)
           (reader.nextKeyValue() ? reader.getCurrentValue() : null);
-      Tuple t = PigHCatUtil.transformToTuple(record, outputSchema);
+      Tuple t = PigHCatUtil.transformToTuple(record);
       // TODO : we were discussing an iter interface, and also a LazyTuple
       // change this when plans for that solidifies.
       return t;
