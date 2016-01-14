@@ -28,10 +28,10 @@ To use Spark shell with RecordService, first you'll need to start up `spark-shel
 with RecordService jar:
 
 ```bash
-spark-shell --properties_file=/path/to/properties_file --jars /path/to/recordservice-spark.jar
+spark-shell --properties-file=/path/to/properties-file --jars /path/to/recordservice-spark.jar
 ```
 
-where the parameter `properties_file` should include all the necessary properties. For instance:
+where the parameter `properties-file` should include all the necessary properties. For instance:
 
 ```
 spark.recordservice.planner.rpc.timeoutMs=-1
@@ -115,7 +115,7 @@ on the `tpch.nation` table mentioned in the MapReduce example:
 spark-submit \
   --class com.cloudera.recordservice.examples.spark.RecordCount \
   --master <master-url> \
-  --properties_file /path/to/properties_file \
+  --properties-file /path/to/properties-file \
   /path/to/recordservice-examples-spark-${VERSION_NUMBER}.jar \
   "SELECT * FROM tpch.nation"
 ```
@@ -133,7 +133,7 @@ However, accessing the columns we've been granted privileges with will be OK:
 spark-submit \
   --class com.cloudera.recordservice.examples.spark.RecordCount \
   --master <master-url> \
-  --properties_file /path/to/properties_file \
+  --properties-file /path/to/properties-file \
   /path/to/recordservice-examples-spark-${VERSION_NUMBER}.jar \
   "SELECT n_name, n_nationkey FROM tpch.nation"
 
@@ -145,7 +145,7 @@ Accessing the `tpch.nation_names` view is also OK:
 spark-submit \
   --class com.cloudera.recordservice.examples.spark.RecordCount \
   --master <master-url> \
-  --properties_file /path/to/properties_file \
+  --properties-file /path/to/properties-file \
   /path/to/recordservice-examples-spark-${VERSION_NUMBER}.jar \
   "SELECT * FROM tpch.nation_names"
 
@@ -162,6 +162,6 @@ as example:
 spark-submit \
   --class com.cloudera.recordservice.examples.spark.WordCount \
   --master <master-url> \
-  --properties_file /path/to/properties_file \
+  --properties-file /path/to/properties-file \
   /path/to/recordservice-examples-spark-${VERSION_NUMBER}.jar
 ```
