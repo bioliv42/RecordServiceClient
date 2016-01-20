@@ -62,11 +62,10 @@ public class HCatRSInputFormat extends HCatRSBaseInputFormat {
     String dbName = dbTablePair.first;
     String tableName = dbTablePair.second;
     if (location.toLowerCase().startsWith("select")) {
-      RecordServiceConfig.setInputQuery(job.getConfiguration(), location);
+      RecordServiceConfig.setInputQuery(conf, location);
     }
     else{
-      RecordServiceConfig.setInputTable(job.getConfiguration(), dbName, tableName);
-
+      RecordServiceConfig.setInputTable(conf, dbName, tableName);
     }
     Credentials credentials = job.getCredentials();
     RecordServicePlannerClient.Builder builder = PlanUtil.getBuilder(conf);
