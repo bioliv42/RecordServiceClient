@@ -104,21 +104,24 @@ public class HCatRSUtil {
     } catch (Exception e) {
       throw new IOException("Deserialization error: " + e.getMessage(), e);
     }
-
   }
 
+  // This method cleans out any extra characters before the database name and after
+  // the table name. It takes in a Pair where the left String ends with the database name
+  // and the right String starts with the table name Pair that is returned strips
+  // away all other parts of the query so Hcatalog can handle it.
   public static Pair<String, String> cleanQueryPair(Pair<String, String> dbTablePair){
     String dbName;
     String tableName;
     String[] dbCheck = dbTablePair.first.split(" ");
-    if(dbCheck.length != 1) {
+    if (dbCheck.length != 1) {
       dbName = dbCheck[dbCheck.length - 1];
     }
     else {
       dbName = dbTablePair.first;
     }
     String[] tbCheck = dbTablePair.second.split(" ");
-    if(dbCheck.length != 1) {
+    if (dbCheck.length != 1) {
       tableName = tbCheck[0];
     }
     else {
