@@ -263,11 +263,11 @@ abstract class RecordServiceRDDBase[T:ClassTag](@transient sc: SparkContext)
           sc.getConf.getInt(RecordServiceConf.PLANNER_REQUEST_MAX_TASKS, -1)
 
       val builder = new RecordServicePlannerClient.Builder()
-      if (connectionTimeoutMs != -1) builder.setConnectionTimeoutMs(connectionTimeoutMs);
-      if (rpcTimeoutMs != -1) builder.setRpcTimeoutMs(rpcTimeoutMs);
-      if (maxTasks != -1) builder.setMaxAttempts(maxAttempts);
-      if (sleepDurationMs != -1) builder.setSleepDurationMs(sleepDurationMs);
-      if (maxAttempts != -1) builder.setMaxTasks(maxTasks);
+      if (connectionTimeoutMs != -1) builder.setConnectionTimeoutMs(connectionTimeoutMs)
+      if (rpcTimeoutMs != -1) builder.setRpcTimeoutMs(rpcTimeoutMs)
+      if (maxAttempts != -1) builder.setMaxAttempts(maxAttempts)
+      if (sleepDurationMs != -1) builder.setSleepDurationMs(sleepDurationMs)
+      if (maxTasks != -1) builder.setMaxTasks(maxTasks)
       planner = PlanUtil.getPlanner(sc.hadoopConfiguration,
         builder, plannerHostPorts, principal, null)
       val result = planner.planRequest(request)
