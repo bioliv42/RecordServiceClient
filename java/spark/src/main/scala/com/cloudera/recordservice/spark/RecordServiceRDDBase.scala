@@ -69,16 +69,17 @@ abstract class RecordServiceRDDBase[T:ClassTag](@transient sc: SparkContext)
   // Configs that we use when we execute the task. These come from SparkContext
   // but we do not serialize the entire context. Instead these are populated in
   // the client (i.e. planning phase).
-  val memLimit = sc.getConf.getLong(RecordServiceConf.MEM_LIMIT_CONF, -1);
-  val limit = sc.getConf.getLong(RecordServiceConf.RECORDS_LIMIT_CONF, -1);
+  val memLimit = sc.getConf.getLong(RecordServiceConf.MEM_LIMIT_CONF, -1)
+  val limit = sc.getConf.getLong(RecordServiceConf.RECORDS_LIMIT_CONF, -1)
   val maxAttempts = sc.getConf.getInt(
-      RecordServiceConf.WORKER_RETRY_ATTEMPTS_CONF, -1);
+      RecordServiceConf.WORKER_RETRY_ATTEMPTS_CONF, -1)
   val taskSleepMs = sc.getConf.getInt(
-      RecordServiceConf.WORKER_RETRY_SLEEP_MS_CONF, -1);
+      RecordServiceConf.WORKER_RETRY_SLEEP_MS_CONF, -1)
   val connectionTimeoutMs = sc.getConf.getInt(
-      RecordServiceConf.WORKER_CONNECTION_TIMEOUT_MS_CONF, -1);
+      RecordServiceConf.WORKER_CONNECTION_TIMEOUT_MS_CONF, -1)
   val rpcTimeoutMs = sc.getConf.getInt(
-      RecordServiceConf.WORKER_RPC_TIMEOUT_MS_CONF, -1);
+      RecordServiceConf.WORKER_RPC_TIMEOUT_MS_CONF, -1)
+  val fetchSize = sc.getConf.getInt(RecordServiceConf.FETCH_SIZE_CONF, -1)
 
   // Request to make
   @transient var request:Request = null
@@ -178,12 +179,13 @@ abstract class RecordServiceRDDBase[T:ClassTag](@transient sc: SparkContext)
       val builder = new RecordServiceWorkerClient.Builder()
       builder.setDelegationToken(partition.delegationToken)
 
-      if (memLimit != -1) builder.setMemLimit(memLimit);
-      if (limit != -1) builder.setLimit(limit);
-      if (maxAttempts != -1) builder.setMaxAttempts(maxAttempts);
-      if (taskSleepMs != -1 ) builder.setSleepDurationMs(taskSleepMs);
-      if (connectionTimeoutMs != -1) builder.setConnectionTimeoutMs(connectionTimeoutMs);
-      if (rpcTimeoutMs != -1) builder.setRpcTimeoutMs(rpcTimeoutMs);
+      if (memLimit != -1) builder.setMemLimit(memLimit)
+      if (limit != -1) builder.setLimit(limit)
+      if (maxAttempts != -1) builder.setMaxAttempts(maxAttempts)
+      if (taskSleepMs != -1 ) builder.setSleepDurationMs(taskSleepMs)
+      if (connectionTimeoutMs != -1) builder.setConnectionTimeoutMs(connectionTimeoutMs)
+      if (rpcTimeoutMs != -1) builder.setRpcTimeoutMs(rpcTimeoutMs)
+      if (fetchSize != -1) builder.setFetchSize(fetchSize)
 
       val (hostname, port) = getWorkerToConnectTo(partition)
       worker = builder.connect(hostname, port)
