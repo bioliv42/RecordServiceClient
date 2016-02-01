@@ -61,8 +61,109 @@
     <!-- Note: avoid guava in the client libraries -->
     <guava.version>14.0.1</guava.version>
     <junit.version>4.11</junit.version>
+
+    <cdh.toolchain.home>/opt/toolchain</cdh.toolchain.home>
+    <!-- Clover properties -->
+    <cdh.clover.version>4.0.3</cdh.clover.version>
+    <cdh.clover.license.location>${cdh.toolchain.home}/clover-ant-${cdh.clover.version}/lib/clover.license</cdh.clover.license.location>
+
   </properties>
 
+  <profiles>
+        <profile>
+           <id>local</id>
+           <activation>
+            <activeByDefault>true</activeByDefault>
+            </activation>
+             <properties>
+                 <deploy.maven>http://maven.jenkins.cloudera.com:8081/artifactory/libs-release-local</deploy.maven>
+             </properties>
+        </profile>
+        <profile>
+           <id>remote</id>
+           <properties>
+               <deploy.maven>https://repository.cloudera.com/cloudera/libs-release-local</deploy.maven>
+           </properties>
+        </profile>
+        <profile>
+          <id>cloudera-clover</id>
+          <activation>
+            <activeByDefault>false</activeByDefault>
+          </activation>
+          <dependencies>
+            <dependency>
+              <groupId>com.atlassian.clover</groupId>
+              <artifactId>clover</artifactId>
+              <version>${cdh.clover.version}</version>
+            </dependency>
+          </dependencies>
+          <build>
+            <plugins>
+              <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <dependencies>
+                  <dependency>
+                    <groupId>com.atlassian.maven.plugins</groupId>
+                    <artifactId>maven-clover2-plugin</artifactId>
+                    <version>${cdh.clover.version}</version>
+                  </dependency>
+                </dependencies>
+              </plugin>
+              <plugin>
+                <groupId>com.atlassian.maven.plugins</groupId>
+                <artifactId>maven-clover2-plugin</artifactId>
+                <version>${cdh.clover.version}</version>
+                <configuration>
+                  <includesAllSourceRoots>true</includesAllSourceRoots>
+                  <includesTestSourceRoots>true</includesTestSourceRoots>
+                  <excludes>
+                    <exclude>**/generated/**</exclude>
+                    <exclude>**/generated-sources/**</exclude>
+                    <exclude>**/src-instrumented/**</exclude>
+                  </excludes>
+                  <licenseLocation>${cdh.clover.license.location}</licenseLocation>
+                </configuration>
+                <executions>
+                  <execution>
+                    <id>clover-setup</id>
+                    <phase>process-sources</phase>
+                    <goals>
+                      <goal>setup</goal>
+                    </goals>
+                  </execution>
+                  <execution>
+                    <id>clover</id>
+                    <phase>site</phase>
+                    <goals>
+                      <goal>clover</goal>
+                    </goals>
+                  </execution>
+                </executions>
+              </plugin>
+            </plugins>
+          </build>
+        </profile>
+        <profile>
+          <id>sonar</id>
+          <activation>
+            <activeByDefault>false</activeByDefault>
+          </activation>
+          <properties>
+            <!-- EXAMPLE FOR MYSQL -->
+            <sonar.jdbc.url>
+              jdbc:mysql://sonar.jenkins.cloudera.com:3306/sonar?useUnicode=true&amp;characterEncoding=utf8
+            </sonar.jdbc.url>
+            <sonar.jdbc.driverClassName>com.mysql.jdbc.Driver</sonar.jdbc.driverClassName>
+            <sonar.jdbc.username>sonar</sonar.jdbc.username>
+            <sonar.jdbc.password>sonar</sonar.jdbc.password>
+            <!-- optional URL to server. Default value is http://localhost:9000 -->
+            <sonar.host.url>
+              http://sonar.jenkins.cloudera.com:9000
+            </sonar.host.url>
+          </properties>
+        </profile>
+    </profiles>
   <reporting>
     <plugins>
       <plugin>
