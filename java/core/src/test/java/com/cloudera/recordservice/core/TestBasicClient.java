@@ -457,7 +457,6 @@ public class TestBasicClient extends TestBase {
         .planRequest(PLANNER_HOST, PLANNER_PORT,
             Request.createSqlRequest("select * from tpch.nation"));
     assertTrue(plan.warnings.isEmpty());
-
     // Verify schema
     verifyNationSchema(plan.schema, false);
     assertEquals(1, plan.tasks.size());

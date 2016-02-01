@@ -75,7 +75,6 @@ public class ClusterController {
     RECORD_SERVICE_PLANNER_HOST = hostname;
     try {
       if (USE_MINI_CLUSTER) {
-        MiniClusterController.Start(DEFAULT_NUM_NODES);
         cluster_ = MiniClusterController.instance();
         HADOOP_CONF_DIR = System.getenv("HADOOP_CONF_DIR");
       } else {
@@ -96,9 +95,6 @@ public class ClusterController {
         LOGGER.debug("HADOOP_HOME: " + System.getenv("HADOOP_HOME"));
         cluster_ = this;
       }
-    } catch (InterruptedException e) {
-      LOGGER.debug("Error starting mini cluster", e);
-      System.exit(1);
     } catch (MalformedURLException e) {
       LOGGER.debug("Error getting cluster configuration", e);
       System.exit(1);
