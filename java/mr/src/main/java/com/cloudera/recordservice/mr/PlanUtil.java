@@ -164,7 +164,7 @@ public class PlanUtil {
     // Try all the host ports in order.
     // TODO: we can randomize the list for load balancing but it might be more
     // efficient to be sticky (hotter cache, etc).
-    RecordServicePlannerClient planner = null;
+    RecordServicePlannerClient planner;
     Exception lastException = null;
     for (int i = 0; i < plannerHostPorts.size(); ++i) {
       NetworkAddress hostPort = plannerHostPorts.get(i);
@@ -194,9 +194,23 @@ public class PlanUtil {
   public static SplitsInfo getSplits(Configuration jobConf,
                                      Credentials credentials) throws IOException {
     Request request = PlanUtil.getRequest(jobConf);
-    List<NetworkAddress> plannerHostPorts = RecordServiceConfig.getPlannerHostPort(
-        jobConf.get(RecordServiceConfig.PLANNER_HOSTPORTS_CONF,
-            RecordServiceConfig.DEFAULT_PLANNER_HOSTPORTS));
+    List<NetworkAddress> plannerHostPorts = null;
+    if (isPlannerDiscoveryEnabled(jobConf)) {
+      try {
+        LOG.info("Using planner auto discovery on ZK connection string {}",
+            jobConf.get(RecordServiceConfig.ZOOKEEPER_CONNECTION_STRING_CONF));
+        plannerHostPorts = ZooKeeperUtil.getPlanners(jobConf);
+      } catch (IOException e) {
+        LOG.warn("Planner discovery failed. Now fall back to use "
+            + RecordServiceConfig.PLANNER_HOSTPORTS_CONF
+            + " in the job configuration.", e);
+      }
+    }
+    if (plannerHostPorts == null || plannerHostPorts.isEmpty()) {
+      plannerHostPorts = RecordServiceConfig.getPlannerHostPort(
+          jobConf.get(RecordServiceConfig.PLANNER_HOSTPORTS_CONF,
+              RecordServiceConfig.DEFAULT_PLANNER_HOSTPORTS));
+    }
     String kerberosPrincipal =
         jobConf.get(RecordServiceConfig.KERBEROS_PRINCIPAL_CONF);
     int connectionTimeoutMs =
@@ -247,6 +261,16 @@ public class PlanUtil {
     // Randomize the order of the splits to mitigate skew.
     Collections.shuffle(splits);
     return new SplitsInfo(splits, schema);
+  }
+
+  /**
+   * Checks whether planner auto discovery is enabled. This checks the 'conf' to see
+   * if the ZooKeeper connection string is defined and is not empty.
+   */
+  private static boolean isPlannerDiscoveryEnabled(Configuration conf) {
+    String zkConnectString =
+        conf.get(RecordServiceConfig.ZOOKEEPER_CONNECTION_STRING_CONF);
+    return zkConnectString != null && !zkConnectString.isEmpty();
   }
 
   /**
