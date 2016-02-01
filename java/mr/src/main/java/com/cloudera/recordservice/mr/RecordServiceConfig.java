@@ -107,6 +107,21 @@ public class RecordServiceConfig {
   public final static String WORKER_ENABLE_SERVER_LOGGING_CONF =
       "recordservice.worker.server.enableLogging";
 
+  // ZooKeeper related configurations - these are optional and only used if
+  // planner auto discovery is enabled.
+
+  // Location of zookeeper quorum.
+  public static final String ZOOKEEPER_CONNECTION_STRING_CONF =
+      "recordservice.zookeeper.connectString";
+
+  // ZK connection timeout (in milli seconds).
+  public static final String ZOOKEEPER_CONNECT_TIMEOUTMILLIS_CONF =
+      "recordservice.zookeeper.connectTimeoutMillis";
+
+  // Root zookeeper directory.
+  public static final String ZOOKEEPER_ZNODE_CONF = "recordservice.zookeeper.znode";
+  public static final String ZOOKEEPER_ZNODE_DEFAULT = "/recordservice";
+
   /**
    * Sets the input configuration to read 'cols' from 'db.tbl'. If the tbl is fully
    * qualified, db should be null.

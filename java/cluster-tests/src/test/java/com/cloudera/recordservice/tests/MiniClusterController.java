@@ -29,7 +29,6 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RunningJob;
 
 import com.cloudera.recordservice.mr.RecordServiceConfig;
-import com.cloudera.recordservice.tests.ClusterController.ClusterNode;
 import com.cloudera.recordservice.util.Preconditions;
 
 /**
@@ -39,8 +38,9 @@ import com.cloudera.recordservice.util.Preconditions;
  * This class is a singleton. It first needs to be instantiated, and then the
  * instance method returns the class instance.
  *
- * Usage: MiniClusterController.Start(num_nodes); MiniClusterController
- * miniCluster = MiniClusterController.instance();
+ * Usage:
+ * MiniClusterController.Start(num_nodes);
+ * MiniClusterController miniCluster = MiniClusterController.instance();
  */
 public class MiniClusterController extends ClusterController {
   private static native void StartMiniCluster(int numNodes);
@@ -101,15 +101,16 @@ public class MiniClusterController extends ClusterController {
   /**
    * Adds a recordserviced to the cluster. If 'startPlanner' is true, run it as
    * planner; if 'startWorker' is true, run it as worker. If both are true, run
-   * as both planner and worker.
+   * as both planner and worker. Returns the new node added.
    */
-  public void addRecordServiced(boolean startPlanner, boolean startWorker) {
+  public MiniClusterNode addRecordServiced(boolean startPlanner, boolean startWorker) {
     Preconditions.checkArgument(startPlanner || startWorker);
     int pid = AddRecordServiceNode(startPlanner, startWorker);
     Map<String, Integer> args = processNodeArgs(GetNodeArgs(pid));
     args.put("pid", pid);
     MiniClusterNode newNode = new MiniClusterNode(args);
     clusterList_.add(newNode);
+    return newNode;
   }
 
   /**
@@ -289,6 +290,10 @@ public class MiniClusterController extends ClusterController {
    */
   private static void startMiniCluster(int numNodes) {
     String rsHome = System.getenv("RECORD_SERVICE_HOME");
+    if (rsHome == null) {
+      throw new IllegalStateException(
+          "Required environment variable RECORD_SERVICE_HOME is not set.");
+    }
     String path = rsHome + BUILT_RS_CODE_LOCATION;
     System.load(path + MINICLUSTER_LIBRARY);
     System.out.println("Number of nodes: " + numNodes);
@@ -392,7 +397,7 @@ public class MiniClusterController extends ClusterController {
   public static void main(String[] args) throws InterruptedException, IOException,
       NumberFormatException {
     org.apache.log4j.BasicConfigurator.configure();
-    int numNodes = ClusterController.DEFAULT_NUM_NODES;
+    int numNodes = DEFAULT_NUM_NODES;
     if (args.length == 1) {
       numNodes = Integer.parseInt(args[0]);
     }
