@@ -63,19 +63,30 @@ fi
 
 mvn clean install -f $RECORD_SERVICE_HOME/java/pom.xml
 
+AUDIT_LOG_DIR=/tmp/recordservice/audit-test
+
 if not_quickstart_vm ; then
+  if [ -d ${AUDIT_LOG_DIR} ]; then
+    # Clean the audit log dir before running related tests
+    rm ${AUDIT_LOG_DIR}/*
+  else
+    mkdir -p ${AUDIT_LOG_DIR}
+  fi
+
   # Start up the cluster for the tests that need an Impala cluster already running.
   cd $IMPALA_HOME
-  bin/start-impala-cluster.py -s 1 --catalogd_args="-load_catalog_in_background=false"
+  bin/start-impala-cluster.py -s 1 --catalogd_args="-load_catalog_in_background=false" \
+    --rs_args="-audit_event_log_dir=${AUDIT_LOG_DIR}"
+
+  # Run Authorization tests
+  export IGNORE_SENTRY_TESTS=false
+  cd $RECORD_SERVICE_HOME/tests
+  ./run_authorization_tests.py --audit_log_dir=${AUDIT_LOG_DIR}
 
   # Run Hive SerDe test
   cd $IMPALA_HOME/fe
   mvn -Dtest=HiveSerDeExecutorTest test
 
-  # Run Sentry tests
-  export IGNORE_SENTRY_TESTS=false
-  cd $RECORD_SERVICE_HOME/tests
-  ./run_sentry_tests.py
 
   cd $IMPALA_HOME/tests
   ./run-tests.py query_test/test_hive_serde.py
