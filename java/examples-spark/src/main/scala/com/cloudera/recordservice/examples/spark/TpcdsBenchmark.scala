@@ -145,10 +145,10 @@ object TpcdsBenchmark {
     }
 
     var error = false
-    queryName match {
-      case "Query1" => query1(sqlContext)
-      case "Query2" => query2(sqlContext)
-      case "Query3" => query3(sqlContext)
+    queryName.toUpperCase match {
+      case "QUERY1" => query1(sqlContext)
+      case "QUERY2" => query2(sqlContext)
+      case "QUERY3" => query3(sqlContext)
 
       // TPCDS queries below
       case "Q3" => q3(sqlContext)

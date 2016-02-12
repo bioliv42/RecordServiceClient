@@ -44,6 +44,7 @@ generate_report "Query1_Avro_6GB" $DAYS $RESULTS_DIR
 generate_report "Query2_Parquet_6GB" $DAYS $RESULTS_DIR
 generate_report "Query2_Avro_6GB" $DAYS $RESULTS_DIR
 generate_report "Query1_Parquet_500GB" $DAYS $RESULTS_DIR
+generate_report "TPCDS_Q88_Parquet_500GB" $DAYS $RESULTS_DIR
 generate_report "TPCDS_Q7_Parquet_500GB" $DAYS $RESULTS_DIR
 generate_report "TPCDS_Q73_Parquet_500GB" $DAYS $RESULTS_DIR
 generate_report "Query_1M_blocks_10K_partitions_small_files" $DAYS $RESULTS_DIR
