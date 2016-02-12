@@ -65,11 +65,11 @@ case class RecordServiceRelation(table:String, size:Option[Long])(
     val builder = new RecordServicePlannerClient.Builder()
     // TODO: this code is replicated in a few places because of where the
     // configs come from. We have hadoop Configuration, SparkContext and SQLContext.
-    if (connectionTimeoutMs != -1) builder.setConnectionTimeoutMs(connectionTimeoutMs);
-    if (rpcTimeoutMs != -1) builder.setRpcTimeoutMs(rpcTimeoutMs);
-    if (maxTasks != -1) builder.setMaxAttempts(maxAttempts);
-    if (sleepDurationMs != -1) builder.setSleepDurationMs(sleepDurationMs);
-    if (maxAttempts != -1) builder.setMaxTasks(maxTasks);
+    if (connectionTimeoutMs != -1) builder.setConnectionTimeoutMs(connectionTimeoutMs)
+    if (rpcTimeoutMs != -1) builder.setRpcTimeoutMs(rpcTimeoutMs)
+    if (maxTasks != -1) builder.setMaxTasks(maxTasks)
+    if (sleepDurationMs != -1) builder.setSleepDurationMs(sleepDurationMs)
+    if (maxAttempts != -1) builder.setMaxAttempts(maxAttempts)
 
     val planner = PlanUtil.getPlanner(sqlContext.sparkContext.hadoopConfiguration,
       builder, RecordServiceConf.getPlannerHostPort(sqlContext.sparkContext),
