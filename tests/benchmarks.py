@@ -19,6 +19,7 @@
 import os
 
 IMPALA_SHELL_CMD = os.environ['IMPALA_HOME'] + "/bin/impala-shell.sh -i LOCALHOST -B "
+PLANNER_HOST = os.environ['RECORD_SERVICE_PLANNER_HOST']
 
 # TODO: right now this is used in several places (e.g., pom.xml). It would
 # be good if there's a way to only define it at one place.
@@ -88,6 +89,19 @@ def spark_cmd(cl, query):
   return "java -classpath " + os.environ['RECORD_SERVICE_HOME'] +\
       "/java/examples-spark/target/recordservice-examples-spark-" + VERSION + ".jar " + cl +\
       " \"" + query + "\""
+
+def spark_tpcds(query, use_rs=False):
+    return "spark-submit " +\
+    "--class com.cloudera.recordservice.examples.spark.TpcdsBenchmark " +\
+    "--master yarn-client " +\
+    "--num-executors 16 " +\
+    "--executor-memory 28g " +\
+    "--executor-cores 6 " +\
+    "--driver-memory 20g " +\
+    "--conf \"spark.driver.maxResultSize=15g\" " +\
+    os.environ['RECORD_SERVICE_HOME'] +\
+    "/java/examples-spark/target/recordservice-examples-spark-" + VERSION + ".jar " +\
+    (PLANNER_HOST if use_rs else "SPARK") + " " + query
 
 def spark_q1(query):
   return spark_cmd("com.cloudera.recordservice.examples.spark.Query1", query)
@@ -215,6 +229,8 @@ benchmarks = [
   [
     "TPCDS_Q7_Parquet_500GB", "cluster",
     [
+      ["spark", spark_tpcds("q7")],
+      ["spark-rs", spark_tpcds("q7", True)],
       ["impala", impala_tpcds("q7", False)],
       ["impala-rs", impala_tpcds("q7", True)],
     ]
@@ -223,8 +239,20 @@ benchmarks = [
   [
     "TPCDS_Q73_Parquet_500GB", "cluster",
     [
+      ["spark", spark_tpcds("q73")],
+      ["spark-rs", spark_tpcds("q73", True)],
       ["impala", impala_tpcds("q73", False)],
       ["impala-rs", impala_tpcds("q73", True)],
+    ]
+  ],
+
+  [
+    "TPCDS_Q88_Parquet_500GB", "cluster",
+    [
+      ["spark", spark_tpcds("q88")],
+      ["spark-rs", spark_tpcds("q88", True)],
+      ["impala", impala_tpcds("q88", False)],
+      ["impala-rs", impala_tpcds("q88", True)],
     ]
   ],
 

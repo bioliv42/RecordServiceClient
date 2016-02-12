@@ -49,4 +49,3 @@ impala-shell.sh -q "invalidate metadata"
 # TODO: same these files instead of regenerating them each time.
 impala-shell.sh -q \
     "insert overwrite tpch6gb_parquet.lineitem select * from tpch6gb.lineitem"
-
