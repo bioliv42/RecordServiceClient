@@ -1,6 +1,6 @@
 ---
 layout: article
-title: 'Download and Install the RecordService VM'
+title: 'Using the RecordService VM'
 share: false
 ---
 
