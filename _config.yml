@@ -5,7 +5,7 @@ logo: "/img/rs120x120.png" # 120x120 px default image used for Twitter summary c
 teaser: # 400x250 px default teaser image used in image archive grid
 locale: en
 baseurl: /RecordServiceClient
-url: /RecordServiceClient
+url: /RecordServiceClient/
 examplesUrl: "https://github.com/cloudera/RecordServiceClient/tree/master/java/examples"
 examplesSparkUrl: "http://github.com/cloudera/RecordServiceClient/tree/master/java/examples-spark"
 
@@ -17,9 +17,9 @@ sass:
 permalink: /:categories/:title/
 kramdown:
   toc_levels: 1..3
-highlighter: pygments
-gems:
-  - jekyll-sitemap
+highlighter: rouge
+#gems:
+# - jekyll-sitemap
 
 
 # Site owner
