@@ -4,8 +4,8 @@ description: "An abstraction layer between storage managers (for example, HDFS, 
 logo: "/img/rs120x120.png" # 120x120 px default image used for Twitter summary card
 teaser: # 400x250 px default teaser image used in image archive grid
 locale: en
-baseurl: /RecordServiceClient
-url: /RecordServiceClient
+baseurl: http://recordservice.io/
+url: http://recordservice.io/
 examplesUrl: "https://github.com/cloudera/RecordServiceClient/tree/master/java/examples"
 examplesSparkUrl: "http://github.com/cloudera/RecordServiceClient/tree/master/java/examples-spark"
 
