@@ -7,7 +7,7 @@ share: false
 
 Use these instructions to install RecordService in an existing Hadoop cluster. You can also use the RecordService VM if you want to quickly install and explore the features of RecordService.
 
-See [Download and Install RecordService VM]({{site.baseurl}}/vm.html).
+See [Download and Install RecordService VM]({{site.baseurl}}/vm).
 
 {% include toc.html %}
 

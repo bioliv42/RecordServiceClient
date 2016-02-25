@@ -18,7 +18,7 @@ Suppose you have a group of employees who are tasked with editing the nation key
 
 To assign access with column-level restrictions, you create a role, assign the role to a group, create a view with the columns the group can access, and then assign the view to the role.
 
-* [Download and Install the RecordService VM]({{site.baseurl}}/vm.html).
+* [Download and Install the RecordService VM]({{site.baseurl}}/vm).
 
 * Connect to the RecordService VM using the SSH command `ssh cloudera@quickstart.cloudera`.
 
