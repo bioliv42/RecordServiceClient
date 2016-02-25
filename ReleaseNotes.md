@@ -43,7 +43,7 @@ RecordService VM requires VirtualBox version 4.3 or 5. You can download a free c
 
 RecordService supports the following software and hardware configurations when running on your own Hadoop cluster:
 
-* CDH 5.4
+* CDH 5.4 and higher
 * Server support: RHEL5 and RHEL6, Ubuntu LTS, SLES, and Debian
 * Intel Nehalem (or later) or AMD  Bulldozer (or later) processor
 * 64 GB memory
