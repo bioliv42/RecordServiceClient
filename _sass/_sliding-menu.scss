@@ -9,10 +9,10 @@
 .slide {
     transform: translateX(-100%);
     @include media($medium) {
-      transform: translateX(em(-600));
+      transform: translateX(em(-200));
     }
     @include media($large) {
-      transform: translateX(em(-900));
+      transform: translateX(em(-300));
     }
   }
 
@@ -27,8 +27,8 @@
   top: $gutter;
   right: $gutter;
   display: block;
-  width: $button-size * 2;
-  height: $button-size * 2;
+  width: $button-size * 1.5;
+  height: $button-size * 1.5;
   background: $primary-color;
   outline: 0;
   padding: 0;
@@ -38,16 +38,17 @@
   box-sizing: border-box;
   &:hover {
     background: $black;
+    opacity: .4;
   }
   transition: $sliding-menu-animation;
   &.slide {
     background: $danger-color;
     transform: translateX(0); /* don't slide close button on small screens only */
     @include media($medium) {
-      transform: translateX(em(-600)); /* reset slide position */
+      transform: translateX(em(-200)); /* reset slide position */
     }
     @include media($large) {
-      transform: translateX(em(-900)); /* reset slide position */
+      transform: translateX(em(-300)); /* reset slide position */
     }
   }
 }
@@ -66,14 +67,15 @@
   text-align: left;
   @include size(100% 100%);
   @include media($small) {
-    width: em(600);
+    width: em(200);
   }
   @include media($large) {
-    width: em(900);
+    width: em(300);
   }
   transform: translateX(100%);
   transition: $sliding-menu-animation;
   background: $sliding-menu-background;
+  opacity: .75;
   z-index: 20;
   overflow-y: auto;
   overflow-x: hidden;
@@ -96,7 +98,7 @@
       display: block;
       @include font-size(32,no,1);
       @include media($small) {
-        @include font-size(48,no,1);
+        @include font-size(36,no,1);
       }
       font-family: $base-font;
       text-transform: uppercase;
@@ -119,7 +121,7 @@
     padding-bottom: 1em;
     min-height: 70px;
     @include media($small) {
-      min-height: 100px;
+      min-height: 20px;
     }
   }
   .menu-item {
@@ -150,7 +152,7 @@
       @include font-size(24,no);
       font-weight: 700;
       @include media($small) {
-        margin-left: 170px;
+        margin-left: 20px;
         @include font-size(32,no);
       }
     }
