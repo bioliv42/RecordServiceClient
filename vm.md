@@ -1,7 +1,6 @@
 ---
 layout: article
 title: 'Using the RecordService VM'
-share: false
 ---
 
 {% include toc.html %}
