@@ -6,13 +6,7 @@ image:
 category: install
 share: false
 ---
-<div>
-<p>
-<b>Note:</b><br/>
-Due to technical difficulties, please visit the docs in this alternate location. Sorry for the inconvenience.<br/>
-<a href="http://dennisdawson.github.io/recordService.html">http://dennisdawson.github.io/recordService.html</a>
-</p>
-</div>
+
 <hl />
 <div class="tiles">
 <div class="tile">
