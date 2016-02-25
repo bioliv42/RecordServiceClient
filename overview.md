@@ -14,7 +14,7 @@ One of the key aspects of the Hadoop ecosystem is decoupling storage managers (f
 
 RecordService is a new core security layer for Hadoop that sits between the storage managers and compute frameworks to provide a unified data access path.
 
-![Unified Data Access Path](img/unifiedDataAccessPath.png){:height="100%" width="100%"}
+![Unified Data Access Path](/img/unifiedDataAccessPath.png){:height="100%" width="100%"}
 
 ## The Benefits
 
@@ -30,12 +30,12 @@ RecordService is a new core security layer for Hadoop that sits between the stor
 
 RecordService provides the following services.
 
-* RecordServicePlanner &mdash; Generates tasks, performs authorization checks, and handles metadata access. Called during input split generation. 
+* RecordServicePlanner &mdash; Generates tasks, performs authorization checks, and handles metadata access. Called during input split generation.
 * RecordServiceWorker &mdash; Executes tasks, and reads and writes to the storage layer.
     * Builds on the highly optimized I/O scheduler and file parsers provided by Impala.
     * Returns rows in a canonical format.
 * Thrift APIs.
 * Client Integration Libraries &mdash; Allow easy migration to RecordService.
 
-![Record Service Architecture Overview ](img/RecordServiceArchitectureOverview.png){:height="100%" width="100%"}
+![Record Service Architecture Overview ](/img/RecordServiceArchitectureOverview.png){:height="100%" width="100%"}
 
