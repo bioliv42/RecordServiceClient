@@ -23,6 +23,7 @@ import com.cloudera.recordservice.core.{Request, RecordServicePlannerClient, Sch
 import com.cloudera.recordservice.mr.PlanUtil
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.expressions.SpecificMutableRow
+import org.apache.spark.sql.catalyst.util.DateTimeUtils
 import org.apache.spark.sql.sources._
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{Row, SQLContext}
@@ -100,7 +101,7 @@ case class RecordServiceRelation(table:String, size:Option[Long])(
       case Schema.Type.BIGINT => LongType
       case Schema.Type.FLOAT => FloatType
       case Schema.Type.DOUBLE => DoubleType
-      case Schema.Type.STRING => StringType
+      case Schema.Type.CHAR | Schema.Type.VARCHAR | Schema.Type.STRING => StringType
       case Schema.Type.DECIMAL =>
         DataTypes.createDecimalType(rsType.precision, rsType.scale)
       case Schema.Type.TIMESTAMP_NANOS => DataTypes.TimestampType
@@ -228,14 +229,16 @@ case class RecordServiceRelation(table:String, size:Option[Long])(
               case Schema.Type.BIGINT => mutableRow.setLong(i, x.nextLong(i))
               case Schema.Type.FLOAT => mutableRow.setFloat(i, x.nextFloat(i))
               case Schema.Type.DOUBLE => mutableRow.setDouble(i, x.nextDouble(i))
-              case Schema.Type.STRING =>
+              case Schema.Type.STRING | Schema.Type.CHAR | Schema.Type.VARCHAR =>
+                // TODO: does this copy the array? improve if we can.
                 mutableRow.update(i, UTF8String.fromString(x.nextByteArray(i).toString))
               case Schema.Type.DECIMAL =>
                 val d = x.nextDecimal(i)
                 mutableRow.update(i,
                   Decimal(d.toBigDecimal, d.getPrecision, d.getScale))
               case Schema.Type.TIMESTAMP_NANOS =>
-                  mutableRow.update(i, x.nextTimestampNanos(i).toTimeStamp)
+                val ts = x.nextTimestampNanos(i).toTimeStamp
+                mutableRow.update(i, DateTimeUtils.fromJavaTimestamp(ts))
               case _ => assert(false)
             }
           }
