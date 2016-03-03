@@ -21,6 +21,7 @@ import sys
 import subprocess
 import time
 from datetime import datetime
+import threading
 
 import benchmarks
 
@@ -64,6 +65,7 @@ parser.add_option("--db_user", dest="db_user", default="rs",
 parser.add_option("--db_password", dest="db_password", default="rs",
     help="The password for the db")
 
+threadLock = threading.Lock()
 # Runs 'cmd' and waits for the return value.
 def run_shell_cmd(cmd):
   cmd += " >> " + options.log_file + " 2>&1"
@@ -110,14 +112,40 @@ def replace_host(cmd):
     return cmd.replace("LOCALHOST", options.impalad)
   return cmd
 
+def run_case(case, results_sql, result_tsv, suite):
+  print "  Running case: " + case[0]
+  sys.stdout.flush()
+  cmd = replace_host(case[1])
+
+  for x in range(0, options.warmup_iterations):
+    run_shell_cmd(cmd)
+
+  for x in range(0, options.iterations):
+    start = time.time() * 1000
+    run_shell_cmd(cmd)
+    timing_ms = time.time() * 1000 - start
+    if (suite[1] == "parallel"):
+      # Get lock to synchronize threads
+      threadLock.acquire()
+    results_sql.write(to_sql(suite, case, timing_ms) + "\n")
+    if (result_tsv != None):
+      # Write the results in the form that's normally output from the DB.
+      # Write a marker build number.
+      result_tsv.write(case[0] + "\t" + str(timing_ms) + "\tBUILD_NUMBER\n")
+    if (suite[1] == "parallel"):
+      # Free lock to release next thread
+      threadLock.release()
+      # parallel test only run once
+      break
+
 def run_suite(suite, results_sql):
   if (options.cluster):
-    if (suite[1] != "cluster"):
+    if (suite[1] != "cluster" and suite[1] != "parallel"):
       print "Skipping local suite: " + suite[0]
       return
   else:
     if (suite[1] != "local"):
-      print "Skipping cluster suite: " + suite[0]
+      print "Skipping cluster / parallel suite: " + suite[0]
       return
   print "Running benchmark suite: " + suite[0]
 
@@ -137,23 +165,20 @@ def run_suite(suite, results_sql):
     for x in range(0, options.suite_warmup_iterations):
       run_shell_cmd(cmd)
 
-  for case in cases:
-    print "  Running case: " + case[0]
-    sys.stdout.flush()
-    cmd = replace_host(case[1])
-
-    for x in range(0, options.warmup_iterations):
-      run_shell_cmd(cmd)
-
-    for x in range(0, options.iterations):
-      start = time.time() * 1000
-      run_shell_cmd(cmd)
-      timing_ms = time.time() * 1000 - start
-      results_sql.write(to_sql(suite, case, timing_ms) + "\n")
-      if (result_tsv != None):
-        # Write the results in the form that's normally output from the DB.
-        # Write a marker build number.
-        result_tsv.write(case[0] + "\t" + str(timing_ms) + "\tBUILD_NUMBER\n")
+  if (suite[1] == "parallel"):
+    # Running all cases in parallel
+    print " Running all cases in parallel: ", len(cases)
+    threads = []
+    for case in cases:
+      t = threading.Thread(target=run_case, args=(case, results_sql, result_tsv, suite))
+      t.start()
+      threads.append(t)
+    for t in threads:
+      t.join()
+    print "Finish the parallel test " + suite[0]
+  else:
+    for case in cases:
+      run_case(case, results_sql, result_tsv, suite)
 
 if __name__ == "__main__":
   benchmark_start_time_ms = time.time() * 1000
