@@ -25,6 +25,22 @@ PLANNER_HOST = os.environ['RECORD_SERVICE_PLANNER_HOST']
 # be good if there's a way to only define it at one place.
 VERSION = "0.2.0-cdh5.5.x"
 
+MR_TEMPLATE = "hadoop jar " + os.environ['RECORD_SERVICE_HOME'] +\
+    "/java/examples/target/recordservice-examples-" + VERSION + ".jar " +\
+    "{0} \"{1}\" \"{2}\" "
+
+SPARK_TEMPLATE = "spark-submit " +\
+    "--class {0} " +\
+    "--master yarn-client " +\
+    "--num-executors 16 " +\
+    "--executor-memory 28g " +\
+    "--conf \"spark.dynamicAllocation.enabled=true\" " +\
+    "--driver-memory 20g " +\
+    "--conf \"spark.driver.maxResultSize=15g\" " +\
+    os.environ['RECORD_SERVICE_HOME'] +\
+    "/java/examples-spark/target/recordservice-examples-spark-" + VERSION + ".jar " +\
+    "\"{1}\" "
+
 def read_file(path):
   data = ""
   with open(path, "r") as f:
@@ -54,23 +70,20 @@ def java_client_cmd(query):
       "\"" + query + "\""
 
 def mr_record_count(query, outpath):
-  return "hadoop jar " + os.environ['RECORD_SERVICE_HOME'] +\
-      "/java/examples/target/recordservice-examples-" + VERSION + ".jar " +\
-      "com.cloudera.recordservice.examples.mapreduce.RecordCount " +\
-      "\"" + query + "\"" + " \"" + outpath + "\""
+  return MR_TEMPLATE.format(
+      "com.cloudera.recordservice.examples.mapreduce.RecordCount ", query, outpath)
+
+def mr_word_count(inpath, outpath, use_rs="true"):
+  return MR_TEMPLATE.format(
+      "com.cloudera.recordservice.examples.mapreduce.WordCount ", inpath, outpath) + use_rs
 
 def spark_record_count(query):
-  return "spark-submit " +\
-    "--class com.cloudera.recordservice.examples.spark.RecordCount " +\
-    "--master yarn-client " +\
-    "--num-executors 16 " +\
-    "--executor-memory 28g " +\
-    "--executor-cores 6 " +\
-    "--driver-memory 20g " +\
-    "--conf \"spark.driver.maxResultSize=15g\" " +\
-    os.environ['RECORD_SERVICE_HOME'] +\
-    "/java/examples-spark/target/recordservice-examples-spark-" + VERSION + ".jar " +\
-    "\"" + query + "\""
+  return SPARK_TEMPLATE.format(
+      "com.cloudera.recordservice.examples.spark.RecordCount", query)
+
+def spark_word_count(inpath, use_rs="true"):
+  return SPARK_TEMPLATE.format(
+      "com.cloudera.recordservice.examples.spark.WordCount", inpath) + use_rs
 
 def hive_rs_cmd(query, tbl_name, fetch_size):
   # Builds a query string that will run using the RecordService
@@ -275,6 +288,65 @@ benchmarks = [
       # ["invalidated", impala_on_rs_cmd(
       #     "invalidate metadata scale_db.num_partitions_10000_blocks_per_partition_100;" +
       #     "explain select avg(id) from scale_db.num_partitions_10000_blocks_per_partition_100_singlefile")],
+    ]
+  ],
+  # The following tests will be run in parallel and in cluster mode.
+  [
+    "Query_parallel", "parallel",
+    [
+      ["impala", impala_shell_cmd(
+          "select count(ss_item_sk) from tpcds500gb_parquet.store_sales")],
+      ["impala-rs", impala_on_rs_cmd(
+          "set num_scanner_threads=32;" +
+          "select count(ss_item_sk) from tpcds500gb_parquet.store_sales")],
+      ["spark", spark_tpcds("q7")],
+      ["spark-rs", spark_tpcds("q7", True)],
+      ["spark-rc-rs", spark_record_count("select ss_item_sk from tpcds500gb_parquet.store_sales")],
+      ["spark-wc", spark_word_count("/test-warehouse/text_1gb", "false")],
+      ["spark-wc-rs", spark_word_count("/test-warehouse/text_1gb")],
+      ["mr-rc-rs", mr_record_count("select ss_item_sk from tpcds500gb_parquet.store_sales",
+          "/tmp/jenkins/rc_output1")],
+      ["mr-wc", mr_word_count("/test-warehouse/text_1gb", "/tmp/jenkins/wc_output2", "false")],
+      ["mr-wc-rs", mr_word_count("/test-warehouse/text_1gb", "/tmp/jenkins/wc_output3")],
+    ]
+  ],
+  [
+    "Wordcount_parallel", "parallel",
+    [
+      ["mr-rs-1", mr_word_count("/test-warehouse/text_1gb", "/tmp/jenkins/wc_output1")],
+      ["mr-rs_2", mr_word_count("/test-warehouse/text_1gb", "tmp/jenkins/wc_output2")],
+      ["mr-1", mr_word_count("/test-warehouse/text_1gb", "/tmp/jenkins/wc_output3", "false")],
+      ["mr-2", mr_word_count("/test-warehouse/text_1gb", "/tmp/jenkins/wc_output4", "false")],
+      ["spark-rs-1", spark_word_count("/test-warehouse/text_1gb")],
+      ["spark-rs-2", spark_word_count("/test-warehouse/text_1gb")],
+      ["spark-1", spark_word_count("/test-warehouse/text_1gb", "false")],
+      ["spark-2", spark_word_count("/test-warehouse/text_1gb", "false")],
+    ]
+  ],
+  [
+    "Wordcount_without_rs_parallel", "parallel",
+    [
+      ["mr-1", mr_word_count("/test-warehouse/text_1gb", "/tmp/jenkins/wc_output1", "false")],
+      ["mr-2", mr_word_count("/test-warehouse/text_1gb", "/tmp/jenkins/wc_output2", "false")],
+      ["mr-3", mr_word_count("/test-warehouse/text_1gb", "/tmp/jenkins/wc_output3", "false")],
+      ["mr-4", mr_word_count("/test-warehouse/text_1gb", "/tmp/jenkins/wc_output4", "false")],
+      ["spark-1", spark_word_count("/test-warehouse/text_1gb", "false")],
+      ["spark-2", spark_word_count("/test-warehouse/text_1gb", "false")],
+      ["spark-3", spark_word_count("/test-warehouse/text_1gb", "false")],
+      ["spark-4", spark_word_count("/test-warehouse/text_1gb", "false")],
+    ]
+  ],
+  [
+    "Wordcount_with_rs_parallel", "parallel",
+    [
+      ["mr-rs-1", mr_word_count("/test-warehouse/text_1gb", "/tmp/jenkins/wc_output1")],
+      ["mr-rs-2", mr_word_count("/test-warehouse/text_1gb", "/tmp/jenkins/wc_output2")],
+      ["mr-rs-3", mr_word_count("/test-warehouse/text_1gb", "/tmp/jenkins/wc_output3")],
+      ["mr-rs-4", mr_word_count("/test-warehouse/text_1gb", "/tmp/jenkins/wc_output4")],
+      ["spark-1", spark_word_count("/test-warehouse/text_1gb")],
+      ["spark-2", spark_word_count("/test-warehouse/text_1gb")],
+      ["spark-3", spark_word_count("/test-warehouse/text_1gb")],
+      ["spark-4", spark_word_count("/test-warehouse/text_1gb")],
     ]
   ],
 ]

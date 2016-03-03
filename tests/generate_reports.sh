@@ -49,6 +49,10 @@ generate_report "TPCDS_Q7_Parquet_500GB" $DAYS $RESULTS_DIR
 generate_report "TPCDS_Q73_Parquet_500GB" $DAYS $RESULTS_DIR
 generate_report "Query_1M_blocks_10K_partitions_small_files" $DAYS $RESULTS_DIR
 generate_report "Query_1M_blocks_10K_partitions_single_file" $DAYS $RESULTS_DIR
+generate_report "Query_parallel" $DAYS $RESULTS_DIR
+generate_report "Wordcount_parallel" $DAYS $RESULTS_DIR
+generate_report "Wordcount_without_rs_parallel" $DAYS $RESULTS_DIR
+generate_report "Wordcount_with_rs_parallel" $DAYS $RESULTS_DIR
 
 mkdir -p $RECORD_SERVICE_HOME/benchmark_results
 rm -f $RECORD_SERVICE_HOME/benchmark_results/*

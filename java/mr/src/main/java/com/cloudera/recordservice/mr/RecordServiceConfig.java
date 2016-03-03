@@ -101,6 +101,22 @@ public class RecordServiceConfig {
   public static final String ZOOKEEPER_ZNODE_DEFAULT = "/recordservice";
 
   /**
+   * Set the request type based on the input string.
+   * - starts with "select" - assume it is a query
+   * - starts with "/" - assume it is a path
+   * - otherwise, assume it is a db.table
+   */
+  public static void setInput(Configuration config, String input) throws IOException {
+    if (input.toLowerCase().startsWith("select")) {
+      setInputQuery(config, input);
+    } else if (input.startsWith("/")) {
+      setInputPaths(config, new Path(input));
+    } else {
+      setInputTable(config, null, input);
+    }
+  }
+
+  /**
    * Sets the input configuration to read 'cols' from 'db.tbl'. If the tbl is fully
    * qualified, db should be null.
    * If cols is empty, all cols in the table are read.
