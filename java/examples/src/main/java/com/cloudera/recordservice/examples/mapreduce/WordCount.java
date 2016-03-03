@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.StringTokenizer;
 
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
@@ -31,10 +32,18 @@ import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
+import org.apache.hadoop.mapred.TextInputFormat;
 import org.apache.hadoop.mapred.TextOutputFormat;
 
 import com.cloudera.recordservice.mr.RecordServiceConfig;
 
+/**
+ * To run the program:
+ * hadoop jar recordservice-examples-*.jar \
+ * com.cloudera.recordservice.examples.mapreduce.WordCount <input path> <output path>
+ *
+ * Append false in the command to run WordCount without RecordService
+ */
 public class WordCount {
   public static class Map extends MapReduceBase
       implements Mapper<LongWritable, Text, Text, IntWritable> {
@@ -67,15 +76,19 @@ public class WordCount {
   }
 
   public void run(String[] args) throws Exception {
-    if (args.length != 2) {
+    boolean useRecordService = true;
+    if (args.length == 3) {
+      useRecordService =  Boolean.parseBoolean(args[2]);
+    } else if (args.length != 2) {
       System.err.println("Usage: WordCount <input path> <output path>");
       System.exit(-1);
     }
     String input = args[0].trim();
-    String outputPath = args[1];
+    String output = args[1];
 
     JobConf conf = new JobConf(WordCount.class);
-    conf.setJobName("wordcount");
+    conf.setJobName(
+        "wordcount-" + (useRecordService ? "with" : "without") + "-RecordService");
 
     conf.setOutputKeyClass(Text.class);
     conf.setOutputValueClass(IntWritable.class);
@@ -84,22 +97,19 @@ public class WordCount {
     conf.setCombinerClass(Reduce.class);
     conf.setReducerClass(Reduce.class);
 
-    conf.setInputFormat(com.cloudera.recordservice.mapred.TextInputFormat.class);
-    conf.setOutputFormat(TextOutputFormat.class);
-
-    // Set the request type based on the input string.
-    //  - starts with "select" - assume it is a query
-    //  - starts with "/" - assume it is a path
-    //  - otherwise, assume it is a db.table (TODO: validate this).
-    // TODO: this seems generally useful, move it to the library.
-    if (input.toLowerCase().startsWith("select")) {
-      RecordServiceConfig.setInputQuery(conf, input);
-    } else if (input.startsWith("/")) {
-      FileInputFormat.setInputPaths(conf, new Path(input));
+    if (useRecordService) {
+      conf.setInputFormat(com.cloudera.recordservice.mapred.TextInputFormat.class);
+      RecordServiceConfig.setInput(conf, input);
     } else {
-      RecordServiceConfig.setInputTable(conf, null, input);
+      conf.setInputFormat(TextInputFormat.class);
+      FileInputFormat.setInputPaths(conf, new Path(input));
     }
-    FileOutputFormat.setOutputPath(conf, new Path(outputPath));
+
+    FileSystem fs = FileSystem.get(conf);
+    Path outputPath = new Path(output);
+    if (fs.exists(outputPath)) fs.delete(outputPath, true);
+    conf.setOutputFormat(TextOutputFormat.class);
+    FileOutputFormat.setOutputPath(conf, outputPath);
 
     JobClient.runJob(conf);
     System.out.println("Done");
