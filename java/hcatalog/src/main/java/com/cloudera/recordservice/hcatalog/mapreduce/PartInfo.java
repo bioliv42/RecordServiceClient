@@ -16,6 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package com.cloudera.recordservice.hcatalog.mapreduce;
 
 import org.apache.hadoop.hive.ql.metadata.HiveStorageHandler;
@@ -29,7 +30,12 @@ import java.io.Serializable;
 import java.util.Map;
 import java.util.Properties;
 
-/** The Class used to serialize the partition information read from the metadata server that maps to a partition. */
+// Copied from the Hive project
+// TODO: replace this with the Hive's class. We currently relies on the
+// setTableInfo method which isn't in CDH Hive 1.1.0
+
+/** The Class used to serialize the partition information read
+ * from the metadata server that maps to a partition. */
 public class PartInfo implements Serializable {
 
   private static Logger LOG = LoggerFactory.getLogger(PartInfo.class);
@@ -174,7 +180,8 @@ public class PartInfo implements Serializable {
   }
 
   /**
-   * Finds commonalities with TableInfo, and suppresses (nulls) fields if they are identical
+   * Finds commonalities with TableInfo, and suppresses (nulls) fields
+   * if they are identical
    */
   private void dedupWithTableInfo() {
     assert tableInfo != null : "TableInfo can't be null at this point.";
@@ -183,7 +190,8 @@ public class PartInfo implements Serializable {
         partitionSchema = null;
       } else {
         if (LOG.isDebugEnabled()) {
-          LOG.debug("Can't suppress data-schema. Partition-schema and table-schema seem to differ! "
+          LOG.debug("Can't suppress data-schema."
+              + " Partition-schema and table-schema seem to differ! "
               + " partitionSchema: " + partitionSchema.getFields()
               + " tableSchema: " + tableInfo.getDataColumns());
         }
@@ -191,12 +199,14 @@ public class PartInfo implements Serializable {
     }
 
     if (storageHandlerClassName != null) {
-      if (storageHandlerClassName.equals(tableInfo.getStorerInfo().getStorageHandlerClass())) {
+      if (storageHandlerClassName.equals(
+          tableInfo.getStorerInfo().getStorageHandlerClass())) {
         storageHandlerClassName = null;
       } else {
         if (LOG.isDebugEnabled()) {
           LOG.debug("Partition's storageHandler (" + storageHandlerClassName + ") " +
-              "differs from table's storageHandler (" + tableInfo.getStorerInfo().getStorageHandlerClass() + ").");
+              "differs from table's storageHandler ("
+              + tableInfo.getStorerInfo().getStorageHandlerClass() + ").");
         }
       }
     }
@@ -207,7 +217,8 @@ public class PartInfo implements Serializable {
       } else {
         if (LOG.isDebugEnabled()) {
           LOG.debug("Partition's InputFormat (" + inputFormatClassName + ") " +
-              "differs from table's InputFormat (" + tableInfo.getStorerInfo().getIfClass() + ").");
+              "differs from table's InputFormat ("
+              + tableInfo.getStorerInfo().getIfClass() + ").");
         }
       }
     }
@@ -218,7 +229,8 @@ public class PartInfo implements Serializable {
       } else {
         if (LOG.isDebugEnabled()) {
           LOG.debug("Partition's OutputFormat (" + outputFormatClassName + ") " +
-              "differs from table's OutputFormat (" + tableInfo.getStorerInfo().getOfClass() + ").");
+              "differs from table's OutputFormat ("
+              + tableInfo.getStorerInfo().getOfClass() + ").");
         }
       }
     }
@@ -229,7 +241,8 @@ public class PartInfo implements Serializable {
       } else {
         if (LOG.isDebugEnabled()) {
           LOG.debug("Partition's SerDe (" + serdeClassName + ") " +
-              "differs from table's SerDe (" + tableInfo.getStorerInfo().getSerdeClass() + ").");
+              "differs from table's SerDe ("
+              + tableInfo.getStorerInfo().getSerdeClass() + ").");
         }
       }
     }

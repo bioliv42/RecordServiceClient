@@ -57,10 +57,10 @@ public class HCatTableInfo implements Serializable {
   private StorerInfo storerInfo;
 
   /**
-   * Initializes a new HCatTableInfo instance to be used with {@link org.apache.hive.hcatalog.mapreduce.HCatInputFormat}
-   * for reading data from a table.
-   * work with hadoop security, the kerberos principal name of the server - else null
-   * The principal name should be of the form:
+   * Initializes a new HCatTableInfo instance to be used with
+   * {@link org.apache.hive.hcatalog.mapreduce.HCatInputFormat} for reading data from
+   * a table. Work with hadoop security, the kerberos principal name of the server
+   * - else null. The principal name should be of the form:
    * <servicename>/_HOST@<realm> like "hcat/_HOST@myrealm.com"
    * The special string _HOST will be replaced automatically with the correct host name
    * @param databaseName the db name
@@ -77,7 +77,8 @@ public class HCatTableInfo implements Serializable {
     HCatSchema partitionColumns,
     StorerInfo storerInfo,
     Table table) {
-    this.databaseName = (databaseName == null) ? MetaStoreUtils.DEFAULT_DATABASE_NAME : databaseName;
+    this.databaseName = (databaseName == null) ?
+        MetaStoreUtils.DEFAULT_DATABASE_NAME : databaseName;
     this.tableName = tableName;
     this.dataColumns = dataColumns;
     this.table = table;
@@ -123,9 +124,9 @@ public class HCatTableInfo implements Serializable {
    * @throws IOException
    */
   static HCatTableInfo valueOf(Table table) throws IOException {
-    // Explicitly use {@link org.apache.hadoop.hive.ql.metadata.Table} when getting the schema,
-    // but store @{link org.apache.hadoop.hive.metastore.api.Table} as this class is serialized
-    // into the job conf.
+    // Explicitly use {@link org.apache.hadoop.hive.ql.metadata.Table} when getting
+    // the schema, but store @{link org.apache.hadoop.hive.metastore.api.Table} as this
+    // class is serialized into the job conf.
     org.apache.hadoop.hive.ql.metadata.Table mTable =
       new org.apache.hadoop.hive.ql.metadata.Table(table);
     HCatSchema schema = HCatUtil.extractSchema(mTable);
@@ -143,15 +144,21 @@ public class HCatTableInfo implements Serializable {
 
     HCatTableInfo tableInfo = (HCatTableInfo) o;
 
-    if (dataColumns != null ? !dataColumns.equals(tableInfo.dataColumns) : tableInfo.dataColumns != null)
+    if (dataColumns != null ? !dataColumns.equals(tableInfo.dataColumns)
+        : tableInfo.dataColumns != null)
       return false;
-    if (databaseName != null ? !databaseName.equals(tableInfo.databaseName) : tableInfo.databaseName != null)
+    if (databaseName != null ? !databaseName.equals(tableInfo.databaseName)
+        : tableInfo.databaseName != null)
       return false;
-    if (partitionColumns != null ? !partitionColumns.equals(tableInfo.partitionColumns) : tableInfo.partitionColumns != null)
+    if (partitionColumns != null ? !partitionColumns.equals(tableInfo.partitionColumns)
+        : tableInfo.partitionColumns != null)
       return false;
-    if (storerInfo != null ? !storerInfo.equals(tableInfo.storerInfo) : tableInfo.storerInfo != null) return false;
-    if (table != null ? !table.equals(tableInfo.table) : tableInfo.table != null) return false;
-    if (tableName != null ? !tableName.equals(tableInfo.tableName) : tableInfo.tableName != null) return false;
+    if (storerInfo != null ? !storerInfo.equals(tableInfo.storerInfo) :
+        tableInfo.storerInfo != null) return false;
+    if (table != null ? !table.equals(tableInfo.table) :
+        tableInfo.table != null) return false;
+    if (tableName != null ? !tableName.equals(tableInfo.tableName) :
+        tableInfo.tableName != null) return false;
 
     return true;
   }

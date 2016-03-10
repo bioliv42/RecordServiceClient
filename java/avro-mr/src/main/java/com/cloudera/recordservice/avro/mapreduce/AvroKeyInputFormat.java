@@ -102,7 +102,7 @@ public class AvroKeyInputFormat<T> extends
     @SuppressWarnings({ "rawtypes", "unchecked" })
     @Override
     public void initialize(InputSplit inputSplit, TaskAttemptContext context)
-        throws IOException, InterruptedException {
+        throws IOException {
       super.initialize(inputSplit, context);
       if (SchemaUtils.isSpecificRecordSchema(avroSchema_)) {
         records_ = new SpecificRecords(avroSchema_, reader_.records(),

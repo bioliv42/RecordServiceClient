@@ -38,7 +38,7 @@ public class RecordServiceInputFormat extends
   @Override
   public RecordReader<NullWritable, RecordServiceRecord>
       createRecordReader(InputSplit split, TaskAttemptContext context)
-          throws IOException, InterruptedException {
+      throws IOException {
     RecordServiceRecordReader rReader = new RecordServiceRecordReader();
     rReader.initialize(split, context);
     return rReader;
@@ -103,7 +103,7 @@ public class RecordServiceInputFormat extends
 
     @Override
     public void initialize(InputSplit split, TaskAttemptContext context)
-        throws IOException, InterruptedException {
+        throws IOException {
       super.initialize(split, context);
       record_ = new RecordServiceRecord(schema());
     }
