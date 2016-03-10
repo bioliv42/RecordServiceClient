@@ -19,36 +19,28 @@
 
 package com.cloudera.recordservice.hcatalog.mapreduce;
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.hive.metastore.MetaStoreUtils;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.StorageDescriptor;
 import org.apache.hadoop.hive.ql.metadata.Table;
-import org.apache.hadoop.hive.serde2.Deserializer;
-import org.apache.hadoop.hive.serde2.SerDe;
-import org.apache.hadoop.hive.serde2.SerDeException;
-import org.apache.hadoop.hive.serde2.SerDeUtils;
-import org.apache.hadoop.hive.serde2.objectinspector.*;
-import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectInspectorFactory;
-import org.apache.hadoop.hive.serde2.typeinfo.*;
-import org.apache.hadoop.mapred.Reporter;
-import org.apache.hadoop.mapreduce.InputSplit;
-import org.apache.hadoop.mapreduce.TaskAttemptContext;
-import org.apache.hive.hcatalog.common.HCatUtil;
-import org.apache.hive.hcatalog.data.schema.HCatFieldSchema;
-import org.apache.hive.hcatalog.data.schema.HCatSchema;
 import org.apache.hive.hcatalog.mapreduce.StorerInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.util.*;
+// Copied from the Hive project
+// TODO: remove this
 
 class InternalUtil {
   private static final Logger LOG = LoggerFactory.getLogger(InternalUtil.class);
 
-  static StorerInfo extractStorerInfo(StorageDescriptor sd, Map<String, String> properties) throws IOException {
+  static StorerInfo extractStorerInfo(
+      StorageDescriptor sd, Map<String, String> properties) throws IOException {
     Properties hcatProperties = new Properties();
     for (String key : properties.keySet()) {
       hcatProperties.put(key, properties.get(key));
@@ -60,10 +52,14 @@ class InternalUtil {
       hcatProperties.put(param.getKey(), param.getValue());
     }
 
+    // TODO: this is the only difference between this file and the one in Hive - think
+    // about how to avoid the copying.
     // Need to hard code the serDe class for, as views are not typically supported by pig
     return new StorerInfo(
-      sd.getInputFormat(), sd.getOutputFormat(), "org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe",
-      properties.get(org.apache.hadoop.hive.metastore.api.hive_metastoreConstants.META_TABLE_STORAGE),
+      sd.getInputFormat(), sd.getOutputFormat(),
+        "org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe",
+      properties.get(org.apache.hadoop.hive.metastore.
+          api.hive_metastoreConstants.META_TABLE_STORAGE),
       hcatProperties);
   }
 

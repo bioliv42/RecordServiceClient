@@ -16,6 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package com.cloudera.recordservice.pig;
 
 import com.cloudera.recordservice.hcatalog.common.HCatRSUtil;
@@ -59,11 +60,13 @@ import java.util.Map.Entry;
 
 /**
  * Pig {@link org.apache.pig.LoadFunc} to read data from HCat
+ *
  * This Class was copied from the Hcatalog-Pig-Adapter Project
- * Orginal name: HCatLoader
- * Changes: Now extends HcatLoader instead of HcatBaseLoader,
- * InputFormat Has been changed to a Record Service input format
- * GetNext Function was overriden to use RecordServiceRecords
+ * Original name: HCatLoader
+ * Changes:
+ *  - Now extends HCatLoader instead of HCatBaseLoader,
+ *  - InputFormat has been changed to a RecordServiceInputFormat
+ *  - getNext function is overridden to use RecordServiceRecord
  */
 @InterfaceAudience.Public
 @InterfaceStability.Evolving
@@ -83,8 +86,8 @@ public class HCatRSLoader extends HCatLoader {
   // Signature for wrapped loader, see comments in LoadFuncBasedInputDriver.initialize
   final public static String INNER_SIGNATURE = "hcatloader.inner.signature";
   final public static String INNER_SIGNATURE_PREFIX = "hcatloader_inner_signature";
-  // A hash map which stores job credentials. The key is a signature passed by Pig, which is
-  //unique to the load func and input file name (table, in our case).
+  // A hash map which stores job credentials. The key is a signature passed by Pig,
+  // which is unique to the load func and input file name (table, in our case).
   private static Map<String, Credentials> jobCredentials = new HashMap<String, Credentials>();
 
   @Override
@@ -106,7 +109,7 @@ public class HCatRSLoader extends HCatLoader {
       .setBoolean(HCatConstants.HCAT_DATA_TINY_SMALL_INT_PROMOTION, true);
     UDFContext udfContext = UDFContext.getUDFContext();
     Properties udfProps = udfContext.getUDFProperties(this.getClass(),
-            new String[]{signature});
+        new String[]{signature});
     job.getConfiguration().set(INNER_SIGNATURE, INNER_SIGNATURE_PREFIX + "_" + signature);
     Pair<String, String> dbTablePair = PigHCatUtil.getDBTableNames(location);
     dbName = dbTablePair.first;
@@ -124,7 +127,7 @@ public class HCatRSLoader extends HCatLoader {
     if (udfProps.containsKey(HCatConstants.HCAT_PIG_LOADER_LOCATION_SET)) {
       for (Enumeration<Object> emr = udfProps.keys(); emr.hasMoreElements(); ) {
         PigHCatUtil.getConfigFromUDFProperties(udfProps,
-                job.getConfiguration(), emr.nextElement().toString());
+            job.getConfiguration(), emr.nextElement().toString());
       }
       if (!HCatUtil.checkJobContextIfRunningFromBackend(job)) {
         //Combine credentials and credentials from job takes precedence for freshness
@@ -137,9 +140,9 @@ public class HCatRSLoader extends HCatLoader {
       InputJobInfo inputJobInfo = (InputJobInfo) HCatRSUtil.deserialize(
           job.getConfiguration().get(HCatConstants.HCAT_KEY_JOB_INFO));
 
-      //TODO: Add back special cases call when I find out where the code has moved.
+      // TODO: Add back special cases call when I find out where the code has moved.
       addSpecialCasesParametersForHCatLoader(job.getConfiguration(),
-              inputJobInfo.getTableInfo());
+          inputJobInfo.getTableInfo());
 
 
       // We will store all the new /changed properties in the job in the
@@ -173,7 +176,8 @@ public class HCatRSLoader extends HCatLoader {
     if (requiredFieldsInfo != null) {
       // convert to hcatschema and pass to HCatInputFormat
       try {
-        outputSchema = phutil.getHCatSchema(requiredFieldsInfo.getFields(), signature, this.getClass());
+        outputSchema = phutil.getHCatSchema(requiredFieldsInfo.getFields(),
+            signature, this.getClass());
         HCatRSInputFormat.setOutputSchema(job, outputSchema);
       } catch (Exception e) {
         throw new IOException(e);
@@ -184,7 +188,8 @@ public class HCatRSLoader extends HCatLoader {
       // setOutputSchema on HCatInputFormat
       if (HCatUtil.checkJobContextIfRunningFromBackend(job)) {
         try {
-          HCatSchema hcatTableSchema = (HCatSchema) udfProps.get(HCatConstants.HCAT_TABLE_SCHEMA);
+          HCatSchema hcatTableSchema =
+              (HCatSchema) udfProps.get(HCatConstants.HCAT_TABLE_SCHEMA);
           outputSchema = hcatTableSchema;
           HCatRSInputFormat.setOutputSchema(job, outputSchema);
         } catch (Exception e) {
@@ -252,7 +257,8 @@ public class HCatRSLoader extends HCatLoader {
   }
 
   /**
-   * Get statistics about the data to be loaded. Only input data size is implemented at this time.
+   * Get statistics about the data to be loaded. Only input data size is implemented
+   * at this time.
    */
   @Override
   public ResourceStatistics getStatistics(String location, Job job) throws IOException {
@@ -305,7 +311,8 @@ public class HCatRSLoader extends HCatLoader {
   @Override
   public Tuple getNext() throws IOException {
     try {
-      RecordServiceRecord record = (RecordServiceRecord) (reader.nextKeyValue() ? reader.getCurrentValue() : null);
+      RecordServiceRecord record = (RecordServiceRecord)
+          (reader.nextKeyValue() ? reader.getCurrentValue() : null);
       Tuple t = PigHCatUtil.transformToTuple(record, outputSchema);
       // TODO : we were discussing an iter interface, and also a LazyTuple
       // change this when plans for that solidifies.
@@ -334,10 +341,11 @@ public class HCatRSLoader extends HCatLoader {
       return;
     }
     String shClass = tableInfo.getStorerInfo().getStorageHandlerClass();
-    if ((shClass != null) && shClass.equals("org.apache.hadoop.hive.hbase.HBaseStorageHandler")){
+    if ((shClass != null) && shClass.equals(
+        "org.apache.hadoop.hive.hbase.HBaseStorageHandler")){
       // NOTE: The reason we use a string name of the hive hbase handler here is
-      // because we do not want to introduce a compile-dependency on the hive-hbase-handler
-      // module from within hive-hcatalog.
+      // because we do not want to introduce a compile-dependency on the
+      // hive-hbase-handler module from within hive-hcatalog.
       // This parameter was added due to the requirement in HIVE-7072
       conf.set("pig.noSplitCombination", "true");
     }

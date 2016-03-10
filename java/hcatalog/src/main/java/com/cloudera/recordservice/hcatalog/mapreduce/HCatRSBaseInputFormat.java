@@ -20,44 +20,37 @@
 package com.cloudera.recordservice.hcatalog.mapreduce;
 
 import com.cloudera.recordservice.hcatalog.common.HCatRSUtil;
-import com.cloudera.recordservice.mapred.RecordServiceInputSplit;
-import com.cloudera.recordservice.mapreduce.RecordServiceInputFormat;
 import com.cloudera.recordservice.mr.PlanUtil;
 import com.cloudera.recordservice.mr.RecordServiceRecord;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.hive.ql.metadata.HiveStorageHandler;
-import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
-import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorConverters;
-import org.apache.hadoop.hive.serde2.objectinspector.primitive.PrimitiveObjectInspectorFactory;
-import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoUtils;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapreduce.*;
+import org.apache.hadoop.mapreduce.InputFormat;
+import org.apache.hadoop.mapreduce.InputSplit;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.JobContext;
+import org.apache.hadoop.mapreduce.RecordReader;
+import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.security.Credentials;
-import org.apache.hadoop.util.ReflectionUtils;
-import org.apache.hadoop.util.StringUtils;
 import org.apache.hive.hcatalog.common.HCatConstants;
-import org.apache.hive.hcatalog.common.HCatException;
 import org.apache.hive.hcatalog.common.HCatUtil;
 import org.apache.hive.hcatalog.data.schema.HCatFieldSchema;
 import org.apache.hive.hcatalog.data.schema.HCatSchema;
-import org.apache.hive.hcatalog.mapreduce.HCatSplit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
 
-public abstract class HCatRSBaseInputFormat
-  extends InputFormat<WritableComparable, RecordServiceRecord> {
+public abstract class HCatRSBaseInputFormat extends
+    InputFormat<WritableComparable, RecordServiceRecord> {
 
   private final static Logger LOG =
           LoggerFactory.getLogger(HCatRSBaseInputFormat.class);
 
-  // TODO needs to go in InitializeInput? as part of InputJobInfo
-  private static HCatSchema getOutputSchema(Configuration conf)
-    throws IOException {
+  // TODO: needs to go in InitializeInput? as part of InputJobInfo
+  private static HCatSchema getOutputSchema(Configuration conf) throws IOException {
     String os = conf.get(HCatConstants.HCAT_KEY_OUTPUT_SCHEMA);
     if (os == null) {
       return getTableSchema(conf);
@@ -105,19 +98,9 @@ public abstract class HCatRSBaseInputFormat
       return splits;
     }
 
-    JobConf jobConf;
-    jobConf = HCatUtil.getJobConfFromContext(jobContext);
+    JobConf jobConf = HCatUtil.getJobConfFromContext(jobContext);
     Credentials credentials = jobContext.getCredentials();
     PlanUtil.SplitsInfo splitsInfo = PlanUtil.getSplits(jobConf, credentials);
-    LOG.info("Num Tasks: " + jobConf.getNumMapTasks());
-    LOG.info(String.format("Generated %d splits.", splitsInfo.splits.size()));
-    InputSplit[] array = (splitsInfo.splits.toArray(new InputSplit[splitsInfo.splits.size()]));
-    LOG.info("ARRAY LENGTH: " + array.length);
-    LOG.info("Value of use new: " + jobConf.getUseNewMapper());
-    for(StackTraceElement el: Thread.currentThread().getStackTrace())
-      LOG.info(el.getLineNumber() + "    " + el.toString());
-    LOG.info("Pig Combined Size: " + conf.getLong("pig.maxCombinedSplitSize", 0));
-    LOG.info("DONE");
     return splitsInfo.splits;
   }
 
@@ -136,19 +119,16 @@ public abstract class HCatRSBaseInputFormat
   public RecordReader<WritableComparable, RecordServiceRecord>
   createRecordReader(InputSplit split,
              TaskAttemptContext taskContext) throws IOException, InterruptedException {
-    JobContext jobContext = taskContext;
-
-    Configuration conf = jobContext.getConfiguration();
-    JobConf jobConf = HCatUtil.getJobConfFromContext(jobContext);
+    JobConf jobConf = HCatUtil.getJobConfFromContext(taskContext);
     HCatRSUtil.copyCredentialsToJobConf(taskContext.getCredentials(), jobConf);
     return new HCatRecordReader();
   }
 
 
   /**
-   * Gets the HCatTable schema for the table specified in the HCatInputFormat.setInput call
-   * on the specified job context. This information is available only after HCatInputFormat.setInput
-   * has been called for a JobContext.
+   * Gets the HCatTable schema for the table specified in the HCatInputFormat.setInput
+   * call on the specified job context. This information is available only after
+   * HCatInputFormat.setInput has been called for a JobContext.
    * @param conf the Configuration object
    * @return the table schema
    * @throws IOException if HCatInputFormat.setInput has not been called
@@ -179,8 +159,7 @@ public abstract class HCatRSBaseInputFormat
    */
   private static InputJobInfo getJobInfo(Configuration conf)
     throws IOException {
-    String jobString = conf.get(
-      HCatConstants.HCAT_KEY_JOB_INFO);
+    String jobString = conf.get(HCatConstants.HCAT_KEY_JOB_INFO);
     if (jobString == null) {
       throw new IOException("job information not found in JobContext."
         + " HCatInputFormat.setInput() not called?");

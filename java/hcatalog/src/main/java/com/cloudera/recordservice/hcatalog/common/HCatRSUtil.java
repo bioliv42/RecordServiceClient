@@ -19,43 +19,47 @@
 
 package com.cloudera.recordservice.hcatalog.common;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
+
 import com.cloudera.recordservice.hcatalog.mapreduce.InputJobInfo;
-import com.cloudera.recordservice.hcatalog.mapreduce.PartInfo;
 import org.apache.commons.codec.binary.Base64;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.ql.metadata.HiveStorageHandler;
 import org.apache.hadoop.hive.ql.plan.TableDesc;
 import org.apache.hadoop.hive.serde.serdeConstants;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.security.Credentials;
 import org.apache.hive.hcatalog.common.HCatConstants;
-import org.apache.hive.hcatalog.common.HCatUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
+// Mostly copied from HCatUtil
+// TODO: can this be removed? seems like most of the methods are the same
 
 public class HCatRSUtil {
-
   private static final Logger LOG = LoggerFactory.getLogger(HCatRSUtil.class);
 
-
-  public static Map<String, String>
-  getInputJobProperties(HiveStorageHandler storageHandler,
-                        InputJobInfo inputJobInfo) {
+  public static Map<String, String> getInputJobProperties(
+      HiveStorageHandler storageHandler, InputJobInfo inputJobInfo) {
     Properties props = inputJobInfo.getTableInfo().getStorerInfo().getProperties();
     props.put(serdeConstants.SERIALIZATION_LIB,storageHandler.getSerDeClass().getName());
     TableDesc tableDesc = new TableDesc(storageHandler.getInputFormatClass(),
-            storageHandler.getOutputFormatClass(),props);
+            storageHandler.getOutputFormatClass(), props);
     if (tableDesc.getJobProperties() == null) {
       tableDesc.setJobProperties(new HashMap<String, String>());
     }
 
     Properties mytableProperties = tableDesc.getProperties();
-    mytableProperties.setProperty(org.apache.hadoop.hive.metastore.api.hive_metastoreConstants.META_TABLE_NAME,inputJobInfo.getDatabaseName()+ "." + inputJobInfo.getTableName());
+    mytableProperties.setProperty(
+        org.apache.hadoop.hive.metastore.api.hive_metastoreConstants.META_TABLE_NAME,
+        inputJobInfo.getDatabaseName() + "." + inputJobInfo.getTableName());
 
     Map<String, String> jobProperties = new HashMap<String, String>();
     try {
@@ -63,13 +67,12 @@ public class HCatRSUtil {
               HCatConstants.HCAT_KEY_JOB_INFO,
               HCatRSUtil.serialize(inputJobInfo));
 
-      storageHandler.configureInputJobProperties(tableDesc,
-              jobProperties);
-
+      storageHandler.configureInputJobProperties(tableDesc, jobProperties);
     } catch (IOException e) {
       throw new IllegalStateException(
               "Failed to configure StorageHandler", e);
     }
+
     return jobProperties;
   }
 

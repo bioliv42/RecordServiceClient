@@ -125,7 +125,7 @@ public class AvroKeyValueInputFormat<K extends SpecificRecordBase,
 
     @Override
     public void initialize(InputSplit inputSplit, TaskAttemptContext context)
-        throws IOException, InterruptedException {
+        throws IOException {
       super.initialize(inputSplit, context);
       records_ = new KeyValueRecords<K, V>(keySchema_, valueSchema_, reader_.records());
     }
