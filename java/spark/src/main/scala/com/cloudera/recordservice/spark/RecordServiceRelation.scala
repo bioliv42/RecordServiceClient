@@ -52,30 +52,12 @@ case class RecordServiceRelation(table:String, size:Option[Long])(
     extends BaseRelation with PrunedFilteredScan with Logging {
 
   override def schema: StructType = {
-    val connectionTimeoutMs = sqlContext.getConf(
-        RecordServiceConf.PLANNER_CONNECTION_TIMEOUT_MS_CONF, "-1").toInt
-    val rpcTimeoutMs = sqlContext.getConf(
-        RecordServiceConf.PLANNER_RPC_TIMEOUT_MS_CONF, "-1").toInt
-    val maxAttempts = sqlContext.getConf(
-        RecordServiceConf.PLANNER_RETRY_ATTEMPTS_CONF, "-1").toInt
-    val sleepDurationMs = sqlContext.getConf(
-        RecordServiceConf.PLANNER_RETRY_SLEEP_MS_CONF, "-1").toInt
-    val maxTasks = sqlContext.getConf(
-        RecordServiceConf.PLANNER_REQUEST_MAX_TASKS, "-1").toInt
-
-    val builder = new RecordServicePlannerClient.Builder()
-    // TODO: this code is replicated in a few places because of where the
-    // configs come from. We have hadoop Configuration, SparkContext and SQLContext.
-    if (connectionTimeoutMs != -1) builder.setConnectionTimeoutMs(connectionTimeoutMs)
-    if (rpcTimeoutMs != -1) builder.setRpcTimeoutMs(rpcTimeoutMs)
-    if (maxTasks != -1) builder.setMaxTasks(maxTasks)
-    if (sleepDurationMs != -1) builder.setSleepDurationMs(sleepDurationMs)
-    if (maxAttempts != -1) builder.setMaxAttempts(maxAttempts)
-
+    val hadoopConf = RecordServiceConf.fromSQLContext(sqlContext)
+    val builder = PlanUtil.getBuilder(hadoopConf)
+    val hostPorts = PlanUtil.getPlannerHostPorts(hadoopConf)
+    val kerberosPrincipal = PlanUtil.getKerberosPrincipal(hadoopConf)
     val planner = PlanUtil.getPlanner(sqlContext.sparkContext.hadoopConfiguration,
-      builder, RecordServiceConf.getPlannerHostPort(sqlContext.sparkContext),
-      RecordServiceConf.getKerberosPrincipal(sqlContext.sparkContext),
-      null)
+      builder, hostPorts, kerberosPrincipal, null)
     try {
       convertSchema(planner.getSchema(Request.createTableScanRequest(table)).schema)
     } finally {

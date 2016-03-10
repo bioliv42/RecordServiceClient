@@ -234,6 +234,15 @@ public class RecordServiceWorkerClient implements Closeable {
       client_.connect(hostname, port);
       return client_;
     }
+
+    /**
+     * Creates a worker client connecting to the 'address' with previously
+     * set options, and the caller must call close().
+     */
+    public RecordServiceWorkerClient connect(NetworkAddress address)
+        throws RecordServiceException, IOException {
+      return connect(address.hostname, address.port);
+    }
   }
 
   /**

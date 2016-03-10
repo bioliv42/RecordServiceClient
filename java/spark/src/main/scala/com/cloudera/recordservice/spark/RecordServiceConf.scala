@@ -14,68 +14,76 @@
 
 package com.cloudera.recordservice.spark
 
-import org.apache.spark.{SparkException, SparkContext}
+import java.util.NoSuchElementException
 
-import com.cloudera.recordservice.core.NetworkAddress
 import com.cloudera.recordservice.mr.RecordServiceConfig
+import org.apache.spark.{SparkConf, SparkContext}
+
+import com.cloudera.recordservice.mr.RecordServiceConfig.ConfVars
+import org.apache.spark.sql.SQLContext
+
+import org.apache.hadoop.conf.Configuration
 
 object RecordServiceConf {
   // Spark requires that configs start with "spark." to be read.
-  val PLANNER_HOSTPORTS_CONF:String =
-      "spark." + RecordServiceConfig.PLANNER_HOSTPORTS_CONF
-
-  val KERBEROS_PRINCIPAL_CONF:String =
-      "spark." + RecordServiceConfig.KERBEROS_PRINCIPAL_CONF
-
-  val FETCH_SIZE_CONF:String =
-      "spark." + RecordServiceConfig.FETCH_SIZE_CONF
-
-  val MEM_LIMIT_CONF:String =
-      "spark." + RecordServiceConfig.MEM_LIMIT_CONF
-
-  val RECORDS_LIMIT_CONF:String =
-      "spark." + RecordServiceConfig.RECORDS_LIMIT_CONF
-
-  val PLANNER_REQUEST_MAX_TASKS:String =
-      "spark." + RecordServiceConfig.PLANNER_REQUEST_MAX_TASKS
-
-  val PLANNER_RETRY_ATTEMPTS_CONF:String =
-      "spark." + RecordServiceConfig.PLANNER_RETRY_ATTEMPTS_CONF
-
-  val PLANNER_RETRY_SLEEP_MS_CONF:String =
-      "spark." + RecordServiceConfig.PLANNER_RETRY_SLEEP_MS_CONF
-
-  val PLANNER_CONNECTION_TIMEOUT_MS_CONF:String =
-      "spark." + RecordServiceConfig.PLANNER_CONNECTION_TIMEOUT_MS_CONF
-
-  val PLANNER_RPC_TIMEOUT_MS_CONF:String =
-      "spark." + RecordServiceConfig.PLANNER_RPC_TIMEOUT_MS_CONF
-
-  val WORKER_RETRY_ATTEMPTS_CONF:String =
-      "spark." + RecordServiceConfig.WORKER_RETRY_ATTEMPTS_CONF
-
-  val WORKER_RETRY_SLEEP_MS_CONF:String =
-      "spark." + RecordServiceConfig.WORKER_RETRY_SLEEP_MS_CONF
-
-  val WORKER_CONNECTION_TIMEOUT_MS_CONF:String =
-      "spark." + RecordServiceConfig.WORKER_CONNECTION_TIMEOUT_MS_CONF
-
-  val WORKER_RPC_TIMEOUT_MS_CONF:String =
-      "spark." + RecordServiceConfig.WORKER_RPC_TIMEOUT_MS_CONF
+  val SPARK_CONF_PREFIX = "spark."
 
   /**
-   * Returns the list of record service planner host/port.
+   * Create a hadoop configuration and copy all RecordService related
+   * properties from the SparkContext to it, striping the "spark." prefix.
    */
-  def getPlannerHostPort(sc:SparkContext) : java.util.List[NetworkAddress] = {
-    val hostports = sc.getConf.getOption(PLANNER_HOSTPORTS_CONF)
-        .getOrElse(RecordServiceConfig.DEFAULT_PLANNER_HOSTPORTS)
-    RecordServiceConfig.getPlannerHostPort(hostports)
+  def fromSparkContext(sc:SparkContext) : Configuration = {
+    val conf = new Configuration
+    ConfVars.values() foreach(v => {
+      val sparkKey = SPARK_CONF_PREFIX + v.name
+      sc.getConf.getOption(sparkKey) match {
+        case Some(value) =>
+          conf.set(v.name, value)
+        case None =>
+          // Do nothing
+      }})
+    conf
   }
 
   /**
-   * Returns the kerberos principal to connect with.
+   * Create a hadoop configuration and copy all RecordService related
+   * properties from the SQLContext to it, striping the "spark." prefix.
    */
-  def getKerberosPrincipal(sc:SparkContext) : String = {
-    sc.getConf.getOption(KERBEROS_PRINCIPAL_CONF).getOrElse(null)
+  def fromSQLContext(sc:SQLContext) : Configuration = {
+    val conf = new Configuration
+    ConfVars.values() foreach (v => {
+      val sparkKey = SPARK_CONF_PREFIX + v.name
+      try {
+        conf.set(v.name, sc.getConf(sparkKey))
+      } catch {
+        case e:NoSuchElementException =>
+         // Key doesn't exist in sc - do nothing
+      }
+    })
+    conf
+  }
+
+  /**
+   * Set key and value in the SparkConf 'conf', adding the 'spark.' prefix to the former.
+   */
+  def setSparkConf(conf:SparkConf, key:RecordServiceConfig.ConfVars,
+                   value:String) : Unit = {
+    conf.set(SPARK_CONF_PREFIX + key.name, value)
+  }
+
+  /**
+   * Set key and value in the SparkContext 'sc', adding the "spark." prefix to the former.
+   */
+  def setSparkContext(sc:SparkContext, key:RecordServiceConfig.ConfVars,
+                      value:String) : Unit = {
+    setSparkConf(sc.getConf, key, value)
+  }
+
+  /**
+   * Set key and value in the SQLContext 'sc', adding the "spark." prefix to the former.
+   */
+  def setSQLContext(sc:SQLContext, key:RecordServiceConfig.ConfVars,
+                    value:String) : Unit = {
+    sc.setConf(SPARK_CONF_PREFIX + key.name, value)
   }
 }

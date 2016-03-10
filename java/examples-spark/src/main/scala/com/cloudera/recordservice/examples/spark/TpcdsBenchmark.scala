@@ -14,6 +14,7 @@
 
 package com.cloudera.recordservice.examples.spark
 
+import com.cloudera.recordservice.mr.RecordServiceConfig
 import com.cloudera.recordservice.spark.RecordServiceConf
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.{SparkContext, SparkConf}
@@ -139,8 +140,9 @@ object TpcdsBenchmark {
       registerSparkSQLTables(sqlContext,
           "hdfs://vd0214.halxg.cloudera.com:8020/user/impala/")
     } else {
-      sqlContext.setConf(RecordServiceConf.PLANNER_HOSTPORTS_CONF,
-          plannerHost + ":12050")
+      RecordServiceConf.setSQLContext(
+        sqlContext, RecordServiceConfig.ConfVars.PLANNER_HOSTPORTS_CONF,
+        plannerHost + ":12050")
       registerRecordServiceTables(sqlContext, db)
     }
 

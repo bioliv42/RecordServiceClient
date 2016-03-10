@@ -122,7 +122,8 @@ public class ZooKeeperTest {
     }
 
     Configuration conf = new Configuration();
-    conf.set(RecordServiceConfig.ZOOKEEPER_CONNECTION_STRING_CONF, testConnectionStr);
+    conf.set(RecordServiceConfig.ConfVars.ZOOKEEPER_CONNECTION_STRING_CONF.name,
+        testConnectionStr);
     List<NetworkAddress> plannerAddresses = ZooKeeperUtil.getPlanners(conf);
 
     RecordServicePlannerClient planner;
