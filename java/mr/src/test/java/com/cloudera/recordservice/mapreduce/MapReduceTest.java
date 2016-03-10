@@ -47,6 +47,7 @@ import com.cloudera.recordservice.mapreduce.testapps.RecordCount;
 import com.cloudera.recordservice.mr.DecimalWritable;
 import com.cloudera.recordservice.mr.PlanUtil;
 import com.cloudera.recordservice.mr.RecordServiceConfig;
+import com.cloudera.recordservice.mr.RecordServiceConfig.ConfVars;
 import com.cloudera.recordservice.mr.RecordServiceRecord;
 import com.cloudera.recordservice.mr.TimestampNanosWritable;
 
@@ -80,9 +81,9 @@ public class MapReduceTest extends TestBase {
   private void verifyInputSplitsTable(int numSplits, int numCols,
       String tbl, String... cols) throws IOException {
     Configuration config = new Configuration();
-    config.set(RecordServiceConfig.TBL_NAME_CONF, tbl);
+    config.set(ConfVars.TBL_NAME_CONF.name, tbl);
     if (cols.length > 0) {
-      config.setStrings(RecordServiceConfig.COL_NAMES_CONF, cols);
+      config.setStrings(ConfVars.COL_NAMES_CONF.name, cols);
     }
     verifyInputSplits(numSplits, numCols, config);
   }
@@ -108,7 +109,7 @@ public class MapReduceTest extends TestBase {
     assertTrue(exceptionThrown);
 
     // Set db/table and make sure it works.
-    config.set(RecordServiceConfig.TBL_NAME_CONF, "tpch.nation");
+    config.set(ConfVars.TBL_NAME_CONF.name, "tpch.nation");
     PlanUtil.getSplits(config, new Credentials());
 
     // Also set input. This should fail.
@@ -124,8 +125,8 @@ public class MapReduceTest extends TestBase {
     assertTrue(exceptionThrown);
 
     // Unset the table and set columns. INPUT_DIR and columns don't work now.
-    config.unset(RecordServiceConfig.TBL_NAME_CONF);
-    config.setStrings(RecordServiceConfig.COL_NAMES_CONF, "a");
+    config.unset(ConfVars.TBL_NAME_CONF.name);
+    config.setStrings(ConfVars.COL_NAMES_CONF.name, "a");
     exceptionThrown = false;
     try {
       PlanUtil.getSplits(config, new Credentials());

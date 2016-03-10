@@ -17,6 +17,8 @@ package com.cloudera.recordservice.spark
 import org.apache.spark.{SparkContext, SparkConf}
 import org.scalatest.{Outcome,BeforeAndAfter, BeforeAndAfterAll, FunSuite}
 
+import com.cloudera.recordservice.mr.RecordServiceConfig.ConfVars
+
 // TODO: add error tests.
 class KerberosTestSuite extends FunSuite with BeforeAndAfterAll with BeforeAndAfter {
   @transient private var _sc: SparkContext = _
@@ -57,8 +59,10 @@ class KerberosTestSuite extends FunSuite with BeforeAndAfterAll with BeforeAndAf
       plannerHost_ = kerberosHosts_(0)
       plannerPrincipal_ = getPrincipal("impala", plannerHost_)
       val conf = new SparkConf(false)
-        .set(RecordServiceConf.PLANNER_HOSTPORTS_CONF, plannerHost_ + ":12050")
-        .set(RecordServiceConf.KERBEROS_PRINCIPAL_CONF, plannerPrincipal_)
+      RecordServiceConf.setSparkConf(
+        conf, ConfVars.PLANNER_HOSTPORTS_CONF, plannerHost_ + ":12050")
+      RecordServiceConf.setSparkConf(
+        conf, ConfVars.KERBEROS_PRINCIPAL_CONF, plannerPrincipal_)
       _sc = new SparkContext("local", "test", conf)
     } else {
       println("To run Kerberos tests, you need to set" +

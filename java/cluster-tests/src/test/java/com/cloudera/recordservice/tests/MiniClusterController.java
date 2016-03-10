@@ -168,7 +168,7 @@ public class MiniClusterController extends ClusterController {
       return null;
     }
     JobConf conf = new JobConf(mrClass);
-    conf.set(RecordServiceConfig.PLANNER_HOSTPORTS_CONF, "localhost:"
+    conf.set(RecordServiceConfig.ConfVars.PLANNER_HOSTPORTS_CONF.name, "localhost:"
         + getRandomNode().plannerPort_);
     return conf;
   }
@@ -181,8 +181,8 @@ public class MiniClusterController extends ClusterController {
       System.err.println("Cannot run MR job because the cluster has no active nodes");
       return null;
     }
-    mrJob.set(RecordServiceConfig.PLANNER_HOSTPORTS_CONF, "localhost:"
-        + getRandomNode().plannerPort_);
+    mrJob.set(RecordServiceConfig.ConfVars.PLANNER_HOSTPORTS_CONF.name,
+        "localhost:" + getRandomNode().plannerPort_);
     System.out.println("Running Job");
     return JobClient.runJob(mrJob);
   }

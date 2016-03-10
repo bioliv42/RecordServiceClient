@@ -33,11 +33,13 @@ import com.cloudera.recordservice.core.NetworkAddress;
 import com.cloudera.recordservice.core.PlanRequestResult;
 import com.cloudera.recordservice.core.RecordServiceException;
 import com.cloudera.recordservice.core.RecordServicePlannerClient;
+import com.cloudera.recordservice.core.RecordServicePlannerClient.Builder;
 import com.cloudera.recordservice.core.Request;
 import com.cloudera.recordservice.core.Task;
 import com.cloudera.recordservice.mapreduce.RecordServiceInputSplit;
 import com.cloudera.recordservice.mr.security.DelegationTokenIdentifier;
 import com.cloudera.recordservice.mr.security.TokenUtils;
+import com.cloudera.recordservice.mr.RecordServiceConfig.ConfVars;
 import com.google.common.base.Preconditions;
 
 /**
@@ -63,9 +65,9 @@ public class PlanUtil {
   public static Request getRequest(Configuration jobConf) throws IOException {
     LOG.debug("Generating input splits.");
 
-    String tblName = jobConf.get(RecordServiceConfig.TBL_NAME_CONF);
+    String tblName = jobConf.get(ConfVars.TBL_NAME_CONF.name);
     String inputDir = jobConf.get(FileInputFormat.INPUT_DIR);
-    String sqlQuery = jobConf.get(RecordServiceConfig.QUERY_NAME_CONF);
+    String sqlQuery = jobConf.get(ConfVars.QUERY_NAME_CONF.name);
 
     int numSet = 0;
     if (tblName != null) ++numSet;
@@ -74,19 +76,19 @@ public class PlanUtil {
 
     if (numSet == 0) {
       throw new IllegalArgumentException("No input specified. Specify either '" +
-          RecordServiceConfig.TBL_NAME_CONF + "', '" +
-          RecordServiceConfig.QUERY_NAME_CONF + "' or '" +
+          ConfVars.TBL_NAME_CONF.name + "', '" +
+          ConfVars.QUERY_NAME_CONF.name + "' or '" +
           FileInputFormat.INPUT_DIR + "'");
     }
     if (numSet > 1) {
       throw new IllegalArgumentException("More than one input specified. Can " +
           "only specify one of '" +
-          RecordServiceConfig.TBL_NAME_CONF + "'=" + tblName + ", '" +
+          ConfVars.TBL_NAME_CONF.name + "'=" + tblName + ", '" +
           FileInputFormat.INPUT_DIR + "'=" + inputDir + ", '" +
-          RecordServiceConfig.QUERY_NAME_CONF + "'=" + sqlQuery);
+          ConfVars.QUERY_NAME_CONF.name + "'=" + sqlQuery);
     }
 
-    String[] colNames = jobConf.getStrings(RecordServiceConfig.COL_NAMES_CONF);
+    String[] colNames = jobConf.getStrings(ConfVars.COL_NAMES_CONF.name);
     if (colNames == null) colNames = new String[0];
 
     if (tblName == null && colNames.length > 0) {
@@ -184,6 +186,66 @@ public class PlanUtil {
   }
 
   /**
+   * Creates a builder for RecordService planner client from the configuration.
+   */
+  public static Builder getBuilder(Configuration conf) {
+    RecordServicePlannerClient.Builder builder =
+        new RecordServicePlannerClient.Builder();
+    int connectionTimeoutMs = conf.getInt(
+        ConfVars.PLANNER_CONNECTION_TIMEOUT_MS_CONF.name, -1);
+    int rpcTimeoutMs = conf.getInt(ConfVars.PLANNER_RPC_TIMEOUT_MS_CONF.name, -1);
+    int maxAttempts = conf.getInt(ConfVars.PLANNER_RETRY_ATTEMPTS_CONF.name, -1);
+    int sleepDurationMs = conf.getInt(ConfVars.PLANNER_RETRY_SLEEP_MS_CONF.name, -1);
+    int maxTasks = conf.getInt(ConfVars.PLANNER_REQUEST_MAX_TASKS.name, -1);
+
+    if (connectionTimeoutMs != -1) builder.setConnectionTimeoutMs(connectionTimeoutMs);
+    if (rpcTimeoutMs != -1) builder.setRpcTimeoutMs(rpcTimeoutMs);
+    if (maxAttempts != -1) builder.setMaxAttempts(maxAttempts);
+    if (sleepDurationMs != -1) builder.setSleepDurationMs(sleepDurationMs);
+    if (maxTasks != -1) builder.setMaxTasks(maxTasks);
+
+    return builder;
+  }
+
+  /**
+   * Given a configuration, returns a list of network addresses for all the planners.
+   * This first tries to use the planner auto discovery feature and use ZooKeeper
+   * to find all the available planners. If that is not feasible, it tries to use
+   * the hardcoded planner host/port lists in the configuration. In case that is
+   * not feasible as well, it uses the default planner host/port.
+   * @param conf the hadoop job configuration
+   * @return a list of network addresses for all the available planners
+   */
+  public static List<NetworkAddress> getPlannerHostPorts(Configuration conf)
+      throws IOException {
+    List<NetworkAddress> plannerHostPorts = null;
+    if (isPlannerDiscoveryEnabled(conf)) {
+      try {
+        LOG.info("Using planner auto discovery on ZK connection string {}",
+            conf.get(ConfVars.ZOOKEEPER_CONNECTION_STRING_CONF.name));
+        plannerHostPorts = ZooKeeperUtil.getPlanners(conf);
+      } catch (IOException e) {
+        LOG.warn("Planner discovery failed. Now fall back to use "
+            + ConfVars.PLANNER_HOSTPORTS_CONF.name
+            + " in the job configuration.", e);
+      }
+    }
+    if (plannerHostPorts == null || plannerHostPorts.isEmpty()) {
+      plannerHostPorts = RecordServiceConfig.getPlannerHostPort(
+          conf.get(ConfVars.PLANNER_HOSTPORTS_CONF.name,
+              RecordServiceConfig.DEFAULT_PLANNER_HOSTPORTS));
+    }
+    return plannerHostPorts;
+  }
+
+  /**
+   * Returns the kerberos principal to connect with.
+   */
+  public static String getKerberosPrincipal(Configuration conf) {
+    return conf.get(ConfVars.KERBEROS_PRINCIPAL_CONF.name);
+  }
+
+  /**
    * This also handles authentication using credentials. If there is a delegation
    * token in the credentials, that will be used to authenticate the planner
    * connection. Otherwise, if kerberos is enabled, a token will be generated
@@ -194,44 +256,9 @@ public class PlanUtil {
   public static SplitsInfo getSplits(Configuration jobConf,
                                      Credentials credentials) throws IOException {
     Request request = PlanUtil.getRequest(jobConf);
-    List<NetworkAddress> plannerHostPorts = null;
-    if (isPlannerDiscoveryEnabled(jobConf)) {
-      try {
-        LOG.info("Using planner auto discovery on ZK connection string {}",
-            jobConf.get(RecordServiceConfig.ZOOKEEPER_CONNECTION_STRING_CONF));
-        plannerHostPorts = ZooKeeperUtil.getPlanners(jobConf);
-      } catch (IOException e) {
-        LOG.warn("Planner discovery failed. Now fall back to use "
-            + RecordServiceConfig.PLANNER_HOSTPORTS_CONF
-            + " in the job configuration.", e);
-      }
-    }
-    if (plannerHostPorts == null || plannerHostPorts.isEmpty()) {
-      plannerHostPorts = RecordServiceConfig.getPlannerHostPort(
-          jobConf.get(RecordServiceConfig.PLANNER_HOSTPORTS_CONF,
-              RecordServiceConfig.DEFAULT_PLANNER_HOSTPORTS));
-    }
-    String kerberosPrincipal =
-        jobConf.get(RecordServiceConfig.KERBEROS_PRINCIPAL_CONF);
-    int connectionTimeoutMs =
-        jobConf.getInt(RecordServiceConfig.PLANNER_CONNECTION_TIMEOUT_MS_CONF, -1);
-    int rpcTimeoutMs =
-            jobConf.getInt(RecordServiceConfig.PLANNER_RPC_TIMEOUT_MS_CONF, -1);
-    int maxAttempts =
-        jobConf.getInt(RecordServiceConfig.PLANNER_RETRY_ATTEMPTS_CONF, -1);
-    int sleepDurationMs =
-        jobConf.getInt(RecordServiceConfig.PLANNER_RETRY_SLEEP_MS_CONF, -1);
-    int maxTasks = jobConf.getInt(RecordServiceConfig.PLANNER_REQUEST_MAX_TASKS, -1);
-
-    RecordServicePlannerClient.Builder builder =
-        new RecordServicePlannerClient.Builder();
-
-    if (connectionTimeoutMs != -1) builder.setConnectionTimeoutMs(connectionTimeoutMs);
-    if (rpcTimeoutMs != -1) builder.setRpcTimeoutMs(rpcTimeoutMs);
-    if (maxAttempts != -1) builder.setMaxAttempts(maxAttempts);
-    if (sleepDurationMs != -1) builder.setSleepDurationMs(sleepDurationMs);
-    if (maxTasks != -1) builder.setMaxTasks(maxTasks);
-
+    RecordServicePlannerClient.Builder builder = getBuilder(jobConf);
+    List<NetworkAddress> plannerHostPorts = getPlannerHostPorts(jobConf);
+    String kerberosPrincipal = jobConf.get(ConfVars.KERBEROS_PRINCIPAL_CONF.name);
     PlanRequestResult result = null;
     RecordServicePlannerClient planner = PlanUtil.getPlanner(
         jobConf, builder, plannerHostPorts, kerberosPrincipal, credentials);
@@ -261,16 +288,6 @@ public class PlanUtil {
     // Randomize the order of the splits to mitigate skew.
     Collections.shuffle(splits);
     return new SplitsInfo(splits, schema);
-  }
-
-  /**
-   * Checks whether planner auto discovery is enabled. This checks the 'conf' to see
-   * if the ZooKeeper connection string is defined and is not empty.
-   */
-  private static boolean isPlannerDiscoveryEnabled(Configuration conf) {
-    String zkConnectString =
-        conf.get(RecordServiceConfig.ZOOKEEPER_CONNECTION_STRING_CONF);
-    return zkConnectString != null && !zkConnectString.isEmpty();
   }
 
   /**
@@ -306,5 +323,15 @@ public class PlanUtil {
     sb.append('\n');
     sb.append("================ End of Configuration Properties Info ================");
     return sb.toString();
+  }
+
+  /**
+   * Checks whether planner auto discovery is enabled. This checks the 'conf' to see
+   * if the ZooKeeper connection string is defined and is not empty.
+   */
+  private static boolean isPlannerDiscoveryEnabled(Configuration conf) {
+    String zkConnectString =
+        conf.get(ConfVars.ZOOKEEPER_CONNECTION_STRING_CONF.name);
+    return zkConnectString != null && !zkConnectString.isEmpty();
   }
 }

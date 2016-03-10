@@ -30,6 +30,7 @@ public class TokenUtils {
    */
   public static DelegationToken
       toDelegationToken(Token<DelegationTokenIdentifier> t) throws IOException {
+    if (t == null) return null;
     return new DelegationToken(
         encodeAsString(t.getIdentifier()),
         encodeAsString(t.getPassword()),

@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.cloudera.recordservice.core.NetworkAddress;
+import com.cloudera.recordservice.mr.RecordServiceConfig.ConfVars;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.api.ACLProvider;
@@ -47,22 +48,21 @@ public class ZooKeeperUtil {
    * @return A list of <code>NetworkAddress</code>es for all the planners available
    */
   public static List<NetworkAddress> getPlanners(Configuration conf) throws IOException {
-    String connectionString = conf.get(
-        RecordServiceConfig.ZOOKEEPER_CONNECTION_STRING_CONF);
+    String connectionString = conf.get(ConfVars.ZOOKEEPER_CONNECTION_STRING_CONF.name);
     if (connectionString == null || connectionString.trim().isEmpty()) {
       throw new IllegalArgumentException(
           "Zookeeper connect string has to be specified through "
-              + RecordServiceConfig.ZOOKEEPER_CONNECTION_STRING_CONF);
+              + ConfVars.ZOOKEEPER_CONNECTION_STRING_CONF.name);
     }
     LOGGER.info("Connecting to zookeeper at: " + connectionString);
 
     int connectionTimeout =
-        conf.getInt(RecordServiceConfig.ZOOKEEPER_CONNECT_TIMEOUTMILLIS_CONF,
+        conf.getInt(ConfVars.ZOOKEEPER_CONNECT_TIMEOUTMILLIS_CONF.name,
             CuratorFrameworkFactory.builder().getConnectionTimeoutMs());
     LOGGER.info("Zookeeper connection timeout: " + connectionTimeout);
 
 
-    String rootNode = conf.get(RecordServiceConfig.ZOOKEEPER_ZNODE_CONF,
+    String rootNode = conf.get(ConfVars.ZOOKEEPER_ZNODE_CONF.name,
         RecordServiceConfig.ZOOKEEPER_ZNODE_DEFAULT);
     LOGGER.info("Zookeeper root: " + rootNode);
 

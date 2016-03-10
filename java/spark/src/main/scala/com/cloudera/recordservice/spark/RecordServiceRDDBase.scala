@@ -18,28 +18,25 @@
 package com.cloudera.recordservice.spark
 
 import com.cloudera.recordservice.core._
-import com.cloudera.recordservice.mr.PlanUtil
+import com.cloudera.recordservice.mr.{PlanUtil, WorkerUtil}
 import org.apache.spark._
 import org.apache.spark.rdd.RDD
 
-import java.net.InetAddress
-
-import scala.collection.mutable.ListBuffer
 import scala.reflect.ClassTag
-import scala.collection.JavaConversions.asScalaBuffer
-import scala.util.Random
+import scala.collection.JavaConversions._
+import org.apache.hadoop.conf.Configuration
 
 private class RecordServicePartition(rddId: Int, idx: Int,
-                                     h:Seq[String], p:Seq[Int],
-                                     w: Seq[NetworkAddress], t: Task, s: Schema,
+                                     h: Seq[NetworkAddress],
+                                     w: Seq[NetworkAddress],
+                                     t: Task, s: Schema,
                                      token: DelegationToken)
-    extends Partition {
+  extends Partition {
   override def hashCode(): Int = 41 * (41 + rddId) + idx
   override val index: Int = idx
   val task: Task = t
   val schema: Schema = s
-  val hosts: Seq[String] = h
-  val ports: Seq[Int] = p
+  val localHosts: Seq[NetworkAddress] = h
   val globalHosts: Seq[NetworkAddress] = w
   val delegationToken: DelegationToken = token
 }
@@ -69,23 +66,10 @@ abstract class RecordServiceRDDBase[T:ClassTag](@transient sc: SparkContext)
   // Configs that we use when we execute the task. These come from SparkContext
   // but we do not serialize the entire context. Instead these are populated in
   // the client (i.e. planning phase).
-  val memLimit = sc.getConf.getLong(RecordServiceConf.MEM_LIMIT_CONF, -1)
-  val limit = sc.getConf.getLong(RecordServiceConf.RECORDS_LIMIT_CONF, -1)
-  val maxAttempts = sc.getConf.getInt(
-      RecordServiceConf.WORKER_RETRY_ATTEMPTS_CONF, -1)
-  val taskSleepMs = sc.getConf.getInt(
-      RecordServiceConf.WORKER_RETRY_SLEEP_MS_CONF, -1)
-  val connectionTimeoutMs = sc.getConf.getInt(
-      RecordServiceConf.WORKER_CONNECTION_TIMEOUT_MS_CONF, -1)
-  val rpcTimeoutMs = sc.getConf.getInt(
-      RecordServiceConf.WORKER_RPC_TIMEOUT_MS_CONF, -1)
-  val fetchSize = sc.getConf.getInt(RecordServiceConf.FETCH_SIZE_CONF, -1)
+  val rsConfigs = saveFromSparkContext(sc)
 
   // Request to make
   @transient var request:Request = null
-
-  var plannerHostPorts:java.util.List[NetworkAddress] =
-      RecordServiceConf.getPlannerHostPort(sc)
 
   // Result schema (after projection)
   var schema:Schema = null
@@ -122,51 +106,10 @@ abstract class RecordServiceRDDBase[T:ClassTag](@transient sc: SparkContext)
     schema
   }
 
-  /**
-   * Sets the planner host/port to connect to. Default pulls from configs.
-   */
-  def setPlannerHostPort(host:String, port:Int): Unit = {
-    plannerHostPorts.clear()
-    plannerHostPorts.add(new NetworkAddress(host, port))
-  }
-
   protected def verifySetRequest() = {
     if (request != null) {
       throw new SparkException("Request is already set.")
     }
-  }
-
-  /**
-   * Returns the worker host to connect to, attempting to schedule for locality. If
-   * any of the hosts matches this hosts address, use that host. Otherwise connect
-   * to a host at random.
-   */
-  def getWorkerToConnectTo(partition: RecordServicePartition): (String, Int) = {
-    val tid = partition.task.taskId
-    val hostAddress = InetAddress.getLocalHost.getHostName()
-    for (i <- 0 until partition.hosts.size) {
-      if (partition.hosts(i) == hostAddress) {
-        logInfo(s"Both data and RecordServiceWorker are availablelocally for task $tid")
-        return (partition.hosts(i), partition.ports(i))
-      }
-    }
-
-    // Check if the current host is running a RecordServiceWorker. If so, schedule the
-    // task locally. Otherwise, choose a random host from the global membership
-    // for the task.
-    val addr = partition.globalHosts.find((_.hostname == hostAddress)) match {
-      case Some(addr) => {
-        logInfo(s"RecordServiceWorker is available locally for task $tid")
-        addr
-      }
-      case None => {
-        val addr = partition.globalHosts(Random.nextInt(partition.globalHosts.size))
-        logInfo(s"Neither RecordServiceWorker nor data is available locally " +
-          s"for task $tid. Randomly selected host ${addr.hostname} to execute it")
-        addr
-      }
-    }
-    (addr.hostname, addr.port)
   }
 
   /**
@@ -176,19 +119,12 @@ abstract class RecordServiceRDDBase[T:ClassTag](@transient sc: SparkContext)
     var worker:RecordServiceWorkerClient = null
     var records:Records = null
     try {
-      val builder = new RecordServiceWorkerClient.Builder()
-      builder.setDelegationToken(partition.delegationToken)
-
-      if (memLimit != -1) builder.setMemLimit(memLimit)
-      if (limit != -1) builder.setLimit(limit)
-      if (maxAttempts != -1) builder.setMaxAttempts(maxAttempts)
-      if (taskSleepMs != -1 ) builder.setSleepDurationMs(taskSleepMs)
-      if (connectionTimeoutMs != -1) builder.setConnectionTimeoutMs(connectionTimeoutMs)
-      if (rpcTimeoutMs != -1) builder.setRpcTimeoutMs(rpcTimeoutMs)
-      if (fetchSize != -1) builder.setFetchSize(fetchSize)
-
-      val (hostname, port) = getWorkerToConnectTo(partition)
-      worker = builder.connect(hostname, port)
+      val conf = new Configuration
+      rsConfigs foreach (e => conf.set(e._1, e._2))
+      val builder = WorkerUtil.getBuilder(conf, partition.delegationToken)
+      val addr = WorkerUtil.getWorkerToConnectTo(
+        partition.task.taskId, partition.localHosts, partition.globalHosts)
+      worker = builder.connect(addr.hostname, addr.port)
       records = worker.execAndFetch(partition.task)
       (worker, records)
     } catch {
@@ -234,7 +170,7 @@ abstract class RecordServiceRDDBase[T:ClassTag](@transient sc: SparkContext)
    */
   override def getPreferredLocations(split: Partition): Seq[String] = {
     val partition = split.asInstanceOf[RecordServicePartition]
-    partition.hosts
+    partition.localHosts.map(_.hostname)
   }
 
   /**
@@ -252,26 +188,12 @@ abstract class RecordServiceRDDBase[T:ClassTag](@transient sc: SparkContext)
       // TODO: for use cases like oozie, we need to authenticate with the planner via
       // delegationToken as well. How is this done for spark? How do we get at the
       // credentials object.
-      val principal = RecordServiceConf.getKerberosPrincipal(sc)
-      val connectionTimeoutMs =
-          sc.getConf.getInt(RecordServiceConf.PLANNER_CONNECTION_TIMEOUT_MS_CONF, -1)
-      val rpcTimeoutMs =
-          sc.getConf.getInt(RecordServiceConf.PLANNER_RPC_TIMEOUT_MS_CONF, -1)
-      val maxAttempts =
-          sc.getConf.getInt(RecordServiceConf.PLANNER_RETRY_ATTEMPTS_CONF, -1)
-      val sleepDurationMs =
-          sc.getConf.getInt(RecordServiceConf.PLANNER_RETRY_SLEEP_MS_CONF, -1)
-      val maxTasks =
-          sc.getConf.getInt(RecordServiceConf.PLANNER_REQUEST_MAX_TASKS, -1)
-
-      val builder = new RecordServicePlannerClient.Builder()
-      if (connectionTimeoutMs != -1) builder.setConnectionTimeoutMs(connectionTimeoutMs)
-      if (rpcTimeoutMs != -1) builder.setRpcTimeoutMs(rpcTimeoutMs)
-      if (maxAttempts != -1) builder.setMaxAttempts(maxAttempts)
-      if (sleepDurationMs != -1) builder.setSleepDurationMs(sleepDurationMs)
-      if (maxTasks != -1) builder.setMaxTasks(maxTasks)
-      planner = PlanUtil.getPlanner(sc.hadoopConfiguration,
-        builder, plannerHostPorts, principal, null)
+      val conf = RecordServiceConf.fromSparkContext(sc)
+      val principal = PlanUtil.getKerberosPrincipal(conf)
+      val builder = PlanUtil.getBuilder(conf)
+      val hostPorts = PlanUtil.getPlannerHostPorts(conf)
+      planner = PlanUtil.getPlanner(
+        sc.hadoopConfiguration, builder, hostPorts, principal, null)
       val result = planner.planRequest(request)
       if (principal != null) {
         (result, planner.getDelegationToken(""))
@@ -287,17 +209,17 @@ abstract class RecordServiceRDDBase[T:ClassTag](@transient sc: SparkContext)
 
     val partitions = new Array[Partition](planResult.tasks.size())
     for (i <- 0 until planResult.tasks.size()) {
-      val hosts = ListBuffer[String]()
-      val ports = ListBuffer[Int]()
-      for (j <- 0 until planResult.tasks.get(i).localHosts.size()) {
-        hosts += planResult.tasks.get(i).localHosts.get(j).hostname
-        ports += planResult.tasks.get(i).localHosts.get(j).port
-      }
-      val globalHosts = asScalaBuffer(planResult.hosts).toList
-      partitions(i) = new RecordServicePartition(id, i, hosts.seq, ports.seq,
-        globalHosts, planResult.tasks.get(i), planResult.schema, delegationToken)
+      partitions(i) = new RecordServicePartition(id, i,
+        planResult.tasks.get(i).localHosts,
+        planResult.hosts,
+        planResult.tasks.get(i), planResult.schema, delegationToken)
     }
     schema = planResult.schema
     (planResult, partitions)
+  }
+
+  private def saveFromSparkContext(sc:SparkContext) : Map[String, String] = {
+    val conf = RecordServiceConf.fromSparkContext(sc)
+    conf map (e => (e.getKey, e.getValue)) toMap
   }
 }
