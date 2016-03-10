@@ -16,37 +16,29 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package com.cloudera.recordservice.hcatalog.mapreduce;
+
+import java.io.IOException;
 
 import com.cloudera.recordservice.hcatalog.common.HCatRSUtil;
 import com.cloudera.recordservice.mapreduce.RecordServiceInputFormat;
 import com.cloudera.recordservice.mapreduce.RecordServiceInputSplit;
 import com.cloudera.recordservice.mr.RecordServiceRecord;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.hive.ql.metadata.HiveStorageHandler;
-import org.apache.hadoop.hive.serde2.Deserializer;
-import org.apache.hadoop.hive.serde2.SerDeException;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
-import org.apache.hadoop.util.ReflectionUtils;
-import org.apache.hive.hcatalog.common.HCatConstants;
 import org.apache.hive.hcatalog.common.HCatUtil;
-import org.apache.hive.hcatalog.data.schema.HCatSchema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-
-/** The HCat wrapper for the underlying RecordReader,
- * this ensures that the initialize on
- * the underlying record reader is done with the underlying split,
- * not with HCatSplit.
+/**
+ * The HCat wrapper for the underlying RecordReader this ensures that the initialize on
+ * the underlying record reader is done with the underlying split not with HCatSplit.
  */
 class HCatRecordReader extends RecordReader<WritableComparable, RecordServiceRecord> {
-
   private static final Logger LOG = LoggerFactory.getLogger(HCatRecordReader.class);
 
   /** The underlying record reader to delegate to. */
@@ -65,31 +57,26 @@ class HCatRecordReader extends RecordReader<WritableComparable, RecordServiceRec
    */
   @Override
   public void initialize(org.apache.hadoop.mapreduce.InputSplit split,
-               TaskAttemptContext taskContext) throws IOException, InterruptedException {
+                         TaskAttemptContext taskContext)
+      throws IOException, InterruptedException {
     RecordServiceInputSplit recordServiceSplit = (RecordServiceInputSplit) split;
     baseRecordReader = createBaseRecordReader(recordServiceSplit, taskContext);
   }
 
-  private RecordReader<NullWritable, RecordServiceRecord> createBaseRecordReader(RecordServiceInputSplit recordServiceSplit,
-                                     TaskAttemptContext taskContext) throws IOException {
+  private RecordReader<NullWritable, RecordServiceRecord> createBaseRecordReader(
+      RecordServiceInputSplit recordServiceSplit,
+      TaskAttemptContext taskContext) throws IOException {
     JobConf jobConf = HCatUtil.getJobConfFromContext(taskContext);
     HCatRSUtil.copyCredentialsToJobConf(taskContext.getCredentials(), jobConf);
-    RecordServiceInputFormat inputFormat = ReflectionUtils.newInstance(RecordServiceInputFormat.class, jobConf);
-    try {
-      return inputFormat.createRecordReader(recordServiceSplit, taskContext);
-    }
-    catch (InterruptedException e){
-      LOG.error("Unable to create Record Reader", e);
-      return null;
-    }
+    return new RecordServiceInputFormat().createRecordReader(
+        recordServiceSplit, taskContext);
   }
 
   /* (non-Javadoc)
   * @see org.apache.hadoop.mapreduce.RecordReader#getCurrentKey()
   */
   @Override
-  public WritableComparable getCurrentKey()
-    throws IOException, InterruptedException {
+  public WritableComparable getCurrentKey() throws IOException, InterruptedException {
     return baseRecordReader.getCurrentKey();
   }
 
@@ -137,66 +124,5 @@ class HCatRecordReader extends RecordReader<WritableComparable, RecordServiceRec
   @Override
   public void close() throws IOException {
     baseRecordReader.close();
-  }
-
-  /**
-   * Tracks number of of errors in input and throws a Runtime exception
-   * if the rate of errors crosses a limit.
-   * <br/>
-   * The intention is to skip over very rare file corruption or incorrect
-   * input, but catch programmer errors (incorrect format, or incorrect
-   * deserializers etc).
-   *
-   * This class was largely copied from Elephant-Bird (thanks @rangadi!)
-   * https://github.com/kevinweil/elephant-bird/blob/master/core/src/main/java/com/twitter/elephantbird/mapreduce/input/LzoRecordReader.java
-   */
-  static class InputErrorTracker {
-    long numRecords;
-    long numErrors;
-
-    double errorThreshold; // max fraction of errors allowed
-    long minErrors; // throw error only after this many errors
-
-    InputErrorTracker(Configuration conf) {
-      errorThreshold = conf.getFloat(HCatConstants.HCAT_INPUT_BAD_RECORD_THRESHOLD_KEY,
-        HCatConstants.HCAT_INPUT_BAD_RECORD_THRESHOLD_DEFAULT);
-      minErrors = conf.getLong(HCatConstants.HCAT_INPUT_BAD_RECORD_MIN_KEY,
-        HCatConstants.HCAT_INPUT_BAD_RECORD_MIN_DEFAULT);
-      numRecords = 0;
-      numErrors = 0;
-    }
-
-    void incRecords() {
-      numRecords++;
-    }
-
-    void incErrors(Throwable cause) {
-      numErrors++;
-      if (numErrors > numRecords) {
-        // incorrect use of this class
-        throw new RuntimeException("Forgot to invoke incRecords()?");
-      }
-
-      if (cause == null) {
-        cause = new Exception("Unknown error");
-      }
-
-      if (errorThreshold <= 0) { // no errors are tolerated
-        throw new RuntimeException("error while reading input records", cause);
-      }
-
-      LOG.warn("Error while reading an input record ("
-        + numErrors + " out of " + numRecords + " so far ): ", cause);
-
-      double errRate = numErrors / (double) numRecords;
-
-      // will always excuse the first error. We can decide if single
-      // error crosses threshold inside close() if we want to.
-      if (numErrors >= minErrors && errRate > errorThreshold) {
-        LOG.error(numErrors + " out of " + numRecords
-          + " crosses configured threshold (" + errorThreshold + ")");
-        throw new RuntimeException("error rate while reading input records crossed threshold", cause);
-      }
-    }
   }
 }

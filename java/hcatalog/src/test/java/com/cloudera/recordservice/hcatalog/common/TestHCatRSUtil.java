@@ -34,41 +34,41 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class TestHCatRSUtil extends TestBase {
+  @Test
+  public void serializeTest() throws IOException {
+    assertEquals("", HCatRSUtil.serialize(null));
 
-    public void serializeTest() throws IOException {
-        assertEquals("", HCatRSUtil.serialize(null));
+    String result = HCatRSUtil.serialize(
+        InputJobInfo.create("db", "example", "filter", null));
+    assertTrue(result != null);
+  }
 
-        String result = HCatRSUtil.serialize(InputJobInfo.create("db", "example", "filter", null));
-        assertTrue(result != null);
-    }
+  @Test
+  public void deserializeTest() throws IOException {
+    // first the null branches
+    assertEquals(null, HCatRSUtil.deserialize(null));
+    assertEquals(null, HCatRSUtil.deserialize(""));
+  }
 
-    @Test
-    public void deserializeTest() throws IOException {
-        // first the null branches
-        assertEquals(null, HCatRSUtil.deserialize(null));
-        assertEquals(null, HCatRSUtil.deserialize(""));
-    }
+  @Test
+  public void encodeBytesTest() {
+    byte[] test = "testEncoding".getBytes();
+    String result = HCatRSUtil.encodeBytes(test);
+    assertTrue(result != null);
+  }
 
-    @Test
-    public void encodeBytesTest() {
-        byte[] test = "testEncoding".getBytes();
-        String result = HCatRSUtil.encodeBytes(test);
-        assertTrue(result != null);
-    }
+  @Test
+  public void decodeBytesTest() {
+    byte[] result = HCatRSUtil.decodeBytes("testDecoding");
+    assertTrue(result != null);
+  }
 
-    @Test
-    public void decodeBytesTest() {
-        byte[] result = HCatRSUtil.decodeBytes("testDecoding");
-        assertTrue(result != null);
-    }
-
-    @Test
-    public void copyCredentialsToJobConfTest() {
-        JobConf conf = new JobConf();
-        Credentials cred = new Credentials();
-        cred.addToken(new Text("Alias"), new Token<TokenIdentifier>());
-        HCatRSUtil.copyCredentialsToJobConf(cred, conf);
-        assertEquals(1, conf.getCredentials().numberOfTokens());
-    }
-
+  @Test
+  public void copyCredentialsToJobConfTest() {
+    JobConf conf = new JobConf();
+    Credentials cred = new Credentials();
+    cred.addToken(new Text("Alias"), new Token<TokenIdentifier>());
+    HCatRSUtil.copyCredentialsToJobConf(cred, conf);
+    assertEquals(1, conf.getCredentials().numberOfTokens());
+  }
 }

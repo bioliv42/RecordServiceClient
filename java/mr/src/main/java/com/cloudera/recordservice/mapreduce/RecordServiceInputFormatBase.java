@@ -88,8 +88,8 @@ public abstract class RecordServiceInputFormatBase<K, V> extends InputFormat<K, 
      */
     @Override
     public void initialize(InputSplit split, TaskAttemptContext context)
-        throws IOException, InterruptedException {
-      RecordServiceInputSplit rsSplit = (RecordServiceInputSplit)split;
+        throws IOException {
+      RecordServiceInputSplit rsSplit = (RecordServiceInputSplit) split;
       try {
         reader_ = new RecordReaderCore(context.getConfiguration(),
             context.getCredentials(), rsSplit.getTaskInfo());

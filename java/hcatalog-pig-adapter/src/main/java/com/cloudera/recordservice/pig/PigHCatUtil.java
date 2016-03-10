@@ -16,8 +16,18 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package com.cloudera.recordservice.pig;
 
+import java.io.IOException;
+import java.sql.Date;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Properties;
 
 import com.cloudera.recordservice.mr.DecimalWritable;
 import com.cloudera.recordservice.mr.RecordServiceRecord;
@@ -28,7 +38,15 @@ import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
 import org.apache.hadoop.hive.metastore.MetaStoreUtils;
 import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
 import org.apache.hadoop.hive.ql.metadata.Table;
-import org.apache.hadoop.io.*;
+import org.apache.hadoop.io.BooleanWritable;
+import org.apache.hadoop.io.ByteWritable;
+import org.apache.hadoop.io.BytesWritable;
+import org.apache.hadoop.io.DoubleWritable;
+import org.apache.hadoop.io.FloatWritable;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.ShortWritable;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hive.hcatalog.common.HCatConstants;
 import org.apache.hive.hcatalog.common.HCatException;
@@ -41,7 +59,12 @@ import org.apache.pig.LoadPushDown.RequiredField;
 import org.apache.pig.PigException;
 import org.apache.pig.ResourceSchema;
 import org.apache.pig.ResourceSchema.ResourceFieldSchema;
-import org.apache.pig.data.*;
+
+import org.apache.pig.data.DataBag;
+import org.apache.pig.data.DataType;
+import org.apache.pig.data.DefaultDataBag;
+import org.apache.pig.data.Tuple;
+import org.apache.pig.data.TupleFactory;
 import org.apache.pig.impl.logicalLayer.schema.Schema;
 import org.apache.pig.impl.util.UDFContext;
 import org.apache.pig.impl.util.Utils;
@@ -49,22 +72,18 @@ import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.sql.Date;
-import java.util.*;
-import java.util.Map.Entry;
-
 /*
  * This Class was copied from the Hcatalog-Pig-Adapter Project
- * Orginal name: PigHcatUtil
- * Changes: ConvertToTuples method now converts record service records
- * instead of HcatRecords
+ * Orginal name: PigHCatUtil
+ * Changes: transferToTuple method now converts RecordServiceRecord
+ * instead of HCatRecord
  */
 class PigHCatUtil {
 
   private static final Logger LOG = LoggerFactory.getLogger(PigHCatUtil.class);
 
-  static final int PIG_EXCEPTION_CODE = 1115; // http://wiki.apache.org/pig/PigErrorHandlingFunctionalSpecification#Error_codes
+  // http://wiki.apache.org/pig/PigErrorHandlingFunctionalSpecification#Error_codes
+  static final int PIG_EXCEPTION_CODE = 1115;
   private static final String DEFAULT_DB = MetaStoreUtils.DEFAULT_DATABASE_NAME;
 
   private final Map<Pair<String, String>, Table> hcatTableCache =
@@ -87,9 +106,9 @@ class PigHCatUtil {
     //
     // HCatalog depends heavily on Hive, which at this time uses antlr 3.0.1.
     //
-    // antlr 3.0.1 and 3.4 are incompatible, so Pig 0.10.0 and Hive cannot be depended on in the
-    // same project. Pig 0.8.0 did not use antlr for its parser and can coexist with Hive,
-    // so that Pig version is depended on by HCatalog at this time.
+    // antlr 3.0.1 and 3.4 are incompatible, so Pig 0.10.0 and Hive cannot be depended on
+    // in the same project. Pig 0.8.0 did not use antlr for its parser and can coexist
+    // with Hive, so that Pig version is depended on by HCatalog at this time.
     try {
       Schema schema = Utils.getSchemaFromString("myBooleanField: boolean");
       pigHasBooleanSupport = (schema.getField("myBooleanField").type == DataType.BOOLEAN);
@@ -152,18 +171,22 @@ class PigHCatUtil {
 
     if (serverKerberosPrincipal != null) {
       hiveConf.setBoolVar(HiveConf.ConfVars.METASTORE_USE_THRIFT_SASL, true);
-      hiveConf.setVar(HiveConf.ConfVars.METASTORE_KERBEROS_PRINCIPAL, serverKerberosPrincipal);
+      hiveConf.setVar(HiveConf.ConfVars.METASTORE_KERBEROS_PRINCIPAL,
+          serverKerberosPrincipal);
     }
 
     try {
       return HCatUtil.getHiveClient(hiveConf);
     } catch (Exception e) {
-      throw new Exception("Could not instantiate a HiveMetaStoreClient connecting to server uri:[" + serverUri + "]", e);
+      throw new Exception(
+          "Could not instantiate a HiveMetaStoreClient connecting to server uri:["
+              + serverUri + "]", e);
     }
   }
 
 
-  HCatSchema getHCatSchema(List<RequiredField> fields, String signature, Class<?> classForUDFCLookup) throws IOException {
+  HCatSchema getHCatSchema(List<RequiredField> fields, String signature,
+                           Class<?> classForUDFCLookup) throws IOException {
     if (fields == null) {
       return null;
     }
@@ -198,10 +221,12 @@ class PigHCatUtil {
     Table table = null;
     HiveMetaStoreClient client = null;
     try {
-      client = getHiveMetaClient(hcatServerUri, hcatServerPrincipal, PigHCatUtil.class, job);
+      client = getHiveMetaClient(hcatServerUri, hcatServerPrincipal,
+          PigHCatUtil.class, job);
       table = HCatUtil.getTable(client, dbName, tableName);
     } catch (NoSuchObjectException nsoe) {
-      throw new PigException("Table not found : " + nsoe.getMessage(), PIG_EXCEPTION_CODE); // prettier error messages to frontend
+      throw new PigException("Table not found : " + nsoe.getMessage(),
+          PIG_EXCEPTION_CODE); // prettier error messages to frontend
     } catch (Exception e) {
       throw new IOException(e);
     } finally {
@@ -211,8 +236,8 @@ class PigHCatUtil {
     return table;
   }
 
-  public static ResourceSchema getResourceSchema(HCatSchema hcatSchema) throws IOException {
-
+  public static ResourceSchema getResourceSchema(HCatSchema hcatSchema)
+      throws IOException {
     List<ResourceFieldSchema> rfSchemaList = new ArrayList<ResourceFieldSchema>();
     for (HCatFieldSchema hfs : hcatSchema.getFields()) {
       ResourceFieldSchema rfSchema;
@@ -251,7 +276,8 @@ class PigHCatUtil {
     return rfSchema;
   }
 
-  protected static ResourceSchema getBagSubSchema(HCatFieldSchema hfs) throws IOException {
+  protected static ResourceSchema getBagSubSchema(HCatFieldSchema hfs)
+      throws IOException {
     // there are two cases - array<Type> and array<struct<...>>
     // in either case the element type of the array is represented in a
     // tuple field schema in the bag's field schema - the second case (struct)
@@ -279,7 +305,8 @@ class PigHCatUtil {
       bagSubFieldSchemas[0].setSchema(getTupleSubSchema(arrayElementFieldSchema));
     } else if (arrayElementFieldSchema.getType() == Type.ARRAY) {
       ResourceSchema s = new ResourceSchema();
-      List<ResourceFieldSchema> lrfs = Arrays.asList(getResourceSchemaFromFieldSchema(arrayElementFieldSchema));
+      List<ResourceFieldSchema> lrfs = Arrays.asList(
+          getResourceSchemaFromFieldSchema(arrayElementFieldSchema));
       s.setFields(lrfs.toArray(new ResourceFieldSchema[lrfs.size()]));
       bagSubFieldSchemas[0].setSchema(s);
     } else {
@@ -288,13 +315,15 @@ class PigHCatUtil {
         .setDescription("The inner field in the tuple in the bag")
         .setType(getPigType(arrayElementFieldSchema))
         .setSchema(null); // the element type is not a tuple - so no subschema
-      bagSubFieldSchemas[0].setSchema(new ResourceSchema().setFields(innerTupleFieldSchemas));
+      bagSubFieldSchemas[0].setSchema(
+          new ResourceSchema().setFields(innerTupleFieldSchemas));
     }
     return new ResourceSchema().setFields(bagSubFieldSchemas);
 
   }
 
-  private static ResourceSchema getTupleSubSchema(HCatFieldSchema hfs) throws IOException {
+  private static ResourceSchema getTupleSubSchema(HCatFieldSchema hfs)
+      throws IOException {
     // for each struct subfield, create equivalent ResourceFieldSchema
     ResourceSchema s = new ResourceSchema();
     List<ResourceFieldSchema> lrfs = new ArrayList<ResourceFieldSchema>();
@@ -317,7 +346,8 @@ class PigHCatUtil {
    * Defines a mapping of HCatalog type to Pig type; not every mapping is exact, 
    * see {@link #extractPigObject(Object, HCatFieldSchema)}
    * See http://pig.apache.org/docs/r0.12.0/basic.html#data-types
-   * See {@link org.apache.hive.hcatalog.pig.HCatBaseStorer#validateSchema(Schema.FieldSchema, HCatFieldSchema, Schema, HCatSchema, int)}
+   * See {@link org.apache.hive.hcatalog.pig.HCatBaseStorer#validateSchema(
+   * Schema.FieldSchema, HCatFieldSchema, Schema, HCatSchema, int)}
    * for Pig->Hive type mapping.
    */ 
   static public byte getPigType(Type type) throws IOException {
@@ -374,7 +404,8 @@ class PigHCatUtil {
         + "' is not supported in Pig as a column type", PIG_EXCEPTION_CODE);
   }
 
-  public static Tuple transformToTuple(RecordServiceRecord record, HCatSchema hs) throws Exception {
+  public static Tuple transformToTuple(RecordServiceRecord record, HCatSchema hs)
+      throws Exception {
     if (record == null) {
       return null;
     }
@@ -393,10 +424,10 @@ class PigHCatUtil {
    * @return object in Pig value system 
    */
   public static Object extractPigObject(Object o, HCatFieldSchema hfs) throws Exception {
-    /*Note that HCatRecordSerDe.serializePrimitiveField() will be called before this, thus some
-    * type promotion/conversion may occur: e.g. Short to Integer.  We should refactor this so
-    * that it's hapenning in one place per module/product that we are integrating with.
-    * All Pig conversion should be done here, etc.*/
+    /*Note that HCatRecordSerDe.serializePrimitiveField() will be called before this, thus
+    * some type promotion/conversion may occur: e.g. Short to Integer.  We should refactor
+    * this so that it's hapenning in one place per module/product that we are integrating
+    * with. All Pig conversion should be done here, etc.*/
     if(o == null) {
       return null;
     }
@@ -413,11 +444,13 @@ class PigHCatUtil {
       result = transformToPigMap((Map<?, ?>) o, hfs);
       break;
     case DATE:
-      /*java.sql.Date is weird.  It automatically adjusts it's millis value to be in the local TZ
-      * e.g. d = new java.sql.Date(System.currentMillis()).toString() so if you do this just after
-      * midnight in Palo Alto, you'll get yesterday's date printed out.*/
+      /*java.sql.Date is weird.  It automatically adjusts it's millis value to be in the
+      * local TZ e.g. d = new java.sql.Date(System.currentMillis()).toString() so if you
+      * do this just after midnight in Palo Alto, you'll get yesterday's date printed
+      * out.*/
       Date d = (Date)o;
-      result = new DateTime(d.getYear() + 1900, d.getMonth() + 1, d.getDate(), 0, 0,0,0);//uses local TZ
+      result = new DateTime(d.getYear() + 1900, d.getMonth() + 1,
+          d.getDate(), 0, 0,0,0);//uses local TZ
       break;
       case BOOLEAN:
         result = ((BooleanWritable) o).get();
@@ -463,7 +496,8 @@ class PigHCatUtil {
     return result;
   }
 
-  private static Tuple transformToTuple(List<?> objList, HCatFieldSchema hfs) throws Exception {
+  private static Tuple transformToTuple(List<?> objList, HCatFieldSchema hfs)
+      throws Exception {
     try {
       return transformToTuple(objList, hfs.getStructSubSchema());
     } catch (Exception e) {
@@ -487,7 +521,8 @@ class PigHCatUtil {
     return t;
   }
 
-  private static Map<String, Object> transformToPigMap(Map<?, ?> map, HCatFieldSchema hfs) throws Exception {
+  private static Map<String, Object> transformToPigMap(
+      Map<?, ?> map, HCatFieldSchema hfs) throws Exception {
     if (map == null) {
       return null;
     }
@@ -496,18 +531,21 @@ class PigHCatUtil {
     for (Entry<?, ?> entry : map.entrySet()) {
       // since map key for Pig has to be Strings
       if (entry.getKey()!=null) {
-        result.put(entry.getKey().toString(), extractPigObject(entry.getValue(), hfs.getMapValueSchema().get(0)));
+        result.put(entry.getKey().toString(),
+            extractPigObject(entry.getValue(), hfs.getMapValueSchema().get(0)));
       }
     }
     return result;
   }
 
-  private static DataBag transformToBag(List<?> list, HCatFieldSchema hfs) throws Exception {
+  private static DataBag transformToBag(List<?> list, HCatFieldSchema hfs)
+      throws Exception {
     if (list == null) {
       return null;
     }
 
-    HCatFieldSchema elementSubFieldSchema = hfs.getArrayElementSchema().getFields().get(0);
+    HCatFieldSchema elementSubFieldSchema =
+        hfs.getArrayElementSchema().getFields().get(0);
     DataBag db = new DefaultDataBag();
     for (Object o : list) {
       Tuple tuple;
@@ -523,13 +561,15 @@ class PigHCatUtil {
   }
 
 
-  private static void validateHCatSchemaFollowsPigRules(HCatSchema tblSchema) throws PigException {
+  private static void validateHCatSchemaFollowsPigRules(HCatSchema tblSchema)
+      throws PigException {
     for (HCatFieldSchema hcatField : tblSchema.getFields()) {
       validateHcatFieldFollowsPigRules(hcatField);
     }
   }
 
-  private static void validateHcatFieldFollowsPigRules(HCatFieldSchema hcatField) throws PigException {
+  private static void validateHcatFieldFollowsPigRules(HCatFieldSchema hcatField)
+      throws PigException {
     try {
       Type hType = hcatField.getType();
       switch (hType) {
@@ -555,22 +595,26 @@ class PigHCatUtil {
         break;
       }
     } catch (HCatException e) {
-      throw new PigException("Incompatible type found in hcat table schema: " + hcatField, PigHCatUtil.PIG_EXCEPTION_CODE, e);
+      throw new PigException("Incompatible type found in hcat table schema: " + hcatField,
+          PigHCatUtil.PIG_EXCEPTION_CODE, e);
     }
   }
 
 
-  public static void validateHCatTableSchemaFollowsPigRules(HCatSchema hcatTableSchema) throws IOException {
+  public static void validateHCatTableSchemaFollowsPigRules(HCatSchema hcatTableSchema)
+      throws IOException {
     validateHCatSchemaFollowsPigRules(hcatTableSchema);
   }
 
-  public static void getConfigFromUDFProperties(Properties p, Configuration config, String propName) {
+  public static void getConfigFromUDFProperties(
+      Properties p, Configuration config, String propName) {
     if (p.getProperty(propName) != null) {
       config.set(propName, p.getProperty(propName));
     }
   }
 
-  public static void saveConfigIntoUDFProperties(Properties p, Configuration config, String propName) {
+  public static void saveConfigIntoUDFProperties(
+      Properties p, Configuration config, String propName) {
     if (config.get(propName) != null) {
       p.setProperty(propName, config.get(propName));
     }
