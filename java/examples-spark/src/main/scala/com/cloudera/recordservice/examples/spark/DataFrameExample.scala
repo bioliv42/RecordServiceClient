@@ -14,6 +14,7 @@
 
 package com.cloudera.recordservice.examples.spark
 
+import com.cloudera.recordservice.mr.RecordServiceConfig
 import com.cloudera.recordservice.spark.RecordServiceConf
 
 import org.apache.spark.sql.SQLContext
@@ -38,7 +39,8 @@ object DataFrameExample {
 
     // Set up the RecordService planner to use. Although in this case it isn't
     // necessary since it's the default value.
-    sparkConf.set(RecordServiceConf.PLANNER_HOSTPORTS_CONF, "localhost:12050")
+    RecordServiceConf.setSparkConf(sparkConf,
+      RecordServiceConfig.ConfVars.PLANNER_HOSTPORTS_CONF, "localhost:12050")
 
     // Initialize SQLContext
     val ctx = new SparkContext(sparkConf)

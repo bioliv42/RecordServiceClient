@@ -50,6 +50,7 @@ import com.cloudera.recordservice.core.Request;
 import com.cloudera.recordservice.mr.security.DelegationTokenIdentifier;
 import com.cloudera.recordservice.mr.security.TokenUtils;
 import org.apache.hive.hcatalog.mapreduce.HCatInputFormat;
+import com.cloudera.recordservice.mr.RecordServiceConfig.ConfVars;
 
 import java.io.IOException;
 import java.util.Properties;
@@ -79,10 +80,10 @@ public class HCatRSInputFormat extends HCatRSBaseInputFormat {
       RecordServicePlannerClient.Builder builder =
               new RecordServicePlannerClient.Builder();
       String kerberosPrincipal =
-              job.getConfiguration().get(RecordServiceConfig.KERBEROS_PRINCIPAL_CONF);
+              job.getConfiguration().get(ConfVars.KERBEROS_PRINCIPAL_CONF.name);
       builder.setKerberosPrincipal(kerberosPrincipal);
       List<NetworkAddress> plannerHostPorts = RecordServiceConfig.getPlannerHostPort(
-              job.getConfiguration().get(RecordServiceConfig.PLANNER_HOSTPORTS_CONF,
+              job.getConfiguration().get(ConfVars.PLANNER_HOSTPORTS_CONF.name,
                       RecordServiceConfig.DEFAULT_PLANNER_HOSTPORTS));
       Exception lastException = null;
       for (int i = 0; i < plannerHostPorts.size(); ++i) {
