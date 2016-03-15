@@ -120,7 +120,11 @@ def run_case(case, results_sql, result_tsv, suite):
   for x in range(0, options.warmup_iterations):
     run_shell_cmd(cmd)
 
-  for x in range(0, options.iterations):
+  iterations = options.iterations;
+  if (suite[0] == "TPCDS_Q88_Parquet_500GB"):
+    iterations = 1
+
+  for x in range(0, iterations):
     start = time.time() * 1000
     run_shell_cmd(cmd)
     timing_ms = time.time() * 1000 - start
