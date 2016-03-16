@@ -20,15 +20,16 @@
 package com.cloudera.recordservice.pig;
 
 import java.io.IOException;
-import java.sql.Date;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Properties;
+import java.util.TimeZone;
 
+import com.cloudera.recordservice.core.Decimal;
+import com.cloudera.recordservice.core.TimestampNanos;
 import com.cloudera.recordservice.hcatalog.common.HCatRSUtil;
 import com.cloudera.recordservice.mr.DecimalWritable;
 import com.cloudera.recordservice.mr.RecordServiceRecord;
@@ -41,13 +42,11 @@ import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
 import org.apache.hadoop.hive.ql.metadata.Table;
 import org.apache.hadoop.io.BooleanWritable;
 import org.apache.hadoop.io.ByteWritable;
-import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.FloatWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.ShortWritable;
-import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hive.hcatalog.common.HCatConstants;
 import org.apache.hive.hcatalog.common.HCatException;
@@ -61,15 +60,14 @@ import org.apache.pig.PigException;
 import org.apache.pig.ResourceSchema;
 import org.apache.pig.ResourceSchema.ResourceFieldSchema;
 
-import org.apache.pig.data.DataBag;
 import org.apache.pig.data.DataType;
-import org.apache.pig.data.DefaultDataBag;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.data.TupleFactory;
 import org.apache.pig.impl.logicalLayer.schema.Schema;
 import org.apache.pig.impl.util.UDFContext;
 import org.apache.pig.impl.util.Utils;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -346,7 +344,8 @@ class PigHCatUtil {
   }
   /**
    * Defines a mapping of HCatalog type to Pig type; not every mapping is exact, 
-   * see {@link #extractPigObject(Object, HCatFieldSchema)}
+   * see {@link #extractPigObject(Object,
+   * com.cloudera.recordservice.core.Schema.TypeDesc)}
    * See http://pig.apache.org/docs/r0.12.0/basic.html#data-types
    * See {@link org.apache.hive.hcatalog.pig.HCatBaseStorer#validateSchema(
    * Schema.FieldSchema, HCatFieldSchema, Schema, HCatSchema, int)}
@@ -424,11 +423,13 @@ class PigHCatUtil {
    * @param o object from Hive value system
    * @return object in Pig value system 
    */
-  public static Object extractPigObject(Object o, com.cloudera.recordservice.core.Schema.TypeDesc itemType) throws Exception {
-    /*Note that HCatRecordSerDe.serializePrimitiveField() will be called before this, thus some
-    * type promotion/conversion may occur: e.g. Short to Integer.  We should refactor this so
-    * that it's hapenning in one place per module/product that we are integrating with.
-    * All Pig conversion should be done here, etc.*/
+  public static Object extractPigObject(
+      Object o, com.cloudera.recordservice.core.Schema.TypeDesc itemType)
+      throws Exception {
+    // Note that HCatRecordSerDe.serializePrimitiveField() will be called before this,
+    // thus some type promotion/conversion may occur: e.g. Short to Integer. We should
+    // refactor this so that it's hapenning in one place per module/product that we are
+    // integrating with. All Pig conversion should be done here, etc.
     if(o == null) {
       return null;
     }
@@ -441,7 +442,7 @@ class PigHCatUtil {
         result = ((ByteWritable) o).get();
         break;
       case SMALLINT:
-        result = ((ShortWritable) o).get();
+        result = (int) ((ShortWritable) o).get();
         break;
       case INT:
         result = ((IntWritable) o).get();
@@ -458,13 +459,17 @@ class PigHCatUtil {
       case STRING:
       case VARCHAR:
       case CHAR:
-        result = ((Text) o).toString();
+        result = o.toString();
         break;
       case TIMESTAMP_NANOS:
-        result = ((TimestampNanosWritable) o).get();
+        TimestampNanos timestampNanos = ((TimestampNanosWritable) o).get();
+        // TODO: make sure this is correct
+        result = new DateTime(timestampNanos.toTimeStamp(),
+            DateTimeZone.forTimeZone(TimeZone.getTimeZone("GMT")));
         break;
       case DECIMAL:
-        result = ((DecimalWritable) o).get();
+        Decimal decimal = ((DecimalWritable) o).get();
+        result = decimal.toBigDecimal();
         break;
     default:
       result = o;
@@ -486,7 +491,8 @@ class PigHCatUtil {
     }
   }*/
 
-  private static Tuple transformToTuple(List<?> objList,  com.cloudera.recordservice.mr.Schema schema) throws Exception {
+  private static Tuple transformToTuple(
+      List<?> objList, com.cloudera.recordservice.mr.Schema schema) throws Exception {
     if (objList == null) {
       return null;
     }
