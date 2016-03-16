@@ -27,33 +27,17 @@ import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Properties;
 import java.util.TimeZone;
 
-import org.apache.pig.ExecType;
-import org.apache.pig.PigServer;
-import org.apache.pig.backend.executionengine.ExecException;
 import org.apache.pig.data.DataType;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.impl.logicalLayer.schema.Schema;
 import org.joda.time.DateTime;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 // TODO: add more tests
-public class TestHCatRSLoader {
-
-  private static PigServer server;
+public class TestHCatRSLoader extends TestBase {
   private static double DELTA = 0.0001;
-
-  @BeforeClass
-  public static void setUpBeforeClass() throws ExecException {
-    // Setup log4j for testing.
-    org.apache.log4j.BasicConfigurator.configure();
-    Properties properties = new Properties();
-    properties.setProperty("hive.metastore.uris", "thrift://localhost:9083");
-    server = new PigServer(ExecType.LOCAL, properties);
-  }
 
   @Test
   public void testNation() throws IOException {

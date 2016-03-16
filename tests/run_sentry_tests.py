@@ -84,6 +84,10 @@ if __name__ == "__main__":
     run_shell_cmd(
       "mvn test -Duser.name=" + TEST_USER +
       " -Dtest=TestSentry", test_output, True)
+    os.chdir(os.environ['RECORD_SERVICE_HOME'] + '/java/hcatalog-pig-adapter')
+    run_shell_cmd(
+      "mvn test -Duser.name=" + TEST_USER +
+      " -Dtest=TestHCatRSLoaderSentry", test_output, True)
   except Exception as e:
     print e.message
   finally:
