@@ -33,9 +33,9 @@ import java.util.List;
 
 /**
  *
- * HCatTableInfo - class to communicate table information to {@link org.apache.hive.hcatalog.mapreduce.HCatInputFormat}
+ * HCatTableInfo - class to communicate table information to
+ * {@link org.apache.hive.hcatalog.mapreduce.HCatInputFormat}
  * and {@link HCatOutputFormat}
- *
  */
 public class HCatTableInfo implements Serializable {
 

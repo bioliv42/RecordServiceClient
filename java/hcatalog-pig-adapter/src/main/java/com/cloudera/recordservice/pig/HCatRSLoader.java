@@ -39,7 +39,6 @@ import org.apache.hadoop.security.Credentials;
 import org.apache.hive.hcatalog.common.HCatConstants;
 import org.apache.hive.hcatalog.common.HCatContext;
 import org.apache.hive.hcatalog.common.HCatUtil;
-import org.apache.hive.hcatalog.data.Pair;
 import org.apache.hive.hcatalog.data.schema.HCatSchema;
 import org.apache.hive.hcatalog.pig.HCatLoader;
 import org.apache.pig.Expression;
@@ -86,7 +85,8 @@ public class HCatRSLoader extends HCatLoader {
   final public static String INNER_SIGNATURE_PREFIX = "hcatloader_inner_signature";
   // A hash map which stores job credentials. The key is a signature passed by Pig,
   // which is unique to the load func and input file name (table, in our case).
-  private static Map<String, Credentials> jobCredentials = new HashMap<String, Credentials>();
+  private static Map<String, Credentials> jobCredentials =
+      new HashMap<String, Credentials>();
 
   @Override
   public InputFormat<?, ?> getInputFormat() throws IOException {
