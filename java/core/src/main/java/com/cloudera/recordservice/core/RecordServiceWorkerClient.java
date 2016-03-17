@@ -16,6 +16,7 @@ package com.cloudera.recordservice.core;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
@@ -361,7 +362,7 @@ public class RecordServiceWorkerClient implements Closeable {
       } catch (TException e) {
         // In this case, we've hit a general thrift exception, makes sense to try again.
         connected = false;
-        LOG.warn("Failed to fetch(): " + state.handle_ + " " + e);
+        LOG.warn("Failed to fetch(): " + state.handle_ + " ", e);
         if (firstException == null) firstException = e;
       }
     }
@@ -437,11 +438,11 @@ public class RecordServiceWorkerClient implements Closeable {
       protocol_ = new TBinaryProtocol(transport);
       workerClient_ = new RecordServiceWorker.Client(protocol_);
       try {
-        protocolVersion_ = ThriftUtils.fromThrift(workerClient_.GetProtocolVersion());
-        LOG.debug("Connected to RecordServiceWorker with version: " + protocolVersion_);
         // Now that we've connected, set a larger timeout as RPCs that do work can take
         // much longer.
         ThriftUtils.getSocketTransport(transport).setTimeout(rpcTimeoutMs_);
+        protocolVersion_ = ThriftUtils.fromThrift(workerClient_.GetProtocolVersion());
+        LOG.debug("Connected to RecordServiceWorker with version: " + protocolVersion_);
         if (!protocolVersion_.isValidProtocolVersion()) {
           String errorMsg =
               "Current RecordServiceClient does not support server protocol version: " +
@@ -469,7 +470,12 @@ public class RecordServiceWorkerClient implements Closeable {
         close();
         String errorMsg = "Could not get service protocol version from " +
             "RecordServiceWorker at " + hostname + ":" + port + ". ";
-        LOG.warn(errorMsg + e);
+        if ((e.getCause() instanceof SocketTimeoutException) &&
+            e.getCause().getMessage().contains("Read timed out")) {
+          errorMsg += " Got SocketTimeoutException: Read timed out, you may increase " +
+              "recordservice.worker.rpc.timeoutMs.";
+        }
+        LOG.warn(errorMsg, e);
         if (e.getType() == TTransportException.END_OF_FILE) {
           TRecordServiceException ex = new TRecordServiceException();
           ex.code = TErrorCode.AUTHENTICATION_ERROR;
@@ -484,7 +490,7 @@ public class RecordServiceWorkerClient implements Closeable {
         String errorMsg = "Could not get service protocol version. It's likely " +
             "the service at " + hostname + ":" + port + " is not running the " +
             "RecordServiceWorker. ";
-        LOG.warn(errorMsg + e);
+        LOG.warn(errorMsg, e);
         throw new IOException(errorMsg, e);
       }
     }

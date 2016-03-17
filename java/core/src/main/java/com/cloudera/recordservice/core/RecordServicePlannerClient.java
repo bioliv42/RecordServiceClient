@@ -17,6 +17,7 @@ package com.cloudera.recordservice.core;
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
@@ -213,11 +214,11 @@ public class RecordServicePlannerClient implements Closeable {
       protocol_ = new TBinaryProtocol(transport);
       plannerClient_ = new RecordServicePlanner.Client(protocol_);
       try {
-        protocolVersion_ = ThriftUtils.fromThrift(plannerClient_.GetProtocolVersion());
-        LOG.debug("Connected to RecordServicePlanner with version: " + protocolVersion_);
         // Now that we've connected, set a larger timeout as RPCs that do work can take
         // much longer.
         ThriftUtils.getSocketTransport(transport).setTimeout(rpcTimeoutMs_);
+        protocolVersion_ = ThriftUtils.fromThrift(plannerClient_.GetProtocolVersion());
+        LOG.debug("Connected to RecordServicePlanner with version: " + protocolVersion_);
         if (!protocolVersion_.isValidProtocolVersion()) {
           String errorMsg =
               "Current RecordServiceClient does not support server protocol version: " +
@@ -245,7 +246,12 @@ public class RecordServicePlannerClient implements Closeable {
         close();
         String errorMsg = "Could not get service protocol version from " +
             "RecordServicePlanner at " + hostname + ":" + port + ". ";
-        LOG.warn(errorMsg + e);
+        if ((e.getCause() instanceof SocketTimeoutException) &&
+            e.getCause().getMessage().contains("Read timed out")) {
+          errorMsg += " Got SocketTimeoutException: Read timed out, you may increase " +
+              "recordservice.planner.rpc.timeoutMs.";
+        }
+        LOG.warn(errorMsg, e);
         if (e.getType() == TTransportException.END_OF_FILE) {
           TRecordServiceException ex = new TRecordServiceException();
           ex.code = TErrorCode.AUTHENTICATION_ERROR;
@@ -260,7 +266,7 @@ public class RecordServicePlannerClient implements Closeable {
         String errorMsg = "Could not get service protocol version. It's likely " +
             "the service at " + hostname + ":" + port + " is not running the " +
             "RecordServicePlanner. ";
-        LOG.warn(errorMsg + e);
+        LOG.warn(errorMsg, e);
         throw new IOException(errorMsg, e);
       }
     }
@@ -511,7 +517,7 @@ public class RecordServicePlannerClient implements Closeable {
     try {
       Thread.sleep(retrySleepMs_);
     } catch (InterruptedException e) {
-      LOG.error("Failed sleeping: " + e);
+      LOG.error("Failed sleeping: ", e);
     }
   }
 }
