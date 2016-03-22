@@ -59,7 +59,7 @@ CONNECT quickstart.cloudera:21000;
 
 ## Running Examples on the VM
 
-The following examples demonstrate how to use RecordService to implement column- and row-level access in Hadoop. Additional examples are described in the topic [RecordService Examples]({{site.baseurl}}/examples.html). 
+The following examples demonstrate how to use RecordService to implement column- and row-level access in Hadoop. Additional examples are described in the topic [RecordService Examples]({{site.baseurl}}/examples).
 
 ### Example: Using RecordService to Control Column-level Access
 
@@ -181,7 +181,7 @@ com.cloudera.recordservice.examples.mapreduce.RecordCount \
 
 15/12/08 17:41:26 INFO client.RMProxy: Connecting to ResourceManager at /0.0.0.0:8032
 
-. . . 
+. . .
 
 RecordServiceException: TRecordServiceException(code:INVALID_REQUEST, message:Could not plan request., detail:AuthorizationException: User 'cloudera' does not have privileges to execute 'SELECT' on: rs.employees
 . . .
@@ -198,7 +198,7 @@ com.cloudera.recordservice.examples.mapreduce.RecordCount \
 
 15/12/08 17:42:25 INFO client.RMProxy: Connecting to ResourceManager at /0.0.0.0:8032
 . . .
-File Output Format Counters 
+File Output Format Counters
     Bytes Written=3
 </pre>
 
@@ -238,7 +238,7 @@ com.cloudera.recordservice.examples.mapreduce.RecordCount \
 
 15/12/08 17:50:18 INFO client.RMProxy: Connecting to ResourceManager at /0.0.0.0:8032
 . . .
-File Output Format Counters 
+File Output Format Counters
     Bytes Written=3
 </pre>
 
@@ -249,7 +249,7 @@ hadoop fs -cat /tmp/count_no_police_output/part-r-00000
 
 The result returned is a row count of 38.
 
-Additional examples are described in the [examples]({{site.baseurl}}/examples.html) topic.
+Additional examples are described in the [examples]({{site.baseurl}}/examples) topic.
 
 ## Troubleshooting the VM Configuration
 
@@ -279,8 +279,8 @@ If you’ve used a Cloudera QuickStart VM before, your known hosts file might al
 
 If you receive an error message similar to the following, your worker nodes are likely not running:
 <pre>
-Exception in thread "main" java.io.IOException: 
-com.cloudera.recordservice.core.RecordServiceException: 
+Exception in thread "main" java.io.IOException:
+com.cloudera.recordservice.core.RecordServiceException:
 TRecordServiceException(code:INVALID_REQUEST, message:
 Worker membership is empty. Please ensure all RecordService Worker nodes are running.)
 </pre>
@@ -296,7 +296,7 @@ sudo service recordservice-server restart
 ### Restarting a service
 
 To restart a service, use the standard RHEL service model.
- 
+
 ```
 service <service-name> start|stop|restart
 ```
