@@ -26,7 +26,7 @@
   <groupId>com.cloudera.recordservice</groupId>
   <artifactId>recordservice</artifactId>
   <name>Record Service</name>
-  <version>${recordservice-project-verion}</version>
+  <version>0.3.0-cdh5.7.x</version>
   <packaging>pom</packaging>
 
   <modules>
@@ -67,7 +67,6 @@
     <cdh.clover.version>4.0.3</cdh.clover.version>
     <cdh.clover.license.location>${cdh.toolchain.home}/clover-ant-${cdh.clover.version}/lib/clover.license</cdh.clover.license.location>
 
-    <recordservice-project-verion>0.3.0-cdh5.7.x</recordservice-project-verion>
   </properties>
 
   <profiles>
