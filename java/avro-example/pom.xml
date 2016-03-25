@@ -26,7 +26,7 @@
  <parent>
     <groupId>com.cloudera.recordservice</groupId>
     <artifactId>recordservice</artifactId>
-    <version>${recordservice-project-verion}</version>
+    <version>0.3.0-cdh5.7.x</version>
   </parent>
 
   <artifactId>recordservice-avro-example</artifactId>
