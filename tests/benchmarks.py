@@ -23,7 +23,7 @@ PLANNER_HOST = os.environ['RECORD_SERVICE_PLANNER_HOST']
 
 # TODO: right now this is used in several places (e.g., pom.xml). It would
 # be good if there's a way to only define it at one place.
-VERSION = "0.3.0-cdh5.7.x"
+VERSION = "0.4.0-cdh5.8.x"
 
 MR_TEMPLATE = "hadoop jar " + os.environ['RECORD_SERVICE_HOME'] +\
     "/java/examples/target/recordservice-examples-" + VERSION + ".jar " +\
