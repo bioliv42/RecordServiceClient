@@ -85,8 +85,7 @@ public class ClusterController {
         String IMPALA_HOME = System.getenv("IMPALA_HOME");
         envMap.put("HADOOP_CONF_DIR", HADOOP_CONF_DIR);
         envMap.put("RECORD_SERVICE_PLANNER_HOST", RECORD_SERVICE_PLANNER_HOST);
-        envMap.put("HADOOP_HOME", IMPALA_HOME
-            + "/thirdparty/hadoop-2.6.0-cdh5.5.0-SNAPSHOT/");
+        envMap.put("HADOOP_HOME", System.getenv("HADOOP_HOME"));
         // Add these two additional system variables to the JVM environment.
         // Hadoop and RecordService rely on these variables to execute on a
         // cluster.
