@@ -1,5 +1,5 @@
 ---
-layout: archive
+layout: home
 title: ''
 image:
   feature: rs_banner.png
