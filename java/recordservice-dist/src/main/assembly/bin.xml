@@ -59,5 +59,12 @@
       </includes>
       <outputDirectory>/</outputDirectory>
     </fileSet>
+    <fileSet>
+      <directory>${project.parent.basedir}/hcatalog-pig-adapter/target</directory>
+        <includes>
+          <include>recordservice-hcatalog-pig-adapter-${project.version}-jar-with-dependencies.jar</include>
+        </includes>
+      <outputDirectory>lib</outputDirectory>
+    </fileSet>
   </fileSets>
 </assembly>
