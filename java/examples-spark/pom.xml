@@ -57,6 +57,11 @@
       <version>${spark.version}</version>
     </dependency>
     <dependency>
+      <groupId>org.apache.spark</groupId>
+      <artifactId>spark-launcher_${sparkcore.version}</artifactId>
+      <version>${spark.version}</version>
+    </dependency>
+    <dependency>
       <!-- Needs to add this to make the shade jar include it -->
       <groupId>javax.ws.rs</groupId>
       <artifactId>jsr311-api</artifactId>
@@ -168,6 +173,7 @@
                     <include>org.scala-lang:*</include>
                     <include>org.apache.commons:*</include>
                     <include>org.apache.spark:spark-core*</include>
+                    <include>org.apache.spark:spark-launcher*</include>
                     <include>org.apache.spark:spark-unsafe*</include>
                     <include>org.apache.spark:spark-network-shuffle*</include>
                     <include>org.apache.spark:spark-network-common*</include>
@@ -191,6 +197,8 @@
                     <include>com.esotericsoftware.reflectasm:*</include>
                     <include>com.thoughtworks.paranamer:*</include>
                     <include>org.xerial.snappy:*</include>
+                    <include>org.apache.xbean:*</include>
+                    <include>com.intel.chimera:*</include>
                   </includes>
                 </artifactSet>
                 <transformers>
