@@ -18,10 +18,10 @@ Follow these steps to download the RecordService VM.
 
 Follow these steps to install the RecordService VM.
 
-1. In a terminal window, navigate to the root of the RSQuickstart Git repository.
+1. In a terminal window, navigate to the root of the recordservice-quickstart git repository.
 1. Run the script `install.sh`.
 
-This script downloads an `ova` file and loads it into VirtualBox. The script might ask you to enter a password, because it edits your `/etc/hosts` file to give the VM a stable IP address, `quickstart.cloudera`. When the script completes, the running VM functions as a RecordService server.
+This script downloads an `.ovf` file and loads it into VirtualBox. The script might ask you to enter a password, because it edits your `/etc/hosts` file to give the VM a stable IP address, `quickstart.cloudera`. When the script completes, the running VM functions as a RecordService server.
 
 ### Testing Your VM Configuration
 
@@ -154,27 +154,27 @@ Query: select * from rs.employees
 Fetched 50 row(s) in 3.75s
 </pre>
 
-* Use Impala to set permissions for a group of users of `rs.employees`. First,  create a role named _demorole_. Next, add the role to the _demogroup_ you created before starting Impala. Grant the _select_ privilege to demorole for only the columns `firstname`, `lastname`, and `phonenumber` from the `rs.employees` table.
+* Use Impala to set permissions for a group of users of `rs.employees`. First,  create a role named _demo_role_. Next, add the role to the _demo_group_ you created before starting Impala. Grant the _select_ privilege to demo_role for only the columns `firstname`, `lastname`, and `phonenumber` from the `rs.employees` table.
 
 <pre>
-[quickstart.cloudera:21000] > create role demorole;
-Query: create role demorole
+[quickstart.cloudera:21000] > create role demo_role;
+Query: create role demo_role
 
 Fetched 0 row(s) in 0.40s
-[quickstart.cloudera:21000] > grant role demorole to group demogroup;
-Query: grant role demorole to group demogroup
+[quickstart.cloudera:21000] > grant role demo_role to group demo_group;
+Query: grant role demo_role to group demo_group
 
-[quickstart.cloudera:21000] > GRANT SELECT(firstname, lastname, phonenumber) ON TABLE rs.employees TO ROLE demorole;
+[quickstart.cloudera:21000] > GRANT SELECT(firstname, lastname, phonenumber) ON TABLE rs.employees TO ROLE demo_role;
 
 Fetched 0 row(s) in 0.11s
 </pre>
 
 * Exit Impala.
 
-* From the home directory, execute the following command. This is a trivial example class that counts the number of records in the table. Since the command specifies the <i>salary</i> column, to which the <i>demouser</i> does not have access, the command fails.
+* From the home directory, execute the following command. This is a trivial example class that counts the number of records in the table. Since the command specifies the <i>salary</i> column, to which the <i>demo_user</i> does not have access, the command fails.
 
 <pre>
-[cloudera@quickstart ~]$ sudo su demouser hadoop jar \
+[cloudera@quickstart ~]$ sudo su demo_user hadoop jar \
 ./recordservice-client-0.3.0-cdh5.7.x/lib/recordservice-examples-0.3.0-cdh5.7.x.jar \
 com.cloudera.recordservice.examples.mapreduce.RecordCount \
 "select lastname, salary from rs.employees" "/tmp/count_salary_output"
@@ -190,7 +190,7 @@ RecordServiceException: TRecordServiceException(code:INVALID_REQUEST, message:Co
 * Now run the same command, but specify the `firstname`, `lastname`, and `phonenumber` columns.
 
 <pre>
-[cloudera@quickstart ~]$ sudo su demouser hadoop jar \
+[cloudera@quickstart ~]$ sudo su demo_user hadoop jar \
 ./recordservice-client-0.3.0-cdh5.7.x/lib/recordservice-examples-0.3.0-cdh5.7.x.jar \
 com.cloudera.recordservice.examples.mapreduce.RecordCount \
 "select firstname, lastname, phonenumber from rs.employees" \
@@ -221,16 +221,16 @@ Create a view that restricts the rows returned. For example, where <i>position</
 Query: create view rs.no_police as select * from rs.employees where position <> "POLICE OFFICER"
 </pre>
 
-Assign that view to <i>demorole</i>.
+Assign that view to <i>demo_role</i>.
 
 <pre>
-[quickstart.cloudera:21000] > grant select on table rs.no_police to role demorole;
-Query: grant select on table rs.no_police to role demorole
+[quickstart.cloudera:21000] > grant select on table rs.no_police to role demo_role;
+Query: grant select on table rs.no_police to role demo_role
 </pre>
 * Run a query against the rs.no_police view.
 
 <pre>
-[cloudera@quickstart ~]$ sudo su demouser hadoop jar \
+[cloudera@quickstart ~]$ sudo su demo_user hadoop jar \
 ./recordservice-client-0.3.0-cdh5.7.x/lib/recordservice-examples-0.3.0-cdh5.7.x.jar \
 com.cloudera.recordservice.examples.mapreduce.RecordCount \
 "select firstname, lastname, phonenumber from rs.no_police" \
@@ -298,7 +298,7 @@ sudo service recordservice-server restart
 To restart a service, use the standard RHEL service model.
 
 ```
-service <service-name> start|stop|restart
+sudo service <service-name> start|stop|restart
 ```
 
 You can view all of the installed services `/etc/init.d` directory.
