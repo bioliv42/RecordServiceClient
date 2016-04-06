@@ -32,6 +32,11 @@ Note the changes:
 
 Additional RecordService properties can be specified in similar way using the `set` command.
 
+For example, in a cluster with kerberos, you need to set kerberos principal in the script:
+```bash
+set recordservice.kerberos.principal ${primary}/_HOST@${REALM}
+```
+
 Besides, RecordService supports column projection:
 
 ```bash
