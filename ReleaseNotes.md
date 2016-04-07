@@ -1,9 +1,13 @@
 ---
 layout: article
-title: 'RecordService Beta 0.2.0 Release Notes'
+title: 'RecordService Beta 0.3.0 Release Notes'
 share: false
 ---
-This is the documentation for RecordService Beta 0.2.0. For RecordService Beta 0.1.0 documentation, see [RecordService_0.1.0.pdf]({{site.baseurl}}/RecordService_0.1.0.pdf).
+This is the documentation for RecordService Beta 0.3.0.
+
+For RecordService Beta 0.2.0 documentation, see [RecordService_0.2.0.pdf]({{site.baseurl}}/RecordService_0.2.0.pdf).
+
+For RecordService Beta 0.1.0 documentation, see [RecordService_0.1.0.pdf]({{site.baseurl}}/RecordService_0.1.0.pdf).
 
 This release of RecordService is a public beta and should not be run on production clusters. During the public beta period, RecordService is supported through the mailing list <a href="mailto:RecordService-user@googlegroups.com">RecordService-user@googlegroups.com</a>, not through the Cloudera Support Portal.
 
@@ -19,15 +23,35 @@ As you use RecordService during the public beta period, keep in mind the followi
 
 {% include toc.html %}
 
-## New Features in RecordService Beta 0.2.0
+## New Features
 
-* Support for CDH5.5, including:
+### New Features in RecordService Beta 0.3.0
+
+* **Planner Auto Discovery**: You can now use the recordservice.zookeeper.connectString property to specify planner/worker membership and other information. See [Configuring RecordService: Planner Auto Discovery Configuration]({{site.baseurl}}/rsConfig/#planner-auto-discovery-configuration)
+
+* **Dynamic Fetch Size Adjustment**: RecordService can now automatically adjust fetch size according to available capacity and workloads on the RecordServiceWorker. This allows for optimal memory management. This helps multi-tenancy workloads to succeed when resources are under contention. RecordService can scale performance up or down based on resource availability. Further tuning is available through use of the new properties `rs_adjust_fetch_size`, `rs_compressed_max_fetch_size`, `rs_compressed_max_fetch_size`, `rs_fetch_size_increase_factor`, `rs_min_fetch_size`, and `rs_spare_capacity_correction_factor`. See [Configuring RecordService]({{site.baseurl}}/rsConfig/#dynamic-fetch-size-adjustment).
+
+* **CSD User Experience Improvements for Sentry Configuration**: The name of the Sentry configuration field has change from *Configuration Snippet (Safety Valve) for sentry-site.xml* to *Sentry Advanced Configuration Snippet (Safety Valve)*. See [Sentry Table Configuration]({{site.baseurl}}/rsConfig/#sentry-table-configuration).
+
+* **HCatalog Support**: RecordService supports the use of HCatalog and Pig. See [Using HCatalog and Pig with RecordService]({{site.baseurl}}/examples/#using-hcatalog-and-pig-with-recordservice).
+
+### New Features in RecordService Beta 0.2.0
+
+* Support for CDH 5.5, including:
     * Sentry Column-Level Authorization.
     * Spark 1.5.
 * CSD user experience improvements for Spark and Sentry configuration.
 * Performance improvements for loading metadata.
 
-## Notable Bug Fixes in RecordService Beta 0.2.0
+## Fixed Issues
+
+### Issues Fixed in RecordService Beta 0.3.0
+
+* Short circuit reads not enabled 
+    * **Bug:** [RS-114](https://issues.cloudera.org/browse/RS-114)
+    * Short circuit reads are enabled by default in RecordService 0.3.0.
+
+### Issues Fixed in RecordService Beta 0.2.0
 * Fix support for multiple planners with path requests.
 * Path requests do not contain the connected user in some cases, causing requests to fail with authorization errors.
 * `SpecificMutableRow Exception` while running spark-shell with RecordService.
@@ -79,6 +103,50 @@ RecordService does not support the following data types:
 
 ## Known Issues
 
+**Error creating zk znode path for planner/worker membership**
+
+Bug: [RS-121](https://issues.cloudera.org/browse/RS-121).
+
+To take advantage of security improvements in Beta 0.3.0, Cloudera recommends that you delete existing ZooKeeper znodes when you stop RecordService.
+
+**Workaround**
+
+To delete ZooKeeper nodes:
+<ol>
+<li>Create a <i>jaas.conf</i> file with the following content (the principal username is <i>impala</i> at the moment, but might change to <i>recordservice</i> in the future.)
+
+<pre>
+Client {
+  com.sun.security.auth.module.Krb5LoginModule required
+  useKeyTab=true
+  keyTab="/path/to/record_service.keytab"
+  storeKey=true
+  useTicketCache=false
+  principal="impala/hostname@realm";
+};
+</pre>
+</li>
+<li>
+Set the environment variable <i>CLIENT_JVMFLAGS</i>:
+
+<pre>
+export JVMFLAGS="-Djava.security.auth.login.config=/path/to/jaas.conf"
+</pre>
+</li>
+<li>
+Launch the ZooKeeper client on the leader node, and specify the leader node in the <i>-server</i> parameter. Note: this does not work on follower nodes.
+
+<pre>
+zookeeper-client -server <i>leader-node-hostname</i>
+</pre>
+</li>
+<li>
+In ZooKeeper console, delete the old ZooKeeper nodes
+<i>rmr /recordservice</i>.
+The user who launches the ZooKeeper client must have the right permissions to  <i>jaas.conf</i> and <i>keytab</i>.
+</li>
+</ol>
+
 **Saving machine state and restarting the VM can result in no registered workers**
 
 After restarting the VM from a saved state, you might receive the following message when attempting to run RecordService applications.
@@ -121,6 +189,11 @@ spark.recordservice.kerberos.principal=<Kerberos principal>
 
 * Save changes and deploy the client configuration.
 
+A properties file is generated in `/etc/recordservice/conf`. 
+When you run a Spark job, add the following instruction to your command: 
+
+`--properties-file=/etc/recordservice/conf/spark.conf`
+
 **digest-md5 library not installed on cluster, breaking delegation tokens**
 
 The digest-md5 library is not installed by default in parcel deployments.
@@ -132,12 +205,6 @@ To install the library on RHEL 6, use the following command-line instruction:
 ```
 sudo yum install cyrus-sasl-md5
 ```
-
-**Short circuit reads not enabled**
-
-**Workaround**
-
-In Cloudera Manager, open the HDFS configuration page and search for _shortcircuit_. There are two configurations named **Enable HDFS Short Circuit Read**. One defaults to _true_ and one to _false_. Set both values to _true_.
 
 ## Limitations
 

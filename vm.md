@@ -175,7 +175,7 @@ Fetched 0 row(s) in 0.11s
 
 <pre>
 [cloudera@quickstart ~]$ sudo su demouser hadoop jar \
-./recordservice-client-0.2.0-cdh5.5.x/lib/recordservice-examples-0.2.0-cdh5.5.x.jar \
+./recordservice-client-0.3.0-cdh5.7.x/lib/recordservice-examples-0.3.0-cdh5.7.x.jar \
 com.cloudera.recordservice.examples.mapreduce.RecordCount \
 "select lastname, salary from rs.employees" "/tmp/count_salary_output"
 
@@ -191,7 +191,7 @@ RecordServiceException: TRecordServiceException(code:INVALID_REQUEST, message:Co
 
 <pre>
 [cloudera@quickstart ~]$ sudo su demouser hadoop jar \
-./recordservice-client-0.2.0-cdh5.5.x/lib/recordservice-examples-0.2.0-cdh5.5.x.jar \
+./recordservice-client-0.3.0-cdh5.7.x/lib/recordservice-examples-0.3.0-cdh5.7.x.jar \
 com.cloudera.recordservice.examples.mapreduce.RecordCount \
 "select firstname, lastname, phonenumber from rs.employees" \
 "/tmp/count_phonelist_output"
@@ -231,7 +231,7 @@ Query: grant select on table rs.no_police to role demorole
 
 <pre>
 [cloudera@quickstart ~]$ sudo su demouser hadoop jar \
-./recordservice-client-0.2.0-cdh5.5.x/lib/recordservice-examples-0.2.0-cdh5.5.x.jar \
+./recordservice-client-0.3.0-cdh5.7.x/lib/recordservice-examples-0.3.0-cdh5.7.x.jar \
 com.cloudera.recordservice.examples.mapreduce.RecordCount \
 "select firstname, lastname, phonenumber from rs.no_police" \
 "/tmp/count_no_police_output"

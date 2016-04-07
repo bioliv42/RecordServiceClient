@@ -76,6 +76,89 @@ Note: This might need to be adjusted according to the type of workloads (MR, Spa
 
 The properties listed on the Cloudera Manager RecordService Configuration page are the ones Cloudera considers the most reasonable to change. However, adjusting these values should not be necessary. Very advanced administrators might consider making minor adjustments.
 
+### Dynamic Fetch Size Adjustment
+
+The following properties allow you to tune dynamic fetch size adjustment on the server. 
+
+<table border="1">
+<tr><th>CATEGORY</th><th>PARAMETER</th><th>DESCRIPTION</th><th> DEFAULT VALUE </th></tr>
+<tr align="left">
+<td style="vertical-align:top">
+Resource Management
+</td>
+<td style="vertical-align:top">
+rs_compressed_max_fetch_size
+</td>
+<td style="vertical-align:top">
+Maximum fetch size when scanning compressed text files.
+</td>
+<td style="vertical-align:top">
+1000
+</td>
+</tr>
+
+<tr align="left">
+<td style="vertical-align:top">
+Resource Management
+</td>
+<td style="vertical-align:top">
+rs_fetch_size_decrease_factor
+</td>
+<td style="vertical-align:top">
+Correction factor to decrease fetch size; must be >= 1.
+</td>
+<td style="vertical-align:top">
+1.5
+</td>
+</tr>
+
+<tr align="left">
+<td style="vertical-align:top">
+Resource Management
+</td>
+<td style="vertical-align:top">
+rs_fetch_size_increase_factor
+</td>
+<td style="vertical-align:top">
+Correction factor to increase fetch size; must be > 0 and <= 1.
+</td>
+<td style="vertical-align:top">
+0.001
+</td>
+</tr>
+
+<tr align="left">
+<td style="vertical-align:top">
+Resource Management
+</td>
+<td style="vertical-align:top">
+rs_min_fetch_size
+</td>
+<td style="vertical-align:top">
+The minimum fetch size for the scanner thread.
+</td>
+<td style="vertical-align:top">
+500
+</td>
+</tr>
+
+<tr align="left">
+<td style="vertical-align:top">
+Resource Management
+</td>
+<td style="vertical-align:top">
+rs_spare_capacity_correction_factor
+</td>
+<td style="vertical-align:top">
+Correction factor for spare capacity; must be > 0 and <= 1. 
+</td>
+<td style="vertical-align:top">
+0.8
+</td>
+</tr>
+
+</table>
+
 ### Kerberos Configuration
 
 No special configuration is required via Cloudera Manager. Enabling Kerberos on the cluster configures everything.
@@ -104,10 +187,16 @@ See [http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topic
     <ul>
     <li>In Cloudera Manager, navigate to <b>RecordService Configuration</b>.</li>
     <li>Select the <b>Sentry-1</b> service.</li>
-    <li>In the <b>Configuration Snippet (Safety Valve) for sentry-site.xml</b> field, enter the following settings.</li>
+    <li>If you are using Cloudera Manager 5.7 with RecordService 0.3.0, enter the following settings in the <b>Sentry Advanced Configuration Snippet (Safety Valve)</b> field.</li>
     </ul>
-
-
+<pre>
+&lt;property&gt;
+    &lt;name&gt;hive.sentry.server&lt;/name&gt;
+    &lt;value>server1&lt;/value&gt;
+&lt;/property&gt;
+</pre>
+<p>If you are using a lower version of Cloudera Manager than 5.7, enter the following settings in the <b>Sentry Advanced Configuration Snippet (Safety Valve)</b> field.
+</p>
 <pre>
 &lt;property&gt;
     &lt;name&gt;sentry.service.server.principal&lt;/name&gt;
@@ -134,9 +223,8 @@ See [http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topic
     &lt;value&gt;server1&lt;/value&gt;
 &lt;/property&gt;
 </pre>
-
 </li>
-<li>Save changes.</li>
+<li>Save your changes.</li>
 <li>Restart the Sentry and RecordService services.</li>
 </ol>
 
@@ -145,3 +233,24 @@ See [http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topic
 No special configuration is required with Cloudera Manager. This is enabled automatically if the cluster is kerberized.
 
 RecordService persists state in Zookeeper, by default, under the /recordservice Zookeeper directory. If this directory is already in use, you can configure the directory with `recordservice.zookeeper.znode`. This is a Hadoop style XML configuration that you can add to the advanced service configuration snippet.
+
+### Planner Auto Discovery Configuration
+
+RecordService 0.3.0 and higher includes the Planner Auto Discovery feature. 
+You no longer need to specify a list of planner host/ports for your RecordService clients through the configuration property `recordservice.planner.hostports`. Instead, you can use the property `recordservice.zookeeper.connectString`, which specifies the connection string to the ZooKeeper session used to keep store information about planner/worker membership (as well as other information, such as delegation tokens). Both the client and the server use this property.
+
+Planner Auto Discovery allows client side applications independent of changes in the planner configuration. Planners might come and go in the cluster, but the client side application uses the same configuration settings.
+
+If you use Cloudera Manager to manage the cluster, this property is automatically populated to the client side configurations through the CSD.
+
+Setting the property enables Planner Auto Discovery. A RecordService job first contacts ZooKeeper to fetch a list of available RecordService planners, then uses those resources for planning. If this step fails, the job reads `recordservice.planner.hostports` and uses static membership information.
+
+Additional properties provide tuning options.
+
+| Property | Description |
+|--- |--- |
+|`recordservice.zookeeper.connectTimeoutMillis` | Specifies a timeout when initiating a ZooKeeper connection |
+|`recordservice.zookeeper.znode` | Specifies the root ZooKeeper directory. Default is  `/recordservice` |
+
+Both the client and the server use these properties.
+

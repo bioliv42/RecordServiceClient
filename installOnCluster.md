@@ -28,11 +28,11 @@ Follow these steps to install the RecordService CSD.
 1. Upload the CSD to `/opt/cloudera/csd` in the Cloudera Manager server.
 1. Change the owner and group for the JAR using the following comamand-line instruction:<br/>
 ```
-chown cloudera-scm:cloudera-scm /opt/cloudera/csd/RECORD_SERVICE-0.2.0.jar
+chown cloudera-scm:cloudera-scm /opt/cloudera/csd/RECORD_SERVICE-0.3.0.jar
 ```
 1. Update the permissions on the file using the following command-line instruction:<br/>
 ```
-chmod 644 /opt/cloudera/csd/RECORD_SERVICE-0.2.0.jar
+chmod 644 /opt/cloudera/csd/RECORD_SERVICE-0.3.0.jar
 ```
 1. Restart the Cloudera Manager server:
     1. As the root user on the Cloudera Manager server, run `service cloudera-scm-server restart`.
@@ -40,9 +40,9 @@ chmod 644 /opt/cloudera/csd/RECORD_SERVICE-0.2.0.jar
 1. Check whether the CSD successfully installed in `http://{cm-server}:7180/cmf/csd/refresh`. Search for the following entry:
 
 <pre>
-{ csdName: "RECORD_SERVICE-0.2.0",
+{ csdName: "RECORD_SERVICE-0.3.0",
   serviceType: "RECORD_SERVICE",
-  source: "/opt/cloudera/csd/RECORD_SERVICE-0.2.0.jar",
+  source: "/opt/cloudera/csd/RECORD_SERVICE-0.3.0.jar",
   isInstalled: true
 }
 </pre>
@@ -72,29 +72,7 @@ Follow these steps to start RecordService for a cluster from Cloudera Manager.
     * RecordService Worker: Select hosts with the role of DN.<br/>
     **Note:** Only one role is allowed on a single node.
 1. Review and modify configuration settings, such as *log dir* and *planner port*.
-    * If Sentry is enabled in the cluster, add the sentry configuration to the field **Configuration Snippet (Safety Valve) for sentry-site.xml**. You can find your Sentry configurations either from the Cloudera Manager Sentry process or Sentry process directory (/var/run/cloudera-scm-agent/process/*-sentry-SENTRY_SERVER/sentry-site.xml). Here is a sample:
-        <pre>
-&lt;property>
-     &lt;name>sentry.service.server.principal&lt;/name>
-     &lt;value>sentry/_HOST@principal&lt;/value>
-&lt;/property>
-&lt;property>
-    &lt;name>sentry.service.security.mode&lt;/name>
-    &lt;value>kerberos&lt;/value>
-&lt;/property>
-&lt;property>
-    &lt;name>sentry.service.client.server.rpc-address&lt;/name>
-    &lt;value>hostname&lt;/value>
-&lt;/property>
-&lt;property>
-    &lt;name>sentry.service.client.server.rpc-port&lt;/name>
-    &lt;value>portnum&lt;/value>
-&lt;/property>
-&lt;property>
-    &lt;name>hive.sentry.server&lt;/name>
-    &lt;value>server1&lt;/value>
-&lt;/property>
-        </pre>
+    * If Sentry is enabled in the cluster, add the sentry configuration to the field **Configuration Snippet (Safety Valve) for sentry-site.xml**. See [Configuring RecordService: Sentry Table Configuration]({{site.baseurl}}/rsConfig/#sentry-table-configuration).
 1. Start the service.
 1. Go to the debug page hostname:11050 to verify that the service started properly. 
 1. Go to the RecordService cluster page in Cloudera Manager.
@@ -121,7 +99,7 @@ See [http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topic
 
 You can verify the RecordService server installation by running examples from the client JAR.
 
-1. Download the client library and example tarball. [http://archive.cloudera.com/beta/recordservice/client-dist/recordservice-client-0.2.0-cdh5.5.x-bin.tar.gz](http://archive.cloudera.com/beta/recordservice/client-dist/recordservice-client-0.2.0-cdh5.5.x-bin.tar.gz)
+1. Download the client library and example tarball. [http://archive.cloudera.com/beta/recordservice/client-dist/recordservice-client-0.3.0-cdh5.7.0-bin.tar.gz](http://archive.cloudera.com/beta/recordservice/client-dist/recordservice-client-0.3.0-cdh5.7.0-bin.tar.gz)
     * You can also build the client library yourself from the client repository. [https://github.com/cloudera/RecordServiceClient](https://github.com/cloudera/RecordServiceClient).
     * Client libraries are also available directly from the Cloudera public Maven repository.
 1. To verify the server installation, run client examples in your clusters.
@@ -142,7 +120,7 @@ See  [https://github.com/cloudera/RecordServiceClient/blob/master/tests/create-t
 <li>Run a MapReduce job for RecordCount on tpch.nation:</li>
 
 <pre>
-> hadoop jar /path/to/recordservice-examples-0.2.0-cdh5.5.x.jar \
+> hadoop jar /path/to/recordservice-examples-0.3.0-cdh5.7.0.jar \
   com.cloudera.recordservice.examples.mapreduce.RecordCount \
   "SELECT * FROM tpch.nation" "/tmp/recordcount_output"
 </pre>
@@ -152,7 +130,7 @@ See  [https://github.com/cloudera/RecordServiceClient/blob/master/tests/create-t
 <pre>
 > path/to/spark/bin/spark-shell \
   --conf spark.recordservice.planner.hostports=planner_host:planner_port \
-  --jars /path/to/recordservice-spark-0.2.0-cdh5.5.x.jar
+  --jars /path/to/recordservice-spark-0.3.0-cdh5.7.0.jar
 > scala> import com.cloudera.recordservice.spark._
   import com.cloudera.recordservice.spark._
 > scala> val data = sc.recordServiceRecords("select * from tpch.nation") \

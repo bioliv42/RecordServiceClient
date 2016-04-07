@@ -5,3 +5,5 @@
   url: https://github.com/cloudera/RecordServiceClient/
 - title: Mailing List
   url: http://groups.google.com/forum/#!forum/recordservice-user
+- title: Download VM
+  url: http://cloudera.github.io/RecordServiceClient/vm#downloading-recordservice-vm
