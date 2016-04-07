@@ -54,7 +54,6 @@
         <include>hcatalog-pig-adapter/**</include>
         <include>avro/**</include>
         <include>avro-mr/**</include>
-        <include>avro-example/**</include>
         <include>examples/**</include>
         <include>examples-spark/**</include>
         <include>recordservice-dist/**</include>

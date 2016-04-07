@@ -38,7 +38,6 @@
     <module>hcatalog-pig-adapter</module>
     <module>avro</module>
     <module>avro-mr</module>
-    <module>avro-example</module>
     <module>examples</module>
     <module>examples-spark</module>
     <module>recordservice-dist</module>
