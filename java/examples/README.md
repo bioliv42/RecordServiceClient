@@ -47,17 +47,17 @@ In the following we'll describe these two approaches separately.
 First, for demonstration purpose, we shall create a test group and add the current user to that group:
 
 ```bash
-sudo groupadd demogroup
-sudo usermod -a -G demogroup $USER
+sudo groupadd demo_group
+sudo usermod -a -G demo_group $USER
 ```
 
-Then, creating a test role called `demorole`, and add it to the group `demogroup` defined above.
+Then, creating a test role called `demo_role`, and add it to the group `demo_group` defined above.
 This can be done with either Impala or Hive (we use Impala here).
 
 ```bash
 sudo -u impala impala-shell
-[quickstart.cloudera:21000] > CREATE ROLE demorole;
-[quickstart.cloudera:21000] > GRANT ROLE demorole to GROUP demogroup;
+[quickstart.cloudera:21000] > CREATE ROLE demo_role;
+[quickstart.cloudera:21000] > GRANT ROLE demo_role to GROUP demo_group;
 ```
 
 We shall use `tpch.nation` as example, which is also available in our QuickStart VM.
@@ -77,10 +77,10 @@ Suppose we want some users with a particular role to only be able to read the
 
 ```bash
 sudo -u impala impala-shell
-[quickstart.cloudera:21000] > GRANT SELECT(n_name, n_nationkey) ON TABLE tpch.nation TO ROLE demorole;
+[quickstart.cloudera:21000] > GRANT SELECT(n_name, n_nationkey) ON TABLE tpch.nation TO ROLE demo_role;
 ```
 
-This grants the **SELECT** privilege on columns `n_name` and `n_nationkey` to the role `demorole`.
+This grants the **SELECT** privilege on columns `n_name` and `n_nationkey` to the role `demo_role`.
 
 #### Running MR Job
 
@@ -123,12 +123,12 @@ suppose we want some users with a particular role to only be able to read the
 sudo -u impala impala-shell
 [quickstart.cloudera:21000] > USE tpch;
 [quickstart.cloudera:21000] > CREATE VIEW nation_names AS SELECT n_nationkey, n_name FROM tpch.nation;
-[quickstart.cloudera:21000] > GRANT SELECT ON TABLE tpch.nation_names TO ROLE demorole;
+[quickstart.cloudera:21000] > GRANT SELECT ON TABLE tpch.nation_names TO ROLE demo_role;
 ```
 
 which creates a view on the `n_nationkey`
 and `n_name` columns of the `tpch.nation` table, and grant the **SELECT** privilege to
-the `demorole`.
+the `demo_role`.
 
 #### Running MR Job
 
@@ -167,7 +167,7 @@ Assume the RecordService Planner is running as a user in the 'recordservice' gro
 
 ```bash
 sudo -u impala impala-shell
-[quickstart.cloudera:21000] > GRANT ALL ON URI 'hdfs:/test-warehouse/tpch.nation' TO ROLE demorole;
+[quickstart.cloudera:21000] > GRANT ALL ON URI 'hdfs:/test-warehouse/tpch.nation' TO ROLE demo_role;
 [quickstart.cloudera:21000] > CREATE ROLE rs_global_admin;
 [quickstart.cloudera:21000] > GRANT ROLE rs_global_admin TO GROUP recordservice;
 [quickstart.cloudera:21000] > GRANT ALL ON SERVER TO ROLE rs_global_admin;

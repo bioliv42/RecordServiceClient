@@ -106,7 +106,7 @@ For details on how to create and set up access to views, please check out the [M
 Similarly to MapReduce, if the data is a table in Hive MetaStore, one can get
 fine-grained access to it through either the column-level security feature starting from
 Sentry 1.5, or by creating a separate **view** with selected columns on the original table.
-Following the MapReduce example, suppose we only want to give the role `demorole` access to
+Following the MapReduce example, suppose we only want to give the role `demo_role` access to
 the columns `n_name` and `n_nationkey`, and suppose both the column privileges and the view
 are already set up, now if we launch a Spark job for [RecordCount](src/main/scala/com/cloudera/recordservice/examples/spark/RecordCount.scala)
 on the `tpch.nation` table mentioned in the MapReduce example:
