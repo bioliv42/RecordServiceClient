@@ -6,7 +6,7 @@ share: false
 
 You can find the source code for RecordService examples in the RecordService Client GitHub repository.
 
-[https://github.com/cloudera/RecordServiceClient/tree/master/java/hcatalog-pig-adapter](https://github.com/cloudera/RecordServiceClient/tree/master/java/hcatalog-pig-adapter) 
+[https://github.com/cloudera/RecordServiceClient/tree/master/java](https://github.com/cloudera/RecordServiceClient/tree/master/java) 
 
 Instructions for running the examples are stored in the repository with the source code.
 
