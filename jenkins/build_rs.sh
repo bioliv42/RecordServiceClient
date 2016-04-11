@@ -21,7 +21,7 @@ make
 
 if [[ -z $RECORD_SERVICE_SKIP_JAVA_CLIENT ]]; then
   pushd $RECORD_SERVICE_HOME/java
-  mvn package -DskipTests
+  mvn install -DskipTests
   popd
 fi
 
