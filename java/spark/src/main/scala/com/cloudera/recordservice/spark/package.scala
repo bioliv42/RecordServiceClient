@@ -29,6 +29,10 @@ package object spark {
       new RecordServiceRDD(ctx).setStatement(sql)
     }
 
+    def recordServiceRecords(db: String, tbl:String) : RDD[Array[Writable]] = {
+      new RecordServiceRDD(ctx).setTable(db + "." + tbl)
+    }
+
     def recordServiceTextFile(path: String) : RDD[String] = {
       new RecordServiceRDD(ctx).setPath(path)
           .map(v => v(0).asInstanceOf[Text].toString)
