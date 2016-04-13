@@ -233,6 +233,7 @@ public class RecordServicePlannerClient implements Closeable {
         throw new RecordServiceException("Connection to RecordServicePlanner at "
             + hostname + ":" + port + " is rejected. ", e);
       } catch (TTransportException e) {
+        close();
         String errorMsg = "Could not get service protocol version from " +
             "RecordServicePlanner at " + hostname + ":" + port + ". ";
         LOG.warn(errorMsg + e);
@@ -246,6 +247,7 @@ public class RecordServicePlannerClient implements Closeable {
         }
         throw new IOException(errorMsg, e);
       } catch (TException e) {
+        close();
         String errorMsg = "Could not get service protocol version. It's likely " +
             "the service at " + hostname + ":" + port + " is not running the " +
             "RecordServicePlanner. ";
