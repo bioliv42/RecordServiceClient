@@ -8,7 +8,7 @@ share: false
 
 ## Client Configurations
 
-While it should not be necessary to change the default configuration, you have the option modifying RecordService properties.
+Although you should not need to change the default configuration, you can modify RecordService properties.
 
 To change any of the setting listed below:
 
@@ -36,7 +36,7 @@ Search for <code>Safety Valve</code>.
 
 For more information, see <a href="http://www.cloudera.com/content/www/en-us/documentation/enterprise/latest/topics/cm_mc_mod_configs.html">Modifying Configuration Properties Using Cloudera Manager</a>.
 
-These are the configuration settings you can (optionally) adjust in your RecordService instance.
+You can adjust the following configuration settings in your RecordService instance.
 
 <table border="1">    
 <tr><th>CATEGORY</th><th>PARAMETER</th><th>DESCRIPTION</th><th> DEFAULT VALUE </th></tr>
@@ -52,18 +52,18 @@ These are the configuration settings you can (optionally) adjust in your RecordS
 
 <tr align="left"><td style="vertical-align:top">Connectivity</td><td style="vertical-align:top">recordservice.planner.rpc.timeoutMs</td><td style="vertical-align:top">Timeout for Planner RPCs in milliseconds.</td><td style="vertical-align:top">120000</td></tr>
 
-<tr align="left"><td style="vertical-align:top">Connectivity</td><td style="vertical-align:top">recordservice.worker.retry.attempts</td><td style="vertical-align:top">Maximum number of attempts to retry RecordService RPCs with a Worker.</td><td style="vertical-align:top">3</td></tr>
+<tr align="left"><td style="vertical-align:top">Connectivity</td><td style="vertical-align:top">recordservice.worker.retry.attempts</td><td style="vertical-align:top">Maximum number of attempts to retry RecordService RPCs with a worker.</td><td style="vertical-align:top">3</td></tr>
 
-<tr align="left"><td style="vertical-align:top">Connectivity</td><td style="vertical-align:top">recordservice.worker.retry.sleepMs</td><td style="vertical-align:top">Sleep in milliseconds between retry attempts with Worker.</td><td style="vertical-align:top">5000</td></tr>
+<tr align="left"><td style="vertical-align:top">Connectivity</td><td style="vertical-align:top">recordservice.worker.retry.sleepMs</td><td style="vertical-align:top">Sleep in milliseconds between retry attempts with  worker.</td><td style="vertical-align:top">5000</td></tr>
 
-<tr align="left"><td style="vertical-align:top">Connectivity</td><td style="vertical-align:top">recordservice.worker.connection.timeoutMs</td><td style="vertical-align:top">Timeout when connecting to the Worker service in milliseconds.</td><td style="vertical-align:top">10000</td></tr>
+<tr align="left"><td style="vertical-align:top">Connectivity</td><td style="vertical-align:top">recordservice.worker.connection.timeoutMs</td><td style="vertical-align:top">Timeout when connecting to the worker in milliseconds.</td><td style="vertical-align:top">10000</td></tr>
 
 <tr align="left"><td style="vertical-align:top">Connectivity</td><td style="vertical-align:top">recordservice.worker.rpc.timeoutMs</td><td style="vertical-align:top">Timeout for Worker RPCs in milliseconds.</td><td style="vertical-align:top">120000</td></tr>
 
 <tr align="left"><td style="vertical-align:top">Performance</td><td style="vertical-align:top">recordservice.task.fetch.size</td><td style="vertical-align:top">Configures the maximum number of records returned when fetching results from the RecordService. If not set, the server default is used. <br/><br/>
-Note: This might need to be adjusted according to the type of workloads (MR, Spark, etc), due to the differences in the data processing speed.</td><td style="vertical-align:top">5000</td></tr>
+You might need to adjust this value according to the type of workload (for example, MapReduce or Spark), due to differences in data processing speed.</td><td style="vertical-align:top">5000</td></tr>
 
-<tr align="left"><td style="vertical-align:top">Resource Management</td><td style="vertical-align:top">recordservice.task.memlimit.bytes</td><td style="vertical-align:top">Maximum memory the server should use per task. Tasks exceeding this limit are aborted.  If not set, the server process limit is used.</td><td style="vertical-align:top">-1 (Unlimited)</td></tr>
+<tr align="left"><td style="vertical-align:top">Resource Management</td><td style="vertical-align:top">recordservice.task.memlimit.bytes</td><td style="vertical-align:top">Maximum memory the server uses per task. Tasks exceeding this limit are aborted.  If not set, the server process limit is used.</td><td style="vertical-align:top">-1 (Unlimited)</td></tr>
 
 <tr align="left"><td style="vertical-align:top">Resource Management</td><td style="vertical-align:top">recordservice.task.plan.maxTasks</td><td style="vertical-align:top">Hint for maximum number of tasks to generate per PlanRequest. This is not strictly enforced by the server, but is used to determine if task combining should occur. This value might need to be set for large datasets.</td><td style="vertical-align:top">-1 (Unlimited)</td></tr>
 
@@ -76,9 +76,9 @@ Note: This might need to be adjusted according to the type of workloads (MR, Spa
 
 The properties listed on the Cloudera Manager RecordService Configuration page are the ones Cloudera considers the most reasonable to change. However, adjusting these values should not be necessary. Very advanced administrators might consider making minor adjustments.
 
-### Dynamic Fetch Size Adjustment
+### Dynamic Fetch Size
 
-The following properties allow you to tune dynamic fetch size adjustment on the server. 
+The following properties allow you to adjust dynamic fetch size on the server. 
 
 <table border="1">
 <tr><th>CATEGORY</th><th>PARAMETER</th><th>DESCRIPTION</th><th> DEFAULT VALUE </th></tr>
@@ -161,7 +161,7 @@ Correction factor for spare capacity; must be > 0 and <= 1.
 
 ### Kerberos Configuration
 
-No special configuration is required via Cloudera Manager. Enabling Kerberos on the cluster configures everything.
+No special configuration is required through Cloudera Manager. Enabling Kerberos on the cluster configures everything required.
 
 ### Sentry Table Configuration
 
@@ -177,25 +177,25 @@ See [http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topic
 
 <ol>
 <li>Enable RecordService to read policy metadata from Sentry:
-    <ul>
+    <ol type="a">
     <li>In Cloudera Manager, navigate to the <b>Sentry Configuration</b> page.</li>
     <li>In <b>Admin Groups</b>, add the user <i>recordservice</i>.</li>
     <li>In <b>Allowed Connecting Users</b>, add the user <i>recordservice</i>.</li>
-    </ul></li>
+    </ol></li>
 <li>Save changes.</li>
 <li>Enable Sentry for RecordService.
-    <ul>
+    <ol type="a">
     <li>In Cloudera Manager, navigate to <b>RecordService Configuration</b>.</li>
     <li>Select the <b>Sentry-1</b> service.</li>
     <li>If you are using Cloudera Manager 5.7 with RecordService 0.3.0, enter the following settings in the <b>Sentry Advanced Configuration Snippet (Safety Valve)</b> field.</li>
-    </ul>
+    </ol>
 <pre>
 &lt;property&gt;
     &lt;name&gt;hive.sentry.server&lt;/name&gt;
     &lt;value>server1&lt;/value&gt;
 &lt;/property&gt;
 </pre>
-<p>If you are using a lower version of Cloudera Manager than 5.7, enter the following settings in the <b>Sentry Advanced Configuration Snippet (Safety Valve)</b> field.
+<p>If you are using a version of Cloudera Manager lower than 5.7, enter the following settings in the <b>Sentry Advanced Configuration Snippet (Safety Valve)</b> field.
 </p>
 <pre>
 &lt;property&gt;
@@ -230,20 +230,20 @@ See [http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topic
 
 ### Delegation Token Configuration
 
-No special configuration is required with Cloudera Manager. This is enabled automatically if the cluster is kerberized.
+No special configuration is required with Cloudera Manager. This is enabled automatically if the cluster is Kerberized.
 
-RecordService persists state in Zookeeper, by default, under the /recordservice Zookeeper directory. If this directory is already in use, you can configure the directory with `recordservice.zookeeper.znode`. This is a Hadoop style XML configuration that you can add to the advanced service configuration snippet.
+RecordService persists state in ZooKeeper, by default, under the `/recordservice` ZooKeeper directory. If this directory is already in use, you can configure the directory with `recordservice.zookeeper.znode`. This is a Hadoop XML configuration that you can add to the advanced service configuration snippet.
 
 ### Planner Auto Discovery Configuration
 
 RecordService 0.3.0 and higher includes the Planner Auto Discovery feature. 
-You no longer need to specify a list of planner host/ports for your RecordService clients through the configuration property `recordservice.planner.hostports`. Instead, you can use the property `recordservice.zookeeper.connectString`, which specifies the connection string to the ZooKeeper session used to keep store information about planner/worker membership (as well as other information, such as delegation tokens). Both the client and the server use this property.
+You do not need to specify a list of planner host/ports for your RecordService clients through the configuration property `recordservice.planner.hostports`. Instead, you can use the property `recordservice.zookeeper.connectString`, which specifies the connection string to the ZooKeeper session used to keep store information about planner/worker membership (as well as other information, such as delegation tokens). Both the client and the server use this property.
 
-Planner Auto Discovery allows client side applications independent of changes in the planner configuration. Planners might come and go in the cluster, but the client side application uses the same configuration settings.
+Planner Auto Discovery allows client-side applications independent of changes in the planner configuration. Planners might come and go in the cluster, but the client-side application uses the same configuration settings.
 
 If you use Cloudera Manager to manage the cluster, this property is automatically populated to the client side configurations through the CSD.
 
-Setting the property enables Planner Auto Discovery. A RecordService job first contacts ZooKeeper to fetch a list of available RecordService planners, then uses those resources for planning. If this step fails, the job reads `recordservice.planner.hostports` and uses static membership information.
+Setting the property enables Planner Auto Discovery. A RecordService job first contacts ZooKeeper to fetch a list of available RecordService planners, and then uses those resources for planning. If this step fails, the job reads `recordservice.planner.hostports` and uses static membership information.
 
 Additional properties provide tuning options.
 

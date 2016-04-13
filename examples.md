@@ -30,14 +30,14 @@ The following examples can be found at [https://github.com/cloudera/RecordServic
 
 | Example | Description |
 |:--------|:--------|
-| Query1/Query2 | Examples that demonstrate RecordService native RDD Resilient Distributed Dataset (RDD) integration using RecordServiceRDD. |
-| WordCount | The Hadoop WordCount example built on top of the RecordService equivalent of textFile(). |
-| SchemaRDDExample | Another example of the native RDD integration, this time using SchemaRecordServiceRDD. |
-| TeraChecksum | This example uses hadoopFile() with the RecordService InputFormats. This is a port of the TeraChecksum MapReduce job, written in Spark.|
-| TpcdsBenchmark | This demonstrates the SparkSQL integration running a portion of the tpcds benchmark. |
-| DataFrameExample | An example that demonstrates DataFrames and RecordService working together. |
+| Query1/Query2 | Examples that demonstrate RecordService native Resilient Distributed Dataset (RDD) integration using RecordServiceRDD. |
+| WordCount | The Hadoop WordCount example built on top of the RecordService equivalent of `textFile()`. |
+| SchemaRDDExample | An example of native RDD integration using SchemaRecordServiceRDD. |
+| TeraChecksum | Uses `hadoopFile()` with RecordService InputFormats. This is a port of the TeraChecksum MapReduce job, written in Spark.|
+| TpcdsBenchmark | Demonstrates the SparkSQL integration running a portion of the tpcds benchmark. |
+| DataFrameExample | Demonstrates DataFrames and RecordService working together. |
 | How to use RecordService with Spark shell | Examples of using spark-shell to interact with RecordService in a variety of ways.|
-| Reading Data from a View and Enforcing Sentry Permissions | This example demonstrates how an MR job may now read data even when the user only has permission to see part of the data in a file (table). See [ReadMe.md](https://github.com/cloudera/RecordServiceClient/blob/master/java/examples-spark/README.md#how-to-enforce-sentry-permissions-with-spark) |
+| Reading Data from a View and Enforcing Sentry Permissions | Demonstrates how a MapReduce job can read data even when the user only has permission to see part of the data in a file (table). See [ReadMe.md](https://github.com/cloudera/RecordServiceClient/blob/master/java/examples-spark/README.md#how-to-enforce-sentry-permissions-with-spark) |
 
 ## Using HCatalog and Pig with RecordService
 
@@ -81,5 +81,4 @@ A = LOAD 'select n_nationkey, n_name from tpch.nation' USING com.cloudera.record
 DUMP A;
 ```
 
-This selects only the columns `n_nationkey` and `n_name` from the `tpch.nation` table.
-As with MapReduce or Spark, you can enforce restrictions on data access using Sentry privileges, which also apply to the HCatalog and Pig jobs.
+This selects only the columns `n_nationkey` and `n_name` from the `tpch.nation` table. As with MapReduce or Spark, you can use Sentry privileges to enforce restrictions on data that also apply to HCatalog and Pig jobs.

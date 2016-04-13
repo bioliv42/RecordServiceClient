@@ -27,9 +27,9 @@ As you use RecordService during the public beta period, keep in mind the followi
 
 ### New Features in RecordService Beta 0.3.0
 
-* **Planner Auto Discovery**: You can now use the recordservice.zookeeper.connectString property to specify planner/worker membership and other information. See [Configuring RecordService: Planner Auto Discovery Configuration]({{site.baseurl}}/rsConfig/#planner-auto-discovery-configuration)
+* **Planner Auto Discovery**: You can now use the `recordservice.zookeeper.connectString` property to specify planner/worker membership and other information. See [Configuring RecordService: Planner Auto Discovery Configuration]({{site.baseurl}}/rsConfig/#planner-auto-discovery-configuration).
 
-* **Dynamic Fetch Size Adjustment**: RecordService can now automatically adjust fetch size according to available capacity and workloads on the RecordServiceWorker. This allows for optimal memory management. This helps multi-tenancy workloads to succeed when resources are under contention. RecordService can scale performance up or down based on resource availability. Further tuning is available through use of the new properties `rs_adjust_fetch_size`, `rs_compressed_max_fetch_size`, `rs_compressed_max_fetch_size`, `rs_fetch_size_increase_factor`, `rs_min_fetch_size`, and `rs_spare_capacity_correction_factor`. See [Configuring RecordService]({{site.baseurl}}/rsConfig/#dynamic-fetch-size-adjustment).
+* **Dynamic Fetch Size Adjustment**: RecordService can now automatically adjust fetch size according to available capacity and workloads on the RecordServiceWorker. This allows for optimal memory management and helps multi-tenancy workloads to succeed when resources are under contention. RecordService can scale performance up or down based on resource availability. Additional tuning is available through use of the new properties `rs_adjust_fetch_size`, `rs_compressed_max_fetch_size`, `rs_compressed_max_fetch_size`, `rs_fetch_size_increase_factor`, `rs_min_fetch_size`, and `rs_spare_capacity_correction_factor`. See [Configuring RecordService]({{site.baseurl}}/rsConfig/#dynamic-fetch-size-adjustment).
 
 * **CSD User Experience Improvements for Sentry Configuration**: The name of the Sentry configuration field has change from *Configuration Snippet (Safety Valve) for sentry-site.xml* to *Sentry Advanced Configuration Snippet (Safety Valve)*. See [Sentry Table Configuration]({{site.baseurl}}/rsConfig/#sentry-table-configuration).
 
@@ -50,6 +50,8 @@ As you use RecordService during the public beta period, keep in mind the followi
 * Short circuit reads not enabled 
     * **Bug:** [RS-114](https://issues.cloudera.org/browse/RS-114)
     * Short circuit reads are enabled by default in RecordService 0.3.0.
+    
+* On the RecordService demo Virtual Machine, a MapReduce job would sometimes fail due to RecordService being unable to find any registered workers.
 
 ### Issues Fixed in RecordService Beta 0.2.0
 * Fix support for multiple planners with path requests.
@@ -113,7 +115,7 @@ To take advantage of security improvements in Beta 0.3.0, Cloudera recommends th
 
 To delete ZooKeeper nodes:
 <ol>
-<li>Create a <i>jaas.conf</i> file with the following content (the principal username is <i>impala</i> at the moment, but might change to <i>recordservice</i> in the future.)
+<li>Create a <i>jaas.conf</i> file with the following content; the principal username is <i>impala</i>.
 
 <pre>
 Client {
@@ -134,7 +136,7 @@ export JVMFLAGS="-Djava.security.auth.login.config=/path/to/jaas.conf"
 </pre>
 </li>
 <li>
-Launch the ZooKeeper client on the leader node, and specify the leader node in the <i>-server</i> parameter. Note: this does not work on follower nodes.
+Launch the ZooKeeper client on the leader node, and specify the leader node in the <i>-server</i> parameter. This does not work on follower nodes.
 
 <pre>
 zookeeper-client -server <i>leader-node-hostname</i>
@@ -143,7 +145,7 @@ zookeeper-client -server <i>leader-node-hostname</i>
 <li>
 In ZooKeeper console, delete the old ZooKeeper nodes
 <i>rmr /recordservice</i>.
-The user who launches the ZooKeeper client must have the right permissions to  <i>jaas.conf</i> and <i>keytab</i>.
+The user who launches the ZooKeeper client must have the permissions to  <i>jaas.conf</i> and <i>keytab</i>.
 </li>
 </ol>
 
