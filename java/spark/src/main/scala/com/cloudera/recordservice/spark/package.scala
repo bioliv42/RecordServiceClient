@@ -29,7 +29,7 @@ package object spark {
       new RecordServiceRDD(ctx).setStatement(sql)
     }
 
-    def recordServiceRecords(db: String, tbl:String) : RDD[Array[Writable]] = {
+    def recordServiceTable(db: String, tbl:String) : RDD[Array[Writable]] = {
       new RecordServiceRDD(ctx).setTable(db + "." + tbl)
     }
 
