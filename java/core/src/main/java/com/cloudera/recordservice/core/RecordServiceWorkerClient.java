@@ -498,6 +498,10 @@ public class RecordServiceWorkerClient implements Closeable {
     Preconditions.checkNotNull(task);
     Preconditions.checkState(offset >= 0);
     TExecTaskParams taskParams = new TExecTaskParams(ByteBuffer.wrap(task.task));
+    // Only wrap tag in TExecTaskParams when it is not an empty string.
+    if (!task.getTag().isEmpty()) {
+      taskParams.setTag(task.getTag());
+    }
     taskParams.setOffset(offset);
     if (fetchSize_ != null) taskParams.setFetch_size(fetchSize_);
     if (memLimit_ != null) taskParams.setMem_limit(memLimit_);

@@ -27,6 +27,7 @@ import com.cloudera.recordservice.core.NetworkAddress;
 import com.cloudera.recordservice.core.RecordServiceException;
 import com.cloudera.recordservice.core.RecordServiceWorkerClient;
 import com.cloudera.recordservice.core.Records;
+import com.cloudera.recordservice.core.Task;
 import com.cloudera.recordservice.mr.security.DelegationTokenIdentifier;
 import com.cloudera.recordservice.mr.security.TokenUtils;
 
@@ -49,6 +50,12 @@ public class RecordReaderCore implements Closeable {
   // Schema for records_
   private Schema schema_;
 
+  // system env for container id
+  private static final String CONTAINER_ID = "CONTAINER_ID";
+
+  // Configuration Key for the mapreduce job name
+  private static final String JOB_NAME = "mapreduce.job.name";
+
   /**
    * Creates a RecordReaderCore to read the records for taskInfo.
    */
@@ -63,6 +70,7 @@ public class RecordReaderCore implements Closeable {
     NetworkAddress address = WorkerUtil.getWorkerToConnectTo(
         taskInfo.getTask().taskId, taskInfo.getLocations(),
         taskInfo.getAllWorkerAddresses());
+    setTag(taskInfo.getTask(), config);
 
     try {
       worker_ = builder.connect(address.hostname, address.port);
@@ -84,5 +92,19 @@ public class RecordReaderCore implements Closeable {
 
   public Records records() { return records_; }
   public Schema schema() { return schema_; }
+
+  /**
+   * Set tag for the task.
+   */
+  private void setTag(Task task, Configuration config) {
+    String tag = System.getenv(CONTAINER_ID);
+    if (tag == null || tag.isEmpty()) {
+      tag = "MR-";
+      if (config.get(JOB_NAME) != null) {
+        tag += config.get(JOB_NAME);
+      }
+    }
+    task.setTag(tag);
+  }
 }
 

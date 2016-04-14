@@ -121,6 +121,7 @@ public class RSCat {
       Records rds = null;
       try {
         Task task = planResult.tasks.get(i);
+        task.setTag("RSCat");
         NetworkAddress addr;
         if (task.localHosts.size() > 0) {
           int hostChoice = randGen.nextInt(task.localHosts.size());

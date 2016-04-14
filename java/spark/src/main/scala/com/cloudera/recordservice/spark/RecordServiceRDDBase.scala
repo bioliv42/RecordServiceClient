@@ -63,6 +63,12 @@ abstract class RecordServiceRDDBase[T:ClassTag](@transient sc: SparkContext)
   val bytesReadAccum = sc.accumulator(0L, "BytesRead")
   val bytesReadLocalAccum = sc.accumulator(0L, "BytesReadLocal")
 
+  // system env for container id
+  private val CONTAINER_ID: String = "CONTAINER_ID"
+
+  // application id for the spark job
+  private var app_id: String = ""
+
   // Configs that we use when we execute the task. These come from SparkContext
   // but we do not serialize the entire context. Instead these are populated in
   // the client (i.e. planning phase).
@@ -125,6 +131,7 @@ abstract class RecordServiceRDDBase[T:ClassTag](@transient sc: SparkContext)
       val addr = WorkerUtil.getWorkerToConnectTo(
         partition.task.taskId, partition.localHosts, partition.globalHosts)
       worker = builder.connect(addr.hostname, addr.port)
+      setTag(partition.task)
       records = worker.execAndFetch(partition.task)
       (worker, records)
     } catch {
@@ -205,6 +212,7 @@ abstract class RecordServiceRDDBase[T:ClassTag](@transient sc: SparkContext)
         throw new SparkException("RecordServiceRDD failed", e)
     } finally {
       if (planner != null) planner.close()
+      if (sc.applicationId != null) app_id = sc.applicationId
     }
 
     val partitions = new Array[Partition](planResult.tasks.size())
@@ -221,5 +229,16 @@ abstract class RecordServiceRDDBase[T:ClassTag](@transient sc: SparkContext)
   private def saveFromSparkContext(sc:SparkContext) : Map[String, String] = {
     val conf = RecordServiceConf.fromSparkContext(sc)
     conf map (e => (e.getKey, e.getValue)) toMap
+  }
+
+  /**
+   * Set tag for the task.
+   */
+  private def setTag(task: Task) {
+    var tag: String = System.getenv(CONTAINER_ID)
+    if (tag == null || tag.isEmpty) {
+      tag = "Spark-" + app_id
+    }
+    task.setTag(tag)
   }
 }

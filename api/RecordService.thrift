@@ -312,6 +312,10 @@ struct TExecTaskParams {
 
   // The maximum number of records to return for this task.
   7: optional i64 limit
+
+  // The tag of the task, it can be the container id created by YARN, spark
+  // application id or job name. Currently it is used for debugging.
+  8: optional string tag
 }
 
 struct TExecTaskResult {

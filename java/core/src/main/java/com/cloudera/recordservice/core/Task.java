@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.cloudera.recordservice.thrift.TTask;
+import com.cloudera.recordservice.util.Preconditions;
 
 /**
  * POJO wrapper for TTask
@@ -34,6 +35,8 @@ public class Task implements Serializable {
   public final UniqueId taskId;
   public final boolean resultsOrdered;
   public final long taskSize;
+  // Task tag, it can be the container id created by YARN, application id or job name.
+  private String tag = "";
 
   Task(TTask t) {
     localHosts = NetworkAddress.fromThrift(t.local_hosts);
@@ -59,6 +62,8 @@ public class Task implements Serializable {
     out.writeLong(taskId.lo);
     out.writeBoolean(resultsOrdered);
     out.writeLong(taskSize);
+    out.writeInt(tag.length());
+    out.writeBytes(tag);
   }
 
   /**
@@ -80,16 +85,37 @@ public class Task implements Serializable {
     UniqueId id = new UniqueId(in.readLong(), in.readLong());
     boolean resultsOrdered = in.readBoolean();
     long taskSize = in.readLong();
-    return new Task(localHosts, taskBuffer, id, resultsOrdered, taskSize);
+    int tagLen = in.readInt();
+    byte[] tagBuffer = new byte[tagLen];
+    in.readFully(tagBuffer);
+    String tag = new String(tagBuffer);
+    return new Task(localHosts, taskBuffer, id, resultsOrdered, taskSize, tag);
+  }
+
+  /**
+   * Set the tag, it can be the container id created by YARN, application id or job name.
+   * Throw NullPointerException if tag is null.
+   */
+  public void setTag(String tag) {
+    Preconditions.checkNotNull(tag);
+    this.tag = tag;
+  }
+
+  /**
+   * Return the tag.
+   */
+  public String getTag() {
+    return this.tag;
   }
 
   Task(List<NetworkAddress> localHosts, byte[] task,
-      UniqueId id, boolean resultsOrdered, long taskSize) {
+      UniqueId id, boolean resultsOrdered, long taskSize, String tag) {
     this.localHosts = localHosts;
     this.task = task;
     this.taskId = id;
     this.resultsOrdered = resultsOrdered;
     this.taskSize = taskSize;
+    this.tag = tag;
   }
 
   /**

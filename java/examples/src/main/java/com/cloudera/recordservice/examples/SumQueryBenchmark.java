@@ -67,6 +67,7 @@ public class SumQueryBenchmark {
       long start = System.currentTimeMillis();
       Records records = null;
       try {
+        planResult.tasks.get(i).setTag("SumQueryBenchmark");
         records = WorkerClientUtil.execTask(planResult, i);
         while (records.hasNext()) {
           Record record = records.next();
