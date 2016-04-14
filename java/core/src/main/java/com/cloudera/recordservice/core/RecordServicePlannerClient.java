@@ -282,7 +282,7 @@ public class RecordServicePlannerClient implements Closeable {
 
   /**
    * Calls the RecordServicePlanner to generate a new plan - set of tasks that can be
-   * executed using a RecordServiceWorker.
+   * executed using a RecordServiceWorker. The caller must call close().
    */
   public PlanRequestResult planRequest(Request request)
       throws IOException, RecordServiceException {
@@ -327,7 +327,8 @@ public class RecordServicePlannerClient implements Closeable {
   }
 
   /**
-   * Calls the RecordServicePlanner to return the schema for a request.
+   * Calls the RecordServicePlanner to return the schema for a request. The caller must
+   * call close().
    */
   public GetSchemaResult getSchema(Request request)
       throws IOException, RecordServiceException {

@@ -126,7 +126,7 @@ public class ZooKeeperTest {
         testConnectionStr);
     List<NetworkAddress> plannerAddresses = ZooKeeperUtil.getPlanners(conf);
 
-    RecordServicePlannerClient planner;
+    RecordServicePlannerClient planner = null;
     for (int i = 0; i < SAMPLE_PLANNER_NUM; ++i) {
       NetworkAddress address = plannerAddresses.get(rand_.nextInt(PLANNER_NUM));
       try {
@@ -136,6 +136,8 @@ public class ZooKeeperTest {
       } catch (RecordServiceException e) {
         assertTrue("Expected planning to succeed at address "
             + address + ", but failed with exception " + e, false);
+      } finally {
+        if (planner != null) planner.close();
       }
     }
 
@@ -173,6 +175,8 @@ public class ZooKeeperTest {
       // Do nothing
     } catch (RecordServiceException e) {
       assertTrue("Expected IOException, but got: " + e.getClass().getName(), false);
+    } finally {
+      if (planner != null) planner.close();
     }
 
     // Adding a new planner node. The ZK addresses should also be updated accordingly
@@ -190,6 +194,8 @@ public class ZooKeeperTest {
     } catch (RecordServiceException e) {
       assertTrue("Expected planning to succeed at address "
           + nodeToAdd.plannerPort_ + ", but failed with exception " + e, false);
+    } finally {
+      if (planner != null) planner.close();
     }
   }
 

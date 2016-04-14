@@ -70,9 +70,10 @@ public class HCatRSInputFormat extends HCatRSBaseInputFormat {
     Credentials credentials = job.getCredentials();
     RecordServicePlannerClient.Builder builder = PlanUtil.getBuilder(conf);
     List<NetworkAddress> plannerHosts = PlanUtil.getPlannerHostPorts(conf);
-    RecordServicePlannerClient planner = PlanUtil.getPlanner(
-        conf, builder, plannerHosts, kerberosPrincipal, credentials);
+    RecordServicePlannerClient planner = null;
     try {
+      planner = PlanUtil.getPlanner(
+          conf, builder, plannerHosts, kerberosPrincipal, credentials);
       if (planner.isKerberosAuthenticated()) {
         Token<DelegationTokenIdentifier> delegationToken
             = TokenUtils.fromTDelegationToken(planner.getDelegationToken(""));

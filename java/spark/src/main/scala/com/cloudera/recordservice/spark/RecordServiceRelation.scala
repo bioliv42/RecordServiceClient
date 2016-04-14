@@ -56,12 +56,13 @@ case class RecordServiceRelation(table:String, size:Option[Long])(
     val builder = PlanUtil.getBuilder(hadoopConf)
     val hostPorts = PlanUtil.getPlannerHostPorts(hadoopConf)
     val kerberosPrincipal = PlanUtil.getKerberosPrincipal(hadoopConf)
-    val planner = PlanUtil.getPlanner(sqlContext.sparkContext.hadoopConfiguration,
-      builder, hostPorts, kerberosPrincipal, null)
+    var planner: RecordServicePlannerClient = null
     try {
+      planner = PlanUtil.getPlanner(sqlContext.sparkContext.hadoopConfiguration,
+        builder, hostPorts, kerberosPrincipal, null)
       convertSchema(planner.getSchema(Request.createTableScanRequest(table)).schema)
     } finally {
-      planner.close()
+      if (planner != null) planner.close()
     }
   }
 

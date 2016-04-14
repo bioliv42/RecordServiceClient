@@ -96,11 +96,11 @@ public class RSCat {
 
   public static void processPath(String path, int numRecords, String hostname, int port)
       throws RecordServiceException, IOException {
-    RecordServicePlannerClient rspc = new RecordServicePlannerClient.Builder()
-        .connect(hostname, port);
+    RecordServicePlannerClient rspc = null;
     Request planRequest;
     PlanRequestResult planResult;
     try {
+      rspc = new RecordServicePlannerClient.Builder().connect(hostname, port);
       planRequest = Request.createPathRequest(path);
       planResult = rspc.planRequest(planRequest);
     } catch (RecordServiceException rse) {
@@ -110,11 +110,13 @@ public class RSCat {
       planRequest = Request.createTableScanRequest(path);
       planResult = rspc.planRequest(planRequest);
     } finally {
-      rspc.close();
+      if (rspc != null) {
+        rspc.close();
+      }
     }
 
     Random randGen = new Random();
-    RecordServiceWorkerClient rswc;
+    RecordServiceWorkerClient rswc = null;
     for (int i = 0; i < planResult.tasks.size(); ++i) {
       Records rds = null;
       try {
@@ -138,6 +140,9 @@ public class RSCat {
       } finally {
         if (rds != null){
           rds.close();
+        }
+        if (rswc != null) {
+          rswc.close();
         }
       }
     }

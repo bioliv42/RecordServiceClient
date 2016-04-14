@@ -260,10 +260,11 @@ public class PlanUtil {
     List<NetworkAddress> plannerHostPorts = getPlannerHostPorts(jobConf);
     String kerberosPrincipal = jobConf.get(ConfVars.KERBEROS_PRINCIPAL_CONF.name);
     PlanRequestResult result = null;
-    RecordServicePlannerClient planner = PlanUtil.getPlanner(
-        jobConf, builder, plannerHostPorts, kerberosPrincipal, credentials);
+    RecordServicePlannerClient planner = null;
 
     try {
+      planner = PlanUtil.getPlanner(
+          jobConf, builder, plannerHostPorts, kerberosPrincipal, credentials);
       result = planner.planRequest(request);
       if (planner.isKerberosAuthenticated()) {
         // We need to get a delegation token and populate credentials (for the map tasks)
