@@ -107,9 +107,10 @@ public abstract class RecordServiceInputFormatBase<K, V> extends InputFormat<K, 
               context_, reader_.records().getStatus().stats);
         } catch (RecordServiceException e) {
           LOG.debug("Could not populate counters: " + e);
+        } finally {
+          reader_.close();
+          reader_ = null;
         }
-        reader_.close();
-        reader_ = null;
       }
     }
 

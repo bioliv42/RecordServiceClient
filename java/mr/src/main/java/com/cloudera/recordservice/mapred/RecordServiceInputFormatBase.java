@@ -115,9 +115,10 @@ public abstract class RecordServiceInputFormatBase<K, V> implements InputFormat<
           setCounters(reporter_, reader_.records().getStatus().stats);
         } catch (RecordServiceException e) {
           LOG.debug("Could not populate counters: " + e);
+        } finally {
+          reader_.close();
+          reader_ = null;
         }
-        reader_.close();
-        reader_ = null;
       }
     }
 
