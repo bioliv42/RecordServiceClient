@@ -99,7 +99,7 @@ See [http://www.cloudera.com/content/cloudera/en/documentation/core/latest/topic
 
 You can verify the RecordService server installation by running examples from the client JAR.
 
-1. Download the client library and example tarball. [http://archive.cloudera.com/beta/recordservice/client-dist/recordservice-client-0.3.0-cdh5.7.0-bin.tar.gz](http://archive.cloudera.com/beta/recordservice/client-dist/recordservice-client-0.3.0-cdh5.7.0-bin.tar.gz)
+1. Download the client library and example tarball. [http://archive.cloudera.com/beta/recordservice/client-dist/recordservice-client-0.3.0-cdh5.7.x-bin.tar.gz](http://archive.cloudera.com/beta/recordservice/client-dist/recordservice-client-0.3.0-cdh5.7.x-bin.tar.gz)
     * You can also build the client library yourself from the client repository. [https://github.com/cloudera/RecordServiceClient](https://github.com/cloudera/RecordServiceClient).
     * Client libraries are also available directly from the Cloudera public Maven repository.
 1. To verify the server installation, run client examples in your clusters.
