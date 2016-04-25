@@ -120,7 +120,7 @@ See  [https://github.com/cloudera/RecordServiceClient/blob/master/tests/create-t
 <li>Run a MapReduce job for RecordCount on tpch.nation:</li>
 
 <pre>
-> hadoop jar /path/to/recordservice-examples-0.3.0-cdh5.7.0.jar \
+> hadoop jar /path/to/recordservice-examples-0.3.0-cdh5.7.x.jar \
   com.cloudera.recordservice.examples.mapreduce.RecordCount \
   "SELECT * FROM tpch.nation" "/tmp/recordcount_output"
 </pre>
@@ -130,7 +130,7 @@ See  [https://github.com/cloudera/RecordServiceClient/blob/master/tests/create-t
 <pre>
 > path/to/spark/bin/spark-shell \
   --conf spark.recordservice.planner.hostports=planner_host:planner_port \
-  --jars /path/to/recordservice-spark-0.3.0-cdh5.7.0.jar
+  --jars /path/to/recordservice-spark-0.3.0-cdh5.7.x.jar
 > scala> import com.cloudera.recordservice.spark._
   import com.cloudera.recordservice.spark._
 > scala> val data = sc.recordServiceRecords("select * from tpch.nation") \
