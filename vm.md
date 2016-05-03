@@ -5,19 +5,12 @@ title: 'Using the RecordService VM'
 
 {% include toc.html %}
 
-## Downloading RecordService VM
-
-Follow these steps to download the RecordService VM.
-
-1. Install VirtualBox. The VM works with VirtualBox version 4.3 on Ubuntu 14.04 and VirtualBox version 5 on OSX 10.9. Download VirtualBox for free at [https://www.virtualbox.org/wiki/Downloads](https://www.virtualbox.org/wiki/Downloads).
-1. Clone the recordservice-quickstart repository onto your local disk from [https://github.com/cloudera/recordservice-quickstart](https://github.com/cloudera/recordservice-quickstart).
-
 ## Installing the RecordService VM
-
-|| <b>Note:</b> If you have previously installed the VM on your host machine, follow the instructions in [Verify VM is Listed Correctly in Hosts](#verify-vm-is-listed-correctly-in-hosts) and [Verify Known Hosts](#verify-known-hosts). ||
 
 Follow these steps to install the RecordService VM.
 
+1. Install VirtualBox. The VM works with VirtualBox version 4.3 on Ubuntu 14.04 and VirtualBox version 5 on OSX 10.9. Download VirtualBox for free at [https://www.virtualbox.org/wiki/Downloads](https://www.virtualbox.org/wiki/Downloads).
+1. Clone the recordservice-quickstart repository onto your local disk from [https://github.com/cloudera/recordservice-quickstart](https://github.com/cloudera/recordservice-quickstart). <b>Note:</b> If you have previously installed the VM on your host machine, follow the instructions in [Verify VM is Listed Correctly in Hosts](#verify-vm-is-listed-correctly-in-hosts) and [Verify Known Hosts](#verify-known-hosts).
 1. In a terminal window, navigate to the root of the recordservice-quickstart git repository.
 1. Run the script `install.sh`.
 
