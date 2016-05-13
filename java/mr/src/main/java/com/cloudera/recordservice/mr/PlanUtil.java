@@ -25,6 +25,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.security.Credentials;
+import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.security.token.Token;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -257,6 +258,13 @@ public class PlanUtil {
                                      Credentials credentials) throws IOException {
     Request request = PlanUtil.getRequest(jobConf);
     RecordServicePlannerClient.Builder builder = getBuilder(jobConf);
+    // If the login user is different from the current user, we set the current user as
+    // the delegated user. Here the login user is the user to submit the mapreduce job,
+    // and the current user is the user to execute the mapreduce job.
+    if (!UserGroupInformation.getCurrentUser()
+        .equals(UserGroupInformation.getLoginUser())) {
+      builder.setDelegatedUser(UserGroupInformation.getCurrentUser().getUserName());
+    }
     List<NetworkAddress> plannerHostPorts = getPlannerHostPorts(jobConf);
     String kerberosPrincipal = jobConf.get(ConfVars.KERBEROS_PRINCIPAL_CONF.name);
     PlanRequestResult result = null;

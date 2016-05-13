@@ -19,6 +19,7 @@ package com.cloudera.recordservice.spark
 
 import com.cloudera.recordservice.core._
 import com.cloudera.recordservice.mr.{PlanUtil, WorkerUtil}
+import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark._
 import org.apache.spark.rdd.RDD
 
@@ -199,6 +200,14 @@ abstract class RecordServiceRDDBase[T:ClassTag](@transient sc: SparkContext)
       val principal = PlanUtil.getKerberosPrincipal(conf)
       val builder = PlanUtil.getBuilder(conf)
       val hostPorts = PlanUtil.getPlannerHostPorts(conf)
+      // If the login user is different from the current user, we set the current user as
+      // the delegated user. Here the login user is the user to submit the spark job, and
+      // the current user is the user to execute the spark job.
+      if (!UserGroupInformation.getLoginUser.equals(
+        UserGroupInformation.getCurrentUser)) {
+        builder.setDelegatedUser(UserGroupInformation.getCurrentUser.getUserName)
+      }
+
       planner = PlanUtil.getPlanner(
         sc.hadoopConfiguration, builder, hostPorts, principal, null)
       val result = planner.planRequest(request)

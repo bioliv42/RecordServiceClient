@@ -70,6 +70,8 @@ public class RecordServicePlannerClient implements Closeable {
 
   private final String USER = System.getProperty("user.name");
 
+  private String delegatedUser_ = null;
+
   /**
    * Builder to create worker client with various configs.
    */
@@ -139,6 +141,13 @@ public class RecordServicePlannerClient implements Closeable {
       if (maxTasks <= 0) return this;
       LOG.debug("Setting maxTasks to " + maxTasks);
       client_.maxTasks_ = maxTasks;
+      return this;
+    }
+
+    public Builder setDelegatedUser(String userName) {
+      if (userName == null || userName.isEmpty()) return this;
+      LOG.debug("Setting delegated user to " + userName);
+      client_.delegatedUser_ = userName;
       return this;
     }
 
@@ -304,6 +313,7 @@ public class RecordServicePlannerClient implements Closeable {
         TPlanRequestParams planParams = request.request_;
         planParams.client_version = ProtocolVersion.CLIENT_VERSION;
         planParams.setUser(USER);
+        if (delegatedUser_ != null) planParams.setDelegated_user(delegatedUser_);
         if (maxTasks_ > 0) planParams.setMax_tasks(maxTasks_);
         planResult = plannerClient_.PlanRequest(planParams);
         LOG.debug("PlanRequest generated {} tasks.", planResult.tasks.size());
@@ -348,6 +358,7 @@ public class RecordServicePlannerClient implements Closeable {
             request, i + 1, maxAttempts_);
         TPlanRequestParams planParams = request.request_;
         planParams.setUser(USER);
+        if (delegatedUser_ != null) planParams.setDelegated_user(delegatedUser_);
         planParams.client_version = ProtocolVersion.CLIENT_VERSION;
         result = plannerClient_.GetSchema(planParams);
         return new GetSchemaResult(result);

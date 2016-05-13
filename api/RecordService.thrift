@@ -225,7 +225,7 @@ struct TPlanRequestParams {
   4: optional string sql_stmt
   5: optional TPathRequest path
 
-  // Username for this plan request. On a secure cluster, this is ignored and
+  // Connected user for this plan request. On a secure cluster, this is ignored and
   // instead the authenticated user used.
   6: optional string user
 
@@ -234,6 +234,9 @@ struct TPlanRequestParams {
   // number ofnatural task splits (e.g. HDFS blocks), the server will combine tasks.
   // The combined tasks will have multiple blocks, for example.
   7: optional i32 max_tasks
+
+  // If set, execute the request on behalf of the delegated_user.
+  8: optional string delegated_user
 }
 
 struct TTask {
