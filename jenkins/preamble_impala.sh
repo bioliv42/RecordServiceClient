@@ -34,8 +34,8 @@ export ASAN_OPTIONS="handle_segv=0"
 # We always need to clean on the ec2 machines because they are provisioned on demand
 # and don't have a metastore db
 ${EC2_HOST_PREFIX:="impala-boost-static-burst-slave"}
-current-host=`hostname`
-if [[ $current-host == *$EC2_HOST_PREFIX* ]]; then
+${current_host:=`hostname`}
+if [[ $current_host == *$EC2_HOST_PREFIX* ]]; then
   export CLEAN=true;
 fi
 

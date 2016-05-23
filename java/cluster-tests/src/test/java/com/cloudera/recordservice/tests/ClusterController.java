@@ -82,9 +82,12 @@ public class ClusterController {
             CM_PASSWORD);
         Map<String, String> envMap = new HashMap<String, String>();
         HADOOP_CONF_DIR = clusterConfiguration_.getHadoopConfDir();
-        String IMPALA_HOME = System.getenv("IMPALA_HOME");
+        String SERVER_HOME = System.getenv("SERVER_HOME");
+        String RECORD_SERVICE_HOME = System.getenv("RECORD_SERVICE_HOME");
         envMap.put("HADOOP_CONF_DIR", HADOOP_CONF_DIR);
         envMap.put("RECORD_SERVICE_PLANNER_HOST", RECORD_SERVICE_PLANNER_HOST);
+        envMap.put("RECORD_SERVICE_HOME", RECORD_SERVICE_HOME);
+        envMap.put("SERVER_HOME", SERVER_HOME);
         envMap.put("HADOOP_HOME", System.getenv("HADOOP_HOME"));
         // Add these two additional system variables to the JVM environment.
         // Hadoop and RecordService rely on these variables to execute on a
