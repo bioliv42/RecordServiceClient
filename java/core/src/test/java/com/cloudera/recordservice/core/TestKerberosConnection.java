@@ -41,7 +41,7 @@ import org.junit.Test;
  */
 public class TestKerberosConnection extends TestBase {
   // Kerberized cluster.
-  private static final String KERBEROS_HOSTS = "KERBEROS_HOSTS";
+  static final String KERBEROS_HOSTS = "KERBEROS_HOSTS";
 
   // Kerberos hosts (planners & workers), planner and planner principal for testing
   private static String[] kerberosHosts_;
