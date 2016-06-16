@@ -88,7 +88,7 @@ public class RecordCount extends Configured implements Tool {
     job.setOutputKeyClass(NullWritable.class);
     job.setOutputValueClass(LongWritable.class);
 
-    RecordServiceConfig.setInputQuery(job.getConfiguration(), inputQuery);
+    RecordServiceConfig.setInput(job.getConfiguration(), inputQuery);
     job.setInputFormatClass(RecordServiceInputFormat.class);
     job.setOutputFormatClass(TextOutputFormat.class);
 

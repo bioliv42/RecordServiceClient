@@ -104,12 +104,18 @@ public class RecordServiceConfig {
    * Set the request type based on the input string.
    * - starts with "select" - assume it is a query
    * - starts with "/" - assume it is a path
+   * - starts with "hdfs:/" - assume it is a path
+   * - starts with "s3a:/" - assume it is a path
    * - otherwise, assume it is a db.table
    */
   public static void setInput(Configuration config, String input) throws IOException {
     if (input.toLowerCase().startsWith("select")) {
       setInputQuery(config, input);
     } else if (input.startsWith("/")) {
+      setInputPaths(config, new Path(input));
+    } else if (input.toLowerCase().startsWith("hdfs:/")) {
+      setInputPaths(config, new Path(input));
+    } else if (input.toLowerCase().startsWith("s3a:/")) {
       setInputPaths(config, new Path(input));
     } else {
       setInputTable(config, null, input);
