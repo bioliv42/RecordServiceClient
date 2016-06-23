@@ -25,8 +25,8 @@ import org.junit.Test;
 public class TestS3 extends TestBase {
 
   static final boolean RUN_S3_TESTS =
-      System.getenv("TARGET_FILESYSTEM") != null &&
-      System.getenv("TARGET_FILESYSTEM").equalsIgnoreCase("s3");
+      System.getenv("S3") != null &&
+      System.getenv("S3").equalsIgnoreCase("1");
 
   @BeforeClass
   public static void setUpBeforeClass() throws Exception {
