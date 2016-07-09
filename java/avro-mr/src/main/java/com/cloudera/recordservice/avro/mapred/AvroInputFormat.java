@@ -19,6 +19,8 @@ import java.io.IOException;
 import org.apache.avro.Schema;
 import org.apache.avro.mapred.AvroJob;
 import org.apache.avro.mapred.AvroWrapper;
+import org.apache.hadoop.classification.InterfaceAudience;
+import org.apache.hadoop.classification.InterfaceStability;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
@@ -38,6 +40,8 @@ import com.cloudera.recordservice.mapred.RecordServiceInputSplit;
  * Input format which provides identical functionality to
  * org.apache.mapred.AvroInputFormat
  */
+@InterfaceAudience.Public
+@InterfaceStability.Evolving
 public class AvroInputFormat<T> extends
     RecordServiceInputFormatBase<AvroWrapper<T>, NullWritable> {
 

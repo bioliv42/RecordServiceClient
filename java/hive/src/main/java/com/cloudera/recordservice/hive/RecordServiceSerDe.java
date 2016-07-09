@@ -20,6 +20,8 @@ import java.util.Properties;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.classification.InterfaceAudience;
+import org.apache.hadoop.classification.InterfaceStability;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.ql.io.IOConstants;
 import org.apache.hadoop.hive.serde2.AbstractSerDe;
@@ -53,6 +55,8 @@ import com.cloudera.recordservice.mr.RecordServiceRecord;
  * OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat'
  * LOCATION '<hdfs path>'
  */
+@InterfaceAudience.Public
+@InterfaceStability.Unstable
 public class RecordServiceSerDe extends AbstractSerDe {
   public static final Log LOG = LogFactory.getLog(RecordServiceSerDe.class);
 

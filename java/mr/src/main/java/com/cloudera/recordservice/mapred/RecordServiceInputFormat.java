@@ -16,6 +16,8 @@ package com.cloudera.recordservice.mapred;
 
 import java.io.IOException;
 
+import org.apache.hadoop.classification.InterfaceAudience;
+import org.apache.hadoop.classification.InterfaceStability;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.mapred.InputSplit;
@@ -29,6 +31,8 @@ import com.cloudera.recordservice.mr.RecordServiceRecord;
 /**
  * Input format which returns (NULL, RecordServiceRecord).
  */
+@InterfaceAudience.Public
+@InterfaceStability.Evolving
 public class RecordServiceInputFormat extends
     RecordServiceInputFormatBase<WritableComparable<?>, RecordServiceRecord> {
 

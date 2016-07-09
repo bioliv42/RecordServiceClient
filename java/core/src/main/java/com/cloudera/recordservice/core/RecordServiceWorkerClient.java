@@ -21,6 +21,8 @@ import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.hadoop.classification.InterfaceAudience;
+import org.apache.hadoop.classification.InterfaceStability;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TProtocol;
@@ -43,6 +45,8 @@ import com.cloudera.recordservice.util.Preconditions;
 /**
  * Java client for the RecordServiceWorker. This class is not thread safe.
  */
+@InterfaceAudience.Public
+@InterfaceStability.Evolving
 public class RecordServiceWorkerClient implements Closeable {
   private final static Logger LOG =
     LoggerFactory.getLogger(RecordServiceWorkerClient.class);
@@ -109,6 +113,8 @@ public class RecordServiceWorkerClient implements Closeable {
    * TODO: this has a tone of duplication with RecordServicePlannerClient.Builder().
    * Fix this.
    */
+  @InterfaceAudience.Public
+  @InterfaceStability.Evolving
   public final static class Builder {
     RecordServiceWorkerClient client_ = new RecordServiceWorkerClient();
 

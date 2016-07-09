@@ -16,6 +16,8 @@ package com.cloudera.recordservice.mapreduce;
 
 import java.io.IOException;
 
+import org.apache.hadoop.classification.InterfaceAudience;
+import org.apache.hadoop.classification.InterfaceStability;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
@@ -32,6 +34,8 @@ import com.cloudera.recordservice.mr.Schema;
  * TODO: is this useful? This introduces the RecordServiceRecord "object"
  * model.
  */
+@InterfaceAudience.Public
+@InterfaceStability.Evolving
 public class RecordServiceInputFormat extends
     RecordServiceInputFormatBase<NullWritable, RecordServiceRecord> {
 

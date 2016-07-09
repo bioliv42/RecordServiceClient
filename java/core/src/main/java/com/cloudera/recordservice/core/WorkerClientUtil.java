@@ -14,8 +14,13 @@
 
 package com.cloudera.recordservice.core;
 
+import org.apache.hadoop.classification.InterfaceAudience;
+import org.apache.hadoop.classification.InterfaceStability;
+
 import java.io.IOException;
 
+@InterfaceAudience.Public
+@InterfaceStability.Evolving
 public class WorkerClientUtil {
   /**
    * Utility function to launch task 'taskId' in plan at the first host.

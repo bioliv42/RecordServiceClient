@@ -19,6 +19,8 @@ import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 
+import org.apache.hadoop.classification.InterfaceAudience;
+import org.apache.hadoop.classification.InterfaceStability;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TProtocol;
@@ -38,6 +40,8 @@ import com.cloudera.recordservice.util.Preconditions;
 /**
  * Java client for the RecordServicePlanner. This class is not thread safe.
  */
+@InterfaceAudience.Public
+@InterfaceStability.Evolving
 public class RecordServicePlannerClient implements Closeable {
   private final static Logger LOG =
       LoggerFactory.getLogger(RecordServicePlannerClient.class);
@@ -76,6 +80,8 @@ public class RecordServicePlannerClient implements Closeable {
   /**
    * Builder to create worker client with various configs.
    */
+  @InterfaceAudience.Public
+  @InterfaceStability.Evolving
   public final static class Builder {
     RecordServicePlannerClient client_ = new RecordServicePlannerClient();
 

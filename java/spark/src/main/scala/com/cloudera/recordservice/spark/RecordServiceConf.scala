@@ -17,6 +17,7 @@ package com.cloudera.recordservice.spark
 import java.util.NoSuchElementException
 
 import com.cloudera.recordservice.mr.RecordServiceConfig
+import org.apache.hadoop.classification.{InterfaceAudience, InterfaceStability}
 import org.apache.spark.{SparkConf, SparkContext}
 
 import com.cloudera.recordservice.mr.RecordServiceConfig.ConfVars
@@ -24,6 +25,8 @@ import org.apache.spark.sql.SQLContext
 
 import org.apache.hadoop.conf.Configuration
 
+@InterfaceAudience.Public
+@InterfaceStability.Evolving
 object RecordServiceConf {
   // Spark requires that configs start with "spark." to be read.
   val SPARK_CONF_PREFIX = "spark."

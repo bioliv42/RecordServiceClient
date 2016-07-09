@@ -26,6 +26,8 @@ import com.cloudera.recordservice.core.RecordServiceWorkerClient;
 import com.cloudera.recordservice.core.RecordServiceWorkerClient.Builder;
 import com.cloudera.recordservice.core.UniqueId;
 import com.cloudera.recordservice.mr.RecordServiceConfig.ConfVars;
+import org.apache.hadoop.classification.InterfaceAudience;
+import org.apache.hadoop.classification.InterfaceStability;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,6 +35,8 @@ import org.slf4j.LoggerFactory;
 /**
  * Utility class for RecordService worker client
  */
+@InterfaceAudience.Public
+@InterfaceStability.Evolving
 public class WorkerUtil {
 
   private final static Logger LOG = LoggerFactory.getLogger(WorkerUtil.class);

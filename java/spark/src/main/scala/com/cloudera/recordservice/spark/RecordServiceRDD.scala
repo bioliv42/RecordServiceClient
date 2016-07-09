@@ -21,6 +21,7 @@ import com.cloudera.recordservice.core.Schema
 import com.cloudera.recordservice.core.TimestampNanos
 import com.cloudera.recordservice.mr.DecimalWritable
 import com.cloudera.recordservice.mr.TimestampNanosWritable
+import org.apache.hadoop.classification.{InterfaceStability, InterfaceAudience}
 import org.apache.hadoop.io._
 import org.apache.spark._
 
@@ -29,6 +30,8 @@ import org.apache.spark._
  * Writable objects.
  * Each record is an array.
  */
+@InterfaceAudience.Public
+@InterfaceStability.Evolving
 class RecordServiceRDD(@transient sc: SparkContext)
   extends RecordServiceRDDBase[Array[Writable]](sc) with Logging {
 

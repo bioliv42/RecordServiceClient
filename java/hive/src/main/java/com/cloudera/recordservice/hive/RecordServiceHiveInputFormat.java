@@ -22,6 +22,8 @@ import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.classification.InterfaceAudience;
+import org.apache.hadoop.classification.InterfaceStability;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.ql.exec.Operator;
 import org.apache.hadoop.hive.ql.exec.TableScanOperator;
@@ -73,6 +75,8 @@ import com.google.common.base.Joiner;
  * - Queries that don't specify any columns and multi-table joins probably don't work.
  */
 @SuppressWarnings("rawtypes")
+@InterfaceAudience.Public
+@InterfaceStability.Unstable
 public class RecordServiceHiveInputFormat<K extends WritableComparable,
     V extends Writable> extends HiveInputFormat<K, V> {
 

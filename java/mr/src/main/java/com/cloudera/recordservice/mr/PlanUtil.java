@@ -21,6 +21,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.hadoop.classification.InterfaceAudience;
+import org.apache.hadoop.classification.InterfaceStability;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
@@ -46,6 +48,8 @@ import com.google.common.base.Preconditions;
 /**
  * Utilities to communicate with the planner.
  */
+@InterfaceAudience.Public
+@InterfaceStability.Evolving
 public class PlanUtil {
   private final static Logger LOG = LoggerFactory.getLogger(PlanUtil.class);
 

@@ -21,6 +21,8 @@ import org.apache.avro.mapred.AvroKey;
 import org.apache.avro.mapred.AvroValue;
 import org.apache.avro.mapreduce.AvroJob;
 import org.apache.avro.specific.SpecificRecordBase;
+import org.apache.hadoop.classification.InterfaceAudience;
+import org.apache.hadoop.classification.InterfaceStability;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
@@ -35,6 +37,8 @@ import com.cloudera.recordservice.mapreduce.RecordServiceInputFormatBase;
  * Input format which provides identical functionality to
  * org.apache.mapreduce.AvroKeyValueInputFormat
  */
+@InterfaceAudience.Public
+@InterfaceStability.Evolving
 public class AvroKeyValueInputFormat<K extends SpecificRecordBase,
     V extends SpecificRecordBase> extends
     RecordServiceInputFormatBase<AvroKey<K>, AvroValue<V> > {

@@ -17,6 +17,8 @@ package com.cloudera.recordservice.mapred;
 import java.io.IOException;
 
 import com.cloudera.recordservice.mr.PlanUtil;
+import org.apache.hadoop.classification.InterfaceAudience;
+import org.apache.hadoop.classification.InterfaceStability;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.InputSplit;
@@ -32,6 +34,8 @@ import com.cloudera.recordservice.core.Records;
  * Input format that implements the mr TextInputFormat.
  * This only works if the schema of the data is 'STRING'.
  */
+@InterfaceAudience.Public
+@InterfaceStability.Evolving
 public class TextInputFormat extends RecordServiceInputFormatBase<LongWritable, Text> {
   @Override
   public InputSplit[] getSplits(JobConf job, int numSplits) throws IOException {

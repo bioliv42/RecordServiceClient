@@ -44,6 +44,30 @@
     <module>cluster-tests</module>
   </modules>
 
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>2.10.4</version>
+        <configuration>
+          <name>User API</name>
+          <destDir>apidocs</destDir>
+          <description>The RecordService Application Programmer's API</description>
+          <docletArtifact>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-annotations</artifactId>
+            <version>${hadoop.version}</version>
+          </docletArtifact>
+          <doclet>org.apache.hadoop.classification.tools.IncludePublicAnnotationsStandardDoclet</doclet>
+          <excludePackageNames>
+            *.example*:com.cloudera.recordservice.tests.*
+          </excludePackageNames>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
   <properties>
     <commons.lang.version>2.6</commons.lang.version>
     <thrift.version>0.9.2</thrift.version>

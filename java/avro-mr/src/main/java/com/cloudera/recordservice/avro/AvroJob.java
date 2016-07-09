@@ -14,6 +14,8 @@
 
 package com.cloudera.recordservice.avro;
 
+import org.apache.hadoop.classification.InterfaceAudience;
+import org.apache.hadoop.classification.InterfaceStability;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,6 +25,8 @@ import org.slf4j.LoggerFactory;
  * and automatically switches non-recordserivce input formats to their recordservice
  * equivalents.
  */
+@InterfaceAudience.Public
+@InterfaceStability.Evolving
 public class AvroJob {
   public final static String USE_RECORD_SERVICE_INPUT_FORMAT_CONF_KEY =
       "recordservice.enable.avro";
