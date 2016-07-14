@@ -8,7 +8,7 @@ echo "**************************************************************************
 echo " building RecordService daemons."
 echo "********************************************************************************"
 
-BUILD_ARGS="-notests -skiptests"
+BUILD_ARGS="-skiptests"
 
 # Get the HDFS version. If this changes, we need to format.
 HDFS_VERSION=`/bin/grep layoutVersion $CLUSTER_DIR/cdh5/node-1/data/dfs/nn/current/VERSION | cut -d= -f2`

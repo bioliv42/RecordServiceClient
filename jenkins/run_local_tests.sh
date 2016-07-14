@@ -24,6 +24,9 @@ cd $IMPALA_HOME
 cd $IMPALA_HOME
 . ${IMPALA_HOME}/bin/set-pythonpath.sh
 
+# Run backend unit tests
+bin/run-backend-tests.sh
+
 bin/start-impala-cluster.py -s 1 --start_recordservice --catalogd_args="-load_catalog_in_background=false"
 
 if [ $S3 -eq 1 ]; then
