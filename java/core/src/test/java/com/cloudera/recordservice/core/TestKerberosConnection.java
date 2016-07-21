@@ -600,4 +600,60 @@ public class TestKerberosConnection extends TestBase {
     }
   }
 
+  /**
+   * Test accessing data within a HDFS encryption zone.
+   * TODO: Add more tests.
+   */
+  @Test
+  public void testHdfsEncryption() throws RecordServiceException, IOException {
+    RecordServicePlannerClient planner = null;
+    RecordServiceWorkerClient worker = null;
+
+    // Test table with location in a HDFS encryption zone.
+    // Here table hdfs_encryp is stored as TEXTFILE with location in an encryption zone.
+    try {
+      planner = new RecordServicePlannerClient.Builder()
+          .setKerberosPrincipal(plannerPrincipal_)
+          .connect(plannerHost_, PLANNER_PORT);
+      PlanRequestResult result = planner
+          .planRequest(Request.createSqlRequest("select * from hdfs_encryp"));
+      assertTrue(result.tasks.size() == 1);
+
+      NetworkAddress addr = result.tasks.get(0).localHosts.get(0);
+      worker = new RecordServiceWorkerClient.Builder()
+          .setKerberosPrincipal(plannerPrincipal_)
+          .connect(addr.hostname, addr.port);
+      worker.execAndFetch(result.tasks.get(0));
+    } finally {
+      if (planner != null) {
+        planner.close();
+      }
+      if (worker != null) {
+        worker.close();
+      }
+    }
+
+    // Test path within a HDFS encryption zone.
+    try {
+      planner = new RecordServicePlannerClient.Builder()
+          .setKerberosPrincipal(plannerPrincipal_)
+          .connect(plannerHost_, PLANNER_PORT);
+      PlanRequestResult result = planner.planRequest(
+          Request.createPathRequest("/tmp/testzone"));
+      assertTrue(result.tasks.size() == 1);
+
+      NetworkAddress addr = result.tasks.get(0).localHosts.get(0);
+      worker = new RecordServiceWorkerClient.Builder()
+          .setKerberosPrincipal(plannerPrincipal_)
+          .connect(addr.hostname, addr.port);
+      worker.execAndFetch(result.tasks.get(0));
+    } finally {
+      if (planner != null) {
+        planner.close();
+      }
+      if (worker != null) {
+        worker.close();
+      }
+    }
+  }
 }
