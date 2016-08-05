@@ -68,5 +68,13 @@ hadoop fs -put -f $IMPALA_HOME/testdata/impala-data/tpch/nation/*\
 hadoop fs -mkdir -p /test-warehouse/tpch_nation_parquet/
 hadoop fs -put -f $IMPALA_HOME/testdata/nation.parq /test-warehouse/tpch_nation_parquet/
 
+# Move UDF jar to HDFS
+hadoop fs -mkdir -p /test-warehouse/udfs/
+hadoop fs -put -f $IMPALA_HOME/testdata/udfs/hive-mask-udf.jar /test-warehouse/udfs
+
+# Create UDFs
+hive -e "DROP FUNCTION IF EXISTS mask;"
+hive -e "CREATE FUNCTION mask AS 'com.cloudera.hive.udf.example.Mask' USING JAR 'hdfs:///test-warehouse/udfs/hive-mask-udf.jar';"
+
 # Invalidate metadata after all data is moved.
 impala-shell.sh -q "invalidate metadata"
