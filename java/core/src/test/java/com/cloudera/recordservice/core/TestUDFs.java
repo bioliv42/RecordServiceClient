@@ -33,8 +33,8 @@ public class TestUDFs extends TestBase {
     try {
       planner = new RecordServicePlannerClient.Builder()
           .connect(PLANNER_HOST, PLANNER_PORT);
-      planner.planRequest(
-          Request.createSqlRequest("select undefined_udf(n_name) from tpch.nation"));
+      planner.planRequest(Request.createSqlRequest(
+          String.format("select undefined_udf(n_name) from %s", DEFAULT_TEST_TABLE)));
     } catch (RecordServiceException e) {
       exceptionThrown = true;
       assertTrue(e.code == RecordServiceException.ErrorCode.INVALID_REQUEST);
@@ -52,8 +52,8 @@ public class TestUDFs extends TestBase {
     try {
       planner = new RecordServicePlannerClient.Builder()
           .connect(PLANNER_HOST, PLANNER_PORT);
-      planner.planRequest(
-          Request.createSqlRequest("select mask(n_name, 1) from tpch.nation"));
+      planner.planRequest(Request.createSqlRequest(
+          String.format("select mask(n_name, 1) from %s", DEFAULT_TEST_TABLE)));
     } catch (RecordServiceException e) {
       exceptionThrown = true;
       assertTrue(e.code == RecordServiceException.ErrorCode.INVALID_REQUEST);
@@ -75,8 +75,8 @@ public class TestUDFs extends TestBase {
       planner = new RecordServicePlannerClient.Builder()
           .connect(PLANNER_HOST, PLANNER_PORT);
       // Mask the first character for column n_name
-      PlanRequestResult result = planner.planRequest(
-          Request.createSqlRequest("select mask(n_name, 0, 0) from tpch.nation"));
+      PlanRequestResult result = planner.planRequest(Request.createSqlRequest(
+          String.format("select mask(n_name, 0, 0) from %s", DEFAULT_TEST_TABLE)));
       assertTrue(result.tasks.size() == 1);
       NetworkAddress addr = result.tasks.get(0).localHosts.get(0);
 

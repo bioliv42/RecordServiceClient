@@ -17,7 +17,7 @@
 
 # Exit on reference to uninitialized variables and non-zero exit codes
 set -u
-set -e
+set -ex
 
 USE_SENTRY=1
 
@@ -71,10 +71,15 @@ hadoop fs -put -f $IMPALA_HOME/testdata/nation.parq /test-warehouse/tpch_nation_
 # Move UDF jar to HDFS
 hadoop fs -mkdir -p /test-warehouse/udfs/
 hadoop fs -put -f $IMPALA_HOME/testdata/udfs/hive-mask-udf.jar /test-warehouse/udfs
+hadoop fs -mkdir -p /test-warehouse/test-uri/
+hadoop fs -put -f $IMPALA_HOME/testdata/udfs/hive-mask-udf.jar /test-warehouse/test-uri
 
 # Create UDFs
-hive -e "DROP FUNCTION IF EXISTS mask;"
-hive -e "CREATE FUNCTION mask AS 'com.cloudera.hive.udf.example.Mask' USING JAR 'hdfs:///test-warehouse/udfs/hive-mask-udf.jar';"
+hive -e "DROP FUNCTION IF EXISTS mask; \
+CREATE FUNCTION mask AS 'com.cloudera.hive.udf.example.Mask' USING JAR 'hdfs:///test-warehouse/udfs/hive-mask-udf.jar'; \
+DROP DATABASE IF EXISTS udf CASCADE; CREATE DATABASE udf; \
+CREATE FUNCTION udf.mask1 AS 'com.cloudera.hive.udf.example.Mask' USING JAR 'hdfs:///test-warehouse/test-uri/hive-mask-udf.jar'; \
+CREATE FUNCTION udf.mask2 AS 'com.cloudera.hive.udf.example.Mask' USING JAR 'hdfs:///test-warehouse/udfs/hive-mask-udf.jar';"
 
 # Invalidate metadata after all data is moved.
 impala-shell.sh -q "invalidate metadata"

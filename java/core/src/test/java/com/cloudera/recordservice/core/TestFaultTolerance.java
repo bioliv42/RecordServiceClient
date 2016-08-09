@@ -28,7 +28,7 @@ public class TestFaultTolerance extends TestBase {
         RecordServiceException, InterruptedException {
     PlanRequestResult plan = new RecordServicePlannerClient.Builder()
         .planRequest(PLANNER_HOST, PLANNER_PORT,
-            Request.createTableScanRequest("tpch.nation"));
+            Request.createTableScanRequest(DEFAULT_TEST_TABLE));
     RecordServiceWorkerClient worker = new RecordServiceWorkerClient.Builder()
         .setMaxAttempts(3).setSleepDurationMs(10).setFetchSize(1)
         .connect(PLANNER_HOST, DEFAULT_WORKER_PORT);
@@ -60,7 +60,7 @@ public class TestFaultTolerance extends TestBase {
     planner.closeConnectionForTesting();
     boolean exceptionThrown = false;
     try {
-      planner.planRequest(Request.createTableScanRequest("tpch.nation"));
+      planner.planRequest(Request.createTableScanRequest(DEFAULT_TEST_TABLE));
     } catch (RecordServiceException e) {
       exceptionThrown = true;
     }
@@ -69,7 +69,7 @@ public class TestFaultTolerance extends TestBase {
     planner.closeConnectionForTesting();
     exceptionThrown = false;
     try {
-      planner.getSchema(Request.createTableScanRequest("tpch.nation"));
+      planner.getSchema(Request.createTableScanRequest(DEFAULT_TEST_TABLE));
     } catch (RecordServiceException e) {
       exceptionThrown = true;
     }

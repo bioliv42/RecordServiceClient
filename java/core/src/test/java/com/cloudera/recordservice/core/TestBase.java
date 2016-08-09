@@ -26,6 +26,7 @@ public class TestBase {
   // Most tests should use the worker port returned from the plan. Only use this
   // for tests that are testing worker connections specifically.
   protected static final int DEFAULT_WORKER_PORT = 13050;
+  protected static final String DEFAULT_TEST_TABLE = "tpch.nation";
 
   @BeforeClass
   public static void setUpBeforeClass() throws Exception {
