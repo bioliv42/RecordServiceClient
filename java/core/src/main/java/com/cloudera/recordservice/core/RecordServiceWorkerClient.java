@@ -468,6 +468,15 @@ public class RecordServiceWorkerClient implements Closeable {
             hostname + ":" + port + " is rejected. ", e);
       } catch (TTransportException e) {
         close();
+        if (e.getType() == TTransportException.END_OF_FILE) {
+          TRecordServiceException ex = new TRecordServiceException();
+          ex.code = TErrorCode.AUTHENTICATION_ERROR;
+          ex.message = "Connection to RecordServiceWorker at " + hostname + ":" + port +
+              " has failed. Please check if the client has the same security setting " +
+              "as the server.";
+          LOG.warn(ex.message, ex);
+          throw new RecordServiceException(ex);
+        }
         String errorMsg = "Could not get service protocol version from " +
             "RecordServiceWorker at " + hostname + ":" + port + ". ";
         if ((e.getCause() instanceof SocketTimeoutException) &&
@@ -476,14 +485,6 @@ public class RecordServiceWorkerClient implements Closeable {
               "recordservice.worker.rpc.timeoutMs.";
         }
         LOG.warn(errorMsg, e);
-        if (e.getType() == TTransportException.END_OF_FILE) {
-          TRecordServiceException ex = new TRecordServiceException();
-          ex.code = TErrorCode.AUTHENTICATION_ERROR;
-          ex.message = "Connection to RecordServiceWorker at " + hostname + ":" + port +
-              " has failed. Please check if the client has the same security setting " +
-              "as the server.";
-          throw new RecordServiceException(ex);
-        }
         throw new IOException(errorMsg, e);
       } catch (TException e) {
         close();
