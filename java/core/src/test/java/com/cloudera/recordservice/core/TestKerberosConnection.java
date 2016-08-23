@@ -602,7 +602,6 @@ public class TestKerberosConnection extends TestBase {
 
   /**
    * Test accessing data within a HDFS encryption zone.
-   * TODO: Add more tests.
    */
   @Test
   public void testHdfsEncryption() throws RecordServiceException, IOException {
@@ -654,6 +653,42 @@ public class TestKerberosConnection extends TestBase {
       if (worker != null) {
         worker.close();
       }
+    }
+  }
+
+  /**
+   * Test path request which the current user doesn't have permission to access.
+   */
+  @Test
+  public void testNoPermissionPath() throws RecordServiceException, IOException {
+    boolean exceptionThrown = false;
+    try {
+      // test no permission path in hdfs
+      new RecordServicePlannerClient.Builder()
+          .setKerberosPrincipal(plannerPrincipal_)
+          .planRequest(plannerHost_, PLANNER_PORT,
+              Request.createPathRequest("/tmp/testdir"));
+    } catch (RecordServiceException e) {
+      exceptionThrown = true;
+      assertEquals(RecordServiceException.ErrorCode.INVALID_REQUEST, e.code);
+      assertTrue(e.getMessage().contains("Could not list directory"));
+    } finally {
+      assertTrue(exceptionThrown);
+    }
+
+    exceptionThrown = false;
+    try {
+      // Test no permission path within a hdfs encryption zone
+      new RecordServicePlannerClient.Builder()
+          .setKerberosPrincipal(plannerPrincipal_)
+          .planRequest(plannerHost_, PLANNER_PORT,
+              Request.createPathRequest("/tmp/huezone"));
+    } catch (RecordServiceException e) {
+      exceptionThrown = true;
+      assertEquals(RecordServiceException.ErrorCode.INVALID_REQUEST, e.code);
+      assertTrue(e.getMessage().contains("Could not list directory"));
+    } finally {
+      assertTrue(exceptionThrown);
     }
   }
 }
