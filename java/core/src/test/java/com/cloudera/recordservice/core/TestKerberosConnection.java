@@ -621,7 +621,7 @@ public class TestKerberosConnection extends TestBase {
 
       NetworkAddress addr = result.tasks.get(0).localHosts.get(0);
       worker = new RecordServiceWorkerClient.Builder()
-          .setKerberosPrincipal(plannerPrincipal_)
+          .setKerberosPrincipal(TestUtil.makePrincipal("impala", addr.hostname))
           .connect(addr.hostname, addr.port);
       worker.execAndFetch(result.tasks.get(0));
     } finally {
@@ -644,7 +644,7 @@ public class TestKerberosConnection extends TestBase {
 
       NetworkAddress addr = result.tasks.get(0).localHosts.get(0);
       worker = new RecordServiceWorkerClient.Builder()
-          .setKerberosPrincipal(plannerPrincipal_)
+          .setKerberosPrincipal(TestUtil.makePrincipal("impala", addr.hostname))
           .connect(addr.hostname, addr.port);
       worker.execAndFetch(result.tasks.get(0));
     } finally {
