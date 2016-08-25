@@ -27,7 +27,8 @@ cd $IMPALA_HOME
 # Run backend unit tests
 bin/run-backend-tests.sh
 
-bin/start-impala-cluster.py -s 1 --start_recordservice --catalogd_args="-load_catalog_in_background=false"
+bin/start-impala-cluster.py -s 1 --start_recordservice --catalogd_args="-load_catalog_in_background=false" \
+  --rs_args="-rs_disable_udf=false"
 
 if [ $S3 -eq 1 ]; then
   echo ">>> Loading test data"

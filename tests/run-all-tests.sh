@@ -50,7 +50,8 @@ if not_quickstart_vm ; then
   # Start up a recordserviced and run the client tests. Note that at this point
   # there is no impala cluster running
   cd $IMPALA_HOME
-  bin/start-impala-cluster.py -s 1 --catalogd_args="-load_catalog_in_background=false"
+  bin/start-impala-cluster.py -s 1 --catalogd_args="-load_catalog_in_background=false" \
+    --rs_args="-rs_disable_udf=false"
   # TODO: update bin/start-impala-cluster.py
   killall -9 impalad
   killall -9 statestored
@@ -76,7 +77,7 @@ if not_quickstart_vm ; then
   # Start up the cluster for the tests that need an Impala cluster already running.
   cd $IMPALA_HOME
   bin/start-impala-cluster.py -s 1 --catalogd_args="-load_catalog_in_background=false" \
-    --rs_args="-audit_event_log_dir=${AUDIT_LOG_DIR}"
+    --rs_args="-audit_event_log_dir=${AUDIT_LOG_DIR} -rs_disable_udf=false"
 
   # Run Authorization tests
   export IGNORE_SENTRY_TESTS=false
